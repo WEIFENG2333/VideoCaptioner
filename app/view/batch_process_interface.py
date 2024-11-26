@@ -181,7 +181,7 @@ class BatchProcessInterface(QWidget):
         # 显示取消处理的通知
         InfoBar.warning(
             self.tr("已取消"),
-            self.tr("已取消批量处理任���"),
+            self.tr("已取消批量处理任"),
             duration=2000,
             position=InfoBarPosition.BOTTOM,
             parent=self
@@ -643,15 +643,16 @@ class TaskInfoCard(CardWidget):
 
     def on_open_folder_clicked(self):
         """打开文件夹按钮点击事件"""
-        if self.task and self.task.work_dir:
+        # 跨平台打开文件夹
+        import platform
+        import subprocess
+        
+        if platform.system() == "Windows":
             os.startfile(self.task.work_dir)
-        else:
-            InfoBar.warning(
-                self.tr("警告"),
-                self.tr("任务未开始"),
-                duration=2000,
-                parent=self
-            )
+        elif platform.system() == "Darwin":  # macOS
+            subprocess.run(["open", self.task.work_dir])
+        else:  # Linux
+            subprocess.run(["xdg-open", self.task.work_dir])
 
     def on_progress(self, value, message):
         """更新转录进度"""
