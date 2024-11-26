@@ -332,7 +332,7 @@ class WhisperSettingDialog(MessageBoxBase):
             self.tr('打开模型文件夹'), 
             self
         )
-        self.openFolderButton.clicked.connect(lambda: os.startfile(MODEL_PATH))
+        self.openFolderButton.clicked.connect(self.open_folder)
         self.buttonLayout.addWidget(self.downloadButton)
         self.buttonLayout.addStretch()
         self.buttonLayout.addWidget(self.openFolderButton)
@@ -411,4 +411,22 @@ class WhisperSettingDialog(MessageBoxBase):
                 duration=2000,
                 parent=self.window(),
                 position=InfoBarPosition.BOTTOM
+            )
+
+    def open_folder(self):
+        """跨平台打开文件夹"""
+        try:
+            if platform.system() == 'Windows':
+                os.startfile(MODEL_PATH)
+            elif platform.system() == 'Darwin':  # macOS
+                subprocess.run(['open', MODEL_PATH])
+            else:  # Linux
+                subprocess.run(['xdg-open', MODEL_PATH])
+        except Exception as e:
+            logger.error(f"打开文件夹失败: {str(e)}")
+            InfoBar.error(
+                title=self.tr('错误'),
+                content=self.tr('打开文件夹失败'),
+                parent=self.window(),
+                duration=3000
             )
