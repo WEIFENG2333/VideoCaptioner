@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from pathlib import Path
 import time
+import tempfile
 
 from .ASRData import ASRDataSeg, from_srt
 from .BaseASR import BaseASR
@@ -60,7 +61,7 @@ class WhisperASR(BaseASR):
         """使用 whisper.cpp 生成 SRT 字幕文件"""
         audio_path = Path(self.audio_path)
 
-        temp_dir = Path(os.environ.get('TEMP')) / "bk_asr"
+        temp_dir = Path(tempfile.gettempdir()) / "bk_asr"
         temp_dir.mkdir(parents=True, exist_ok=True)
         temp_audio = temp_dir / (time.strftime("%Y%m%d%H%M%S") + audio_path.name)
 
