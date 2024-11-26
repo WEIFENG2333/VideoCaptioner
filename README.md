@@ -61,10 +61,11 @@
 
 Mac 用户请自行使用下载源码和安装 python 依赖运行。（本地 Whisper 功能暂不支持 MacOS）
 
-1. 安装 ffmpeg 和 Aria2 下载工具
+1. 安装 ffmpeg 和 Aria2 下载工具等
 ```bash
 brew install ffmpeg
 brew install aria2
+brew install whisper-cpp
 ```
 
 2. 克隆项目
