@@ -20,6 +20,7 @@ from ..components.WhisperSettingDialog import WhisperSettingDialog
 from ..components.WhisperAPISettingDialog import WhisperAPISettingDialog
 from .log_window import LogWindow
 from ..common.signal_bus import signalBus
+from ..components.FasterWhisperSettingDialog import FasterWhisperSettingDialog
 
 
 LOGO_PATH = ASSETS_PATH / "logo.png"
@@ -83,7 +84,7 @@ class TaskCreationInterface(QWidget):
         # 创建字幕修正卡片
         self.subtitle_optimization_card = SwitchButtonSimpleSettingCard(
             self.tr("字幕修正"),
-            self.tr("使用AI大模型进行字幕修正"),
+            self.tr("使用AI大模型进行字幕修正（格式、错字、标点等）"),
             self
         )
 
@@ -96,7 +97,7 @@ class TaskCreationInterface(QWidget):
 
         # 创建目标语言卡片
         self.target_language_card = ComboBoxSimpleSettingCard(
-            self.tr("目标语言"),
+            self.tr("翻译目标语言"),
             self.tr("翻译的目标语言"),
             [model.value for model in TargetLanguageEnum],
             self
@@ -254,7 +255,8 @@ class TaskCreationInterface(QWidget):
         self.search_input.setText("")
         self.whisper_setting_button.setVisible(
             self.transcription_model_card.value() == TranscribeModelEnum.WHISPER.value or
-            self.transcription_model_card.value() == TranscribeModelEnum.WHISPER_API.value
+            self.transcription_model_card.value() == TranscribeModelEnum.WHISPER_API.value or
+            self.transcription_model_card.value() == TranscribeModelEnum.FASTER_WHISPER.value
         )
         if cfg.api_base == "":
             InfoBar.warning(
@@ -270,7 +272,8 @@ class TaskCreationInterface(QWidget):
         cfg.set(cfg.transcribe_model, TranscribeModelEnum(value))
         self.whisper_setting_button.setVisible(
             value == TranscribeModelEnum.WHISPER.value or
-            value == TranscribeModelEnum.WHISPER_API.value
+            value == TranscribeModelEnum.WHISPER_API.value or
+            value == TranscribeModelEnum.FASTER_WHISPER.value
         )
 
     def show_whisper_settings(self):
@@ -279,8 +282,12 @@ class TaskCreationInterface(QWidget):
             dialog = WhisperSettingDialog(self.window())
             if dialog.exec_():
                 return True
-        else:  # WHISPER_API
+        elif self.transcription_model_card.value() == TranscribeModelEnum.WHISPER_API.value:
             dialog = WhisperAPISettingDialog(self.window())
+            if dialog.exec_():
+                return True
+        elif self.transcription_model_card.value() == TranscribeModelEnum.FASTER_WHISPER.value:
+            dialog = FasterWhisperSettingDialog(self.window())
             if dialog.exec_():
                 return True
         return False
@@ -299,7 +306,12 @@ class TaskCreationInterface(QWidget):
             if file_path:
                 self.search_input.setText(file_path)
             return
-        need_whisper_settings = cfg.transcribe_model.value in [TranscribeModelEnum.WHISPER, TranscribeModelEnum.WHISPER_API]
+        
+        need_whisper_settings = cfg.transcribe_model.value in [
+            TranscribeModelEnum.WHISPER, 
+            TranscribeModelEnum.WHISPER_API,
+            TranscribeModelEnum.FASTER_WHISPER
+        ]
         if need_whisper_settings and not self.show_whisper_settings():
             return
 
@@ -424,6 +436,7 @@ class TaskCreationInterface(QWidget):
 
     def process(self):
         search_input = self.search_input.text()
+
         if os.path.isfile(search_input):
             self._process_file(search_input)
         elif self._is_valid_url(search_input):

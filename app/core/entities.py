@@ -74,11 +74,18 @@ class TranscribeModelEnum(Enum):
     """ 转录模型 """
     BIJIAN = "B 接口"
     JIANYING = "J 接口"
-    # KUAISHOU = "K j接口"
-    WHISPER = "Whisper [本地]"
+    FASTER_WHISPER = "FasterWhisper"
+    WHISPER = "WhisperCpp"
     WHISPER_API = "Whisper [API]"
 
-
+class VadMethodEnum(Enum):
+    """ VAD方法 """
+    SILERO_V3 = "silero_v3"
+    SILERO_V4 = "silero_v4"
+    PYANNOTE_V3 = "pyannote_v3"
+    PYANNOTE_ONNX_V3 = "pyannote_onnx_v3"
+    AUDITOK = "auditok"
+    WEBRTC = "webrtc"
 
 class TargetLanguageEnum(Enum):
     """ 目标语言 """
@@ -109,6 +116,7 @@ class TranscribeLanguageEnum(Enum):
 
 
 LANGUAGES = {
+    "auto": "auto",
     "English": "en",
     "Chinese": "zh",
     "Japanese": "ja", 
@@ -136,6 +144,15 @@ class VideoInfo:
 class WhisperModelEnum(Enum):
     TINY = "tiny"
     # BASE = "base"
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE_V1 = "large-v1"
+    LARGE_V2 = "large-v2"
+
+
+class FasterWhisperModelEnum(Enum):
+    TINY = "tiny"
+    BASE = "base"
     SMALL = "small"
     MEDIUM = "medium"
     LARGE_V1 = "large-v1"
@@ -178,7 +195,7 @@ class Task:
     video_info: Optional[VideoInfo] = None
 
     # 音频转换
-    audio_format: Optional[str] = "mp3"
+    audio_format: Optional[str] = "wav"
     audio_save_path: Optional[str] = None
 
     # 转录（转录模型）
@@ -187,11 +204,23 @@ class Task:
     use_asr_cache: bool = True
     need_word_time_stamp: bool = False
     original_subtitle_save_path: Optional[str] = None
+    # Whisper Cpp 配置
     whisper_model: Optional[WhisperModelEnum] = None
+    # Whisper API 配置
     whisper_api_key: Optional[str] = None
     whisper_api_base: Optional[str] = None
     whisper_api_model: Optional[str] = None
     whisper_api_prompt: Optional[str] = None
+    # Faster Whisper 配置
+    faster_whisper_model: Optional[FasterWhisperModelEnum] = None
+    faster_whisper_model_dir: Optional[str] = None
+    faster_whisper_device: str = "cuda"
+    faster_whisper_vad_filter: bool = True
+    faster_whisper_vad_threshold: float = 0.5
+    faster_whisper_vad_method: Optional[VadMethodEnum] = VadMethodEnum.SILERO_V3
+    faster_whisper_ff_mdx_kim2: bool = False
+    faster_whisper_one_word: bool = True
+    faster_whisper_prompt: Optional[str] = None
 
     # LLM（优化翻译模型）
     base_url: Optional[str] = None
@@ -203,8 +232,13 @@ class Task:
     thread_num: int = 10
     batch_size: int = 10
     subtitle_layout: Optional[str] = None
+    max_word_count_cjk: int = 12
+    max_word_count_english: int = 18
+    need_split: bool = True
+
 
     # 视频生成
+    need_video: bool = True
     video_save_path: Optional[str] = None
     soft_subtitle: bool = True
     subtitle_style_srt: Optional[str] = None

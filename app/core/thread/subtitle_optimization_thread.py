@@ -13,9 +13,27 @@ from ..entities import Task
 from ..subtitle_processor.spliter import merge_segments
 from ..utils.test_opanai import test_openai
 from ..utils.logger import setup_logger
+from ...common.config import cfg
 
 # 配置日志
 logger = setup_logger("subtitle_optimization_thread")
+
+FREE_API_CONFIGS = {
+    "ddg": {
+        "base_url": "http://ddg.bkfeng.top/v1",
+        "api_key": "Hey-man-This-free-server-is-convenient-for-beginners-Please-do-not-use-for-personal-use-Server-just-has-limited-concurrency",
+        "llm_model": "gpt-4o-mini",
+        "thread_num": 5,
+        "batch_size": 10
+    },
+    "zhipu": {
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+        "api_key": "c96c2f6ce767136cdddc3fef1692c1de.H27sLU4GwuUVqPn5",
+        "llm_model": "glm-4-flash",
+        "thread_num": 10,
+        "batch_size": 10
+    }
+}
 
 class SubtitleOptimizationThread(QThread):
     finished = pyqtSignal(Task)
@@ -36,23 +54,51 @@ class SubtitleOptimizationThread(QThread):
     def set_custom_prompt_text(self, text: str):
         self.custom_prompt_text = text
 
+    def _setup_api_config(self):
+        """设置API配置，返回base_url, api_key, llm_model, thread_num, batch_size"""
+        if self.task.base_url:
+            if not test_openai(self.task.base_url, self.task.api_key, self.task.llm_model)[0]:
+                raise Exception(self.tr("OpenAI API 测试失败, 请检查设置"))
+            return (self.task.base_url, self.task.api_key, self.task.llm_model, 
+                   self.task.thread_num, self.task.batch_size)
+        
+        logger.info("尝试使用自带的API配置")
+        # 遍历配置字典找到第一个可用的API
+        for config in FREE_API_CONFIGS.values():
+            if not self.valid_limit():
+                raise Exception(self.tr("公益服务有限！请配置自己的API!"))
+            if test_openai(config["base_url"], config["api_key"], config["llm_model"])[0]:
+                self.set_limit()
+                return (config["base_url"], config["api_key"], config["llm_model"],
+                       config["thread_num"], config["batch_size"])
+        
+        logger.error("自带的API配置暂时不可用，请配置自己的API")
+        raise Exception(self.tr("自带的API配置暂时不可用，请配置自己的大模型API"))
+
     def run(self):
         try:
             logger.info(f"\n===========字幕优化任务开始===========")
             logger.info(f"时间：{datetime.datetime.now()}")
-            llm_model = self.task.llm_model
-            need_translate = self.task.need_translate
-            need_optimize = self.task.need_optimize
+            
+            # 获取API配置
+            base_url, api_key, llm_model, thread_num, batch_size = self._setup_api_config()
+            logger.info(f"使用 {llm_model} 作为LLM模型")
+            os.environ['OPENAI_BASE_URL'] = base_url
+            os.environ['OPENAI_API_KEY'] = api_key
+
             str_path = self.task.original_subtitle_save_path
             result_subtitle_save_path = self.task.result_subtitle_save_path
-            thread_num = self.task.thread_num
-            batch_size = self.task.batch_size
             target_language = self.task.target_language
+            need_translate = self.task.need_translate
+            need_optimize = self.task.need_optimize
             need_summarize = True
             subtitle_style_srt = self.task.subtitle_style_srt
             subtitle_layout = self.task.subtitle_layout
-            # TODO: 开启字幕总结功能
+            max_word_count_cjk = self.task.max_word_count_cjk
+            max_word_count_english = self.task.max_word_count_english
+            need_split=self.task.need_split
             split_path = str(Path(result_subtitle_save_path).parent / f"【智能断句】{Path(str_path).stem}.srt")
+            need_remove_punctuation = cfg.needs_remove_punctuation.value
 
             # 检查
             assert str_path is not None, self.tr("字幕文件路径为空")
@@ -60,67 +106,24 @@ class SubtitleOptimizationThread(QThread):
             assert Path(str_path).suffix in ['.srt', '.vtt', '.ass'], self.tr("字幕文件格式不支持")
 
             self.progress.emit(2, self.tr("开始优化字幕..."))
-            
-            api_configs = {
-                "ddg": {
-                    "base_url": "http://ddg.bkfeng.top/v1",
-                    "api_key": "Hey-man-This-free-server-is-convenient-for-beginners-Please-do-not-use-for-personal-use-Server-just-has-limited-concurrency",
-                    "llm_model": "gpt-4o-mini",
-                    "thread_num": 5,
-                    "batch_size": 10
-                },
-                "zhipu": {
-                    "base_url": "https://open.bigmodel.cn/api/paas/v4",
-                    "api_key": "c96c2f6ce767136cdddc3fef1692c1de.H27sLU4GwuUVqPn5",
-                    "llm_model": "glm-4-flash",
-                    "thread_num": 10,
-                    "batch_size": 10
-                }
-            }
-
-            if self.task.base_url:
-                base_url = self.task.base_url
-                api_key = self.task.api_key
-                if not test_openai(base_url, api_key, llm_model)[0]:
-                    raise Exception(self.tr("OpenAI API 测试失败, 请检查设置"))
-            else:
-                logger.info("尝试使用自带的API配置")
-                # 遍历配置字典找到第一个可用的API
-                for config in api_configs.values():
-                    if not self.valid_limit():
-                        raise Exception(self.tr("公益服务有限！请配置自己的API!"))
-                    if test_openai(config["base_url"], config["api_key"], config["llm_model"])[0]:
-                        base_url = config["base_url"]
-                        api_key = config["api_key"] 
-                        llm_model = config["llm_model"]
-                        thread_num = config["thread_num"]
-                        batch_size = config["batch_size"]
-                        self.set_limit()
-                        break
-
-                else:
-                    logger.error("自带的API配置暂时不可用，请配置自己的API")
-                    raise Exception(self.tr("自带的API配置暂时不可用，请配置自己的大模型API"))
-                
-            logger.info(f"使用 {llm_model} 作为LLM模型")
-
-            os.environ['OPENAI_BASE_URL'] = base_url
-            os.environ['OPENAI_API_KEY'] = api_key
-
 
             self.llm_result_logger = setup_logger("llm_result", 
                                                 info_fmt="%(message)s",
                                                 log_file=str(Path(str_path).parent / '优化日志.log'),
-                                                console_output=False)  # 设置不输出到控制台
+                                                console_output=False)
+
             asr_data = from_subtitle_file(str_path)
 
             # 检查是否需要合并重新断句
-            if not asr_data.is_word_timestamp() and self.task.status != Task.Status.OPTIMIZING:
+            if not asr_data.is_word_timestamp() and need_split and self.task.faster_whisper_one_word:
                 asr_data.split_to_word_segments()
             if asr_data.is_word_timestamp():
                 self.progress.emit(5, self.tr("字幕断句..."))
                 logger.info("正在字幕断句...")
-                asr_data = merge_segments(asr_data, model=llm_model, num_threads=thread_num)
+                asr_data = merge_segments(asr_data, model=llm_model, 
+                                          num_threads=thread_num, 
+                                          max_word_count_cjk=max_word_count_cjk, 
+                                          max_word_count_english=max_word_count_english)
                 asr_data.save(save_path=split_path)
                 self.update_all.emit(asr_data.to_json())
 
@@ -139,9 +142,16 @@ class SubtitleOptimizationThread(QThread):
                     self.progress.emit(30, self.tr("优化+翻译..."))
                     logger.info("正在优化+翻译...")
                     need_reflect = False if "glm-4-flash" in llm_model.lower() else True
-                    self.optimizer = SubtitleOptimizer(summary_content=summarize_result, model=llm_model,
-                                                       target_language=target_language, batch_num=batch_size,
-                                                       thread_num=thread_num, llm_result_logger=self.llm_result_logger)
+                    self.optimizer = SubtitleOptimizer(
+                        summary_content=summarize_result,
+                        model=llm_model,
+                        target_language=target_language,
+                        batch_num=batch_size,
+                        thread_num=thread_num,
+                        llm_result_logger=self.llm_result_logger,
+                        need_remove_punctuation=need_remove_punctuation,
+                        cjk_only=True
+                    )
                     optimizer_result = self.optimizer.optimizer_multi_thread(subtitle_json, translate=True,
                                                                              reflect=need_reflect,
                                                                              callback=self.callback)
@@ -152,11 +162,12 @@ class SubtitleOptimizationThread(QThread):
                                                        batch_num=batch_size, thread_num=thread_num, llm_result_logger=self.llm_result_logger)
                     optimizer_result = self.optimizer.optimizer_multi_thread(subtitle_json, callback=self.callback)
 
-                # 保存字幕
+                # 替换优化或者翻译后的字幕
                 for i, subtitle_text in optimizer_result.items():
                     seg = asr_data.segments[int(i) - 1]
                     seg.text = subtitle_text
 
+                # 保存字幕
                 if result_subtitle_save_path.endswith(".ass"):
                     asr_data.to_ass(style_str=subtitle_style_srt, layout=subtitle_layout, save_path=result_subtitle_save_path)
                 else:

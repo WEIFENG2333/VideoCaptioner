@@ -55,8 +55,10 @@ class ASRDataSeg:
 
 class ASRData:
     def __init__(self, segments: List[ASRDataSeg]):
-        segments.sort(key=lambda x: x.start_time)
-        self.segments = segments
+        # 去除 segments.text 为空的
+        filtered_segments = [seg for seg in segments if seg.text and seg.text.strip()]
+        filtered_segments.sort(key=lambda x: x.start_time)
+        self.segments = filtered_segments
 
     def __iter__(self):
         return iter(self.segments)
@@ -105,7 +107,7 @@ class ASRData:
             duration = seg.end_time - seg.start_time
             
             # 匹配所有有效字符（包括数字）
-            pattern = r'[a-zA-Z]+|\d+|[\u4e00-\u9fff]|[\u3040-\u309f]|[\u30a0-\u30ff]|[\uac00-\ud7af]|[\u0e00-\u0e7f]|[\u0600-\u06ff]|[\u0400-\u04ff]|[\u0590-\u05ff]|[\u1e00-\u1eff]|[\u3130-\u318f]'
+            pattern = r'[a-zA-Z\']+|\d+|[\u4e00-\u9fff]|[\u3040-\u309f]|[\u30a0-\u30ff]|[\uac00-\ud7af]|[\u0e00-\u0e7f]|[\u0600-\u06ff]|[\u0400-\u04ff]|[\u0590-\u05ff]|[\u1e00-\u1eff]|[\u3130-\u318f]'
             words = re.finditer(pattern, text)
             words_list = list(words)
             

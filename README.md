@@ -4,7 +4,7 @@
   <h1>VideoCaptioner</h1>
   <p>一款基于大语言模型(LLM)的视频字幕处理助手，支持语音识别、字幕断句、优化、翻译全流程处理</p>
 
-  简体中文 / [English](./docs/README_EN.md)
+  简体中文 / [正體中文](./docs/README_TW.md) / [English](./docs/README_EN.md)
   
 </div>
 
@@ -31,9 +31,9 @@
 
 ## 🧪 测试
 
-全流程处理一个14分钟1080P的 [B站英文 TED 视频](https://www.bilibili.com/video/BV1jT411X7Dz)，调用本地 Whisper 模型进行语音识别，使用 `gpt-4o-mini` 模型优化和翻译为中文，总共消耗时间约 **4 分钟**。
+全流程处理一个14分钟1080P的 [B站英文 TED 视频](https://www.bilibili.com/video/BV1jT411X7Dz)，调用本地 Whisper 模型进行语音识别，使用 `gpt-4o-mini` 模型优化和翻译为中文，总共消耗时间约 **14 分钟**。
 
- 近后台计算，模型优化和翻译消耗费用不足 ￥0.01（以官方价格为计算）
+ 近后台计算，模型优化和翻译消耗费用不足 ￥0.01（以OpenAI官方价格为计算）
 
 具体字幕和视频合成的效果的测试结果图片，请参考 [TED视频测试](./docs/test.md)
 
@@ -56,7 +56,8 @@
 
 <details>
 <summary>MacOS 用户</summary>
-
+ 
+ 
 由于本人缺少 Mac，所以没法测试和打包，暂无法提供 MacOS 的可执行程序。
 
 Mac 用户请自行使用下载源码和安装 python 依赖运行。（本地 Whisper 功能暂不支持 MacOS）

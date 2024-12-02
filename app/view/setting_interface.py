@@ -18,6 +18,7 @@ from ..components.EditComboBoxSettingCard import EditComboBoxSettingCard
 from ..components.LineEditSettingCard import LineEditSettingCard
 from ..core.utils.test_opanai import test_openai, get_openai_models
 from ..components.WhisperSettingDialog import WhisperSettingDialog
+from ..components.FasterWhisperSettingDialog import FasterWhisperSettingDialog
 from ..common.signal_bus import signalBus
 
 class SettingInterface(ScrollArea):
@@ -58,15 +59,15 @@ class SettingInterface(ScrollArea):
             cfg.api_key,
             FIF.FINGERPRINT,
             self.tr("API Key"),
-            self.tr("输入您的 API Key"),
+            self.tr("输入您的 API Key 令牌"),
             "sk-",
             self.llmGroup
         )
         self.apiBaseCard = LineEditSettingCard(
             cfg.api_base,
             FIF.LINK,
-            self.tr("API Base"),
-            self.tr("输入您的 API Base"),
+            self.tr("Base URL"),
+            self.tr("输入兼容 OpenAI 格式的 Base URL（需包括 /v1 后缀）"),
             "https://api.openai.com/v1",
             self.llmGroup
         )
@@ -74,7 +75,7 @@ class SettingInterface(ScrollArea):
             cfg.model,
             FIF.ROBOT,
             self.tr("模型"),
-            self.tr("输入您的模型"),
+            self.tr("输入您的模型，点击下方检查连接后会填充模型列表"),
             ["gpt-4o", "gpt-4o-mini"],
             self.llmGroup
         )
@@ -82,7 +83,7 @@ class SettingInterface(ScrollArea):
             self.tr("检查连接"),
             FIF.LINK,
             self.tr("检查 LLM 连接"),
-            self.tr("点击检查 API 连接是否正常，并获取模型列表填充到上面"),
+            self.tr("点击检查 API 连接是否正常，并获取模型列表"),
             self.llmGroup
         )
         self.batchSizeCard = RangeSettingCard(
@@ -120,7 +121,7 @@ class SettingInterface(ScrollArea):
             cfg.target_language,
             FIF.LANGUAGE,
             self.tr('目标语言'),
-            self.tr('选择字幕的目标语言'),
+            self.tr('选择翻译字幕的目标语言'),
             texts=[lang.value for lang in cfg.target_language.validator.options],
             parent=self.translateGroup
         )
@@ -132,7 +133,7 @@ class SettingInterface(ScrollArea):
             self.tr('修改'),
             FIF.FONT,
             self.tr('字幕样式'),
-            self.tr('选择字幕的颜色、大小、字体等'),
+            self.tr('选择字幕的样式（颜色、大小、字体等）'),
             self.subtitleGroup
         )
         self.subtitleLayoutCard = HyperlinkCard(
@@ -140,18 +141,25 @@ class SettingInterface(ScrollArea):
             self.tr('修改'),
             FIF.FONT,
             self.tr('字幕布局'),
-            self.tr('选择字幕的布局'),
+            self.tr('选择字幕的布局（单语、双语）'),
+            self.subtitleGroup
+        )
+
+        self.needVideoCard = SwitchSettingCard(
+            FIF.VIDEO,
+            self.tr('需要合成视频'),
+            self.tr('是否需要合成视频'),
+            cfg.need_video,
             self.subtitleGroup
         )
         # 开启软字幕
         self.softSubtitleCard = SwitchSettingCard(
             FIF.FONT,
             self.tr('软字幕'),
-            self.tr('是否开启软字幕'),
+            self.tr('合成视频时是否使用软字幕'),
             cfg.soft_subtitle,
             self.subtitleGroup
         )
-
         # 保存配置
         self.saveGroup = SettingCardGroup(self.tr("保存配置"), self.scrollWidget)
         self.savePathCard = PushSettingCard(
@@ -281,6 +289,7 @@ class SettingInterface(ScrollArea):
 
         self.subtitleGroup.addSettingCard(self.subtitleStyleCard)
         self.subtitleGroup.addSettingCard(self.subtitleLayoutCard)
+        self.subtitleGroup.addSettingCard(self.needVideoCard)
         self.subtitleGroup.addSettingCard(self.softSubtitleCard)
         self.saveGroup.addSettingCard(self.savePathCard)
 
@@ -348,10 +357,21 @@ class SettingInterface(ScrollArea):
             dialog = WhisperSettingDialog(self.window())
             if dialog.exec_():
                 return True
-        else:  # WHISPER_API
+        elif self.transcribeModelCard.comboBox.currentText() == TranscribeModelEnum.WHISPER_API.value:
             dialog = WhisperAPISettingDialog(self.window())
             if dialog.exec_():
                 return True
+        elif self.transcribeModelCard.comboBox.currentText() == TranscribeModelEnum.FASTER_WHISPER.value:
+            dialog = FasterWhisperSettingDialog(self.window())
+            if dialog.exec_():
+                return True
+        else:
+            InfoBar.error(
+                self.tr('错误'),
+                self.tr('请先选择Whisper转录模型'),
+                duration=3000,
+                parent=self
+            )
         return False
     
     def __showRestartTooltip(self):
@@ -366,9 +386,9 @@ class SettingInterface(ScrollArea):
     def __onsavePathCardClicked(self):
         """ 处理保存路径卡片点击事件 """
         folder = QFileDialog.getExistingDirectory(self, self.tr("选择文件夹"), "./")
-        if not folder or cfg.get(cfg.save_path) == folder:
+        if not folder or cfg.get(cfg.work_dir) == folder:
             return
-        cfg.set(cfg.save_path, folder)
+        cfg.set(cfg.work_dir, folder)
         self.savePathCard.setContent(folder)
 
     def checkLLMConnection(self):
@@ -418,8 +438,8 @@ class SettingInterface(ScrollArea):
             self.modelCard.setItems(models)
             self.modelCard.comboBox.setCurrentText(temp)
             InfoBar.success(
-                self.tr('获取模型列表成功'),
-                self.tr('模型列表已填充'),
+                self.tr('获取模型列表成功:'),
+                self.tr('一共') + str(len(models)) + self.tr('个模型'),
                 duration=3000,
                 parent=self
             )

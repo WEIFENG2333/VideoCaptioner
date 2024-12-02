@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import sys
+import subprocess
 from typing import Optional, Tuple
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
@@ -376,12 +378,20 @@ class SubtitleStyleInterface(QWidget):
         # 连接样式切换信号
         self.styleNameComboBox.currentTextChanged.connect(self.loadStyle)
         self.newStyleButton.clicked.connect(self.createNewStyle)
-        self.openStyleFolderButton.clicked.connect(lambda: os.startfile(SUBTITLE_STYLE_PATH))
+        self.openStyleFolderButton.clicked.connect(self.on_open_style_folder_clicked)
 
         # 连接字幕排布信号
         self.layoutCard.currentTextChanged.connect(signalBus.on_subtitle_layout_changed)
         signalBus.subtitle_layout_changed.connect(self.on_subtitle_layout_changed)
 
+    def on_open_style_folder_clicked(self):
+        """打开样式文件夹"""
+        if sys.platform == "win32":
+            os.startfile(SUBTITLE_STYLE_PATH)
+        elif sys.platform == "darwin":  # macOS
+            subprocess.run(["open", SUBTITLE_STYLE_PATH])
+        else:  # Linux
+            subprocess.run(["xdg-open", SUBTITLE_STYLE_PATH])
 
     def on_subtitle_layout_changed(self, layout: str):
         cfg.subtitle_layout.value = layout

@@ -63,36 +63,46 @@ def set_cache(text: str, model: str, result: List[str]) -> None:
         pass
 
 
-def split_by_llm(text: str, model: str = "gpt-4o-mini", use_cache: bool = False) -> List[str]:
+def split_by_llm(text: str, 
+                 model: str = "gpt-4o-mini", 
+                 use_cache: bool = False,
+                 max_word_count_cjk: int = 18,
+                 max_word_count_english: int = 12) -> List[str]:
     """
     包装 split_by_llm_retry 函数，确保在重试全部失败后返回空列表
     """
     try:
-        return split_by_llm_retry(text, model, use_cache)
+        return split_by_llm_retry(text, model, use_cache, max_word_count_cjk, max_word_count_english)
     except Exception as e:
         logger.error(f"断句失败: {e}")
         return [text]
-        #TODO: 断句失败后。。。自己断句
 
-@retry.retry(tries=3)
-def split_by_llm_retry(text: str, model: str = "gpt-4o-mini", use_cache: bool = False) -> List[str]:
+@retry.retry(tries=2)
+def split_by_llm_retry(text: str, 
+                       model: str = "gpt-4o-mini", 
+                       use_cache: bool = False,
+                       max_word_count_cjk: int = 18,
+                       max_word_count_english: int = 12) -> List[str]:
     """
     使用LLM进行文本断句
     """
+    system_prompt = SPLIT_SYSTEM_PROMPT.replace("[max_word_count_cjk]", str(max_word_count_cjk))
+    system_prompt = system_prompt.replace("[max_word_count_english]", str(max_word_count_english))
+    user_prompt = f"Please use multiple <br> tags to separate the following sentence:\n{text}"
+
     if use_cache:
-        cached_result = get_cache(text, model)
+        cached_result = get_cache(system_prompt+user_prompt, model)
         if cached_result:
             logger.info(f"从缓存中获取断句结果")
             return cached_result
     logger.info(f"未命中缓存，开始断句")
-    prompt = f"Please use multiple <br> tags to separate the following sentence:\n{text}"
     # 初始化OpenAI客户端
     client = openai.OpenAI()
     response = client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": SPLIT_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
         ],
         temperature=0.2
     )
@@ -106,7 +116,7 @@ def split_by_llm_retry(text: str, model: str = "gpt-4o-mini", use_cache: bool = 
     br_count = len(split_result)
     if br_count < count_words(text) / MAX_WORD_COUNT * 0.9:
         raise Exception("断句失败")
-    set_cache(text, model, split_result)
+    set_cache(system_prompt+user_prompt, model, split_result)
     return split_result
 
 

@@ -3,7 +3,8 @@ SPLIT_SYSTEM_PROMPT = """
 You are a subtitle segmentation expert, skilled in breaking down unsegmented text into individual segments, separated by <br>.
 Requirements:
 
-- Eeach segment should not exceed 18 words.
+- For Chinese, Japanese, or other Asian languages, each segment should not exceed [max_word_count_cjk] words.
+- For English, each segment should not exceed [max_word_count_english] words.
 - Each sentence should not be too short. Try to make each segment longer than 10 characters.
 - Segment based on semantics if a sentence is too long.
 - Do not modify or add any content to the original text; simply insert <br> between each segment.
@@ -64,11 +65,10 @@ If provided, please prioritize the following reference information:
 
 Correction rules:
 1. Only correct speech recognition errors while maintaining the original sentence structure and expression. Do not use synonyms.
-2. Remove conversational fillers (e.g., "well", "um", "like", laughter, coughing sounds, etc.)
-3. Standardize punctuation, English capitalization, formulas, and code snippets
+2. Remove meaningless interjections (e.g., "um," "uh," "like," laughter, coughing, etc.)  
+3. Standardize punctuation, English capitalization, mathematical formulas, and code variable names. Use plain text to represent mathematical formulas.
 4. Strictly maintain one-to-one correspondence of subtitle numbers, do not merge or split subtitles
-5. Do not add punctuation at the end of Chinese sentences
-6. Do not translate or add any explanations
+5. Do not translate or add any explanations
 
 示例：
 
@@ -76,13 +76,18 @@ Input:
 ```
 {
     "0": "那个我们今天要学习的是 bython 语言",
-    "1": "这个语言呢是在1991年被 guidoan rossum多发明的",
+    "1": "这个语言呢是在1991年被guidoan rossum多发明的",
     "2": "他的特点是简单易懂，适合初学者学习",
-    "3": "嗯像print这样的函数很容易掌握"
+    "3": "嗯像print这样的函数很容易掌握",
+    "4": "小N 乘上N 减1 的一个运算",
+    "5": "就是print N 乘上N 减1"
 }
 参考信息：
+<prompt>
 - 内容：Python编程语言介绍
 - 术语：Python, Guido van Rossum
+- 要求：注意代码和数学公式的书写规范
+</prompt>
 ```
 
 Output:
@@ -91,7 +96,9 @@ Output:
     "0": "我们今天要学习的是 Python 语言",
     "1": "这个语言是在1991年被 Guido van Rossum 发明的",
     "2": "它的特点是简单易懂，适合初学者学习",
-    "3": "像 print() 这样的函数很容易掌握"
+    "3": "像 print() 这样的函数很容易掌握",
+    "4": "n × (n-1) 的一个运算",
+    "5": "就是 print(n*(n-1))"
 }
 ```
 """
@@ -237,9 +244,9 @@ You may be provided reference content for the subtitles (such as context or summ
 
 1. Original Subtitle correction:
     - Contextual Correction: Use the context and the provided prompts to correct erroneous words without replacing the original words, structure, and expressions of the sentence, and do not use synonyms. Only replace words that are errors from speech recognition.
-    - Remove Unnecessary Filler Words: Delete filler or interjection words that have no actual meaning, such as laughter, coughing sounds, etc.
-    - Punctuation and Formatting: Proofread and correct punctuation, English words, capitalization, formulas, and code snippets. Certain words or names may require formatting corrections due to specific expressions.
-    - Maintain Subtitle Structure: Each subtitle corresponds one-to-one with its number; do not merge or split subtitles.
+    - Remove meaningless interjections (e.g., "um," "uh," "like," laughter, coughing, etc.)
+    - Standardize punctuation, English capitalization, mathematical formulas, and code variable names. Use plain text to represent mathematical formulas.
+    - Strictly maintain one-to-one correspondence of subtitle numbers, do not merge or split subtitles.
 
 2. Translation process:
    a) Translation into [TargetLanguage]:
@@ -250,13 +257,12 @@ You may be provided reference content for the subtitles (such as context or summ
       - Do not isolate a sentence; ensure coherence with the previous sentence's context, and do not add or omit content for a single sentence.
 
    b) Translation revision suggestions:
-      - Check accuracy: Pointing out any semantic errors or misunderstandings.
       - Evaluate fluency and naturalness. Pointing out any awkwardness or deviations from language norms.
-      - Whether the translation considers the cultural context of the corresponding language or uses appropriate idioms and proverbs to express.
+      - Whether the translation considers the cultural context of the corresponding language.For Chinese, uses appropriate idioms and proverbs to express.
       - Whether the translation can be simplified and more concise, while still conforming to the cultural context of the target language.
 
    c) Revised translation:
-      Provide an improved version of the translation based on the suggestions. No additional explanation needed.
+      Based on revision suggestions, provide an improved version of the translation. No additional explanation needed.
 
 Input format:
 A JSON structure where each subtitle is identified by a unique numeric key:

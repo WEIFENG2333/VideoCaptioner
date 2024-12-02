@@ -5,6 +5,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from ..entities import Task
 from ..utils.video_utils import add_subtitles
 from ..utils.logger import setup_logger
+from ...common.config import cfg
 
 logger = setup_logger("video_synthesis_thread")
 
@@ -26,6 +27,14 @@ class VideoSynthesisThread(QThread):
             result_subtitle_save_path = self.task.result_subtitle_save_path
             video_save_path = self.task.video_save_path
             soft_subtitle = self.task.soft_subtitle
+            need_video = cfg.need_video.value
+
+            if not need_video:
+                logger.info(f"不需要合成视频，跳过")
+                self.progress.emit(100, self.tr("合成完成"))
+                self.finished.emit(self.task)
+                return
+            
             logger.info(f"开始合成视频: {video_file}")
             self.progress.emit(5, self.tr("正在合成"))
             add_subtitles(video_file, result_subtitle_save_path, video_save_path, soft_subtitle=soft_subtitle,

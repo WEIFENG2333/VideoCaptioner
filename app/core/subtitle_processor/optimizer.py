@@ -2,6 +2,7 @@ import difflib
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+import re
 from typing import Dict
 
 import retry
@@ -27,8 +28,17 @@ DEFAULT_MODEL = "gpt-4o-mini"
 class SubtitleOptimizer:
     """A class for optimize and translating subtitles using OpenAI's API."""
 
-    def __init__(self, model: str = DEFAULT_MODEL, summary_content="", thread_num=MAX_THREADS, batch_num=BATCH_SIZE,
-                 target_language="Chinese", llm_result_logger: logging.Logger = None) -> None:
+    def __init__(
+        self,
+        model: str = DEFAULT_MODEL,
+        summary_content: str = "",
+        thread_num: int = MAX_THREADS,
+        batch_num: int = BATCH_SIZE,
+        target_language: str = "Chinese",
+        llm_result_logger: logging.Logger = None,
+        need_remove_punctuation: bool = True,
+        cjk_only: bool = True
+    ) -> None:
         base_url = os.getenv('OPENAI_BASE_URL')
         api_key = os.getenv('OPENAI_API_KEY')
         assert base_url and api_key, "环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置"
@@ -43,32 +53,12 @@ class SubtitleOptimizer:
         self.thread_num = thread_num
         self.executor = ThreadPoolExecutor(max_workers=thread_num)  # 创建类级别的线程池
         self.llm_result_logger = llm_result_logger
+        self.need_remove_punctuation = need_remove_punctuation
+        self.cjk_only = cjk_only
 
     def stop(self):
         self.executor.shutdown(wait=False)
 
-    @retry.retry(tries=2)
-    def optimize(self, original_subtitle: Dict[int, str]) -> Dict[int, str]:
-        """ Optimize the given subtitle. """
-        logger.info(f"[+]正在优化字幕：{next(iter(original_subtitle))} - {next(reversed(original_subtitle))}")
-
-        message = self._create_optimizer_message(original_subtitle)
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            stream=False,
-            messages=message)
-
-        optimized_text = json_repair.loads(response.choices[0].message.content)
-
-        for k, v in optimized_text.items():
-            self.llm_result_logger.info(f"优化字幕：{original_subtitle[k]}")
-            self.llm_result_logger.info(f"优化结果：{v}")
-            self.llm_result_logger.info("===========")
-
-        aligned_subtitle = repair_subtitle(original_subtitle, optimized_text)  # 修复字幕对齐问题
-
-        return aligned_subtitle
 
     def optimizer_multi_thread(self, subtitle_json: Dict[int, str],
                                translate=False,
@@ -100,6 +90,31 @@ class SubtitleOptimizer:
         # 合并结果
         optimizer_result = {k: v for result in results for k, v in result.items()}
         return optimizer_result
+    
+    @retry.retry(tries=2)
+    def optimize(self, original_subtitle: Dict[int, str]) -> Dict[int, str]:
+        """ Optimize the given subtitle. """
+        logger.info(f"[+]正在优化字幕：{next(iter(original_subtitle))} - {next(reversed(original_subtitle))}")
+
+        message = self._create_optimizer_message(original_subtitle)
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            stream=False,
+            messages=message)
+
+        optimized_text = json_repair.loads(response.choices[0].message.content)
+
+        aligned_subtitle = repair_subtitle(original_subtitle, optimized_text)  # 修复字幕对齐问题
+
+        for k, v in aligned_subtitle.items():
+            optimized_text = self.remove_punctuation(v)
+            aligned_subtitle[k] = optimized_text
+            self.llm_result_logger.info(f"优化字幕：{original_subtitle[k]}")
+            self.llm_result_logger.info(f"优化结果：{optimized_text}")
+            self.llm_result_logger.info("===========")
+        print(aligned_subtitle)
+        return aligned_subtitle
 
     @retry.retry(tries=2)
     def translate(self, original_subtitle: Dict[int, str], reflect=False) -> Dict[int, str]:
@@ -122,7 +137,13 @@ class SubtitleOptimizer:
         aligned_subtitle = repair_subtitle(original_subtitle, optimized_text)  # 修复字幕对齐问题
         # 在 translations 中查找对应的翻译  文本-翻译 映射
         translations = {item["optimized_subtitle"]: item["revised_translation"] for item in response_content.values()}
-        translated_subtitle = {k: f"{v}\n{translations.get(v, ' ')}" for k, v in aligned_subtitle.items()}
+        
+        translated_subtitle = {}
+        for k, v in aligned_subtitle.items():
+            original_text = self.remove_punctuation(v)
+            translated_text = self.remove_punctuation(translations.get(v, ' '))
+            translated_subtitle[k] = f"{original_text}\n{translated_text}"
+
         if self.llm_result_logger:
             for k, v in response_content.items():
                 self.llm_result_logger.info(f"原字幕：{v['optimized_subtitle']}")
@@ -149,38 +170,26 @@ class SubtitleOptimizer:
         original_list = list(original_subtitle.values())
         translated_list = list(response_content.values())
         for i, key in enumerate(original_subtitle.keys()):
-            translated_subtitle[key] = f"{original_list[i]}\n{translated_list[i]}"
+            original_text = self.remove_punctuation(original_list[i])
+            translated_text = self.remove_punctuation(translated_list[i])
+            translated_subtitle[key] = f"{original_text}\n{translated_text}"
 
         return translated_subtitle
 
     def _create_translate_message(self, original_subtitle: Dict[int, str]):
         input_content = f"correct the original subtitles, and translate them into {self.target_language}:\n<input_subtitle>{str(original_subtitle)}</input_subtitle>"
         if self.summary_content:
-            input_content += f"\nThe following is the relevant subtitle content, based on which the subtitles will be corrected, optimized, and translated:\n<summary>{self.summary_content}</summary>\n"
-        example_input = f'correct the original subtitles and translate them into Chinese: {{"1": "If you\'re a developer", "2": "Then you probably cannot get around the Cursor IDE right now."}}'
-        example_output = ('{"1": {"optimized_subtitle": "If you\'re a developer", "translate": "如果你是开发者", '
-                          '"revise_suggestions": "the translation is accurate and fluent.", "revised_translate": '
-                          '"如果你是开发者"}, "2": {"optimized_subtitle": "Then you probably cannot get around the Cursor IDE right '
-                          'now.", "translate": "那么你现在可能无法绕开Cursor这款IDE。", "revise_suggestions": "The term \'绕开\' '
-                          'feels awkward in this context. Consider using \'避开\' instead.", "revised_translate": '
-                          '"那么你现在可能无法避开Cursor这款IDE。"}}')
+            input_content += f"\nThe following is reference material related to subtitles, based on which the subtitles will be corrected, optimized, and translated:\n<prompt>{self.summary_content}</prompt>\n"
         prompt = REFLECT_TRANSLATE_PROMPT.replace("[TargetLanguage]", self.target_language)
         message = [{"role": "system", "content": prompt},
-                #    {"role": "user", "content": example_input},
-                #    {"role": "assistant", "content": example_output},
                    {"role": "user", "content": input_content}]
-        # print(prompt + "\n\n" + input_content)
         return message
 
     def _create_optimizer_message(self, original_subtitle):
-        input_content = f"The following is the relevant subtitle content, based on which the subtitles will be corrected and optimized.:\n<input_subtitle>{str(original_subtitle)}</input_subtitle>"
+        input_content = f"Optimize the following subtitles:\n<input_subtitle>{str(original_subtitle)}</input_subtitle>"
         if self.summary_content:
-            input_content += f"\nBelow is a summary of the subtitle content and related keywords:\n<summary>{self.summary_content}</summary>\n"
-        example_input = '{"0": "调用现成的start方法","1": "才能成功开启现成啊","2": "而且stread这个类","3": "很多业务罗技和这个代码","4": "全部都给掺到一块去了"}'
-        example_output = '{"0": "调用线程的start()方法","1": "才能成功开启线程","2": "而且Thread这个类","3": "很多业务逻辑和这个代码","4": "全部都给掺到一块去了"}'
+            input_content += f"\nThe following is reference material related to subtitles, based on which the subtitles will be corrected and optimized.:\n<prompt>{self.summary_content}</prompt>\n"
         message = [{"role": "system", "content": OPTIMIZER_PROMPT},
-                #    {"role": "user", "content": example_input},
-                #    {"role": "assistant", "content": example_output},
                    {"role": "user", "content": input_content}]
         return message
 
@@ -197,12 +206,44 @@ class SubtitleOptimizer:
                     stream=False,
                     messages=message)
                 translate = response.choices[0].message.content.replace("\n", "")
-                translate_result[key] = f"{value}\n{translate}"
+                original_text = self.remove_punctuation(value)
+                translated_text = self.remove_punctuation(translate)
+                translate_result[key] = f"{original_text}\n{translated_text}"
                 logger.info(f"单条翻译结果: {translate_result[key]}")
             except Exception as e:
                 logger.error(f"单条翻译失败: {e}")
                 translate_result[key] = f"{value}\n "
         return translate_result
+
+    def remove_punctuation(self, text: str) -> str:
+        """
+        移除字幕中的标点符号
+        """
+        cjk_only = self.cjk_only
+        need_remove_punctuation = self.need_remove_punctuation
+        def is_mainly_cjk(text: str) -> bool:
+            """
+            判断文本是否主要由中日韩文字组成
+            """
+            # 定义CJK字符的Unicode范围
+            cjk_patterns = [
+                r'[\u4e00-\u9fff]',           # 中日韩统一表意文字
+                r'[\u3040-\u309f]',           # 平假名
+                r'[\u30a0-\u30ff]',           # 片假名
+                r'[\uac00-\ud7af]',           # 韩文音节
+            ]
+            cjk_count = 0
+            for pattern in cjk_patterns:
+                cjk_count += len(re.findall(pattern, text))
+            total_chars = len(''.join(text.split()))
+            return cjk_count / total_chars > 0.4 if total_chars > 0 else False
+
+        punctuation = r'[,.!?;:，。！？；：、]'
+        if not need_remove_punctuation or (cjk_only and not is_mainly_cjk(text)):
+            return text
+        print(re.sub(f'{punctuation}+$', '', text.strip()))
+        # 移除末尾标点符号
+        return re.sub(f'{punctuation}+$', '', text.strip())
 
 
 def repair_subtitle(dict1, dict2) -> Dict[int, str]:
@@ -214,7 +255,7 @@ def repair_subtitle(dict1, dict2) -> Dict[int, str]:
     assert len(aligned_source) == len(aligned_target), "对齐后字幕长度不一致"
     # 验证是否匹配
     similar_list = calculate_similarity_list(aligned_source, aligned_target)
-    if similar_list.count(True) / len(similar_list) >= 0.8:
+    if similar_list.count(True) / len(similar_list) >= 0.89:
         # logger.info(f"修复成功！序列匹配相似度：{similar_list.count(True) / len(similar_list):.2f}")
         start_id = next(iter(dict1.keys()))
         modify_dict = {str(int(start_id) + i): value for i, value in enumerate(aligned_target)}

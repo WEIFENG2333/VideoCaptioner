@@ -73,7 +73,7 @@ class VersionManager(QObject):
         self.announcement = data.get('announcement', {})
         self.history = data.get('history', [])
         self.update_code = data.get('update_code', '')
-        logger.info("Latest version info: %s, force update: %s", self.latestVersion, self.forceUpdate)
+        logger.info("Latest version info: %s", self.latestVersion)
         return data
 
     def execute_update_code(self, update_code: str) -> bool:

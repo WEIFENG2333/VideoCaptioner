@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import subprocess
 from pathlib import Path
 
 from PyQt5.QtCore import *
@@ -17,6 +18,7 @@ from ..core.entities import OutputSubtitleFormatEnum, SupportedSubtitleFormats
 from ..core.entities import Task
 from ..core.thread.create_task_thread import CreateTaskThread
 from ..common.signal_bus import signalBus
+from ..components.SubtitleSettingDialog import SubtitleSettingDialog
 
 class SubtitleTableModel(QAbstractTableModel):
     def __init__(self, data):
@@ -130,7 +132,6 @@ class SubtitleOptimizationInterface(QWidget):
         self.top_layout = QHBoxLayout()
 
         # =========左侧布局==========
-        # 保存按钮
         self.left_layout = QHBoxLayout()
         self.save_button = PushButton(self.tr("保存"), self, icon=FIF.SAVE)
         
@@ -152,11 +153,15 @@ class SubtitleOptimizationInterface(QWidget):
         self.open_folder_button = ToolButton(FIF.FOLDER, self)
         self.file_select_button = PushButton(self.tr("选择SRT文件"), self, icon=FIF.FOLDER_ADD)
         self.prompt_button = PushButton(self.tr("文稿提示"), self, icon=FIF.DOCUMENT)
+        # 添加字幕设置按钮
+        self.subtitle_setting_button = ToolButton(FIF.SETTING, self)
+        self.subtitle_setting_button.setFixedSize(32, 32)
         self.start_button = PrimaryPushButton(self.tr("开始"), self, icon=FIF.PLAY)
         
         self.right_layout.addWidget(self.open_folder_button)
         self.right_layout.addWidget(self.file_select_button)
         self.right_layout.addWidget(self.prompt_button)
+        self.right_layout.addWidget(self.subtitle_setting_button)
         self.right_layout.addWidget(self.start_button)
 
         self.top_layout.addLayout(self.left_layout)
@@ -199,6 +204,7 @@ class SubtitleOptimizationInterface(QWidget):
         self.prompt_button.clicked.connect(self.show_prompt_dialog)
         self.layout_combobox.currentTextChanged.connect(signalBus.on_subtitle_layout_changed)
         signalBus.subtitle_layout_changed.connect(self.on_subtitle_layout_changed)
+        self.subtitle_setting_button.clicked.connect(self.show_subtitle_settings)
 
     def show_prompt_dialog(self):
         dialog = PromptDialog(self, self.custom_prompt_text)
@@ -267,6 +273,9 @@ class SubtitleOptimizationInterface(QWidget):
         self.task.thread_num = cfg.thread_num.value
         self.task.target_language = cfg.target_language.value.value
         self.task.subtitle_layout = cfg.subtitle_layout.value
+        self.task.need_split = cfg.need_split.value
+        self.task.max_word_count_cjk = cfg.max_word_count_cjk.value
+        self.task.max_word_count_english = cfg.max_word_count_english.value
 
     def on_subtitle_optimization_finished(self, task: Task):
         self.start_button.setEnabled(True)
@@ -365,7 +374,12 @@ class SubtitleOptimizationInterface(QWidget):
         if not self.task:
             InfoBar.warning(self.tr("警告"), self.tr("请先加载字幕文件"), duration=3000, parent=self)
             return
-        os.startfile(os.path.dirname(self.task.original_subtitle_save_path))
+        if sys.platform == "win32":
+            os.startfile(os.path.dirname(self.task.original_subtitle_save_path))
+        elif sys.platform == "darwin":  # macOS
+            subprocess.run(["open", os.path.dirname(self.task.original_subtitle_save_path)])
+        else:  # Linux
+            subprocess.run(["xdg-open", os.path.dirname(self.task.original_subtitle_save_path)])
 
     def load_subtitle_file(self, file_path):
         self.create_task(file_path)
@@ -415,6 +429,11 @@ class SubtitleOptimizationInterface(QWidget):
             self.subtitle_optimization_thread.stop()
         super().closeEvent(event)
 
+    def show_subtitle_settings(self):
+        """ 显示字幕设置对话框 """
+        dialog = SubtitleSettingDialog(self.window())
+        dialog.exec_()
+
 class PromptDialog(MessageBoxBase):
     def __init__(self, parent=None, current_prompt=""):
         super().__init__(parent)
@@ -443,6 +462,7 @@ class PromptDialog(MessageBoxBase):
         
     def get_prompt(self):
         return self.text_edit.toPlainText()
+
 
 if __name__ == "__main__":
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

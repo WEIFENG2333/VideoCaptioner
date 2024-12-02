@@ -1,11 +1,9 @@
 import os
 from pathlib import Path
 import subprocess
-import shutil
 import hashlib
-import platform
+import sys
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QProgressBar,
                            QMessageBox, QLabel)
 from qfluentwidgets import (ComboBoxSettingCard, MessageBoxBase, 
@@ -17,7 +15,7 @@ from ..common.config import cfg
 from ..core.entities import WhisperModelEnum, TranscribeLanguageEnum
 from ..config import MODEL_PATH
 from ..core.utils.logger import setup_logger
-from ..config import CACHE_PATH
+from ..core.thread.download_thread import DownloadThread
 
 logger = setup_logger("whisper_download")
 
@@ -75,14 +73,14 @@ WHISPER_MODELS = [
         "mirrorLink": "https://www.modelscope.cn/models/cjc1887415157/whisper.cpp/resolve/master/ggml-large-v2.bin",
         "sha": "0f4c8e34f21cf1a914c59d8b3ce882345ad349d6"
     },
-    {
-        "label": "Large(v3)",
-        "value": "ggml-large-v3.bin",
-        "size": "3.09 GB",
-        "downloadLink": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin",
-        "mirrorLink": "https://www.modelscope.cn/models/cjc1887415157/whisper.cpp/resolve/master/ggml-large-v3.bin",
-        "sha": "ad82bf6a9043ceed055076d0fd39f5f186ff8062"
-    },
+    # {
+    #     "label": "Large(v3)",
+    #     "value": "ggml-large-v3.bin",
+    #     "size": "3.09 GB",
+    #     "downloadLink": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin",
+    #     "mirrorLink": "https://www.modelscope.cn/models/cjc1887415157/whisper.cpp/resolve/master/ggml-large-v3.bin",
+    #     "sha": "ad82bf6a9043ceed055076d0fd39f5f186ff8062"
+    # },
     # {
     #     "label": "Distil Large(v3)",
     #     "value": "ggml-distil-large-v3.bin",
@@ -93,108 +91,6 @@ WHISPER_MODELS = [
     # }
 ]
 
-class DownloadThread(QThread):
-    progress = pyqtSignal(float, str)
-    finished = pyqtSignal()
-    error = pyqtSignal(str)
-    
-    def __init__(self, url, save_path):
-        super().__init__()
-        self.url = url
-        self.save_path = save_path
-        self.process = None
-        
-    def run(self):
-        try:
-            # 创建缓存下载目录
-            temp_dir = CACHE_PATH / "whisper_models"
-            temp_dir.mkdir(parents=True, exist_ok=True)
-            temp_file = temp_dir / os.path.basename(self.save_path)
-            
-            # 检查是否存在未完成的下载文件
-            if temp_file.exists():
-                logger.info(f"发现未完成的下载文件: {temp_file}")
-            self.progress.emit(0, self.tr("正在连接..."))
-            cmd = [
-                'aria2c',
-                '--show-console-readout=false',
-                '--summary-interval=1',
-                '-x2',
-                '-s2',
-                '--connect-timeout=10',  # 连接超时时间10秒
-                '--timeout=10',          # 数据传输超时时间10秒
-                '--max-tries=2',         # 最大重试次数2次
-                '--retry-wait=1',        # 重试等待时间1秒
-                '--continue=true',       # 开启断点续传
-                '--auto-file-renaming=false',
-                '--allow-overwrite=true',
-                '--check-certificate=false',
-                f'--dir={temp_dir}',
-                f'--out={temp_file.name}',
-                self.url
-            ]
-            
-            # 根据操作系统设置不同的 subprocess 参数
-            subprocess_args = {
-                'stdout': subprocess.PIPE,
-                'stderr': subprocess.PIPE,
-                'universal_newlines': True,
-                'encoding': 'utf-8'
-            }
-            
-            # 仅在 Windows 系统上添加 CREATE_NO_WINDOW 标志
-            if platform.system() == 'Windows':
-                subprocess_args['creationflags'] = subprocess.CREATE_NO_WINDOW
-            
-            logger.info("运行下载命令: %s", " ".join(cmd))
-            
-            self.process = subprocess.Popen(
-                cmd,
-                **subprocess_args
-            )
-            
-            while True:
-                if self.process.poll() is not None:
-                    break
-                    
-                line = self.process.stdout.readline()
-                
-                if '[#' in line and ']' in line:
-                    try:
-                        # 解析类似 "[#40ca1b 2.4MiB/74MiB(3%) CN:2 DL:3.9MiB ETA:18s]" 的格式
-                        progress_part = line.split('(')[1].split(')')[0]
-                        percent = float(progress_part.strip('%'))
-                        
-                        # 提取下载速度和剩余时间
-                        speed = "0"
-                        eta = ""
-                        if "DL:" in line:
-                            speed = line.split("DL:")[1].split()[0]
-                        if "ETA:" in line:
-                            eta = line.split("ETA:")[1].split(']')[0]
-                        status_msg = f"{self.tr('速度')}: {speed}/s, {self.tr('剩余时间')}: {eta}"
-                        self.progress.emit(percent, status_msg)
-                    except Exception as e:
-                        pass
-                        
-            if self.process.returncode == 0:
-                # 下载完成后移动文件到目标位置
-                os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
-                shutil.move(str(temp_file), self.save_path)
-                self.finished.emit()
-            else:
-                error = self.process.stderr.read()
-                logger.error("下载失败: %s", error)
-                self.error.emit(f"{self.tr('下载失败')}: {error}")
-                
-        except Exception as e:
-            logger.error("下载异常: %s", str(e))
-            self.error.emit(str(e))
-            
-    def stop(self):
-        if self.process:
-            self.process.terminate()
-            self.process.wait()
 
 class DownloadDialog(MessageBoxBase):
     def __init__(self, parent=None):
@@ -332,7 +228,8 @@ class WhisperSettingDialog(MessageBoxBase):
             self.tr('打开模型文件夹'), 
             self
         )
-        self.openFolderButton.clicked.connect(self.open_folder)
+
+        self.openFolderButton.clicked.connect(self.on_open_model_folder_clicked)
         self.buttonLayout.addWidget(self.downloadButton)
         self.buttonLayout.addStretch()
         self.buttonLayout.addWidget(self.openFolderButton)
@@ -347,7 +244,16 @@ class WhisperSettingDialog(MessageBoxBase):
         self.yesButton.setText(self.tr('确定'))
         self.yesButton.clicked.connect(self.__onYesButtonClicked)
         self.widget.setMinimumWidth(400)
-    
+
+
+    def on_open_model_folder_clicked(self):
+        if sys.platform == "win32":
+            os.startfile(MODEL_PATH)
+        elif sys.platform == "darwin":  # macOS
+            subprocess.run(["open", MODEL_PATH])
+        else:  # Linux
+            subprocess.run(["xdg-open", MODEL_PATH])
+
     def show_download_dialog(self):
         download_dialog = DownloadDialog(self)
         download_dialog.show()
@@ -376,11 +282,11 @@ class WhisperSettingDialog(MessageBoxBase):
             return False
             
         # 验证模型文件的SHA值
-        model_file = model_files[0]  # 使用找到的第一个匹配文件
-        if not self.verify_sha(model_file, model_config['sha']):
-            self.show_error_info(self.tr('模型文件SHA验证失败，请重新下载模型'))
-            logger.error(f"模型文件 {model_file} 的SHA验证失败")
-            return False
+        # model_file = model_files[0]  # 使用找到的第一个匹配文件
+        # if not self.verify_sha(model_file, model_config['sha']):
+        #     self.show_error_info(self.tr('模型文件SHA验证失败，请重新下载模型'))
+        #     logger.error(f"模型文件 {model_file} 的SHA验证失败")
+        #     return False
             
         return True
     

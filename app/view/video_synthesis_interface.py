@@ -234,7 +234,6 @@ class VideoSynthesisInterface(QWidget):
         if self.task and self.task.work_dir:
             file_path = Path(self.task.video_save_path)
             target_path = str(file_path.parent if file_path.exists() else Path(self.task.work_dir))
-            
             # Cross-platform folder opening
             if sys.platform == "win32":
                 os.startfile(target_path)

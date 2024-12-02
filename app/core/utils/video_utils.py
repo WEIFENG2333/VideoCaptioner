@@ -16,15 +16,13 @@ def video2audio(input_file: str, output: str = "") -> bool:
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output = str(output)
-
     cmd = [
         'ffmpeg',
         '-i', input_file,
         '-map', '0:a',
         '-ac', '1',
-        '-f', 'mp3',
         '-ar', '16000',
-        '-af', 'aresample=async=1',
+        '-af', 'aresample=async=1',  # 处理音频同步问题
         '-y',
         output
     ]

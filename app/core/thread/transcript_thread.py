@@ -3,10 +3,19 @@ from pathlib import Path
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from ..bk_asr import JianYingASR, KuaiShouASR, BcutASR, WhisperASR, WhisperAPI
+from ..bk_asr import (
+    JianYingASR,
+    KuaiShouASR, 
+    BcutASR,
+    WhisperASR,
+    WhisperAPI,
+    FasterWhisperASR
+)
 from ..entities import Task, TranscribeModelEnum
 from ..utils.video_utils import video2audio
 from ..utils.logger import setup_logger
+from ...config import MODEL_PATH
+from ...common.config import cfg
 
 logger = setup_logger("transcript_thread")
 
@@ -21,6 +30,7 @@ class TranscriptThread(QThread):
         TranscribeModelEnum.BIJIAN: BcutASR,
         TranscribeModelEnum.WHISPER: WhisperASR,
         TranscribeModelEnum.WHISPER_API: WhisperAPI,
+        TranscribeModelEnum.FASTER_WHISPER: FasterWhisperASR,
     }
 
     def __init__(self, task: Task):
@@ -54,7 +64,7 @@ class TranscriptThread(QThread):
                     logger.error("音频转换失败")
                     raise ValueError(self.tr("音频转换失败"))
 
-            self.progress.emit(30, self.tr("语音转录中"))
+            self.progress.emit(20, self.tr("语音转录中"))
             logger.info("开始语音转录")
 
             # 获取ASR模型
@@ -83,6 +93,37 @@ class TranscriptThread(QThread):
                 args["use_cache"] = False
                 args["need_word_time_stamp"] = True
                 self.asr = WhisperAPI(self.task.audio_save_path, **args)
+            elif self.task.transcribe_model == TranscribeModelEnum.FASTER_WHISPER:
+                args["faster_whisper_path"] = cfg.faster_whisper_program.value
+                args["whisper_model"] = self.task.faster_whisper_model.value
+                args["model_dir"] = str(MODEL_PATH)
+                args["language"] = self.task.transcribe_language
+                args["device"] = self.task.faster_whisper_device
+                args["vad_filter"] = self.task.faster_whisper_vad_filter
+                args["vad_threshold"] = self.task.faster_whisper_vad_threshold
+                args["vad_method"] = self.task.faster_whisper_vad_method.value
+                args["ff_mdx_kim2"] = self.task.faster_whisper_ff_mdx_kim2
+                args["one_word"] = self.task.faster_whisper_one_word
+                args["prompt"] = self.task.faster_whisper_prompt
+                args["use_cache"] = False
+
+                if self.task.faster_whisper_one_word:
+                    args["one_word"] = True
+                else:
+                    args["sentence"] = True
+                    print(self.task.transcribe_language)
+                    print(self.task.max_word_count_cjk)
+                    print(self.task.max_word_count_english)
+                    if self.task.transcribe_language in ["zh", "ja", "ko"]:
+                        args["max_line_width"] = int(self.task.max_word_count_cjk)
+                        args["max_comma_cent"] = 50
+                        args["max_comma"] = 5
+                    else:
+                        args["max_line_width"] = int(self.task.max_word_count_english * 4)
+                        args["max_comma_cent"] = 50
+                        args["max_comma"] = 20
+
+                self.asr = FasterWhisperASR(self.task.audio_save_path, **args)
             elif self.task.transcribe_model == TranscribeModelEnum.BIJIAN:
                 self.asr = BcutASR(self.task.audio_save_path, **args)
             elif self.task.transcribe_model == TranscribeModelEnum.JIANYING:
@@ -115,5 +156,5 @@ class TranscriptThread(QThread):
             self.progress.emit(100, self.tr("转录失败"))
 
     def progress_callback(self, value, message):
-        progress = min(30 + (value // 100) * 70, 100)
-        self.progress.emit(progress, message)
+        progress = min(20 + (value // 100) * 80, 100)
+        self.progress.emit(int(progress), message)

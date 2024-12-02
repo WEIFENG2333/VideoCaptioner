@@ -1,6 +1,8 @@
 import datetime
 import os
 from pathlib import Path
+import subprocess
+import sys
 from threading import Lock
 
 from PyQt5.QtCore import *
@@ -643,16 +645,20 @@ class TaskInfoCard(CardWidget):
 
     def on_open_folder_clicked(self):
         """打开文件夹按钮点击事件"""
-        # 跨平台打开文件夹
-        import platform
-        import subprocess
-        
-        if platform.system() == "Windows":
-            os.startfile(self.task.work_dir)
-        elif platform.system() == "Darwin":  # macOS
-            subprocess.run(["open", self.task.work_dir])
-        else:  # Linux
-            subprocess.run(["xdg-open", self.task.work_dir])
+        if self.task and self.task.work_dir:
+            if sys.platform == "win32":
+                os.startfile(self.task.work_dir)
+            elif sys.platform == "darwin":  # macOS
+                subprocess.run(["open", self.task.work_dir])
+            else:  # Linux
+                subprocess.run(["xdg-open", self.task.work_dir])
+        else:
+            InfoBar.warning(
+                self.tr("警告"),
+                self.tr("任务未开始"),
+                duration=2000,
+                parent=self
+            )
 
     def on_progress(self, value, message):
         """更新转录进度"""
