@@ -121,6 +121,10 @@ class Config(QConfig):
     faster_whisper_one_word = ConfigItem(
         "FasterWhisper", "OneWord", True, BoolValidator()
     )
+    # 翻译成英语
+    faster_whisper_translate_to_english = ConfigItem(
+        "FasterWhisper", "TranslateToEnglish", False, BoolValidator()
+    )
     # 提示词
     faster_whisper_prompt = ConfigItem("FasterWhisper", "Prompt", "")
 
@@ -177,6 +181,9 @@ class Config(QConfig):
     checkUpdateAtStartUp = ConfigItem(
         "Update", "CheckUpdateAtStartUp", True, BoolValidator()
     )
+    
+    # ------------------- 最后打开文件夹 -------------------
+    last_open_dir = ConfigItem("All", "Last_Open_Dir", "")
 
 
 cfg = Config()

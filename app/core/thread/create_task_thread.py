@@ -20,23 +20,26 @@ class CreateTaskThread(QThread):
     progress = pyqtSignal(int, str)
     error = pyqtSignal(str)
 
-    def __init__(self, file_path, task_type):
+    def __init__(self, file_path, task_type: Task.Type):
         super().__init__()
         self.file_path = file_path
         self.task_type = task_type
 
     def run(self):
         try:
-            if self.task_type == 'file':
-                self.create_file_task(self.file_path)
-            elif self.task_type == 'url':
-                self.create_url_task(self.file_path)
-            elif self.task_type == 'transcription':
-                self.create_transcription_task(self.file_path)
-            elif self.task_type == 'optimization':
-                self.create_subtitle_optimization_task()
-            elif self.task_type == 'synthesis':
-                self.create_video_synthesis_task()
+            match self.task_type:
+                case Task.Type.SUBTITLE:
+                    self.create_file_task(self.file_path)
+                case Task.Type.URL:
+                    self.create_url_task(self.file_path)
+                case Task.Type.TRANSCRIBE:
+                    self.create_transcription_task(self.file_path)
+                case Task.Type.OPTIMIZE:
+                    self.create_subtitle_optimization_task()
+                case Task.Type.SYNTHESIS:
+                    self.create_video_synthesis_task()
+                case _:
+                    raise RuntimeError("No matching task type.")
         except Exception as e:
             logger.exception("创建任务失败: %s", str(e))
             self.progress.emit(0, self.tr("创建任务失败"))
@@ -47,17 +50,20 @@ class CreateTaskThread(QThread):
         logger.info(f"开始创建文件任务：{file_path}")
         # 使用 Path 对象处理路径
         task_work_dir = Path(cfg.work_dir.value) / Path(file_path).stem
+        file_dir = Path(file_path).parent
+        file_name = Path(file_path).stem
 
         # 获取 视频/音频 信息
         thumbnail_path = str(task_work_dir / "thumbnail.jpg")
         video_info = get_video_info(file_path, thumbnail_path=thumbnail_path)
         video_info = VideoInfo(**video_info)
 
-
-        if cfg.need_optimize.value:
-            result_subtitle_type = "【修正字幕】"
-        elif cfg.need_translate.value:
+        # Philip: If need translation, no need to do subtitle fix
+        # Translation should have priority over fixing.
+        if cfg.need_translate.value:
             result_subtitle_type = "【翻译字幕】"
+        elif cfg.need_optimize.value:
+            result_subtitle_type = "【修正字幕】"
         else:
             result_subtitle_type = "【字幕】"
 
@@ -71,10 +77,10 @@ class CreateTaskThread(QThread):
             whisper_type = ""
 
         # 定义各个路径
-        audio_save_path = task_work_dir / f"【Audio】{Path(file_path).stem}.wav"
-        original_subtitle_save_path = task_work_dir / "subtitle" / f"【原始字幕】{cfg.transcribe_model.value.value}{whisper_type}.srt"
-        result_subtitle_save_path = task_work_dir / "subtitle" / f"{result_subtitle_type}样式字幕.ass"
-        video_save_path = task_work_dir / f"【卡卡】{Path(file_path).name}"
+        audio_save_path = task_work_dir / f"【Audio】{file_name}.wav"
+        original_subtitle_save_path = task_work_dir / "subtitle" / f"【原始字幕】{file_name}-{cfg.transcribe_model.value.value}{whisper_type}.srt"
+        result_subtitle_save_path = file_dir / "subtitle" / f"{result_subtitle_type}-{file_name}.ass"
+        video_save_path = file_dir / f"【生成】{Path(file_path).name}"
 
         ass_style_name = cfg.subtitle_style_name.value
         ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
@@ -100,7 +106,7 @@ class CreateTaskThread(QThread):
             file_path=str(Path(self.file_path)),
             url="",
             source=Task.Source.FILE_IMPORT,
-            original_language=None,
+            original_language=cfg.transcribe_language,
             target_language=cfg.target_language.value.value,
             transcribe_language=LANGUAGES[cfg.transcribe_language.value.value],
             whisper_model=cfg.whisper_model.value.value,
@@ -117,6 +123,7 @@ class CreateTaskThread(QThread):
             faster_whisper_ff_mdx_kim2=cfg.faster_whisper_ff_mdx_kim2.value,
             faster_whisper_one_word=cfg.faster_whisper_one_word.value,
             faster_whisper_prompt=cfg.faster_whisper_prompt.value,
+            faster_whisper_translate_to_english=cfg.faster_whisper_translate_to_english.value,
             video_info=video_info,
             audio_format="mp3",
             audio_save_path=str(audio_save_path),
@@ -138,6 +145,7 @@ class CreateTaskThread(QThread):
             soft_subtitle=cfg.soft_subtitle.value,
             subtitle_style_srt=subtitle_style_srt,
             need_video=cfg.need_video.value,
+            type=Task.Type.SUBTITLE,
         )
         self.finished.emit(task)
         self.progress.emit(100, self.tr("创建任务完成"))
@@ -153,6 +161,7 @@ class CreateTaskThread(QThread):
 
         video_info = VideoInfo(
             file_name=Path(video_file_path).stem,
+            file_path=url, 
             width=info_dict.get('width', 0),
             height=info_dict.get('height', 0),
             fps=info_dict.get('fps', 0),
@@ -166,6 +175,7 @@ class CreateTaskThread(QThread):
 
         # 使用 Path 对象处理路径
         task_work_dir = Path(video_file_path).parent
+        file_name = Path(video_file_path).stem
 
         if cfg.need_optimize.value:
             result_subtitle_type = "【修正字幕】"
@@ -185,9 +195,9 @@ class CreateTaskThread(QThread):
 
         # 定义各个路径
         audio_save_path = task_work_dir / f"【Audio】{Path(video_file_path).stem}.wav"
-        original_subtitle_save_path = task_work_dir / "subtitle" / f"【原始字幕】{cfg.transcribe_model.value.value}{whisper_type}.srt" if not subtitle_file_path else subtitle_file_path
-        result_subtitle_save_path = task_work_dir / "subtitle" / f"{result_subtitle_type}样式字幕.ass"
-        video_save_path = task_work_dir / f"【卡卡】{Path(video_file_path).name}"
+        original_subtitle_save_path = task_work_dir / "subtitle" / f"【原始字幕】{cfg.transcribe_model.value.value}-file_name-{whisper_type}.srt" if not subtitle_file_path else subtitle_file_path
+        result_subtitle_save_path = task_work_dir / "subtitle" / f"{result_subtitle_type}-{file_name}.ass"
+        video_save_path = task_work_dir / f"【生成】{Path(video_file_path).name}"
 
         if cfg.transcribe_model.value in [TranscribeModelEnum.JIANYING, TranscribeModelEnum.BIJIAN]:
             need_word_time_stamp = True
@@ -213,7 +223,7 @@ class CreateTaskThread(QThread):
             file_path=str(Path(video_file_path)),
             url="",
             source=Task.Source.FILE_IMPORT,
-            original_language=None,
+            original_language=cfg.transcribe_language,
             target_language=cfg.target_language.value,
             video_info=video_info,
             audio_format="mp3",
@@ -234,6 +244,7 @@ class CreateTaskThread(QThread):
             faster_whisper_ff_mdx_kim2=cfg.faster_whisper_ff_mdx_kim2.value,
             faster_whisper_one_word=cfg.faster_whisper_one_word.value,
             faster_whisper_prompt=cfg.faster_whisper_prompt.value,
+            faster_whisper_translate_to_english=cfg.faster_whisper_translate_to_english.value,
             use_asr_cache=cfg.use_asr_cache.value,
             need_word_time_stamp=need_word_time_stamp,
             original_subtitle_save_path=str(original_subtitle_save_path),
@@ -251,15 +262,18 @@ class CreateTaskThread(QThread):
             soft_subtitle=cfg.soft_subtitle.value,
             subtitle_style_srt=subtitle_style_srt,
             need_video=cfg.need_video.value,
+            task=Task.Type.SUBTITLE,
         )
         self.finished.emit(task)
         logger.info(f"URL任务创建完成：{task}")
 
     def create_transcription_task(self, file_path):
         logger.info(f"开始创建转录任务：{file_path}")
-        task_work_dir = Path(file_path).parent
+        # task_work_dir = Path(file_path).parent
+        
+        # 使用 Path 对象处理路径
         file_name = Path(file_path).stem
-
+        task_work_dir = Path(cfg.work_dir.value) / file_name
         thumbnail_path = task_work_dir / "thumbnail.jpg"
 
         video_info = get_video_info(file_path, thumbnail_path=str(thumbnail_path))
@@ -277,6 +291,7 @@ class CreateTaskThread(QThread):
 
         audio_save_path = task_work_dir / f"【Audio】{file_name}.wav"
         original_subtitle_save_path = task_work_dir / f"【原始字幕】{file_name}-{cfg.transcribe_model.value.value}-{whisper_type}.srt"
+        result_subtitle_save_path = Path(file_path).parent / f"【生成字幕】{file_name}.ass"
 
         # 创建 Task 对象
         task = Task(
@@ -284,13 +299,13 @@ class CreateTaskThread(QThread):
             queued_at=datetime.datetime.now(),
             started_at=datetime.datetime.now(),
             completed_at=None,
-            status=Task.Status.TRANSCRIBING,
+            status=Task.Status.PENDING,
             fraction_downloaded=0,
             work_dir=str(task_work_dir),
             file_path=str(Path(self.file_path)),
             url="",
             source=Task.Source.FILE_IMPORT,
-            original_language=None,
+            original_language=cfg.transcribe_language.value,
             target_language=cfg.target_language.value.value,
             transcribe_language=LANGUAGES[cfg.transcribe_language.value.value],
             whisper_model=cfg.whisper_model.value.value,
@@ -306,6 +321,7 @@ class CreateTaskThread(QThread):
             faster_whisper_vad_method=cfg.faster_whisper_vad_method.value,
             faster_whisper_ff_mdx_kim2=cfg.faster_whisper_ff_mdx_kim2.value,
             faster_whisper_one_word=cfg.faster_whisper_one_word.value,
+            faster_whisper_translate_to_english=cfg.faster_whisper_translate_to_english.value,
             faster_whisper_prompt=cfg.faster_whisper_prompt.value,
             video_info=video_info,
             audio_format="mp3",
@@ -313,8 +329,12 @@ class CreateTaskThread(QThread):
             transcribe_model=cfg.transcribe_model.value,
             use_asr_cache=cfg.use_asr_cache.value,
             original_subtitle_save_path=str(original_subtitle_save_path),
+            result_subtitle_save_path=str(result_subtitle_save_path),
             max_word_count_cjk=cfg.max_word_count_cjk.value,
             max_word_count_english=cfg.max_word_count_english.value,
+            # Added by Philip
+            type=Task.Type.TRANSCRIBE,  # Transcribe only, no video generation.
+            # End add
         )
         self.finished.emit(task)
         logger.info(f"转录任务创建完成：{task}")
@@ -324,16 +344,16 @@ class CreateTaskThread(QThread):
         task_work_dir = Path(file_path.strip()).parent
         file_name = Path(file_path.strip()).stem
 
-        if cfg.need_optimize.value:
-            result_subtitle_type = "【修正字幕】"
-        elif cfg.need_translate.value:
+        if cfg.need_translate.value:
             result_subtitle_type = "【翻译字幕】"
+        elif cfg.need_optimize.value:
+            result_subtitle_type = "【修正字幕】"
         else:
             result_subtitle_type = "【字幕】"
         logger.info(f"字幕类型: {result_subtitle_type}")
 
         original_subtitle_save_path = task_work_dir / file_path
-        result_subtitle_save_path = task_work_dir / f"{result_subtitle_type}{file_name}.srt"
+        result_subtitle_save_path = task_work_dir / f"{result_subtitle_type}{file_name}.ass"
 
         ass_style_name = cfg.subtitle_style_name.value
         ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
@@ -365,7 +385,7 @@ class CreateTaskThread(QThread):
             max_word_count_cjk=cfg.max_word_count_cjk.value,
             max_word_count_english=cfg.max_word_count_english.value,
             subtitle_style_srt=subtitle_style_srt,
-
+            type=Task.Type.OPTIMIZE,
         )
         logger.info(f"字幕优化任务创建完成：{task}")
         return task
@@ -375,7 +395,7 @@ class CreateTaskThread(QThread):
         subtitle_file = Path(subtitle_file.strip()).as_posix()
         video_file = Path(video_file.strip()).as_posix()
         task_work_dir = Path(video_file.strip()).parent
-        video_save_path = task_work_dir / f"【卡卡】{Path(video_file).name}"
+        video_save_path = task_work_dir / f"【生成】{Path(video_file).name}"
 
         # 创建 Task 对象,保存文件夹与原视频路径一样
         task = Task(
@@ -389,6 +409,7 @@ class CreateTaskThread(QThread):
             result_subtitle_save_path=str(Path(subtitle_file)),
             video_save_path=str(video_save_path),
             soft_subtitle=cfg.soft_subtitle.value,
+            type=Task.Type.SYNTHESIS
         )
         logger.info(f"视频合成任务创建完成：{task}")
         return task

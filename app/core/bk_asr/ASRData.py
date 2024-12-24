@@ -291,6 +291,7 @@ class ASRData:
                 ass_content += dialogue_template.format(start_time, end_time, "Default", seg.text)
             
         if save_path:
+            Path(save_path).parent.mkdir(parents=True, exist_ok=True)
             with open(save_path, 'w', encoding='utf-8') as f:
                 f.write(ass_content)
         return ass_content

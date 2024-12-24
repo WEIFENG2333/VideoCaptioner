@@ -1,5 +1,6 @@
 import datetime
 import logging
+from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from ..entities import Task
@@ -23,8 +24,17 @@ class VideoSynthesisThread(QThread):
         try:
             logger.info(f"\n===========视频合成任务开始===========")
             logger.info(f"时间：{datetime.datetime.now()}")
+            self.task.status = Task.Status.GENERATING
             video_file = self.task.file_path
-            result_subtitle_save_path = self.task.result_subtitle_save_path
+            if Path(self.task.result_subtitle_save_path).is_file():
+                # result sub exist (after optimizing)
+                subtitle_file = self.task.result_subtitle_save_path
+            elif Path(self.task.original_subtitle_save_path).is_file():
+                # No optimzing, original sub only
+                subtitle_file = self.task.original_subtitle_save_path
+            else:
+                raise RuntimeError("No subtitle file available.")
+            
             video_save_path = self.task.video_save_path
             soft_subtitle = self.task.soft_subtitle
             need_video = cfg.need_video.value
@@ -37,7 +47,7 @@ class VideoSynthesisThread(QThread):
             
             logger.info(f"开始合成视频: {video_file}")
             self.progress.emit(5, self.tr("正在合成"))
-            add_subtitles(video_file, result_subtitle_save_path, video_save_path, soft_subtitle=soft_subtitle,
+            add_subtitles(video_file, subtitle_file, video_save_path, soft_subtitle=soft_subtitle,
                           progress_callback=self.progress_callback)
             self.progress.emit(100, self.tr("合成完成"))
             logger.info(f"视频合成完成，保存路径: {video_save_path}")

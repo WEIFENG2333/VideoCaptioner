@@ -234,6 +234,7 @@ def get_video_info(filepath: str, thumbnail_path: str = "") -> dict:
 
         video_info = {
             'file_name': Path(filepath).stem,
+            'file_path': str( Path(filepath).parent ),
             'duration_seconds': 0,
             'bitrate_kbps': 0,
             'video_codec': '',

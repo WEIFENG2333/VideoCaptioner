@@ -302,21 +302,31 @@ class TranscriptionInterface(QWidget):
 
     def _on_file_select(self):
         """文件选择处理"""
-        desktop_path = QStandardPaths.writableLocation(QStandardPaths.DesktopLocation)
         file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
         # 构建文件过滤器
         video_formats = " ".join(f"*.{fmt.value}" for fmt in SupportedVideoFormats)
         audio_formats = " ".join(f"*.{fmt.value}" for fmt in SupportedAudioFormats)
         filter_str = f"{self.tr('媒体文件')} ({video_formats} {audio_formats});;{self.tr('视频文件')} ({video_formats});;{self.tr('音频文件')} ({audio_formats})"
 
-        file_path, _ = file_dialog.getOpenFileName(self, self.tr("选择媒体文件"), desktop_path, filter_str)
+        if cfg.last_open_dir.value != "":
+            open_path = cfg.last_open_dir.value
+        else:
+            open_path = QStandardPaths.writableLocation(QStandardPaths.DesktopLocation)
+            
+        file_path, _ = file_dialog.getOpenFileName(self, self.tr("选择媒体文件"), open_path, filter_str)
         if file_path:
+            # Save this file's directory for later use
+            file_dir = str( Path(file_path).parent )
+            if file_dir != cfg.last_open_dir.value:
+                cfg.last_open_dir.value = file_dir
+
             self.create_task(file_path)
 
     def create_task(self, file_path):
         """创建任务"""
-        self.create_task_thread = CreateTaskThread(file_path, 'transcription')
+        self.create_task_thread = CreateTaskThread(file_path, Task.Type.TRANSCRIBE)
         self.create_task_thread.finished.connect(self.set_task)
         self.create_task_thread.start()
 

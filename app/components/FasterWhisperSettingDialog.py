@@ -733,6 +733,14 @@ class FasterWhisperSettingDialog(MessageBoxBase):
             self.other_group
         )
         
+        # 翻译成英语
+        self.translate_to_english_card = SwitchSettingCard(
+            FIF.LANGUAGE,
+            self.tr("翻译成英语"),
+            self.tr("使用FastWhisper内置的翻译成英语功能"),
+            cfg.faster_whisper_translate_to_english,
+            self.other_group
+        )
         # 提示词
         self.prompt_card = LineEditSettingCard(
             cfg.faster_whisper_prompt,
@@ -765,6 +773,7 @@ class FasterWhisperSettingDialog(MessageBoxBase):
         # 添加其他设置的卡片
         self.other_group.addSettingCard(self.ff_mdx_kim2_card)
         self.other_group.addSettingCard(self.one_word_card)
+        self.other_group.addSettingCard(self.translate_to_english_card)
         self.other_group.addSettingCard(self.prompt_card)
 
         # 检查并提示下载 faster-whisper

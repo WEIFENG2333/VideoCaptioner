@@ -48,15 +48,16 @@ class SubtitlePipelineThread(QThread):
 
             # 2. 字幕优化/翻译
             # self.task.status = Task.Status.OPTIMIZING
-            self.progress.emit(40, self.tr("开始优化字幕"))
-            optimization_thread = SubtitleOptimizationThread(self.task)
-            optimization_thread.progress.connect(lambda value, msg: self.progress.emit(int(40 + value * 0.2), msg))
-            optimization_thread.error.connect(handle_error)
-            optimization_thread.run()
+            if self.task.need_translate:
+                self.progress.emit(40, self.tr("开始优化字幕"))
+                optimization_thread = SubtitleOptimizationThread(self.task)
+                optimization_thread.progress.connect(lambda value, msg: self.progress.emit(int(40 + value * 0.2), msg))
+                optimization_thread.error.connect(handle_error)
+                optimization_thread.run()
 
-            if self.has_error:
-                logger.info("字幕优化过程中发生错误，终止流程")
-                return
+                if self.has_error:
+                    logger.info("字幕优化过程中发生错误，终止流程")
+                    return
 
             # 3. 视频合成
             # self.task.status = Task.Status.GENERATING

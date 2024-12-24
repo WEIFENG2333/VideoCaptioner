@@ -35,6 +35,7 @@ class FasterWhisperASR(BaseASR):
                  ff_mdx_kim2: bool = False,
                  # 文本处理参数
                  one_word: int = 0,
+                 translate_to_english: bool = False,
                  sentence: bool = False,
                  max_line_width: int = 100,
                  max_line_count: int = 1,
@@ -69,6 +70,7 @@ class FasterWhisperASR(BaseASR):
         self.max_line_count = max_line_count
         self.max_comma = max_comma
         self.max_comma_cent = max_comma_cent
+        self.translate_to_english = translate_to_english
         self.prompt = prompt
 
         self.process = None
@@ -121,6 +123,10 @@ class FasterWhisperASR(BaseASR):
         if self.one_word in [0, 1, 2]:
             cmd.extend(["--one_word", str(self.one_word)])
         
+        # 翻译成英语
+        if self.translate_to_english:
+            cmd.extend(["--task", "translate"])
+        
         if self.sentence:
             cmd.extend([
                 "--sentence",
@@ -142,10 +148,7 @@ class FasterWhisperASR(BaseASR):
         filtered_segments = []
         for seg in asr_data.segments:
             text = seg.text.strip()
-            if not (text.startswith('【') or 
-                   text.startswith('[') or 
-                   text.startswith('(') or 
-                   text.startswith('（')):
+            if not text.startswith(('【','[','(','（')):
                 filtered_segments.append(seg)
         return filtered_segments
 
@@ -187,6 +190,9 @@ class FasterWhisperASR(BaseASR):
                 output = output.strip()
                 if output:
                     # 解析进度百分比
+                    if output.startswith("Operation finished"):
+                        # Sometimes it's not showing 100% in output
+                        is_finish = True
                     if match := re.search(r'(\d+)%', output):
                         progress = int(match.group(1))
                         if progress == 100:

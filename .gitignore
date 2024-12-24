@@ -4,6 +4,8 @@
 
 # 开发环境
 .idea/
+.vscode
+.venv
 *.pyc
 */__pycache__/
 *.env
@@ -17,6 +19,7 @@
 *.srt
 *.mp4
 *.exe
+*.md
 
 # 应用数据
 /AppData/

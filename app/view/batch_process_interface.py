@@ -16,6 +16,7 @@ from qfluentwidgets import FluentIcon as FIF
 from qframelesswindow import FramelessWindow, StandardTitleBar
 
 from ..config import RESOURCE_PATH
+from ..common.config import cfg
 from ..core.entities import SupportedVideoFormats, SupportedAudioFormats
 from ..core.entities import Task, VideoInfo
 from ..core.thread.create_task_thread import CreateTaskThread
@@ -137,15 +138,6 @@ class BatchProcessInterface(QWidget):
         self.add_file_button.setEnabled(False)
         self.clear_all_button.setEnabled(False)
 
-        # 显示开始处理的通知
-        InfoBar.info(
-            self.tr("开始处理"),
-            self.tr("开始批量处理任务"),
-            duration=2000,
-            position=InfoBarPosition.BOTTOM,
-            parent=self
-        )
-
         if not self.task_cards:
             InfoBar.warning(
                 self.tr("警告"),
@@ -154,6 +146,15 @@ class BatchProcessInterface(QWidget):
                 parent=self
             )
             return
+
+        # 显示开始处理的通知
+        InfoBar.info(
+            self.tr("开始处理"),
+            self.tr("开始批量处理任务"),
+            duration=2000,
+            position=InfoBarPosition.BOTTOM,
+            parent=self
+        )
 
         # 查找第一个未完成的任务并开始处理
         for task_card in self.task_cards:
@@ -259,14 +260,22 @@ class BatchProcessInterface(QWidget):
         audio_formats = [f"*.{fmt.value}" for fmt in SupportedAudioFormats]
         if self.task_type_combo.currentText() == self.tr("视频加字幕"):
             filter_str = f"{self.tr('视频文件')} ({' '.join(video_formats)})"
+            task_type = Task.Type.SUBTITLE
         else:
+            # 音频/视频生成字幕
             filter_str = f"{self.tr('音频文件或视频文件')} ({' '.join(audio_formats + video_formats)})"
+            task_type = Task.Type.TRANSCRIBE
 
-        files, _ = QFileDialog.getOpenFileNames(self, self.tr("选择文件"), "", filter_str)
+        files, _ = QFileDialog.getOpenFileNames(self, self.tr("选择文件"), cfg.last_open_dir.value , filter_str)
         for file_path in files:
-            self.create_task(file_path)
+            self.create_task(file_path, task_type)
+            
+        # Save the files' directory for later use
+        file_dir = str( Path(files[0]).parent )
+        if file_dir != cfg.last_open_dir.value:
+            cfg.last_open_dir.value = file_dir
 
-    def create_task(self, file_path):
+    def create_task(self, file_path, task_type: Task.Type):
         """创建新任务"""
         # 检查文件是否已存在
         for task in self.tasks:
@@ -280,7 +289,7 @@ class BatchProcessInterface(QWidget):
                 )
                 return
 
-        task_type = 'transcription' if self.task_type_combo.currentText() == self.tr("音视频转录") else 'file'
+        # task_type = 'transcription' if self.task_type_combo.currentText() == self.tr("音视频转录") else 'file'
         create_thread = CreateTaskThread(file_path, task_type)
         create_thread.finished.connect(self.add_task_card)
         create_thread.finished.connect(lambda: self.cleanup_thread(create_thread))
@@ -365,11 +374,13 @@ class BatchProcessInterface(QWidget):
             # 根据任务类型检查文件格式
             if self.task_type_combo.currentText() == self.tr("视频加字幕"):
                 supported_formats = {fmt.value for fmt in SupportedVideoFormats}
+                task_type = Task.Type.SUBTITLE
             else:
                 supported_formats = {fmt.value for fmt in SupportedVideoFormats} | {fmt.value for fmt in SupportedAudioFormats}
+                task_type = Task.Type.TRANSCRIBE
 
             if file_ext in supported_formats:
-                self.create_task(file_path)
+                self.create_task(file_path, task_type)
             else:
                 error_msg = self.tr("请拖入视频文件") if self.task_type_combo.currentText() == self.tr("视频加字幕") else self.tr("请拖入音频或视频文件")
                 InfoBar.error(
@@ -486,7 +497,8 @@ class TaskInfoCard(CardWidget):
 
     def update_info(self, video_info: VideoInfo):
         """更新视频信息显示"""
-        self.video_title.setText(video_info.file_name.rsplit('.', 1)[0])
+        # self.video_title.setText(video_info.file_name.rsplit('.', 1)[0])
+        self.video_title.setText(video_info.file_name + '\n' + video_info.file_path)
         self.resolution_info.setText(self.tr("画质: ") + f"{video_info.width}x{video_info.height}")
         file_size_mb = os.path.getsize(self.task.file_path) / 1024 / 1024
         self.file_size_info.setText(self.tr("大小: ") + f"{file_size_mb:.1f} MB")
@@ -503,9 +515,11 @@ class TaskInfoCard(CardWidget):
         if self.task.need_optimize:
             strategy_text = self.tr("字幕优化")
         elif self.task.need_translate:
-            strategy_text = self.tr("字幕优化+翻译 ") + str(self.task.target_language)
+            # strategy_text = self.tr("字幕优化+翻译 ") + str(self.task.target_language)
+            strategy_text = self.tr("字幕翻译 ") + str(self.task.target_language)
 
         tooltip = self.tr("转录模型: ") + self.task.transcribe_model.value + "\n"
+        tooltip += self.tr("文件: ") + self.task.file_path + '\n'
         if self.task.status == Task.Status.PENDING:
             tooltip += self.tr("字幕策略: ") + strategy_text + "\n"
         tooltip += self.tr("任务状态: ") + self.task.status.value
@@ -628,30 +642,30 @@ class TaskInfoCard(CardWidget):
         self.progress_ring.resume()
 
         # 开始转录过程
-        if self.task.status == Task.Status.TRANSCRIBING:
+        if self.task.type == Task.Type.TRANSCRIBE:
             self.transcript_thread = TranscriptThread(self.task)
             self.transcript_thread.finished.connect(self.on_finished)
             self.transcript_thread.progress.connect(self.on_progress)
             self.transcript_thread.error.connect(self.on_error)
             self.transcript_thread.start()
-        elif self.task.status == Task.Status.PENDING:
+        elif self.task.type == Task.Type.SUBTITLE:
             self.subtitle_thread = SubtitlePipelineThread(self.task)
             self.subtitle_thread.finished.connect(self.on_finished)
             self.subtitle_thread.progress.connect(self.on_progress)
             self.subtitle_thread.error.connect(self.on_error)
             self.subtitle_thread.start()
         else:
-            self.on_error(self.tr("任务状态错误"))
+            self.on_error(self.tr("任务类型错误"))
 
     def on_open_folder_clicked(self):
         """打开文件夹按钮点击事件"""
-        if self.task and self.task.work_dir:
+        if self.task and Path(self.task.file_path).exists():
             if sys.platform == "win32":
-                os.startfile(self.task.work_dir)
+                os.startfile(str( Path(self.task.file_path).parent) )
             elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", self.task.work_dir])
+                subprocess.run(["open", str( Path(self.task.file_path).parent) ])
             else:  # Linux
-                subprocess.run(["xdg-open", self.task.work_dir])
+                subprocess.run(["xdg-open", str( Path(self.task.file_path).parent) ])
         else:
             InfoBar.warning(
                 self.tr("警告"),

@@ -106,6 +106,7 @@ class SubtitleOptimizationThread(QThread):
             assert Path(str_path).exists(), self.tr("字幕文件路径不存在")
             assert Path(str_path).suffix in ['.srt', '.vtt', '.ass'], self.tr("字幕文件格式不支持")
 
+            self.task.status = Task.Status.OPTIMIZING
             self.progress.emit(2, self.tr("开始优化字幕..."))
 
             self.llm_result_logger = setup_logger("llm_result", 

@@ -327,6 +327,7 @@ LANGUAGES = {
 class VideoInfo:
     """视频信息类"""
     file_name: str
+    file_path: str
     width: int
     height: int
     fps: float
@@ -373,12 +374,21 @@ class Task:
         FILE_IMPORT = "文件导入"
         URL_IMPORT = "URL导入"
 
+    class Type(Enum):
+        # 任务类型：transcribe or generate subtitle
+        TRANSCRIBE = "transcription"
+        SUBTITLE = "file"
+        OPTIMIZE = "optimization"
+        SYNTHESIS = "synthesis"
+        URL = "url"
+        
     # 任务信息
     id: int = field(default_factory=lambda: randint(0, 100_000_000))
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
     completed_at: Optional[datetime.datetime] = None
     status: Status = Status.PENDING
+    type: Type = Type.SUBTITLE
     fraction_downloaded: float = 0.0
     work_dir: Optional[str] = None
 
@@ -396,6 +406,7 @@ class Task:
 
     # 转录（转录模型）
     transcribe_model: Optional[TranscribeModelEnum] = TranscribeModelEnum.JIANYING
+    
     transcribe_language: Optional[TranscribeLanguageEnum] = LANGUAGES[TranscribeLanguageEnum.ENGLISH.value]
     use_asr_cache: bool = True
     need_word_time_stamp: bool = False
@@ -416,6 +427,7 @@ class Task:
     faster_whisper_vad_method: Optional[VadMethodEnum] = VadMethodEnum.SILERO_V3
     faster_whisper_ff_mdx_kim2: bool = False
     faster_whisper_one_word: bool = True
+    faster_whisper_translate_to_english: bool = False
     faster_whisper_prompt: Optional[str] = None
 
     # LLM（优化翻译模型）
@@ -431,7 +443,6 @@ class Task:
     max_word_count_cjk: int = 12
     max_word_count_english: int = 18
     need_split: bool = True
-
 
     # 视频生成
     need_video: bool = True
