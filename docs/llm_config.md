@@ -3,7 +3,7 @@
 也可以使用中转站，使用 OpenAI 或 Claude的API。
 
 
-这里以国内的 [SiliconCloud](https://cloud.siliconflow.cn/i/HF95kaoz) 的 API 为例子，其已经集合国内多家大模型厂商。（注意以上是我的推广链接，通过此可以获得14元额度，介意就百度自行搜索注册，非广告）
+这里以国内的 [SiliconCloud](https://cloud.siliconflow.cn/i/onCHcaDx) 的 API 为例子，其已经集合国内多家大模型厂商。（注意以上是我的推广链接，通过此可以获得14元额度，介意就百度自行搜索注册，非广告）
 
 ![api](images/get_api.png)
 
