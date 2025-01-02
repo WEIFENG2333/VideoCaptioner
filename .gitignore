@@ -6,7 +6,9 @@
 .idea/
 *.pyc
 */__pycache__/
-*.env
+.env
+.venv
+.vscode
 
 # 测试和脚本
 /test/
