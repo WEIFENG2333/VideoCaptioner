@@ -47,6 +47,7 @@ class CreateTaskThread(QThread):
         logger.info(f"开始创建文件任务：{file_path}")
         # 使用 Path 对象处理路径
         task_work_dir = Path(cfg.work_dir.value) / Path(file_path).stem
+        file_full_path = Path(file_path)
 
         # 获取 视频/音频 信息
         thumbnail_path = str(task_work_dir / "thumbnail.jpg")
@@ -72,13 +73,15 @@ class CreateTaskThread(QThread):
 
         # 定义各个路径
         audio_save_path = task_work_dir / f"【Audio】{Path(file_path).stem}.wav"
+        
         original_subtitle_save_path = task_work_dir / "subtitle" / f"【原始字幕】{cfg.transcribe_model.value.value}{whisper_type}.srt"
-        result_subtitle_save_path = task_work_dir / "subtitle" / f"{result_subtitle_type}样式字幕.ass"
+        result_subtitle_save_path = file_full_path.parent / ( cfg.subtitle_file_prefix.value + file_full_path.stem + cfg.subtitle_file_suffix.value + "." + cfg.subtitle_output_format.value.value )
         video_save_path = task_work_dir / f"【卡卡】{Path(file_path).name}"
+        
 
-        ass_style_name = cfg.subtitle_style_name.value
-        ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
-        if ass_style_path.exists():
+        if cfg.subtitle_output_format.value.value == "ass" and ass_style_path.exists():
+            ass_style_name = cfg.subtitle_style_name.value
+            ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
             subtitle_style_srt = ass_style_path.read_text(encoding="utf-8")
         else:
             subtitle_style_srt = None
@@ -166,6 +169,7 @@ class CreateTaskThread(QThread):
 
         # 使用 Path 对象处理路径
         task_work_dir = Path(video_file_path).parent
+        file_full_path = video_file_path
 
         if cfg.need_optimize.value:
             result_subtitle_type = "【修正字幕】"
@@ -186,7 +190,7 @@ class CreateTaskThread(QThread):
         # 定义各个路径
         audio_save_path = task_work_dir / f"【Audio】{Path(video_file_path).stem}.wav"
         original_subtitle_save_path = task_work_dir / "subtitle" / f"【原始字幕】{cfg.transcribe_model.value.value}{whisper_type}.srt" if not subtitle_file_path else subtitle_file_path
-        result_subtitle_save_path = task_work_dir / "subtitle" / f"{result_subtitle_type}样式字幕.ass"
+        result_subtitle_save_path = file_full_path.parent / ( cfg.subtitle_file_prefix.value + file_full_path.stem + cfg.subtitle_file_suffix.value + "." + cfg.subtitle_output_format.value.value )
         video_save_path = task_work_dir / f"【卡卡】{Path(video_file_path).name}"
 
         if cfg.transcribe_model.value in [TranscribeModelEnum.JIANYING, TranscribeModelEnum.BIJIAN]:
@@ -194,9 +198,9 @@ class CreateTaskThread(QThread):
         else:
             need_word_time_stamp = False
 
-        ass_style_name = cfg.subtitle_style_name.value
-        ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
-        if ass_style_path.exists():
+        if cfg.subtitle_output_format.value.value == "ass" and ass_style_path.exists():
+            ass_style_name = cfg.subtitle_style_name.value
+            ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
             subtitle_style_srt = ass_style_path.read_text(encoding="utf-8")
         else:
             subtitle_style_srt = None
@@ -257,8 +261,10 @@ class CreateTaskThread(QThread):
 
     def create_transcription_task(self, file_path):
         logger.info(f"开始创建转录任务：{file_path}")
-        task_work_dir = Path(file_path).parent
-        file_name = Path(file_path).stem
+        
+        task_work_dir = Path(cfg.work_dir.value).parent
+        file_full_path = Path(file_path)
+        file_name = file_full_path.stem
 
         thumbnail_path = task_work_dir / "thumbnail.jpg"
 
@@ -277,6 +283,14 @@ class CreateTaskThread(QThread):
 
         audio_save_path = task_work_dir / f"【Audio】{file_name}.wav"
         original_subtitle_save_path = task_work_dir / f"【原始字幕】{file_name}-{cfg.transcribe_model.value.value}-{whisper_type}.srt"
+        result_subtitle_save_path = file_full_path.parent / ( cfg.subtitle_file_prefix.value + file_full_path.stem + cfg.subtitle_file_suffix.value + "." + cfg.subtitle_output_format.value.value )
+
+        if cfg.subtitle_output_format.value.value == "ass" and ass_style_path.exists():
+            ass_style_name = cfg.subtitle_style_name.value
+            ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
+            subtitle_style_srt = ass_style_path.read_text(encoding="utf-8")
+        else:
+            subtitle_style_srt = None
 
         # 创建 Task 对象
         task = Task(
@@ -312,7 +326,9 @@ class CreateTaskThread(QThread):
             audio_save_path=str(audio_save_path),
             transcribe_model=cfg.transcribe_model.value,
             use_asr_cache=cfg.use_asr_cache.value,
+            subtitle_style_srt=subtitle_style_srt,
             original_subtitle_save_path=str(original_subtitle_save_path),
+            result_subtitle_save_path=str(result_subtitle_save_path),
             max_word_count_cjk=cfg.max_word_count_cjk.value,
             max_word_count_english=cfg.max_word_count_english.value,
         )
@@ -321,8 +337,8 @@ class CreateTaskThread(QThread):
 
     def create_subtitle_optimization_task(file_path):
         logger.info(f"开始创建字幕优化任务：{file_path}")
-        task_work_dir = Path(file_path.strip()).parent
-        file_name = Path(file_path.strip()).stem
+        task_work_dir = Path(cfg.work_dir.value).parent
+        file_full_path = Path(file_path)
 
         if cfg.need_optimize.value:
             result_subtitle_type = "【修正字幕】"
@@ -333,11 +349,13 @@ class CreateTaskThread(QThread):
         logger.info(f"字幕类型: {result_subtitle_type}")
 
         original_subtitle_save_path = task_work_dir / file_path
-        result_subtitle_save_path = task_work_dir / f"{result_subtitle_type}{file_name}.srt"
+        result_subtitle_save_path = file_full_path.parent / ( cfg.subtitle_file_prefix.value + file_full_path.stem + cfg.subtitle_file_suffix.value + "." + cfg.subtitle_output_format.value.value )        
+        
+        # result_subtitle_save_path = task_work_dir / f"{result_subtitle_type}{file_name}.srt"
 
-        ass_style_name = cfg.subtitle_style_name.value
-        ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
-        if ass_style_path.exists():
+        if cfg.subtitle_output_format.value.value == "ass" and ass_style_path.exists():
+            ass_style_name = cfg.subtitle_style_name.value
+            ass_style_path = SUBTITLE_STYLE_PATH / f"{ass_style_name}.txt"
             subtitle_style_srt = ass_style_path.read_text(encoding="utf-8")
         else:
             subtitle_style_srt = None
@@ -351,12 +369,12 @@ class CreateTaskThread(QThread):
             status=Task.Status.OPTIMIZING,
             work_dir=str(task_work_dir),
             target_language=cfg.target_language.value.value,
-            original_subtitle_save_path=str(original_subtitle_save_path),
             base_url=cfg.api_base.value,
             api_key=cfg.api_key.value,
             llm_model=cfg.model.value,
             need_translate=cfg.need_translate.value,
             need_optimize=cfg.need_optimize.value,
+            original_subtitle_save_path=str(original_subtitle_save_path),
             result_subtitle_save_path=str(result_subtitle_save_path),
             thread_num=cfg.thread_num.value,
             batch_size=cfg.batch_size.value,
@@ -365,7 +383,6 @@ class CreateTaskThread(QThread):
             max_word_count_cjk=cfg.max_word_count_cjk.value,
             max_word_count_english=cfg.max_word_count_english.value,
             subtitle_style_srt=subtitle_style_srt,
-
         )
         logger.info(f"字幕优化任务创建完成：{task}")
         return task

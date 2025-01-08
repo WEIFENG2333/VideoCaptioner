@@ -65,7 +65,7 @@ class OutputSubtitleFormatEnum(Enum):
     """ 字幕输出格式 """
     SRT = "srt"
     ASS = "ass"
-    VTT = "vtt"
+    # VTT = "vtt"
     JSON = "json"
     TXT = "txt"
 

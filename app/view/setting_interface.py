@@ -160,6 +160,36 @@ class SettingInterface(ScrollArea):
             cfg.soft_subtitle,
             self.subtitleGroup
         )
+        
+        # 保存字幕格式
+        self.saveSubtitleFormatCard = ComboBoxSettingCard(
+            cfg.subtitle_output_format,
+            FIF.SAVE_AS,
+            self.tr('保存字幕格式'),
+            self.tr('选择保存字幕的格式'),
+            texts=[format.value for format in cfg.subtitle_output_format.validator.options],
+            parent=self.subtitleGroup
+        )
+
+        # 字幕文件的前缀和后缀
+        self.saveSubtitlePrefixCard = LineEditSettingCard(
+            cfg.subtitle_file_prefix,
+            FIF.TAG,
+            self.tr("字幕文件前缀"),
+            self.tr("字幕文件名前面加入右边的字符"),
+            "生成字幕前缀",
+            self.subtitleGroup
+        )
+        
+        self.saveSubtitleSuffixCard = LineEditSettingCard(
+            cfg.subtitle_file_suffix,
+            FIF.TAG,
+            self.tr("字幕文件后缀"),
+            self.tr("字幕文件名后面面加入右边的字符"),
+            "生成字幕后缀",
+            self.subtitleGroup
+        )
+        
         # 保存配置
         self.saveGroup = SettingCardGroup(self.tr("保存配置"), self.scrollWidget)
         self.savePathCard = PushSettingCard(
@@ -291,6 +321,9 @@ class SettingInterface(ScrollArea):
         self.subtitleGroup.addSettingCard(self.subtitleLayoutCard)
         self.subtitleGroup.addSettingCard(self.needVideoCard)
         self.subtitleGroup.addSettingCard(self.softSubtitleCard)
+        self.subtitleGroup.addSettingCard(self.saveSubtitleFormatCard)
+        self.subtitleGroup.addSettingCard(self.saveSubtitlePrefixCard)
+        self.subtitleGroup.addSettingCard(self.saveSubtitleSuffixCard)
         self.saveGroup.addSettingCard(self.savePathCard)
 
         self.personalGroup.addSettingCard(self.themeCard)

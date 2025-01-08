@@ -14,7 +14,8 @@ from ..core.entities import (
     TranscribeLanguageEnum,
     WhisperModelEnum,
     FasterWhisperModelEnum,
-    VadMethodEnum
+    VadMethodEnum,
+    OutputSubtitleFormatEnum,
 )
 
 
@@ -145,6 +146,16 @@ class Config(QConfig):
     needs_remove_punctuation = ConfigItem("Subtitle", "NeedsRemovePunctuation", False, BoolValidator())
     custom_prompt_text = ConfigItem("Subtitle", "CustomPromptText", "")
 
+    # ------------------- 字幕生成配置配置 -------------------
+    subtitle_output_format = OptionsConfigItem(
+        "Subtitle", "SaveFormat",
+        OutputSubtitleFormatEnum.ASS.value,
+        OptionsValidator(OutputSubtitleFormatEnum),
+        EnumSerializer(OutputSubtitleFormatEnum)
+    )
+    subtitle_file_prefix = ConfigItem("Subtitle", "FilePrefix", "生成")
+    subtitle_file_suffix = ConfigItem("Subtitle", "FileSuffix", "字幕")
+
     # ------------------- 字幕合成配置 -------------------
     soft_subtitle = ConfigItem("Video", "SoftSubtitle", True, BoolValidator())
     need_video = ConfigItem("Video", "NeedVideo", True, BoolValidator())
@@ -153,7 +164,7 @@ class Config(QConfig):
     subtitle_style_name = ConfigItem("SubtitleStyle", "StyleName", "default")
     subtitle_layout = ConfigItem("SubtitleStyle", "Layout", "译文在上")
     subtitle_preview_image = ConfigItem("SubtitleStyle", "PreviewImage", "")
-
+    
     # ------------------- 保存配置 -------------------
     work_dir = ConfigItem("Save", "Work_Dir", WORK_PATH, FolderValidator())
 

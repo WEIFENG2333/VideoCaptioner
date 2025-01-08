@@ -11,7 +11,7 @@ from ..bk_asr import (
     WhisperAPI,
     FasterWhisperASR
 )
-from ..entities import Task, TranscribeModelEnum
+from ..entities import Task, TranscribeModelEnum, OutputSubtitleFormatEnum
 from ..utils.video_utils import video2audio
 from ..utils.logger import setup_logger
 from ...config import MODEL_PATH
@@ -132,7 +132,12 @@ class TranscriptThread(QThread):
             # 保存字幕文件
             original_subtitle_path = Path(self.task.original_subtitle_save_path)
             original_subtitle_path.parent.mkdir(parents=True, exist_ok=True)
-            asr_data.to_srt(save_path=str(original_subtitle_path))
+            asr_data.save(
+                save_path = str(original_subtitle_path),
+                ass_style = self.task.subtitle_style_srt,
+                layout = self.task.subtitle_layout
+            )
+
             logger.info("字幕文件已保存到: %s", str(original_subtitle_path))
 
             # 删除音频文件 和 封面
