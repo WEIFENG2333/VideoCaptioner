@@ -6,7 +6,7 @@ import re
 from typing import Dict
 
 import retry
-from openai import OpenAI
+import openai
 
 from .subtitle_config import (
     TRANSLATE_PROMPT,
@@ -44,7 +44,9 @@ class SubtitleOptimizer:
         assert base_url and api_key, "环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置"
 
         self.model = model
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+
+        openai.api_base = self.base_url
+        openai.api_key = self.api_key
 
         self.summary_content = summary_content
         self.prompt = TRANSLATE_PROMPT
@@ -113,7 +115,7 @@ class SubtitleOptimizer:
 
         message = self._create_optimizer_message(original_subtitle)
 
-        response = self.client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=self.model,
             stream=False,
             messages=message,
@@ -142,7 +144,7 @@ class SubtitleOptimizer:
     def _reflect_translate(self, original_subtitle: Dict[int, str]):
         logger.info(f"[+]正在反思翻译字幕：{next(iter(original_subtitle))} - {next(reversed(original_subtitle))}")
         message = self._create_translate_message(original_subtitle)
-        response = self.client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=self.model,
             stream=False,
             messages=message,
@@ -175,7 +177,7 @@ class SubtitleOptimizer:
         message = [{"role": "system", "content": prompt},
                    {"role": "user",
                     "content": f"Please translate the input into {self.target_language}:\n<input>{str(original_subtitle)}</input>"}]
-        response = self.client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=self.model,
             stream=False,
             messages=message,
@@ -218,7 +220,7 @@ class SubtitleOptimizer:
                 message = [{"role": "system",
                             "content": SINGLE_TRANSLATE_PROMPT.replace("[TargetLanguage]", self.target_language)},
                            {"role": "user", "content": value}]
-                response = self.client.chat.completions.create(
+                response = openai.ChatCompletion.create(
                     model=self.model,
                     stream=False,
                     messages=message)

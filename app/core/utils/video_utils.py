@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 from typing import Literal
+from .separate_audio import separate_audio
 
 from ..utils.logger import setup_logger
 
@@ -332,6 +333,9 @@ def extract_thumbnail(video_path: str, seek_time: float, thumbnail_path: str) ->
     except Exception as e:
         logger.exception(f"提取缩略图时出错: {str(e)}")
         return False
+
+def separate_video_audio(input_file: str, output: str = "") -> str:
+    separate_audio()
 
 
 if __name__ == "__main__":

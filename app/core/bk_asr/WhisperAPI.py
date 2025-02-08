@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-from openai import OpenAI
+import openai
 from ..utils.logger import setup_logger
 
 from .ASRData import ASRData, ASRDataSeg
@@ -47,7 +47,8 @@ class WhisperAPI(BaseASR):
         self.need_word_time_stamp = need_word_time_stamp
         
         logger.info(f"初始化 WhisperASR: model={whisper_model}, language={language}, prompt={prompt}")
-        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+        openai.api_base = self.base_url
+        openai.api_key = self.api_key
 
     def _run(self, callback=None) -> dict:
         """执行语音识别"""
@@ -77,7 +78,7 @@ class WhisperAPI(BaseASR):
             if self.need_word_time_stamp and "groq" not in self.base_url:
                 args["timestamp_granularities"] = ["word", "segment"]
             logger.info("开始识别音频...")
-            completion = self.client.audio.transcriptions.create(
+            completion = openai.Audio.transcribe(
                 model=self.model,
                 temperature=0,
                 response_format="verbose_json",
