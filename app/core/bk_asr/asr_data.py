@@ -601,7 +601,7 @@ class ASRData:
                     )
                 )
             else:
-                text = lines[2]
+                text = " ".join(lines[2:])
                 segments.append(ASRDataSeg(text, start_time, end_time))
 
         return ASRData(segments)
