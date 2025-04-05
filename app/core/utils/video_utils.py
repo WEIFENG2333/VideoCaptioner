@@ -6,6 +6,8 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
+from PyQt5.QtCore import QCoreApplication
+
 from ..utils.logger import setup_logger
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 
@@ -261,10 +263,10 @@ def add_subtitles(
                 # 计算进度百分比
                 if total_duration:
                     progress = (current_time / total_duration) * 100
-                    progress_callback(f"{round(progress)}", "正在合成")
+                    progress_callback(f"{round(progress)}", QCoreApplication.translate("VideoUtils", "正在合成"))
 
             if progress_callback:
-                progress_callback("100", "合成完成")
+                progress_callback("100", QCoreApplication.translate("VideoUtils", "合成完成"))
             # 检查进程的返回码
             return_code = process.wait()
             if return_code != 0:
@@ -277,7 +279,7 @@ def add_subtitles(
             logger.exception(f"关闭 FFmpeg: {str(e)}")
             if process and process.poll() is None:  # 如果进程还在运行
                 process.kill()  # 如果进程没有及时终止，强制结束它
-            raise
+            raise RuntimeError(QCoreApplication.translate("VideoUtils", "视频合成失败") + f": {str(e)}")
         finally:
             # 删除临时文件
             if temp_subtitle.exists():

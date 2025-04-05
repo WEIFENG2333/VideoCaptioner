@@ -1,9 +1,10 @@
 from PyQt5.QtCore import QObject, pyqtSignal, QUrl
+from app.core.entities import SubtitleLayoutEnum
 
 
 class SignalBus(QObject):
     # 字幕排布信号
-    subtitle_layout_changed = pyqtSignal(str)
+    subtitle_layout_changed = pyqtSignal(object)
     # 字幕优化信号
     subtitle_optimization_changed = pyqtSignal(bool)
     # 字幕翻译信号

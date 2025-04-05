@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 import retry
 from openai import OpenAI
+from PyQt5.QtCore import QCoreApplication
 
 from app.config import CACHE_PATH
 from app.core.bk_asr.asr_data import ASRData, ASRDataSeg
@@ -51,7 +52,7 @@ class SubtitleOptimizer:
         base_url = os.getenv("OPENAI_BASE_URL")
         api_key = os.getenv("OPENAI_API_KEY")
         if not (base_url and api_key):
-            raise ValueError("环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置")
+            raise ValueError(QCoreApplication.translate("SubtitleOptimizer", "环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置"))
 
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
@@ -88,7 +89,7 @@ class SubtitleOptimizer:
             return ASRData(new_segments)
         except Exception as e:
             logger.error(f"优化失败：{str(e)}")
-            raise RuntimeError(f"优化失败：{str(e)}")
+            raise RuntimeError(QCoreApplication.translate("SubtitleOptimizer", "优化失败") + f": {str(e)}")
 
     def _split_chunks(self, subtitle_dict: Dict[str, str]) -> List[Dict[str, str]]:
         """将字幕分割成块"""
@@ -105,7 +106,7 @@ class SubtitleOptimizer:
 
         for chunk in chunks:
             if not self.executor:
-                raise ValueError("线程池未初始化")
+                raise ValueError(QCoreApplication.translate("SubtitleOptimizer", "线程池未初始化"))
             future = self.executor.submit(self._safe_optimize_chunk, chunk)
             futures.append(future)
 
@@ -131,7 +132,7 @@ class SubtitleOptimizer:
                 return self._optimize_chunk(chunk)
             except Exception as e:
                 if i == self.retry_times - 1:
-                    raise
+                    raise RuntimeError(QCoreApplication.translate("SubtitleOptimizer", "优化失败") + f": {str(e)}")
                 logger.warning(f"优化重试 {i+1}/{self.retry_times}: {str(e)}")
         return chunk
 
@@ -211,7 +212,7 @@ class SubtitleOptimizer:
         )
 
         if len(aligned_source) != len(aligned_target):
-            raise ValueError("对齐后字幕长度不一致")
+            raise ValueError(QCoreApplication.translate("SubtitleOptimizer", "对齐后字幕长度不一致"))
 
         # 构建对齐后的字典
         start_id = next(iter(original.keys()))

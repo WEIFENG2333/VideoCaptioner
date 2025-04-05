@@ -1,6 +1,7 @@
 import os
 
 from openai import OpenAI
+from PyQt5.QtCore import QCoreApplication
 
 from ..utils import json_repair
 from ..utils.logger import setup_logger
@@ -15,7 +16,7 @@ class SubtitleSummarizer:
         api_key = os.getenv("OPENAI_API_KEY")
 
         if not base_url or not api_key:
-            raise ValueError("环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置")
+            raise ValueError(QCoreApplication.translate("SubtitleSummarizer", "环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置"))
 
         self.model = model
         self.client = OpenAI(base_url=base_url, api_key=api_key)

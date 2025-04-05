@@ -17,9 +17,9 @@ Output:
 
 
 Input:
-the upgraded claude sonnet is now available for all users developers can build with the computer use beta on the anthropic api amazon bedrock and google cloud’s vertex ai the new claude haiku will be released later this month
+the upgraded claude sonnet is now available for all users developers can build with the computer use beta on the anthropic api amazon bedrock and google cloud's vertex ai the new claude haiku will be released later this month
 Output:
-the upgraded claude sonnet is now available for all users<br>developers can build with the computer use beta<br>on the anthropic api amazon bedrock and google cloud’s vertex ai<br>the new claude haiku will be released later this month
+the upgraded claude sonnet is now available for all users<br>developers can build with the computer use beta<br>on the anthropic api amazon bedrock and google cloud's vertex ai<br>the new claude haiku will be released later this month
 """
 
 
@@ -42,9 +42,9 @@ Output:
 大家好<br>今天我们带来的3d创意设计作品是禁制演示器<br>我是来自中山大学附属中学的方若涵<br>我是陈欣然<br>我们这一次作品介绍分为三个部分<br>第一个部分提出问题<br>第二个部分解决方案<br>第三个部分作品介绍<br>当我们学习进制的时候难以掌握<br>老师教学也比较抽象<br>那有没有一种教具或演示器可以将进制的原理形象生动地展现出来  
 
 Input:
-the upgraded claude sonnet is now available for all users developers can build with the computer use beta on the anthropic api amazon bedrock and google cloud’s vertex ai the new claude haiku will be released later this month
+the upgraded claude sonnet is now available for all users developers can build with the computer use beta on the anthropic api amazon bedrock and google cloud's vertex ai the new claude haiku will be released later this month
 Output:
-the upgraded claude sonnet is now available for all users<br>developers can build with the computer use beta on the anthropic api amazon bedrock and google cloud’s vertex ai<br>the new claude haiku will be released later this month
+the upgraded claude sonnet is now available for all users<br>developers can build with the computer use beta on the anthropic api amazon bedrock and google cloud's vertex ai<br>the new claude haiku will be released later this month
 """
 
 SUMMARIZER_PROMPT = """
@@ -206,7 +206,7 @@ Return a pure JSON following this structure and translate into ${target_language
   },
   ...
 }
-注：示例中“<<<”、“>>>”仅为需要的遵循准则，实际输出应为对应的专业翻译结果
+注：示例中"<<<"、">>>"仅为需要的遵循准则，实际输出应为对应的专业翻译结果
 
 
 # EXAMPLE_INPUT
@@ -220,13 +220,13 @@ Return a pure JSON following this structure and translate into ${target_language
   "1": {
     "translation": "In order to achieve the dual carbon goals, China is working hard to promote carbon peaking and carbon neutrality.",
     "free_translation": "To realize the dual carbon goals, China is striving to advance carbon peaking and carbon neutrality.",
-    "revise_suggestions": "该句中涉及多个专业术语，如“dual carbon goals”（双碳目标）、“carbon peaking”（碳达峰）和“carbon neutrality”（碳中和），已参照相关术语词汇对应表进行翻译，确保专业性与准确性。在意译阶段，建议使用“To realize”替代冗长的“In order to achieve”，同时将“working hard to promote”调整为更简洁有力的“striving to advance”，以增强表达效果，符合视频字幕的简洁性和流畅性。",
+    "revise_suggestions": "该句中涉及多个专业术语，如"dual carbon goals"（双碳目标）、"carbon peaking"（碳达峰）和"carbon neutrality"（碳中和），已参照相关术语词汇对应表进行翻译，确保专业性与准确性。在意译阶段，建议使用"To realize"替代冗长的"In order to achieve"，同时将"working hard to promote"调整为更简洁有力的"striving to advance"，以增强表达效果，符合视频字幕的简洁性和流畅性。",
     "revised_translation": "To realize the dual carbon goals, China is striving to advance carbon peaking and carbon neutrality."
   },
   "2": {
     "translation": "This technology is really YYDS!",
     "free_translation": "This technology is absolutely the GOAT!",
-    "revise_suggestions": "‘YYDS’作为中文网络流行语，在英语中缺乏直接对应。参考文化背景和表达习惯，将其意译为‘GOAT’（Greatest Of All Time），既保留了原文的赞美和推崇之情，又符合英语表达习惯。在此基础上，使用‘absolutely’替代‘really’使语气更加强烈和自然，适合视频聊天的语境。",
+    "revise_suggestions": "'YYDS'作为中文网络流行语，在英语中缺乏直接对应。参考文化背景和表达习惯，将其意译为'GOAT'（Greatest Of All Time），既保留了原文的赞美和推崇之情，又符合英语表达习惯。在此基础上，使用'absolutely'替代'really'使语气更加强烈和自然，适合视频聊天的语境。",
     "revised_translation": "This technology is absolutely the GOAT!"
   }
 }

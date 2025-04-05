@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from random import randint
 from typing import List, Optional
+from PyQt5.QtCore import QCoreApplication
 
 
 class SupportedAudioFormats(Enum):
@@ -95,6 +96,16 @@ class TranscribeModelEnum(Enum):
     WHISPER_CPP = "WhisperCpp"
     WHISPER_API = "Whisper [API]"
 
+    def __str__(self):
+        translations = {
+            "B 接口": QCoreApplication.translate("TranscribeModelEnum", "B 接口"),
+            "J 接口": QCoreApplication.translate("TranscribeModelEnum", "J 接口"),
+            "FasterWhisper ✨": QCoreApplication.translate("TranscribeModelEnum", "FasterWhisper ✨"),
+            "WhisperCpp": QCoreApplication.translate("TranscribeModelEnum", "WhisperCpp"),
+            "Whisper [API]": QCoreApplication.translate("TranscribeModelEnum", "Whisper [API]")
+        }
+        return translations.get(self.value, self.value)
+
 
 class TranslatorServiceEnum(Enum):
     """翻译器服务"""
@@ -103,6 +114,15 @@ class TranslatorServiceEnum(Enum):
     DEEPLX = "DeepLx 翻译"
     BING = "微软翻译"
     GOOGLE = "谷歌翻译"
+
+    def __str__(self):
+        translations = {
+            "LLM 大模型翻译": QCoreApplication.translate("TranslatorServiceEnum", "LLM 大模型翻译"),
+            "DeepLx 翻译": QCoreApplication.translate("TranslatorServiceEnum", "DeepLx 翻译"),
+            "微软翻译": QCoreApplication.translate("TranslatorServiceEnum", "微软翻译"),
+            "谷歌翻译": QCoreApplication.translate("TranslatorServiceEnum", "谷歌翻译")
+        }
+        return translations.get(self.value, self.value)
 
 
 class VadMethodEnum(Enum):
@@ -130,23 +150,30 @@ class SplitTypeEnum(Enum):
 
     SEMANTIC = "语义分段"
     SENTENCE = "句子分段"
+    
+    def __str__(self):
+        translations = {
+            "语义分段": QCoreApplication.translate("SplitTypeEnum", "语义分段"),
+            "句子分段": QCoreApplication.translate("SplitTypeEnum", "句子分段")
+        }
+        return translations.get(self.value, self.value)
 
 
 class TargetLanguageEnum(Enum):
     """翻译目标语言"""
 
-    CHINESE_SIMPLIFIED = "简体中文"
-    CHINESE_TRADITIONAL = "繁体中文"
-    ENGLISH = "英语"
-    JAPANESE = "日本語"
-    KOREAN = "韩语"
-    YUE = "粤语"
-    FRENCH = "法语"
-    GERMAN = "德语"
-    SPANISH = "西班牙语"
-    RUSSIAN = "俄语"
-    PORTUGUESE = "葡萄牙语"
-    TURKISH = "土耳其语"
+    CHINESE_SIMPLIFIED = "Chinese Simplified"
+    CHINESE_TRADITIONAL = "Chinese Traditional"
+    ENGLISH = "English"
+    JAPANESE = "Japanese"
+    KOREAN = "Korean"
+    YUE = "Cantonese"
+    FRENCH = "French"
+    GERMAN = "German"
+    SPANISH = "Spanish"
+    RUSSIAN = "Russian"
+    PORTUGUESE = "Portuguese"
+    TURKISH = "Turkish"
     POLISH = "Polish"
     CATALAN = "Catalan"
     DUTCH = "Dutch"
@@ -237,22 +264,128 @@ class TargetLanguageEnum(Enum):
     JAVANESE = "Javanese"
     SUNDANESE = "Sundanese"
     CANTONESE = "Cantonese"
+
+    def __str__(self):
+        translations = {
+            "Chinese Simplified": QCoreApplication.translate("TargetLanguageEnum", "Chinese Simplified"),
+            "Chinese Traditional": QCoreApplication.translate("TargetLanguageEnum", "Chinese Traditional"),
+            "English": QCoreApplication.translate("TargetLanguageEnum", "English"),
+            "Japanese": QCoreApplication.translate("TargetLanguageEnum", "Japanese"),
+            "Korean": QCoreApplication.translate("TargetLanguageEnum", "Korean"),
+            "Cantonese": QCoreApplication.translate("TargetLanguageEnum", "Cantonese"),
+            "French": QCoreApplication.translate("TargetLanguageEnum", "French"),
+            "German": QCoreApplication.translate("TargetLanguageEnum", "German"),
+            "Spanish": QCoreApplication.translate("TargetLanguageEnum", "Spanish"),
+            "Russian": QCoreApplication.translate("TargetLanguageEnum", "Russian"),
+            "Portuguese": QCoreApplication.translate("TargetLanguageEnum", "Portuguese"),
+            "Turkish": QCoreApplication.translate("TargetLanguageEnum", "Turkish"),
+            "Polish": QCoreApplication.translate("TargetLanguageEnum", "Polish"),
+            "Catalan": QCoreApplication.translate("TargetLanguageEnum", "Catalan"),
+            "Dutch": QCoreApplication.translate("TargetLanguageEnum", "Dutch"),
+            "Arabic": QCoreApplication.translate("TargetLanguageEnum", "Arabic"),
+            "Swedish": QCoreApplication.translate("TargetLanguageEnum", "Swedish"),
+            "Italian": QCoreApplication.translate("TargetLanguageEnum", "Italian"),
+            "Indonesian": QCoreApplication.translate("TargetLanguageEnum", "Indonesian"),
+            "Hindi": QCoreApplication.translate("TargetLanguageEnum", "Hindi"),
+            "Finnish": QCoreApplication.translate("TargetLanguageEnum", "Finnish"),
+            "Vietnamese": QCoreApplication.translate("TargetLanguageEnum", "Vietnamese"),
+            "Hebrew": QCoreApplication.translate("TargetLanguageEnum", "Hebrew"),
+            "Ukrainian": QCoreApplication.translate("TargetLanguageEnum", "Ukrainian"),
+            "Greek": QCoreApplication.translate("TargetLanguageEnum", "Greek"),
+            "Malay": QCoreApplication.translate("TargetLanguageEnum", "Malay"),
+            "Czech": QCoreApplication.translate("TargetLanguageEnum", "Czech"),
+            "Romanian": QCoreApplication.translate("TargetLanguageEnum", "Romanian"),
+            "Danish": QCoreApplication.translate("TargetLanguageEnum", "Danish"),
+            "Hungarian": QCoreApplication.translate("TargetLanguageEnum", "Hungarian"),
+            "Tamil": QCoreApplication.translate("TargetLanguageEnum", "Tamil"),
+            "Norwegian": QCoreApplication.translate("TargetLanguageEnum", "Norwegian"),
+            "Thai": QCoreApplication.translate("TargetLanguageEnum", "Thai"),
+            "Urdu": QCoreApplication.translate("TargetLanguageEnum", "Urdu"),
+            "Croatian": QCoreApplication.translate("TargetLanguageEnum", "Croatian"),
+            "Bulgarian": QCoreApplication.translate("TargetLanguageEnum", "Bulgarian"),
+            "Lithuanian": QCoreApplication.translate("TargetLanguageEnum", "Lithuanian"),
+            "Latin": QCoreApplication.translate("TargetLanguageEnum", "Latin"),
+            "Maori": QCoreApplication.translate("TargetLanguageEnum", "Maori"),
+            "Malayalam": QCoreApplication.translate("TargetLanguageEnum", "Malayalam"),
+            "Welsh": QCoreApplication.translate("TargetLanguageEnum", "Welsh"),
+            "Slovak": QCoreApplication.translate("TargetLanguageEnum", "Slovak"),
+            "Telugu": QCoreApplication.translate("TargetLanguageEnum", "Telugu"),
+            "Persian": QCoreApplication.translate("TargetLanguageEnum", "Persian"),
+            "Latvian": QCoreApplication.translate("TargetLanguageEnum", "Latvian"),
+            "Bengali": QCoreApplication.translate("TargetLanguageEnum", "Bengali"),
+            "Serbian": QCoreApplication.translate("TargetLanguageEnum", "Serbian"),
+            "Azerbaijani": QCoreApplication.translate("TargetLanguageEnum", "Azerbaijani"),
+            "Slovenian": QCoreApplication.translate("TargetLanguageEnum", "Slovenian"),
+            "Kannada": QCoreApplication.translate("TargetLanguageEnum", "Kannada"),
+            "Estonian": QCoreApplication.translate("TargetLanguageEnum", "Estonian"),
+            "Macedonian": QCoreApplication.translate("TargetLanguageEnum", "Macedonian"),
+            "Breton": QCoreApplication.translate("TargetLanguageEnum", "Breton"),
+            "Basque": QCoreApplication.translate("TargetLanguageEnum", "Basque"),
+            "Icelandic": QCoreApplication.translate("TargetLanguageEnum", "Icelandic"),
+            "Armenian": QCoreApplication.translate("TargetLanguageEnum", "Armenian"),
+            "Nepali": QCoreApplication.translate("TargetLanguageEnum", "Nepali"),
+            "Mongolian": QCoreApplication.translate("TargetLanguageEnum", "Mongolian"),
+            "Bosnian": QCoreApplication.translate("TargetLanguageEnum", "Bosnian"),
+            "Kazakh": QCoreApplication.translate("TargetLanguageEnum", "Kazakh"),
+            "Albanian": QCoreApplication.translate("TargetLanguageEnum", "Albanian"),
+            "Swahili": QCoreApplication.translate("TargetLanguageEnum", "Swahili"),
+            "Galician": QCoreApplication.translate("TargetLanguageEnum", "Galician"),
+            "Marathi": QCoreApplication.translate("TargetLanguageEnum", "Marathi"),
+            "Punjabi": QCoreApplication.translate("TargetLanguageEnum", "Punjabi"),
+            "Sinhala": QCoreApplication.translate("TargetLanguageEnum", "Sinhala"),
+            "Khmer": QCoreApplication.translate("TargetLanguageEnum", "Khmer"),
+            "Shona": QCoreApplication.translate("TargetLanguageEnum", "Shona"),
+            "Yoruba": QCoreApplication.translate("TargetLanguageEnum", "Yoruba"),
+            "Somali": QCoreApplication.translate("TargetLanguageEnum", "Somali"),
+            "Afrikaans": QCoreApplication.translate("TargetLanguageEnum", "Afrikaans"),
+            "Occitan": QCoreApplication.translate("TargetLanguageEnum", "Occitan"),
+            "Georgian": QCoreApplication.translate("TargetLanguageEnum", "Georgian"),
+            "Belarusian": QCoreApplication.translate("TargetLanguageEnum", "Belarusian"),
+            "Tajik": QCoreApplication.translate("TargetLanguageEnum", "Tajik"),
+            "Sindhi": QCoreApplication.translate("TargetLanguageEnum", "Sindhi"),
+            "Gujarati": QCoreApplication.translate("TargetLanguageEnum", "Gujarati"),
+            "Amharic": QCoreApplication.translate("TargetLanguageEnum", "Amharic"),
+            "Yiddish": QCoreApplication.translate("TargetLanguageEnum", "Yiddish"),
+            "Lao": QCoreApplication.translate("TargetLanguageEnum", "Lao"),
+            "Uzbek": QCoreApplication.translate("TargetLanguageEnum", "Uzbek"),
+            "Faroese": QCoreApplication.translate("TargetLanguageEnum", "Faroese"),
+            "Haitian Creole": QCoreApplication.translate("TargetLanguageEnum", "Haitian Creole"),
+            "Pashto": QCoreApplication.translate("TargetLanguageEnum", "Pashto"),
+            "Turkmen": QCoreApplication.translate("TargetLanguageEnum", "Turkmen"),
+            "Nynorsk": QCoreApplication.translate("TargetLanguageEnum", "Nynorsk"),
+            "Maltese": QCoreApplication.translate("TargetLanguageEnum", "Maltese"),
+            "Sanskrit": QCoreApplication.translate("TargetLanguageEnum", "Sanskrit"),
+            "Luxembourgish": QCoreApplication.translate("TargetLanguageEnum", "Luxembourgish"),
+            "Myanmar": QCoreApplication.translate("TargetLanguageEnum", "Myanmar"),
+            "Tibetan": QCoreApplication.translate("TargetLanguageEnum", "Tibetan"),
+            "Tagalog": QCoreApplication.translate("TargetLanguageEnum", "Tagalog"),
+            "Malagasy": QCoreApplication.translate("TargetLanguageEnum", "Malagasy"),
+            "Assamese": QCoreApplication.translate("TargetLanguageEnum", "Assamese"),
+            "Tatar": QCoreApplication.translate("TargetLanguageEnum", "Tatar"),
+            "Hawaiian": QCoreApplication.translate("TargetLanguageEnum", "Hawaiian"),
+            "Lingala": QCoreApplication.translate("TargetLanguageEnum", "Lingala"),
+            "Hausa": QCoreApplication.translate("TargetLanguageEnum", "Hausa"),
+            "Bashkir": QCoreApplication.translate("TargetLanguageEnum", "Bashkir"),
+            "Javanese": QCoreApplication.translate("TargetLanguageEnum", "Javanese"),
+            "Sundanese": QCoreApplication.translate("TargetLanguageEnum", "Sundanese"),
+        }
+        return translations.get(self.value, self.value)
 
 
 class TranscribeLanguageEnum(Enum):
     """转录语言"""
 
-    ENGLISH = "英语"
-    CHINESE = "中文"
-    JAPANESE = "日本語"
-    KOREAN = "韩语"
-    YUE = "粤语"
-    FRENCH = "法语"
-    GERMAN = "德语"
-    SPANISH = "西班牙语"
-    RUSSIAN = "俄语"
-    PORTUGUESE = "葡萄牙语"
-    TURKISH = "土耳其语"
+    ENGLISH = "English"
+    CHINESE = "Chinese"
+    JAPANESE = "Japanese"
+    KOREAN = "Korean"
+    CANTONESE = "Cantonese"
+    FRENCH = "French"
+    GERMAN = "German"
+    SPANISH = "Spanish"
+    RUSSIAN = "Russian"
+    PORTUGUESE = "Portuguese"
+    TURKISH = "Turkish"
     POLISH = "Polish"
     CATALAN = "Catalan"
     DUTCH = "Dutch"
@@ -342,7 +475,111 @@ class TranscribeLanguageEnum(Enum):
     BASHKIR = "Bashkir"
     JAVANESE = "Javanese"
     SUNDANESE = "Sundanese"
-    CANTONESE = "Cantonese"
+
+    def __str__(self):
+        translations = {
+            "English": QCoreApplication.translate("TranscribeLanguageEnum", "English"),
+            "Chinese": QCoreApplication.translate("TranscribeLanguageEnum", "Chinese"),
+            "Japanese": QCoreApplication.translate("TranscribeLanguageEnum", "Japanese"),
+            "Korean": QCoreApplication.translate("TranscribeLanguageEnum", "Korean"),
+            "Cantonese": QCoreApplication.translate("TranscribeLanguageEnum", "Cantonese"),
+            "French": QCoreApplication.translate("TranscribeLanguageEnum", "French"),
+            "German": QCoreApplication.translate("TranscribeLanguageEnum", "German"),
+            "Spanish": QCoreApplication.translate("TranscribeLanguageEnum", "Spanish"),
+            "Russian": QCoreApplication.translate("TranscribeLanguageEnum", "Russian"),
+            "Portuguese": QCoreApplication.translate("TranscribeLanguageEnum", "Portuguese"),
+            "Turkish": QCoreApplication.translate("TranscribeLanguageEnum", "Turkish"),
+            "Polish": QCoreApplication.translate("TranscribeLanguageEnum", "Polish"),
+            "Catalan": QCoreApplication.translate("TranscribeLanguageEnum", "Catalan"),
+            "Dutch": QCoreApplication.translate("TranscribeLanguageEnum", "Dutch"),
+            "Arabic": QCoreApplication.translate("TranscribeLanguageEnum", "Arabic"),
+            "Swedish": QCoreApplication.translate("TranscribeLanguageEnum", "Swedish"),
+            "Italian": QCoreApplication.translate("TranscribeLanguageEnum", "Italian"),
+            "Indonesian": QCoreApplication.translate("TranscribeLanguageEnum", "Indonesian"),
+            "Hindi": QCoreApplication.translate("TranscribeLanguageEnum", "Hindi"),
+            "Finnish": QCoreApplication.translate("TranscribeLanguageEnum", "Finnish"),
+            "Vietnamese": QCoreApplication.translate("TranscribeLanguageEnum", "Vietnamese"),
+            "Hebrew": QCoreApplication.translate("TranscribeLanguageEnum", "Hebrew"),
+            "Ukrainian": QCoreApplication.translate("TranscribeLanguageEnum", "Ukrainian"),
+            "Greek": QCoreApplication.translate("TranscribeLanguageEnum", "Greek"),
+            "Malay": QCoreApplication.translate("TranscribeLanguageEnum", "Malay"),
+            "Czech": QCoreApplication.translate("TranscribeLanguageEnum", "Czech"),
+            "Romanian": QCoreApplication.translate("TranscribeLanguageEnum", "Romanian"),
+            "Danish": QCoreApplication.translate("TranscribeLanguageEnum", "Danish"),
+            "Hungarian": QCoreApplication.translate("TranscribeLanguageEnum", "Hungarian"),
+            "Tamil": QCoreApplication.translate("TranscribeLanguageEnum", "Tamil"),
+            "Norwegian": QCoreApplication.translate("TranscribeLanguageEnum", "Norwegian"),
+            "Thai": QCoreApplication.translate("TranscribeLanguageEnum", "Thai"),
+            "Urdu": QCoreApplication.translate("TranscribeLanguageEnum", "Urdu"),
+            "Croatian": QCoreApplication.translate("TranscribeLanguageEnum", "Croatian"),
+            "Bulgarian": QCoreApplication.translate("TranscribeLanguageEnum", "Bulgarian"),
+            "Lithuanian": QCoreApplication.translate("TranscribeLanguageEnum", "Lithuanian"),
+            "Latin": QCoreApplication.translate("TranscribeLanguageEnum", "Latin"),
+            "Maori": QCoreApplication.translate("TranscribeLanguageEnum", "Maori"),
+            "Malayalam": QCoreApplication.translate("TranscribeLanguageEnum", "Malayalam"),
+            "Welsh": QCoreApplication.translate("TranscribeLanguageEnum", "Welsh"),
+            "Slovak": QCoreApplication.translate("TranscribeLanguageEnum", "Slovak"),
+            "Telugu": QCoreApplication.translate("TranscribeLanguageEnum", "Telugu"),
+            "Persian": QCoreApplication.translate("TranscribeLanguageEnum", "Persian"),
+            "Latvian": QCoreApplication.translate("TranscribeLanguageEnum", "Latvian"),
+            "Bengali": QCoreApplication.translate("TranscribeLanguageEnum", "Bengali"),
+            "Serbian": QCoreApplication.translate("TranscribeLanguageEnum", "Serbian"),
+            "Azerbaijani": QCoreApplication.translate("TranscribeLanguageEnum", "Azerbaijani"),
+            "Slovenian": QCoreApplication.translate("TranscribeLanguageEnum", "Slovenian"),
+            "Kannada": QCoreApplication.translate("TranscribeLanguageEnum", "Kannada"),
+            "Estonian": QCoreApplication.translate("TranscribeLanguageEnum", "Estonian"),
+            "Macedonian": QCoreApplication.translate("TranscribeLanguageEnum", "Macedonian"),
+            "Breton": QCoreApplication.translate("TranscribeLanguageEnum", "Breton"),
+            "Basque": QCoreApplication.translate("TranscribeLanguageEnum", "Basque"),
+            "Icelandic": QCoreApplication.translate("TranscribeLanguageEnum", "Icelandic"),
+            "Armenian": QCoreApplication.translate("TranscribeLanguageEnum", "Armenian"),
+            "Nepali": QCoreApplication.translate("TranscribeLanguageEnum", "Nepali"),
+            "Mongolian": QCoreApplication.translate("TranscribeLanguageEnum", "Mongolian"),
+            "Bosnian": QCoreApplication.translate("TranscribeLanguageEnum", "Bosnian"),
+            "Kazakh": QCoreApplication.translate("TranscribeLanguageEnum", "Kazakh"),
+            "Albanian": QCoreApplication.translate("TranscribeLanguageEnum", "Albanian"),
+            "Swahili": QCoreApplication.translate("TranscribeLanguageEnum", "Swahili"),
+            "Galician": QCoreApplication.translate("TranscribeLanguageEnum", "Galician"),
+            "Marathi": QCoreApplication.translate("TranscribeLanguageEnum", "Marathi"),
+            "Punjabi": QCoreApplication.translate("TranscribeLanguageEnum", "Punjabi"),
+            "Sinhala": QCoreApplication.translate("TranscribeLanguageEnum", "Sinhala"),
+            "Khmer": QCoreApplication.translate("TranscribeLanguageEnum", "Khmer"),
+            "Shona": QCoreApplication.translate("TranscribeLanguageEnum", "Shona"),
+            "Yoruba": QCoreApplication.translate("TranscribeLanguageEnum", "Yoruba"),
+            "Somali": QCoreApplication.translate("TranscribeLanguageEnum", "Somali"),
+            "Afrikaans": QCoreApplication.translate("TranscribeLanguageEnum", "Afrikaans"),
+            "Occitan": QCoreApplication.translate("TranscribeLanguageEnum", "Occitan"),
+            "Georgian": QCoreApplication.translate("TranscribeLanguageEnum", "Georgian"),
+            "Belarusian": QCoreApplication.translate("TranscribeLanguageEnum", "Belarusian"),
+            "Tajik": QCoreApplication.translate("TranscribeLanguageEnum", "Tajik"),
+            "Sindhi": QCoreApplication.translate("TranscribeLanguageEnum", "Sindhi"),
+            "Gujarati": QCoreApplication.translate("TranscribeLanguageEnum", "Gujarati"),
+            "Amharic": QCoreApplication.translate("TranscribeLanguageEnum", "Amharic"),
+            "Yiddish": QCoreApplication.translate("TranscribeLanguageEnum", "Yiddish"),
+            "Lao": QCoreApplication.translate("TranscribeLanguageEnum", "Lao"),
+            "Uzbek": QCoreApplication.translate("TranscribeLanguageEnum", "Uzbek"),
+            "Faroese": QCoreApplication.translate("TranscribeLanguageEnum", "Faroese"),
+            "Haitian Creole": QCoreApplication.translate("TranscribeLanguageEnum", "Haitian Creole"),
+            "Pashto": QCoreApplication.translate("TranscribeLanguageEnum", "Pashto"),
+            "Turkmen": QCoreApplication.translate("TranscribeLanguageEnum", "Turkmen"),
+            "Nynorsk": QCoreApplication.translate("TranscribeLanguageEnum", "Nynorsk"),
+            "Maltese": QCoreApplication.translate("TranscribeLanguageEnum", "Maltese"),
+            "Sanskrit": QCoreApplication.translate("TranscribeLanguageEnum", "Sanskrit"),
+            "Luxembourgish": QCoreApplication.translate("TranscribeLanguageEnum", "Luxembourgish"),
+            "Myanmar": QCoreApplication.translate("TranscribeLanguageEnum", "Myanmar"),
+            "Tibetan": QCoreApplication.translate("TranscribeLanguageEnum", "Tibetan"),
+            "Tagalog": QCoreApplication.translate("TranscribeLanguageEnum", "Tagalog"),
+            "Malagasy": QCoreApplication.translate("TranscribeLanguageEnum", "Malagasy"),
+            "Assamese": QCoreApplication.translate("TranscribeLanguageEnum", "Assamese"),
+            "Tatar": QCoreApplication.translate("TranscribeLanguageEnum", "Tatar"),
+            "Hawaiian": QCoreApplication.translate("TranscribeLanguageEnum", "Hawaiian"),
+            "Lingala": QCoreApplication.translate("TranscribeLanguageEnum", "Lingala"),
+            "Hausa": QCoreApplication.translate("TranscribeLanguageEnum", "Hausa"),
+            "Bashkir": QCoreApplication.translate("TranscribeLanguageEnum", "Bashkir"),
+            "Javanese": QCoreApplication.translate("TranscribeLanguageEnum", "Javanese"),
+            "Sundanese": QCoreApplication.translate("TranscribeLanguageEnum", "Sundanese"),
+        }
+        return translations.get(self.value, self.value)
 
 
 class WhisperModelEnum(Enum):
@@ -366,25 +603,15 @@ class FasterWhisperModelEnum(Enum):
 
 
 LANGUAGES = {
-    "英语": "en",
-    "中文": "zh",
-    "日本語": "ja",
-    "德语": "de",
-    "粤语": "yue",
-    "西班牙语": "es",
-    "俄语": "ru",
-    "韩语": "ko",
-    "法语": "fr",
-    "葡萄牙语": "pt",
-    "土耳其语": "tr",
     "English": "en",
     "Chinese": "zh",
+    "Japanese": "ja",
     "German": "de",
+    "Cantonese": "yue",
     "Spanish": "es",
     "Russian": "ru",
     "Korean": "ko",
     "French": "fr",
-    "Japanese": "ja",
     "Portuguese": "pt",
     "Turkish": "tr",
     "Polish": "pl",
@@ -476,8 +703,25 @@ LANGUAGES = {
     "Bashkir": "ba",
     "Javanese": "jw",
     "Sundanese": "su",
-    "Cantonese": "yue",
 }
+
+
+class SubtitleLayoutEnum(Enum):
+    """字幕布局"""
+
+    TRANSLATE_ON_TOP = "译文在上"
+    ORIGINAL_ON_TOP = "原文在上"
+    ONLY_ORIGINAL = "仅原文"
+    ONLY_TRANSLATE = "仅译文"
+    
+    def __str__(self):
+        translations = {
+            "译文在上": QCoreApplication.translate("SubtitleLayoutEnum", "译文在上"),
+            "原文在上": QCoreApplication.translate("SubtitleLayoutEnum", "原文在上"),
+            "仅原文": QCoreApplication.translate("SubtitleLayoutEnum", "仅原文"),
+            "仅译文": QCoreApplication.translate("SubtitleLayoutEnum", "仅译文")
+        }
+        return translations.get(self.value, self.value)
 
 
 @dataclass
@@ -543,7 +787,7 @@ class SubtitleConfig:
     batch_size: int = 10
     # 字幕布局和分割
     split_type: Optional[SplitTypeEnum] = None
-    subtitle_layout: Optional[str] = None
+    subtitle_layout: Optional[SubtitleLayoutEnum] = None
     max_word_count_cjk: int = 12
     max_word_count_english: int = 18
     need_split: bool = True
@@ -669,7 +913,13 @@ class BatchTaskType(Enum):
     FULL_PROCESS = "全流程处理"
 
     def __str__(self):
-        return self.value
+        translations = {
+            "批量转录": QCoreApplication.translate("BatchTaskType", "批量转录"),
+            "批量字幕": QCoreApplication.translate("BatchTaskType", "批量字幕"),
+            "转录+字幕": QCoreApplication.translate("BatchTaskType", "转录+字幕"),
+            "全流程处理": QCoreApplication.translate("BatchTaskType", "全流程处理")
+        }
+        return translations.get(self.value, self.value)
 
 
 class BatchTaskStatus(Enum):
@@ -681,4 +931,35 @@ class BatchTaskStatus(Enum):
     FAILED = "失败"
 
     def __str__(self):
-        return self.value
+        translations = {
+            "等待中": QCoreApplication.translate("BatchTaskStatus", "等待中"),
+            "处理中": QCoreApplication.translate("BatchTaskStatus", "处理中"),
+            "已完成": QCoreApplication.translate("BatchTaskStatus", "已完成"),
+            "失败": QCoreApplication.translate("BatchTaskStatus", "失败")
+        }
+        return translations.get(self.value, self.value)
+
+
+class FilenamePrefixEnum(Enum):
+    """文件名前缀"""
+
+    ORIGINAL_SUBTITLE = "【原始字幕】"
+    DOWNLOADED_SUBTITLE = "【下载字幕】"
+    SEGMENTED_SUBTITLE = "【断句字幕】"
+    SMART_SEGMENTATION = "【智能断句】"
+    STYLED_SUBTITLE = "【样式字幕】"
+    SUBTITLE = "【字幕】"
+    KAKA_VIDEO = "【卡卡】"
+
+    def __str__(self):
+        translations = {
+            "【原始字幕】": QCoreApplication.translate("FilenamePrefixEnum", "【原始字幕】"),
+            "【下载字幕】": QCoreApplication.translate("FilenamePrefixEnum", "【下载字幕】"),
+            "【断句字幕】": QCoreApplication.translate("FilenamePrefixEnum", "【断句字幕】"),
+            "【智能断句】": QCoreApplication.translate("FilenamePrefixEnum", "【智能断句】"),
+            "【样式字幕】": QCoreApplication.translate("FilenamePrefixEnum", "【样式字幕】"),
+            "【字幕】": QCoreApplication.translate("FilenamePrefixEnum", "【字幕】"),
+            "【卡卡】": QCoreApplication.translate("FilenamePrefixEnum", "【卡卡】")
+        }
+        return translations.get(self.value, self.value)
+

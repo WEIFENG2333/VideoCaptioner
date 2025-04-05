@@ -272,7 +272,7 @@ class WhisperCppDownloadDialog(MessageBoxBase):
         if has_program:
             # 显示已安装版本
             versions_text = " + ".join(installed_versions)
-            program_status = BodyLabel(self.tr(f"已安装版本: {versions_text}"), self)
+            program_status = BodyLabel(self.tr("已安装版本: ") + versions_text, self)
             program_status.setStyleSheet("color: green")
             layout.addWidget(program_status)
         else:
@@ -414,7 +414,7 @@ class WhisperCppDownloadDialog(MessageBoxBase):
         model = WHISPER_CPP_MODELS[row]
         self.progress_bar.show()
         self.progress_label.show()
-        self.progress_label.setText(self.tr(f"正在下载 {model['label']} 模型..."))
+        self.progress_label.setText(self.tr("正在下载模型: ") + model['label'])
 
         # 禁用当前行的下载按钮
         button_container = self.model_table.cellWidget(row, 3)
@@ -456,7 +456,7 @@ class WhisperCppDownloadDialog(MessageBoxBase):
 
             InfoBar.success(
                 self.tr("下载成功"),
-                self.tr(f"{model['label']} 模型已下载完成"),
+                self.tr("模型已下载完成") + f": {model['label']}",
                 duration=3000,
                 parent=self,
             )
@@ -558,7 +558,7 @@ class WhisperCppSettingWidget(QWidget):
             FIF.LANGUAGE,
             self.tr("源语言"),
             self.tr("音频的源语言"),
-            [language.value for language in TranscribeLanguageEnum],
+            [str(lang) for lang in TranscribeLanguageEnum],
             self.setting_group,
         )
 

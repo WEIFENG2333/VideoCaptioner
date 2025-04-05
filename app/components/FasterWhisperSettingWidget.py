@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QCoreApplication
 from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import (
     QHBoxLayout,
@@ -60,22 +60,24 @@ from .EditComboBoxSettingCard import EditComboBoxSettingCard
 from .LineEditSettingCard import LineEditSettingCard
 
 # 在文件开头添加常量定义
-FASTER_WHISPER_PROGRAMS = [
-    {
-        "label": "GPU（cuda） + CPU 版本",
-        "value": "faster-whisper-gpu.7z",
-        "type": "GPU",
-        "size": "1.35 GB",
-        "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/Faster-Whisper-XXL_r245.2_windows.7z",
-    },
-    {
-        "label": "CPU版本",
-        "value": "faster-whisper.exe",
-        "type": "CPU",
-        "size": "78.7 MB",
-        "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/whisper-faster.exe",
-    },
-]
+def get_faster_whisper_programs():
+    """获取已翻译的Faster Whisper程序列表"""
+    return [
+        {
+            "label": QCoreApplication.translate("FasterWhisperSettingWidget", "GPU（CUDA） + CPU 版本"),
+            "value": "faster-whisper-gpu.7z",
+            "type": "GPU",
+            "size": "1.35 GB",
+            "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/Faster-Whisper-XXL_r245.2_windows.7z",
+        },
+        {
+            "label": QCoreApplication.translate("FasterWhisperSettingWidget", "CPU 版本"),
+            "value": "faster-whisper.exe",
+            "type": "CPU",
+            "size": "78.7 MB",
+            "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/whisper-faster.exe",
+        },
+    ]
 
 FASTER_WHISPER_MODELS = [
     {
@@ -151,11 +153,11 @@ def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     bin_path = Path(BIN_PATH)
     installed_versions = []
 
-    # 检查 faster-whisper.exe(CPU版本)
+    # 检查 faster-whisper.exe(CPU 版本)
     if (bin_path / "faster-whisper.exe").exists():
         installed_versions.append("CPU")
 
-    # 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe(GPU版本)
+    # 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe(GPU 版本)
     xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe"
     if xxl_path.exists():
         installed_versions.extend(["GPU", "CPU"])
@@ -187,7 +189,7 @@ class UnzipThread(QThread):
             os.remove(self.zip_file)
             self.finished.emit()
         except subprocess.CalledProcessError as e:
-            self.error.emit(f"解压失败: {str(e)}")
+            self.error.emit(self.tr("解压失败: ") + str(e))
         except Exception as e:
             self.error.emit(str(e))
 
@@ -244,7 +246,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         if has_program:
             # 显示已安装版本
             versions_text = " + ".join(installed_versions)
-            program_status = BodyLabel(self.tr(f"已安装版本: {versions_text}"), self)
+            program_status = BodyLabel(self.tr("已安装版本: ") + versions_text, self)
             program_status.setStyleSheet("color: green")
             layout.addWidget(program_status)
 
@@ -263,7 +265,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         self.program_combo.hide()
 
         # 只显示未安装的版本
-        for program in FASTER_WHISPER_PROGRAMS:
+        for program in get_faster_whisper_programs():
             version_type = program["type"]
             if version_type not in installed_versions:
                 self.program_combo.addItem(f"{program['label']} ({program['size']})")
@@ -426,7 +428,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
 
         # 根据标签找到对应的程序配置
         program = next(
-            (p for p in FASTER_WHISPER_PROGRAMS if p["label"] == selected_label), None
+            (p for p in get_faster_whisper_programs() if p["label"] == selected_label), None
         )
 
         if not program:
@@ -532,7 +534,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         model = FASTER_WHISPER_MODELS[row]
         self.progress_bar.show()
         self.progress_label.show()
-        self.progress_label.setText(self.tr(f"正在下载 {model['label']} 模型..."))
+        self.progress_label.setText(self.tr("正在下载模型: ") + model['label'])
 
         # 禁用当前行的下载按钮
         button_container = self.model_table.cellWidget(row, 3)
@@ -573,7 +575,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
 
             InfoBar.success(
                 self.tr("下载成功"),
-                self.tr(f"{model['label']} 模型已下载完成"),
+                self.tr("模型已下载完成") + f": {model['label']}",
                 duration=3000,
                 parent=self,
             )
@@ -732,7 +734,7 @@ class FasterWhisperSettingWidget(QWidget):
             FIF.LANGUAGE,
             self.tr("源语言"),
             self.tr("音频的源语言"),
-            [lang.value for lang in TranscribeLanguageEnum],
+            [str(lang) for lang in TranscribeLanguageEnum],
             self.setting_group,
         )
         self.language_card.comboBox.setMaxVisibleItems(6)
@@ -810,7 +812,7 @@ class FasterWhisperSettingWidget(QWidget):
             cfg.faster_whisper_prompt,
             FIF.CHAT,
             self.tr("提示词"),
-            self.tr("可选的提示词,默认空"),
+            self.tr("可选的提示词，默认空"),
             "",
             self.other_group,
         )

@@ -328,13 +328,13 @@ class TranscriptionInterface(QWidget):
             if "接口" in model.value or "api" in model.value.lower():
                 self.model_menu.addActions(
                     [
-                        Action(FluentIcon.GLOBE, model.value),
+                        Action(FluentIcon.GLOBE, str(model)),
                     ]
                 )
             else:
                 self.model_menu.addActions(
                     [
-                        Action(FluentIcon.ROBOT, model.value),
+                        Action(FluentIcon.ROBOT, str(model)),
                     ]
                 )
         self.model_button.setMenu(self.model_menu)
@@ -361,16 +361,16 @@ class TranscriptionInterface(QWidget):
 
     def _set_value(self):
         """设置转录模型"""
-        model_name = cfg.get(cfg.transcribe_model).value
+        model = cfg.get(cfg.transcribe_model)
         # self.model_button.setText(self.tr(model_name))
-        self.on_transcription_model_changed(model_name)
+        self.on_transcription_model_changed(str(model))
 
     def on_transcription_model_changed(self, model_name: str):
         """处理转录模型改变"""
-        self.model_button.setText(self.tr(model_name))
+        self.model_button.setText(model_name)
         self.transcription_setting_card.on_model_changed(model_name)
         for model in TranscribeModelEnum:
-            if model.value == model_name:
+            if str(model) == model_name:
                 cfg.set(cfg.transcribe_model, model)
                 break
 

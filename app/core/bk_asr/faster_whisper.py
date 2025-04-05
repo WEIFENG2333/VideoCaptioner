@@ -7,6 +7,8 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Union
 
+from PyQt5.QtCore import QCoreApplication
+
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg, ASRData
 from .base import BaseASR
@@ -92,13 +94,13 @@ class FasterWhisperASR(BaseASR):
                 self.faster_whisper_program = "faster-whisper-xxl"
             else:
                 if not shutil.which("faster-whisper"):
-                    raise EnvironmentError("faster-whisper程序未找到，请确保已经下载。")
+                    raise EnvironmentError(QCoreApplication.translate("FasterWhisperASR", "faster-whisper程序未找到，请确保已经下载"))
                 self.faster_whisper_program = "faster-whisper"
                 self.vad_method = None
         elif self.device == "cuda":
             if not shutil.which("faster-whisper-xxl"):
                 raise EnvironmentError(
-                    "faster-whisper-xxl 程序未找到，请确保已经下载。"
+                    QCoreApplication.translate("FasterWhisperASR", "faster-whisper-xxl 程序未找到，请确保已经下载")
                 )
             self.faster_whisper_program = "faster-whisper-xxl"
 
@@ -221,7 +223,7 @@ class FasterWhisperASR(BaseASR):
             cmd = self._build_command(wav_path)
 
             logger.info("Faster Whisper 执行命令: %s", " ".join(cmd))
-            callback(5, "Whisper识别")
+            callback(5, QCoreApplication.translate("FasterWhisperASR", "Whisper识别"))
 
             self.process = subprocess.Popen(
                 cmd,
@@ -250,7 +252,7 @@ class FasterWhisperASR(BaseASR):
                         callback(mapped_progress, f"{mapped_progress} %")
                     if "Subtitles are written to" in output:
                         is_finish = True
-                        callback(100, "识别完成")
+                        callback(100, QCoreApplication.translate("FasterWhisperASR", "识别完成"))
                     if "error" in output:
                         error_msg += output
                         logger.error(output)
@@ -263,15 +265,15 @@ class FasterWhisperASR(BaseASR):
             logger.info("Faster Whisper 返回值: %s", self.process.returncode)
             if not is_finish:
                 logger.error("Faster Whisper 错误: %s", error_msg)
-                raise RuntimeError(error_msg)
+                raise RuntimeError(QCoreApplication.translate("FasterWhisperASR", "执行失败") + f": {error_msg}")
 
             # 判断是否识别成功
             if not output_path.exists():
-                raise RuntimeError(f"Faster Whisper 输出文件不存在: {output_path}")
+                raise RuntimeError(QCoreApplication.translate("FasterWhisperASR", "输出文件不存在") + f": {output_path}")
 
             logger.info("Faster Whisper 识别完成")
 
-            callback(100, "识别完成")
+            callback(100, QCoreApplication.translate("FasterWhisperASR", "识别完成"))
 
             return output_path.read_text(encoding="utf-8")
 

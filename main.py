@@ -66,6 +66,19 @@ myTranslator = QTranslator()
 translations_path = (
     RESOURCE_PATH / "translations" / f"VideoCaptioner_{locale.name()}.qm"
 )
+
+# Check if the translation file exists, if not, fall back to English
+if not os.path.exists(translations_path):
+    fallback_locale = locale
+    from PyQt5.QtCore import QLocale
+    fallback_locale = QLocale(QLocale.English)
+    translations_path = (
+        RESOURCE_PATH / "translations" / f"VideoCaptioner_{fallback_locale.name()}.qm"
+    )
+    logger.warning(f"Translation file for {locale.name()} not found, falling back to English")
+else:
+    logger.info(f"Translation file for {locale.name()} found")
+    
 myTranslator.load(str(translations_path))
 app.installTranslator(translator)
 app.installTranslator(myTranslator)

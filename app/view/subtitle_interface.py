@@ -42,6 +42,7 @@ from app.core.entities import (
     SubtitleTask,
     SupportedSubtitleFormats,
     TargetLanguageEnum,
+    SubtitleLayoutEnum,
 )
 from app.core.task_factory import TaskFactory
 from app.core.utils.get_subtitle_style import get_subtitle_style
@@ -208,10 +209,10 @@ class SubtitleInterface(QWidget):
         self._setup_bottom_layout()
 
     def set_values(self):
-        self.layout_button.setText(cfg.subtitle_layout.value)
+        self.layout_button.setText(str(cfg.subtitle_layout.value))
         self.translate_button.setChecked(cfg.need_translate.value)
         self.optimize_button.setChecked(cfg.need_optimize.value)
-        self.target_language_button.setText(cfg.target_language.value.value)
+        self.target_language_button.setText(str(cfg.target_language.value))
         self.target_language_button.setEnabled(cfg.need_translate.value)
 
     def _setup_top_layout(self):
@@ -248,8 +249,8 @@ class SubtitleInterface(QWidget):
         self.layout_button.setFixedHeight(34)
         self.layout_button.setMinimumWidth(125)
         self.layout_menu = RoundMenu(parent=self)
-        for layout in ["译文在上", "原文在上", "仅译文", "仅原文"]:
-            action = Action(text=layout)
+        for layout in SubtitleLayoutEnum:
+            action = Action(text=str(layout))
             action.triggered.connect(
                 lambda checked, l=layout: signalBus.subtitle_layout_changed.emit(l)
             )
@@ -286,9 +287,9 @@ class SubtitleInterface(QWidget):
         self.target_language_menu = RoundMenu(parent=self)
         self.target_language_menu.setMaxVisibleItems(10)
         for lang in TargetLanguageEnum:
-            action = Action(text=lang.value)
+            action = Action(text=str(lang))
             action.triggered.connect(
-                lambda checked, l=lang.value: signalBus.target_language_changed.emit(l)
+                lambda checked, l=lang: signalBus.target_language_changed.emit(str(l))
             )
             self.target_language_menu.addAction(action)
         self.target_language_button.setMenu(self.target_language_menu)
@@ -805,8 +806,8 @@ class SubtitleInterface(QWidget):
     def on_target_language_changed(self, language: str):
         """处理翻译语言变更"""
         for lang in TargetLanguageEnum:
-            if lang.value == language:
-                self.target_language_button.setText(lang.value)
+            if str(lang) == language:
+                self.target_language_button.setText(str(lang))
                 cfg.set(cfg.target_language, lang)
                 break
 
@@ -822,10 +823,10 @@ class SubtitleInterface(QWidget):
         # 控制翻译语言选择按钮的启用状态
         self.target_language_button.setEnabled(checked)
 
-    def on_subtitle_layout_changed(self, layout: str):
+    def on_subtitle_layout_changed(self, layout: SubtitleLayoutEnum):
         """处理字幕排布变更"""
         cfg.set(cfg.subtitle_layout, layout)
-        self.layout_button.setText(layout)
+        self.layout_button.setText(str(layout))
 
 
 class PromptDialog(MessageBoxBase):

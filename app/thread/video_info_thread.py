@@ -99,7 +99,7 @@ class VideoInfoThread(QThread):
             return VideoInfo(**video_info_dict)
         except Exception as e:
             logger.exception(f"获取视频信息时出错: {str(e)}")
-            raise
+            raise Exception(self.tr("获取视频信息时出错") + f": {str(e)}")
 
     def _extract_thumbnail(self, seek_time: float, thumbnail_path: str) -> bool:
         """提取视频缩略图"""

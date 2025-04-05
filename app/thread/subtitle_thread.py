@@ -7,7 +7,15 @@ from PyQt5.QtCore import QSettings, QThread, pyqtSignal
 
 from app.common.config import cfg
 from app.core.bk_asr.asr_data import ASRData
-from app.core.entities import SubtitleConfig, SubtitleTask, TranslatorServiceEnum
+from app.core.entities import (
+    SubtitleConfig,
+    SubtitleTask,
+    TranslatorServiceEnum,
+    LLMServiceEnum,
+    FilenamePrefixEnum,
+    SplitTypeEnum,
+    SubtitleLayoutEnum,
+)
 from app.core.subtitle_processor.split import SubtitleSplitter
 from app.core.subtitle_processor.summarization import SubtitleSummarizer
 from app.core.subtitle_processor.optimize import SubtitleOptimizer
@@ -53,9 +61,7 @@ class SubtitleThread(QThread):
                 "llm", self.MAX_DAILY_LLM_CALLS
             ):
                 raise Exception(
-                    self.tr(
-                        f"公益LLM服务已达到每日使用限制 {self.MAX_DAILY_LLM_CALLS} 次，建议使用自己的API"
-                    )
+                    self.tr("公益LLM服务已达到每日使用限制，建议使用自己的API。每日上限:") + f" {self.MAX_DAILY_LLM_CALLS}"
                 )
             self.task.subtitle_config.thread_num = 5
             self.task.subtitle_config.batch_size = 10
@@ -92,11 +98,11 @@ class SubtitleThread(QThread):
             subtitle_path = self.task.subtitle_path
             output_name = (
                 Path(subtitle_path)
-                .stem.replace("【原始字幕】", "")
-                .replace("【下载字幕】", "")
+                .stem.replace(str(FilenamePrefixEnum.ORIGINAL_SUBTITLE), "")
+                .replace(str(FilenamePrefixEnum.DOWNLOADED_SUBTITLE), "")
             )
             split_path = str(
-                Path(subtitle_path).parent / f"【断句字幕】{output_name}.srt"
+                Path(subtitle_path).parent / f"{str(FilenamePrefixEnum.SEGMENTED_SUBTITLE)}{output_name}.srt"
             )
             assert subtitle_path is not None, self.tr("字幕文件路径为空")
 
@@ -194,15 +200,15 @@ class SubtitleThread(QThread):
                 self.update_all.emit(asr_data.to_json())
                 # 保存翻译结果(单语、双语)
                 if self.task.need_next_task and self.task.video_path:
-                    for subtitle_layout in ["原文在上", "译文在上", "仅原文", "仅译文"]:
+                    for layout in SubtitleLayoutEnum:
                         save_path = str(
                             Path(self.task.subtitle_path).parent
-                            / f"{Path(self.task.video_path).stem}-{subtitle_layout}.srt"
+                            / f"{Path(self.task.video_path).stem}-{str(layout)}.srt"
                         )
                         asr_data.save(
                             save_path=save_path,
                             ass_style=subtitle_config.subtitle_style,
-                            layout=subtitle_layout,
+                            layout=layout,
                         )
                         logger.info(f"字幕保存到 {save_path}")
 
@@ -237,7 +243,7 @@ class SubtitleThread(QThread):
                 # 删除断句文件（对于仅字幕任务）
                 split_path = str(
                     Path(self.task.subtitle_path).parent
-                    / f"【智能断句】{Path(self.task.subtitle_path).stem}.srt"
+                    / f"{str(FilenamePrefixEnum.SMART_SEGMENTATION)}{Path(self.task.subtitle_path).stem}.srt"
                 )
                 if os.path.exists(split_path):
                     os.remove(split_path)
@@ -256,7 +262,7 @@ class SubtitleThread(QThread):
         progress = min(
             int((self.finished_subtitle_length / self.subtitle_length) * 100), 100
         )
-        self.progress.emit(progress, self.tr("{0}% 处理字幕").format(progress))
+        self.progress.emit(progress, self.tr("正在处理字幕") + f" ({progress}%)")
         self.update.emit(result)
 
     def stop(self):

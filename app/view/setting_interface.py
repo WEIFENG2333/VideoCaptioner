@@ -83,7 +83,7 @@ class SettingInterface(ScrollArea):
             FIF.MICROPHONE,
             self.tr("转录模型"),
             self.tr("语音转换文字要使用的语音识别模型"),
-            texts=[model.value for model in cfg.transcribe_model.validator.options],
+            texts=[str(model) for model in cfg.transcribe_model.validator.options],
             parent=self.transcribeGroup,
         )
 
@@ -113,7 +113,7 @@ class SettingInterface(ScrollArea):
             FIF.LANGUAGE,
             self.tr("目标语言"),
             self.tr("选择翻译字幕的目标语言"),
-            texts=[lang.value for lang in cfg.target_language.validator.options],
+            texts=[str(lang) for lang in cfg.target_language.validator.options],
             parent=self.translateGroup,
         )
 
@@ -247,8 +247,8 @@ class SettingInterface(ScrollArea):
         self.llmServiceCard = ComboBoxSettingCard(
             cfg.llm_service,
             FIF.ROBOT,
-            self.tr("LLM服务)"),
-            self.tr("选择大服务，用于字幕断句、字幕优化、字幕翻译（如果选择"),
+            self.tr("LLM服务"),
+            self.tr("选择大服务，用于字幕断句、字幕优化、字幕翻译（如果选择）"),
             texts=[service.value for service in cfg.llm_service.validator.options],
             parent=self.llmGroup,
         )
@@ -359,7 +359,7 @@ class SettingInterface(ScrollArea):
                 config["api_key_cfg"],
                 FIF.FINGERPRINT,
                 self.tr("API Key"),
-                self.tr(f"输入您的 {service.value} API Key"),
+                self.tr("输入API密钥"),
                 "sk-" if service != LLMServiceEnum.OLLAMA else "",
                 self.llmGroup,
             )
@@ -370,7 +370,7 @@ class SettingInterface(ScrollArea):
                 config["api_base_cfg"],
                 FIF.LINK,
                 self.tr("Base URL"),
-                self.tr(f"输入 {service.value} Base URL, 需要包含 /v1"),
+                self.tr("输入服务端点地址，需要包含 /v1"),
                 config["default_base"],
                 self.llmGroup,
             )
@@ -381,7 +381,7 @@ class SettingInterface(ScrollArea):
                 config["model_cfg"],
                 FIF.ROBOT,
                 self.tr("模型"),
-                self.tr(f"选择 {service.value} 模型"),
+                self.tr("选择服务模型"),
                 config["default_models"],
                 self.llmGroup,
             )
@@ -417,9 +417,7 @@ class SettingInterface(ScrollArea):
             FIF.ROBOT,
             self.tr("翻译服务"),
             self.tr("选择翻译服务"),
-            texts=[
-                service.value for service in cfg.translator_service.validator.options
-            ],
+            texts=[str(service) for service in cfg.translator_service.validator.options],
             parent=self.translate_serviceGroup,
         )
 
@@ -685,7 +683,7 @@ class SettingInterface(ScrollArea):
 
             InfoBar.success(
                 self.tr("获取模型列表成功:"),
-                self.tr("一共") + str(len(models)) + self.tr("个模型"),
+                self.tr("检测到模型数量") + f": {len(models)}",
                 duration=3000,
                 parent=self,
             )
@@ -752,10 +750,10 @@ class SettingInterface(ScrollArea):
             card.setVisible(False)
 
         # 根据选择的服务显示相应的配置卡片
-        if service in [TranslatorServiceEnum.DEEPLX.value]:
+        if service == str(TranslatorServiceEnum.DEEPLX):
             for card in deeplx_cards:
                 card.setVisible(True)
-        elif service in [TranslatorServiceEnum.OPENAI.value]:
+        elif service == str(TranslatorServiceEnum.OPENAI):
             for card in openai_cards:
                 card.setVisible(True)
 

@@ -4,6 +4,7 @@ import time
 from typing import Optional
 
 import requests
+from PyQt5.QtCore import QCoreApplication
 
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg
@@ -148,14 +149,14 @@ class BcutASR(BaseASR):
         if callback is None:
             callback = lambda x, y: None
 
-        callback(0, "上传中")
+        callback(0, QCoreApplication.translate("BcutASR", "上传中"))
         self.upload()
 
-        callback(40, "创建任务中")
+        callback(40, QCoreApplication.translate("BcutASR", "创建任务中"))
 
         self.create_task()
 
-        callback(60, "正在转录")
+        callback(60, QCoreApplication.translate("BcutASR", "正在转录"))
 
         # 轮询检查任务状态
         for _ in range(500):
@@ -164,7 +165,7 @@ class BcutASR(BaseASR):
                 break
             time.sleep(1)
 
-        callback(100, "转录成功")
+        callback(100, QCoreApplication.translate("BcutASR", "转录成功"))
 
         logger.info(f"转换成功")
         return json.loads(task_resp["result"])
