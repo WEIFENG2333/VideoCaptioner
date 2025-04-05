@@ -1,6 +1,7 @@
 import logging
 
 import requests
+from PyQt5.QtCore import QCoreApplication
 
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg
@@ -44,7 +45,7 @@ class KuaiShouASR(BaseASR):
             logger.info("Submission successful")
         except requests.exceptions.RequestException as e:
             logger.error("Submission failed: %s", e)
-            raise
+            raise RuntimeError(QCoreApplication.translate("KuaiShouASR", "提交失败") + f": {e}")
         return result.json()
 
 

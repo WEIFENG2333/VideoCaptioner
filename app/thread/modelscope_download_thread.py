@@ -28,7 +28,7 @@ class ModelscopeDownloadThread(QThread):
                     file_match = re.search(r'\[(.*?)\]:', text)
                     if file_match:
                         filename = file_match.group(1)
-                        self.progress.emit(percentage, f"正在下载 {filename}: {percentage}%")
+                        self.progress.emit(percentage, f"{self.tr('正在下载')} {filename}: {percentage}%")
             except Exception:
                 pass
         # 写入原始stdout
@@ -38,7 +38,7 @@ class ModelscopeDownloadThread(QThread):
     def run(self):
         try:
             # 发送开始下载信号
-            self.progress.emit(0, "开始下载...")
+            self.progress.emit(0, self.tr("开始下载..."))
             
             # 保存原始stdout
             self._original_stdout = sys.stdout
@@ -69,7 +69,7 @@ class ModelscopeDownloadThread(QThread):
                 sys.stderr = self._original_stderr
             
             # 发送完成信号
-            self.progress.emit(100, "下载完成")
+            self.progress.emit(100, self.tr("下载完成"))
             
         except Exception as e:
             self.error.emit(str(e))

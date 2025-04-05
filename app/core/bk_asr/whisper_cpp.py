@@ -6,6 +6,8 @@ import tempfile
 import time
 from pathlib import Path
 
+from PyQt5.QtCore import QCoreApplication
+
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg, ASRData
@@ -25,8 +27,10 @@ class WhisperCppASR(BaseASR):
         need_word_time_stamp: bool = False,
     ):
         super().__init__(audio_path, False)
-        assert os.path.exists(audio_path), f"音频文件 {audio_path} 不存在"
-        assert audio_path.endswith(".wav"), f"音频文件 {audio_path} 必须是WAV格式"
+        if not os.path.exists(audio_path):
+            raise ValueError(QCoreApplication.translate("WhisperCppASR", "音频文件不存在") + f": {audio_path}")
+        if not audio_path.endswith(".wav"):
+            raise ValueError(QCoreApplication.translate("WhisperCppASR", "音频文件必须是WAV格式") + f": {audio_path}")
 
         # 如果指定了 whisper_model，则在 models 目录下查找对应模型
         if whisper_model:
@@ -34,12 +38,12 @@ class WhisperCppASR(BaseASR):
             model_files = list(models_dir.glob(f"*ggml*{whisper_model}*.bin"))
             if not model_files:
                 raise ValueError(
-                    f"在 {models_dir} 目录下未找到包含 '{whisper_model}' 的模型文件"
+                    QCoreApplication.translate("WhisperCppASR", "模型文件未找到") + f": {models_dir}, '{whisper_model}'"
                 )
             model_path = str(model_files[0])
             logger.info(f"找到模型文件: {model_path}")
         else:
-            raise ValueError("whisper_model 不能为空")
+            raise ValueError(QCoreApplication.translate("WhisperCppASR", "whisper_model 不能为空"))
 
         self.model_path = model_path
         self.whisper_cpp_path = Path(whisper_cpp_path)
@@ -163,26 +167,26 @@ class WhisperCppASR(BaseASR):
                                 )
                             )
                             progress = int(min(current_time / total_duration * 100, 98))
-                            callback(progress, f"{progress}% 正在转换")
+                            callback(progress, str(progress) + QCoreApplication.translate("WhisperCppASR", "% 正在转换"))
                         except (ValueError, IndexError):
                             continue
                 # 等待进程完成
                 stdout, stderr = self.process.communicate()
                 if self.process.returncode != 0:
-                    raise RuntimeError(f"WhisperCPP 执行失败: {stderr}")
+                    raise RuntimeError(QCoreApplication.translate("WhisperCppASR", "执行失败") + f": {stderr}")
 
-                callback(100, "转换完成")
+                callback(100, QCoreApplication.translate("WhisperCppASR", "转换完成"))
 
                 # 读取结果文件
                 srt_path = output_path
                 if not srt_path.exists():
-                    raise RuntimeError(f"输出文件未生成: {srt_path}")
+                    raise RuntimeError(QCoreApplication.translate("WhisperCppASR", "输出文件未生成") + f": {srt_path}")
 
                 return srt_path.read_text(encoding="utf-8")
 
             except Exception as e:
                 logger.exception("处理失败")
-                raise RuntimeError(f"生成 SRT 文件失败: {str(e)}")
+                raise RuntimeError(QCoreApplication.translate("WhisperCppASR", "生成SRT文件失败") + f": {str(e)}")
 
     def _get_key(self):
         return f"{self.crc32_hex}-{self.need_word_time_stamp}-{self.model_path}-{self.language}"

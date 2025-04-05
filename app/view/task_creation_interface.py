@@ -184,7 +184,7 @@ class TaskCreationInterface(QWidget):
 
         # 添加版权信息标签
         self.info_label = BodyLabel(
-            self.tr(f"©VideoCaptioner {VERSION} • By Weifeng"), self
+            f"©VideoCaptioner {VERSION} • By Weifeng", self
         )
         self.info_label.setAlignment(Qt.AlignCenter)
         self.info_label.setStyleSheet("font-size: 12px; color: #888888;")

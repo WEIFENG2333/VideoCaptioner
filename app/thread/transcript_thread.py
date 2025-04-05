@@ -6,7 +6,7 @@ from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.core.bk_asr import transcribe
-from app.core.entities import TranscribeTask, TranscribeModelEnum
+from app.core.entities import TranscribeTask, TranscribeModelEnum, FilenamePrefixEnum
 from app.core.utils.logger import setup_logger
 from app.core.utils.video_utils import video2audio
 from app.core.storage.cache_manager import ServiceUsageManager
@@ -64,7 +64,7 @@ class TranscriptThread(QThread):
             if self.task.need_next_task:
                 subtitle_dir = Path(self.task.file_path).parent / "subtitle"
                 downloaded_subtitles = (
-                    list(subtitle_dir.glob("【下载字幕】*"))
+                    list(subtitle_dir.glob(f"{str(FilenamePrefixEnum.DOWNLOADED_SUBTITLE)}*"))
                     if subtitle_dir.exists()
                     else []
                 )

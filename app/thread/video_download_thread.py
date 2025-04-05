@@ -4,10 +4,10 @@ from pathlib import Path
 
 import requests
 import yt_dlp
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QCoreApplication
 
 from app.config import APPDATA_PATH
-from app.core.entities import VideoInfo
+from app.core.entities import VideoInfo, FilenamePrefixEnum
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("video_download_thread")
@@ -52,9 +52,13 @@ class VideoDownloadThread(QThread):
             )
             clean_speed = speed.replace("\x1b[0;32m", "").replace("\x1b[0m", "").strip()
 
+            download_progress = QCoreApplication.translate("VideoDownloadThread", "下载进度")
+            speed_text = QCoreApplication.translate("VideoDownloadThread", "速度")
+            message = download_progress + ": " + clean_percent + "%  " + speed_text + ": " + clean_speed
+            
             self.progress.emit(
                 int(float(clean_percent)),
-                f"下载进度: {clean_percent}%  速度: {clean_speed}",
+                message,
             )
 
     def sanitize_filename(self, name: str, replacement: str = "_") -> str:
@@ -121,7 +125,7 @@ class VideoDownloadThread(QThread):
         initial_ydl_opts = {
             "outtmpl": {
                 "default": "%(title)s.%(ext)s",
-                "subtitle": "【下载字幕】.%(ext)s",
+                "subtitle": f"{str(FilenamePrefixEnum.DOWNLOADED_SUBTITLE)}.%(ext)s",
                 "thumbnail": "thumbnail",
             },
             "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",  # 优先下载mp4格式
@@ -185,7 +189,7 @@ class VideoDownloadThread(QThread):
 
             # 获取字幕文件路径
             subtitle_file_path = None
-            for file in video_work_dir.glob("**/【下载字幕】*"):
+            for file in video_work_dir.glob(f"**/{str(FilenamePrefixEnum.DOWNLOADED_SUBTITLE)}*"):
                 file_path = str(file)
                 if subtitle_language and subtitle_language not in file_path:
                     logger.info(
@@ -197,7 +201,7 @@ class VideoDownloadThread(QThread):
                         file_path = (
                             video_work_dir
                             / "subtitle"
-                            / f"【下载字幕】{subtitle_language}.vtt"
+                            / f"{str(FilenamePrefixEnum.DOWNLOADED_SUBTITLE)}{subtitle_language}.vtt"
                         )
                         if res := response.text:
                             with open(file_path, "w", encoding="utf-8") as f:

@@ -1,7 +1,7 @@
 # coding:utf-8
 from enum import Enum
 
-from PyQt5.QtCore import QLocale
+from PyQt5.QtCore import QLocale, QCoreApplication
 from PyQt5.QtGui import QColor
 import openai
 from qfluentwidgets import (
@@ -30,6 +30,7 @@ from ..core.entities import (
     WhisperModelEnum,
     FasterWhisperModelEnum,
     VadMethodEnum,
+    SubtitleLayoutEnum,
 )
 
 
@@ -40,15 +41,6 @@ class Language(Enum):
     CHINESE_TRADITIONAL = QLocale(QLocale.Chinese, QLocale.HongKong)
     ENGLISH = QLocale(QLocale.English)
     AUTO = QLocale()
-
-
-class SubtitleLayoutEnum(Enum):
-    """字幕布局"""
-
-    TRANSLATE_ON_TOP = "译文在上"
-    ORIGINAL_ON_TOP = "原文在上"
-    ONLY_ORIGINAL = "仅原文"
-    ONLY_TRANSLATE = "仅译文"
 
 
 class LanguageSerializer(ConfigSerializer):
@@ -244,7 +236,13 @@ class Config(QConfig):
 
     # ------------------- 字幕样式配置 -------------------
     subtitle_style_name = ConfigItem("SubtitleStyle", "StyleName", "default")
-    subtitle_layout = ConfigItem("SubtitleStyle", "Layout", "译文在上")
+    subtitle_layout = OptionsConfigItem(
+        "SubtitleStyle",
+        "Layout",
+        SubtitleLayoutEnum.TRANSLATE_ON_TOP,
+        OptionsValidator(SubtitleLayoutEnum),
+        EnumSerializer(SubtitleLayoutEnum)
+    )
     subtitle_preview_image = ConfigItem("SubtitleStyle", "PreviewImage", "")
 
     # ------------------- 保存配置 -------------------

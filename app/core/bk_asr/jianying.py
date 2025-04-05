@@ -8,6 +8,7 @@ import uuid
 from typing import Dict, Tuple, Union
 
 import requests
+from PyQt5.QtCore import QCoreApplication
 
 from app.config import VERSION
 
@@ -85,22 +86,22 @@ class JianYingASR(BaseASR):
 
     def _run(self, callback=None):
         if callback:
-            callback(20, "正在上传...")
+            callback(20, QCoreApplication.translate("JianYingASR", "正在上传..."))
         logger.info("正在上传文件...")
         self.upload()
         
         if callback:
-            callback(50, "提交任务...")
+            callback(50, QCoreApplication.translate("JianYingASR", "提交任务..."))
         logger.info("提交任务...")
         query_id = self.submit()
         
         if callback:
-            callback(60, "获取结果...")
+            callback(60, QCoreApplication.translate("JianYingASR", "获取结果..."))
         logger.info("获取结果...")
         resp_data = self.query(query_id)
         
         if callback:
-            callback(100, "转录完成")
+            callback(100, QCoreApplication.translate("JianYingASR", "转录完成"))
         logger.info("转录完成")
         
         return resp_data

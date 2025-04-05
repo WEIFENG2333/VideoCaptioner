@@ -76,9 +76,9 @@ class WhisperAPISettingWidget(QWidget):
         self.language_card = ComboBoxSettingCard(
             cfg.transcribe_language,
             FIF.LANGUAGE,
-            self.tr("原语言"),
-            self.tr("音频的原语言"),
-            [lang.value for lang in TranscribeLanguageEnum],
+            self.tr("源语言"),
+            self.tr("音频的源语言"),
+            [str(lang) for lang in TranscribeLanguageEnum],
             self.setting_group,
         )
 
@@ -87,7 +87,7 @@ class WhisperAPISettingWidget(QWidget):
             cfg.whisper_api_prompt,
             FIF.CHAT,
             self.tr("提示词"),
-            self.tr("可选的提示词,默认空"),
+            self.tr("可选的提示词，默认空"),
             "",
             self.setting_group,
         )

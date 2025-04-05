@@ -2,6 +2,7 @@ import os
 from typing import Optional
 
 from openai import OpenAI
+from PyQt5.QtCore import QCoreApplication
 
 from ..utils.logger import setup_logger
 from .asr_data import ASRData, ASRDataSeg
@@ -41,7 +42,7 @@ class WhisperAPI(BaseASR):
         self.api_key = api_key
 
         if not self.base_url or not self.api_key:
-            raise ValueError("必须设置 OPENAI_BASE_URL 和 OPENAI_API_KEY")
+            raise ValueError(QCoreApplication.translate("WhisperAPI", "必须设置 OPENAI_BASE_URL 和 OPENAI_API_KEY"))
 
         self.model = whisper_model
         self.language = language

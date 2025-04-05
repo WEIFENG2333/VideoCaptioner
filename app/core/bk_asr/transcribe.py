@@ -1,4 +1,5 @@
 from typing import Optional
+from PyQt5.QtCore import QCoreApplication
 
 from app.core.bk_asr.bcut import BcutASR
 from app.core.bk_asr.faster_whisper import FasterWhisperASR
@@ -37,7 +38,7 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
 
     asr_class = ASR_MODELS.get(config.transcribe_model)
     if not asr_class:
-        raise ValueError(f"无效的转录模型: {config.transcribe_model}")
+        raise ValueError(QCoreApplication.translate("Transcribe", "无效的转录模型") + f": {config.transcribe_model}")
 
     # 构建ASR参数
     asr_args = {

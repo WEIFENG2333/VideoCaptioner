@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import List, Tuple
 import os
 import platform
+from PyQt5.QtCore import QCoreApplication
+
+from app.core.entities import SubtitleLayoutEnum
 
 
 def handle_long_path(path: str) -> str:
@@ -197,7 +200,7 @@ class ASRData:
         return self
 
     def save(
-        self, save_path: str, ass_style: str = None, layout: str = "原文在上"
+        self, save_path: str, ass_style: str = None, layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP
     ) -> None:
         """
         Save the ASRData to a file
@@ -205,7 +208,7 @@ class ASRData:
         Args:
             save_path: 保存路径
             ass_style: ASS样式字符串,为空则使用默认样式
-            layout: 字幕布局,可选值["原文在上", "译文在上", "仅原文", "仅译文"]
+            layout: 字幕布局,可选值从SubtitleLayoutEnum中获取
         """
         # 处理Windows长路径问题
         save_path = handle_long_path(save_path)
@@ -223,9 +226,9 @@ class ASRData:
         elif save_path.endswith(".ass"):
             self.to_ass(save_path=save_path, style_str=ass_style, layout=layout)
         else:
-            raise ValueError(f"Unsupported file extension: {save_path}")
+            raise ValueError(QCoreApplication.translate("ASRData", "不支持的文件扩展名") + f": {save_path}")
 
-    def to_txt(self, save_path=None, layout: str = "原文在上") -> str:
+    def to_txt(self, save_path=None, layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP) -> str:
         """Convert to plain text subtitle format (without timestamps)"""
         result = []
         for seg in self.segments:
@@ -234,13 +237,13 @@ class ASRData:
             translated = seg.translated_text
 
             # 根据字幕类型组织文本
-            if layout == "原文在上":
+            if layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 text = f"{original}\n{translated}" if translated else original
-            elif layout == "译文在上":
+            elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 text = f"{translated}\n{original}" if translated else original
-            elif layout == "仅原文":
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 text = original
-            elif layout == "仅译文":
+            elif layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
                 text = translated if translated else original
             else:
                 text = seg.transcript
@@ -254,7 +257,7 @@ class ASRData:
                 f.write("\n".join(result))
         return text
 
-    def to_srt(self, layout: str = "原文在上", save_path=None) -> str:
+    def to_srt(self, layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP, save_path=None) -> str:
         """Convert to SRT subtitle format"""
         srt_lines = []
         for n, seg in enumerate(self.segments, 1):
@@ -263,13 +266,13 @@ class ASRData:
             translated = seg.translated_text
 
             # 根据字幕类型组织文本
-            if layout == "原文在上":
+            if layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 text = f"{original}\n{translated}" if translated else original
-            elif layout == "译文在上":
+            elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 text = f"{translated}\n{original}" if translated else original
-            elif layout == "仅原文":
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 text = original
-            elif layout == "仅译文":
+            elif layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
                 text = translated if translated else original
             else:
                 text = seg.transcript
@@ -287,7 +290,7 @@ class ASRData:
 
     def to_lrc(self, save_path=None) -> str:
         """Convert to LRC subtitle format"""
-        raise NotImplementedError("LRC format is not supported")
+        raise NotImplementedError(QCoreApplication.translate("ASRData", "LRC格式不支持"))
 
     def to_json(self) -> dict:
         result_json = {}
@@ -305,13 +308,14 @@ class ASRData:
         return result_json
 
     def to_ass(
-        self, style_str: str = None, layout: str = "原文在上", save_path: str = None
+        self, style_str: str = None, layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP, save_path: str = None
     ) -> str:
         """转换为ASS字幕格式
 
         Args:
             style_str: ASS样式字符串,为空则使用默认样式
-            layout: 字幕布局,可选值["译文在上", "原文在上", "仅原文", "仅译文"]
+            layout: 字幕布局,从SubtitleLayoutEnum中获取值
+            save_path: 保存路径
 
         Returns:
             ASS格式字幕内容
@@ -349,7 +353,7 @@ class ASRData:
             # 检查是否有译文
             has_translation = bool(translated and translated.strip())
 
-            if layout == "译文在上":
+            if layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 if has_translation:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Secondary", original
@@ -361,7 +365,7 @@ class ASRData:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Default", original
                     )
-            elif layout == "原文在上":
+            elif layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 if has_translation:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Secondary", translated
@@ -373,11 +377,11 @@ class ASRData:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Default", original
                     )
-            elif layout == "仅原文":
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 ass_content += dialogue_template.format(
                     start_time, end_time, "Default", original
                 )
-            elif layout == "仅译文":
+            elif layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
                 text = translated if has_translation else original
                 ass_content += dialogue_template.format(
                     start_time, end_time, "Default", text
@@ -400,7 +404,7 @@ class ASRData:
         Returns:
             str: WebVTT格式的字幕内容
         """
-        raise NotImplementedError("WebVTT format is not supported")
+        raise NotImplementedError(QCoreApplication.translate("ASRData", "WebVTT格式不支持"))
         # # WebVTT头部
         # vtt_lines = ["WEBVTT\n"]
 
@@ -427,7 +431,7 @@ class ASRData:
             or end_index >= len(self.segments)
             or start_index > end_index
         ):
-            raise IndexError("无效的段索引。")
+            raise IndexError(QCoreApplication.translate("ASRData", "无效的段索引"))
         merged_start_time = self.segments[start_index].start_time
         merged_end_time = self.segments[end_index].end_time
         if merged_text is None:
@@ -441,7 +445,7 @@ class ASRData:
     def merge_with_next_segment(self, index: int) -> None:
         """合并指定索引的段与下一个段。"""
         if index < 0 or index >= len(self.segments) - 1:
-            raise IndexError("索引超出范围或没有下一个段可合并。")
+            raise IndexError(QCoreApplication.translate("ASRData", "索引超出范围或没有下一个段可合并"))
         current_seg = self.segments[index]
         next_seg = self.segments[index + 1]
         merged_text = f"{current_seg.text} {next_seg.text}"
@@ -501,7 +505,7 @@ class ASRData:
         """
         file_path = Path(file_path)
         if not file_path.exists():
-            raise FileNotFoundError(f"文件不存在: {file_path}")
+            raise FileNotFoundError(QCoreApplication.translate("ASRData", "文件不存在") + f": {file_path}")
 
         try:
             content = file_path.read_text(encoding="utf-8")
@@ -521,7 +525,7 @@ class ASRData:
         elif suffix == ".json":
             return ASRData.from_json(json.loads(content))
         else:
-            raise ValueError(f"不支持的文件格式: {suffix}")
+            raise ValueError(QCoreApplication.translate("ASRData", "不支持的文件格式") + f": {suffix}")
 
     @staticmethod
     def from_json(json_data: dict) -> "ASRData":

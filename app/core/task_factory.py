@@ -16,6 +16,7 @@ from app.core.entities import (
     TranscribeConfig,
     TranscribeTask,
     TranscriptAndSubtitleTask,
+    FilenamePrefixEnum,
 )
 
 
@@ -55,7 +56,7 @@ class TaskFactory:
                 Path(cfg.work_dir.value)
                 / file_name
                 / "subtitle"
-                / f"【原始字幕】{file_name}-{cfg.transcribe_model.value.value}-{cfg.transcribe_language.value.value}.srt"
+                / f"{str(FilenamePrefixEnum.ORIGINAL_SUBTITLE)}{file_name}-{str(cfg.transcribe_model.value)}-{str(cfg.transcribe_language.value)}.srt"
             )
         else:
             need_word_time_stamp = False
@@ -101,27 +102,27 @@ class TaskFactory:
         """创建字幕任务"""
         output_name = (
             Path(file_path)
-            .stem.replace("【原始字幕】", "")
-            .replace(f"【下载字幕】", "")
+            .stem.replace(str(FilenamePrefixEnum.ORIGINAL_SUBTITLE), "")
+            .replace(str(FilenamePrefixEnum.DOWNLOADED_SUBTITLE), "")
         )
         # 只在需要翻译时添加翻译服务后缀
         suffix = (
-            f"-{cfg.translator_service.value.value}" if cfg.need_translate.value else ""
+            f"-{str(cfg.translator_service.value)}" if cfg.need_translate.value else ""
         )
 
         if need_next_task:
             output_path = str(
-                Path(file_path).parent / f"【样式字幕】{output_name}{suffix}.ass"
+                Path(file_path).parent / f"{str(FilenamePrefixEnum.STYLED_SUBTITLE)}{output_name}{suffix}.ass"
             )
         else:
             output_path = str(
-                Path(file_path).parent / f"【字幕】{output_name}{suffix}.srt"
+                Path(file_path).parent / f"{str(FilenamePrefixEnum.SUBTITLE)}{output_name}{suffix}.srt"
             )
 
-        if cfg.split_type.value == SplitTypeEnum.SENTENCE.value:
-            split_type = "sentence"
+        if cfg.split_type.value == SplitTypeEnum.SENTENCE:
+            split_type = SplitTypeEnum.SENTENCE
         else:
-            split_type = "semantic"
+            split_type = SplitTypeEnum.SEMANTIC
 
         # 根据当前选择的LLM服务获取对应的配置
         current_service = cfg.llm_service.value
@@ -187,7 +188,7 @@ class TaskFactory:
             max_word_count_english=cfg.max_word_count_english.value,
             need_split=cfg.need_split.value,
             # 字幕翻译
-            target_language=cfg.target_language.value.value,
+            target_language=cfg.target_language.value,
             # 字幕优化
             need_remove_punctuation=cfg.needs_remove_punctuation.value,
             # 字幕提示
@@ -210,11 +211,11 @@ class TaskFactory:
         """创建视频合成任务"""
         if need_next_task:
             output_path = str(
-                Path(video_path).parent / f"【卡卡】{Path(video_path).stem}.mp4"
+                Path(video_path).parent / f"{str(FilenamePrefixEnum.KAKA_VIDEO)}{Path(video_path).stem}.mp4"
             )
         else:
             output_path = str(
-                Path(video_path).parent / f"【卡卡】{Path(video_path).stem}.mp4"
+                Path(video_path).parent / f"{str(FilenamePrefixEnum.KAKA_VIDEO)}{Path(video_path).stem}.mp4"
             )
 
         config = SynthesisConfig(

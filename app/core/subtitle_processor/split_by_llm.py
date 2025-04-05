@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import openai
 import retry
-
+from PyQt5.QtCore import QCoreApplication
 from app.config import CACHE_PATH
 
 from ..utils.logger import setup_logger
@@ -117,7 +117,7 @@ def split_by_llm_retry(text: str,
 
     br_count = len(split_result)
     if br_count < count_words(text) / MAX_WORD_COUNT * 0.9:
-        raise Exception("断句失败")
+        raise Exception(QCoreApplication.translate("SplitByLLM", "断句失败"))
     set_cache(system_prompt+user_prompt, model, split_result)
     return split_result
 

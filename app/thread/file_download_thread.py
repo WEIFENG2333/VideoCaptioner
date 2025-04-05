@@ -88,7 +88,9 @@ class FileDownloadThread(QThread):
                             speed = line.split("DL:")[1].split()[0]
                         if "ETA:" in line:
                             eta = line.split("ETA:")[1].split(']')[0]
-                        status_msg = f"{self.tr('速度')}: {speed}/s, {self.tr('剩余时间')}: {eta}"
+                        speed_text = self.tr('速度')
+                        eta_text = self.tr('剩余时间')
+                        status_msg = "{}: {}/s, {}: {}".format(speed_text, speed, eta_text, eta)
                         self.progress.emit(percent, status_msg)
                     except Exception as e:
                         pass

@@ -60,11 +60,11 @@ class TranscriptionSettingCard(QWidget):
 
     def on_model_changed(self, value):
         # 切换对应的设置界面
-        if value == TranscribeModelEnum.WHISPER_CPP.value:
+        if value == str(TranscribeModelEnum.WHISPER_CPP):
             self.stacked_widget.setCurrentWidget(self.whisper_cpp_widget)
-        elif value == TranscribeModelEnum.WHISPER_API.value:
+        elif value == str(TranscribeModelEnum.WHISPER_API):
             self.stacked_widget.setCurrentWidget(self.whisper_api_widget)
-        elif value == TranscribeModelEnum.FASTER_WHISPER.value:
+        elif value == str(TranscribeModelEnum.FASTER_WHISPER):
             self.stacked_widget.setCurrentWidget(self.faster_whisper_widget)
         else:
             self.stacked_widget.setCurrentWidget(self.empty_widget)

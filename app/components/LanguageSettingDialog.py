@@ -33,7 +33,7 @@ class LanguageSettingDialog(MessageBoxBase):
             FIF.LANGUAGE,
             self.tr("源语言"),
             self.tr("音频的源语言"),
-            [lang.value for lang in TranscribeLanguageEnum],
+            [str(lang) for lang in TranscribeLanguageEnum],
         )
         self.language_card.comboBox.setMaxVisibleItems(6)
 

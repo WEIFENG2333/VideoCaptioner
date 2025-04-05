@@ -3,8 +3,9 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, Tuple
+from enum import Enum
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QCoreApplication
 from PyQt5.QtGui import QColor, QFontDatabase
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CardWidget
@@ -29,19 +30,31 @@ from app.components.MySettingCard import (
     SpinBoxSettingCard,
 )
 from app.config import SUBTITLE_STYLE_PATH, ASSETS_PATH
+from app.core.entities import SubtitleLayoutEnum
 from app.core.utils.subtitle_preview import generate_preview
 
-PERVIEW_TEXTS = {
-    "长文本": (
+
+class PreviewTextEnum(Enum):
+    LONG_TEXT = (
         "This is a long text used for testing subtitle preview and style settings.",
         "这是一段用于测试字幕预览和样式设置的长文本内容",
-    ),
-    "中文本": (
+    )
+    MEDIUM_TEXT = (
         "Welcome to apply for the prestigious South China Normal University!",
         "欢迎报考百年名校华南师范大学",
-    ),
-    "短文本": ("Elementary school students know this", "小学二年级的都知道"),
-}
+    )
+    SHORT_TEXT = (
+        "Elementary school students know this", 
+        "小学二年级的都知道"
+    )
+    
+    def __str__(self):
+        translations = {
+            PreviewTextEnum.LONG_TEXT: QCoreApplication.translate("SubtitleStyleInterface", "长文本"),
+            PreviewTextEnum.MEDIUM_TEXT: QCoreApplication.translate("SubtitleStyleInterface", "中文本"),
+            PreviewTextEnum.SHORT_TEXT: QCoreApplication.translate("SubtitleStyleInterface", "短文本"),
+        }
+        return translations[self]
 
 DEFAULT_BG_LANDSCAPE = {
     "path": ASSETS_PATH / "default_bg_landscape.png",
@@ -183,7 +196,7 @@ class SubtitleStyleInterface(QWidget):
             FIF.ALIGNMENT,
             self.tr("字幕排布"),
             self.tr("设置主字幕和副字幕的显示方式"),
-            texts=["译文在上", "原文在上", "仅译文", "仅原文"],
+            texts=[str(layout) for layout in SubtitleLayoutEnum],
         )
 
         # 垂直间距
@@ -296,7 +309,7 @@ class SubtitleStyleInterface(QWidget):
             FIF.MESSAGE,
             self.tr("预览文字"),
             self.tr("设置预览显示的文字内容"),
-            texts=PERVIEW_TEXTS.keys(),
+            texts=[str(text_enum) for text_enum in PreviewTextEnum],
             parent=self.previewGroup,
         )
 
@@ -304,7 +317,10 @@ class SubtitleStyleInterface(QWidget):
             FIF.LAYOUT,
             self.tr("预览方向"),
             self.tr("设置预览图片的显示方向"),
-            texts=["横屏", "竖屏"],
+            texts=[
+                QCoreApplication.translate("SubtitleStyleInterface", "横屏"),
+                QCoreApplication.translate("SubtitleStyleInterface", "竖屏")
+            ],
             parent=self.previewGroup,
         )
 
@@ -368,7 +384,7 @@ class SubtitleStyleInterface(QWidget):
     def __setValues(self):
         """设置初始值"""
         # 设置字幕排布
-        self.layoutCard.comboBox.setCurrentText(cfg.get(cfg.subtitle_layout))
+        self.layoutCard.comboBox.setCurrentText(str(cfg.subtitle_layout.value))
         # 设置字幕样式
         self.styleNameComboBox.comboBox.setCurrentText(cfg.get(cfg.subtitle_style_name))
 
@@ -404,9 +420,7 @@ class SubtitleStyleInterface(QWidget):
         """连接所有设置变更的信号到预览更新函数"""
         # 字幕排布
         self.layoutCard.currentTextChanged.connect(self.onSettingChanged)
-        self.layoutCard.currentTextChanged.connect(
-            lambda: cfg.set(cfg.subtitle_layout, self.layoutCard.comboBox.currentText())
-        )
+        self.layoutCard.currentTextChanged.connect(self.onLayoutTextChanged)
         # 垂直间距
         self.verticalSpacingCard.spinBox.valueChanged.connect(self.onSettingChanged)
 
@@ -438,9 +452,23 @@ class SubtitleStyleInterface(QWidget):
 
         # 连接字幕排布信号
         self.layoutCard.comboBox.currentTextChanged.connect(
-            signalBus.subtitle_layout_changed
+            self.emitLayoutChanged
         )
         signalBus.subtitle_layout_changed.connect(self.on_subtitle_layout_changed)
+
+    def onLayoutTextChanged(self, text):
+        """当字幕排布文本改变时的处理：更新配置"""
+        for layout in SubtitleLayoutEnum:
+            if str(layout) == text:
+                cfg.set(cfg.subtitle_layout, layout)
+                break
+
+    def emitLayoutChanged(self, text):
+        """当字幕排布文本改变时：发射信号"""
+        for layout in SubtitleLayoutEnum:
+            if str(layout) == text:
+                signalBus.subtitle_layout_changed.emit(layout)
+                break
 
     def on_open_style_folder_clicked(self):
         """打开样式文件夹"""
@@ -451,15 +479,15 @@ class SubtitleStyleInterface(QWidget):
         else:  # Linux
             subprocess.run(["xdg-open", SUBTITLE_STYLE_PATH])
 
-    def on_subtitle_layout_changed(self, layout: str):
-        cfg.subtitle_layout.value = layout
-        self.layoutCard.setCurrentText(layout)
+    def on_subtitle_layout_changed(self, layout: SubtitleLayoutEnum):
+        cfg.set(cfg.subtitle_layout, layout)
+        self.layoutCard.setCurrentText(str(layout))
 
     def onOrientationChanged(self):
         """当预览方向改变时调用"""
         orientation = self.orientationCard.comboBox.currentText()
         preview_image = (
-            DEFAULT_BG_LANDSCAPE if orientation == "横屏" else DEFAULT_BG_PORTRAIT
+            DEFAULT_BG_LANDSCAPE if orientation == QCoreApplication.translate("SubtitleStyleInterface", "横屏") else DEFAULT_BG_PORTRAIT
         )
         cfg.set(cfg.subtitle_preview_image, str(Path(preview_image["path"])))
         self.updatePreview()
@@ -542,22 +570,29 @@ class SubtitleStyleInterface(QWidget):
         style_str = self.generateAssStyles()
 
         # 获取预览文本
-        main_text, sub_text = PERVIEW_TEXTS[self.previewTextCard.comboBox.currentText()]
+        current_text = self.previewTextCard.comboBox.currentText()
+        # Use a dictionary comprehension for direct lookup
+        selected_enum = {str(e): e for e in PreviewTextEnum}.get(current_text)
+        if selected_enum:
+            main_text, sub_text = selected_enum.value
+        else:
+            # Fallback to first enum if not found
+            main_text, sub_text = PreviewTextEnum.LONG_TEXT.value
 
         # 字幕布局
         layout = self.layoutCard.comboBox.currentText()
-        if layout == "译文在上":
+        if layout == str(SubtitleLayoutEnum.TRANSLATE_ON_TOP):
             main_text, sub_text = sub_text, main_text
-        elif layout == "原文在上":
+        elif layout == str(SubtitleLayoutEnum.ORIGINAL_ON_TOP):
             main_text, sub_text = main_text, sub_text
-        elif layout == "仅译文":
+        elif layout == str(SubtitleLayoutEnum.ONLY_TRANSLATE):
             main_text, sub_text = sub_text, None
-        elif layout == "仅原文":
+        elif layout == str(SubtitleLayoutEnum.ONLY_ORIGINAL):
             main_text, sub_text = main_text, None
 
         # 获取预览方向
         orientation = self.orientationCard.comboBox.currentText()
-        default_preview = DEFAULT_BG_LANDSCAPE if orientation == "横屏" else DEFAULT_BG_PORTRAIT
+        default_preview = DEFAULT_BG_LANDSCAPE if orientation == QCoreApplication.translate("SubtitleStyleInterface", "横屏") else DEFAULT_BG_PORTRAIT
         
         # 检查是否存在用户自定义背景图片
         user_bg_path = cfg.get(cfg.subtitle_preview_image)

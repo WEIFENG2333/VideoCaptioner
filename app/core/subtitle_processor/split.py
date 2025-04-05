@@ -9,6 +9,7 @@ import json
 from concurrent.futures import as_completed
 
 from openai import OpenAI
+from PyQt5.QtCore import QCoreApplication
 
 from app.config import CACHE_PATH
 from app.core.bk_asr.asr_data import ASRData, ASRDataSeg
@@ -18,6 +19,7 @@ from app.core.subtitle_processor.prompt import (
     SPLIT_PROMPT_SENTENCE,
 )
 from app.core.utils.logger import setup_logger
+from app.core.entities import SplitTypeEnum
 
 logger = setup_logger("subtitle_splitter")
 
@@ -181,7 +183,7 @@ class SubtitleSplitter:
         temperature: float = 0.4,
         timeout: int = 60,
         retry_times: int = 1,
-        split_type: str = "semantic",
+        split_type: SplitTypeEnum = SplitTypeEnum.SEMANTIC,
         max_word_count_cjk: int = MAX_WORD_COUNT_CJK,
         max_word_count_english: int = MAX_WORD_COUNT_ENGLISH,
         use_cache: bool = True,
@@ -195,7 +197,7 @@ class SubtitleSplitter:
             temperature: LLM温度参数
             timeout: API超时时间（秒）
             retry_times: 重试次数
-            split_type: 分段类型，可选值："semantic"（语义分段）或"sentence"（句子分段）
+            split_type: 分段类型，SplitTypeEnum 枚举值
             max_word_count_cjk: 中日韩文本最大字数
             max_word_count_english: 英文文本最大单词数
             use_cache: 是否使用缓存
@@ -214,18 +216,14 @@ class SubtitleSplitter:
         self._init_thread_pool()
         self.cache_manager = CacheManager(str(CACHE_PATH))
 
-        # 验证分段类型
-        if split_type not in ["semantic", "sentence"]:
-            raise ValueError(
-                f"无效的分段类型: {split_type}，必须是 'semantic' 或 'sentence'"
-            )
+        # 验证分段类型不再需要，因为使用枚举保证了值的有效性
 
     def _init_client(self):
         """初始化OpenAI客户端"""
         base_url = os.getenv("OPENAI_BASE_URL")
         api_key = os.getenv("OPENAI_API_KEY")
         if not (base_url and api_key):
-            raise ValueError("环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置")
+            raise ValueError(QCoreApplication.translate("SubtitleSplitter", "环境变量 OPENAI_BASE_URL 和 OPENAI_API_KEY 必须设置"))
 
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
@@ -281,7 +279,7 @@ class SubtitleSplitter:
 
         except Exception as e:
             logger.error(f"分割失败：{str(e)}")
-            raise RuntimeError(f"分割失败：{str(e)}")
+            raise RuntimeError(QCoreApplication.translate("SubtitleSplitter", "分割失败") + f": {str(e)}")
 
     def _determine_num_segments(self, word_count: int, threshold: int = 500) -> int:
         """
@@ -371,7 +369,7 @@ class SubtitleSplitter:
         futures = []
         for asr_data in asr_data_list:
             if not self.executor:
-                raise ValueError("线程池未初始化")
+                raise ValueError(QCoreApplication.translate("SubtitleSplitter", "线程池未初始化"))
             future = self.executor.submit(self._process_single_segment, asr_data)
             futures.append(future)
 
@@ -430,12 +428,13 @@ class SubtitleSplitter:
         logger.debug(f"处理文本长度: {len(txt)}")
 
         # 构建提示词
-        if self.split_type == "semantic":
+        if self.split_type == SplitTypeEnum.SEMANTIC:
             template = Template(SPLIT_PROMPT_SEMANTIC)
-        elif self.split_type == "sentence":
+        elif self.split_type == SplitTypeEnum.SENTENCE:
             template = Template(SPLIT_PROMPT_SENTENCE)
         else:
-            raise ValueError(f"无效的分段类型: {self.split_type}")
+            # This shouldn't happen with an enum, but keep for type safety
+            raise ValueError(QCoreApplication.translate("SubtitleSplitter", "未支持的分段类型") + f": {self.split_type}")
 
         system_prompt = template.safe_substitute(
             max_word_count_cjk=self.max_word_count_cjk,
@@ -450,7 +449,7 @@ class SubtitleSplitter:
         cache_key = f"{len(system_prompt)}_{user_prompt}"
         param = {
             "temperature": self.temperature,
-            "split_type": self.split_type,
+            "split_type": self.split_type.name,  # Use enum name for cache key
         }
         if self.use_cache:
             cached_result = self.cache_manager.get_llm_result(
@@ -481,7 +480,7 @@ class SubtitleSplitter:
         # 处理响应结果
         result = response.choices[0].message.content
         if result is None:
-            raise ValueError("API返回的内容为空")
+            raise ValueError(QCoreApplication.translate("SubtitleSplitter", "API返回的内容为空"))
 
         result = result.replace("\n", "")  # 清理多余换行符
         sentences = [
@@ -490,7 +489,7 @@ class SubtitleSplitter:
 
         # 验证结果
         if not sentences:
-            raise ValueError("API返回的分段结果为空")
+            raise ValueError(QCoreApplication.translate("SubtitleSplitter", "API返回的分段结果为空"))
 
         logger.info(f"API返回结果，句子数量: {len(sentences)}")
 
@@ -981,7 +980,9 @@ class SubtitleSplitter:
                 unmatched_count += 1
                 if unmatched_count > max_unmatched:
                     raise ValueError(
-                        f"未匹配句子数量超过阈值 {max_unmatched}，处理终止"
+                        QCoreApplication.translate("SubtitleSplitter", "未匹配句子数量超过阈值") + 
+                        f" {max_unmatched}" + 
+                        QCoreApplication.translate("SubtitleSplitter", "，处理终止")
                     )
                 max_shift = 100
                 asr_index = min(asr_index + 1, asr_len - 1)
