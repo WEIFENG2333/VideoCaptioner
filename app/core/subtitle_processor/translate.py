@@ -17,6 +17,7 @@ import requests
 import re
 import html
 from urllib.parse import quote
+import time
 
 from app.core.bk_asr.asr_data import ASRData, ASRDataSeg
 from app.core.utils import json_repair
@@ -203,13 +204,19 @@ class OpenAITranslator(BaseTranslator):
             retry_times=retry_times,
             timeout=timeout,
             update_callback=update_callback,
+            custom_prompt=custom_prompt,
         )
-
-        self._init_client()
         self.model = model
-        self.custom_prompt = custom_prompt
         self.is_reflect = is_reflect
         self.temperature = temperature
+        self._init_client()
+        # 添加动态批处理大小调整
+        self.current_batch_size = batch_num
+        self.success_counter = 0
+        self.failure_counter = 0
+        self.adjustment_threshold = 5  # 累计5次成功/失败后调整批处理大小
+        self.max_batch_size = batch_num
+        self.min_batch_size = max(1, batch_num // 4)
 
     def _init_client(self):
         """初始化OpenAI客户端"""
@@ -221,70 +228,124 @@ class OpenAITranslator(BaseTranslator):
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
     def _translate_chunk(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:
-        """翻译字幕块"""
-        logger.info(
-            f"[+]正在翻译字幕：{next(iter(subtitle_chunk))} - {next(reversed(subtitle_chunk))}"
-        )
-
-        # 获取提示词
-        if self.is_reflect:
-            prompt = REFLECT_TRANSLATE_PROMPT
-        else:
-            prompt = TRANSLATE_PROMPT
-        prompt = Template(prompt).safe_substitute(
-            target_language=self.target_language, custom_prompt=self.custom_prompt
-        )
-        prompt_hash = hashlib.md5(prompt.encode()).hexdigest()
-
+        """翻译字幕块，加入动态批处理大小调整"""
         try:
-            # 检查缓存
-            cache_params = {
-                "target_language": self.target_language,
-                "is_reflect": self.is_reflect,
-                "temperature": self.temperature,
-                "prompt_hash": prompt_hash,
-            }
-            cache_key = f"{json.dumps(subtitle_chunk, ensure_ascii=False)}"
-            cache_result = self.cache_manager.get_llm_result(
+            # 检查批处理大小是否需要调整
+            if len(subtitle_chunk) > self.current_batch_size:
+                # 如果当前块大于调整后的批处理大小，分割处理
+                items = list(subtitle_chunk.items())
+                result = {}
+                for i in range(0, len(items), self.current_batch_size):
+                    sub_chunk = dict(items[i:i + self.current_batch_size])
+                    sub_result = self._process_translate_chunk(sub_chunk)
+                    result.update(sub_result)
+                
+                # 记录成功
+                self.success_counter += 1
+                self._adjust_batch_size()
+                return result
+            else:
+                # 正常处理
+                result = self._process_translate_chunk(subtitle_chunk)
+                
+                # 记录成功
+                self.success_counter += 1
+                self._adjust_batch_size()
+                return result
+                
+        except Exception as e:
+            # 记录失败
+            self.failure_counter += 1
+            self._adjust_batch_size()
+            logger.error(f"翻译块失败(批处理大小={self.current_batch_size}): {str(e)}")
+            raise
+    
+    def _adjust_batch_size(self):
+        """根据成功/失败次数动态调整批处理大小"""
+        if self.success_counter >= self.adjustment_threshold:
+            # 连续成功，增加批处理大小
+            new_size = min(self.current_batch_size + 2, self.max_batch_size)
+            if new_size != self.current_batch_size:
+                logger.info(f"增加批处理大小: {self.current_batch_size} -> {new_size}")
+                self.current_batch_size = new_size
+            self.success_counter = 0
+            self.failure_counter = 0
+        
+        elif self.failure_counter >= 2:  # 对失败更敏感
+            # 连续失败，减少批处理大小
+            new_size = max(self.current_batch_size // 2, self.min_batch_size)
+            if new_size != self.current_batch_size:
+                logger.info(f"减少批处理大小: {self.current_batch_size} -> {new_size}")
+                self.current_batch_size = new_size
+            self.success_counter = 0
+            self.failure_counter = 0
+    
+    def _process_translate_chunk(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:
+        """处理字幕块的实际翻译逻辑"""
+        start_time = time.time()
+        logger.info(
+            f"正在翻译 {len(subtitle_chunk)} 段字幕: {next(iter(subtitle_chunk.keys()))} - {next(reversed(subtitle_chunk.keys()))}"
+        )
+
+        # 检查是否为批量API
+        if len(subtitle_chunk) <= 1:
+            result = self._translate_chunk_single(subtitle_chunk)
+            elapsed = time.time() - start_time
+            logger.info(f"单字幕翻译完成，耗时 {elapsed:.2f}s")
+            return result
+
+        target_lang = self.target_language
+        prompt_template = TRANSLATE_PROMPT if not self.is_reflect else REFLECT_TRANSLATE_PROMPT
+
+        # 构建提示词
+        template = Template(prompt_template)
+        prompt = template.substitute(
+            target_language=target_lang,
+            input_subtitles=str(subtitle_chunk),
+        )
+
+        # 添加用户自定义提示
+        if self.custom_prompt:
+            prompt += f"\nReference content:\n{self.custom_prompt}"
+
+        # 检查缓存
+        param = {
+            "temperature": self.temperature,
+            "is_reflect": self.is_reflect,
+        }
+        cache_key = f"{self.target_language}_{len(prompt)}_{len(subtitle_chunk)}"
+        cache_result = self.cache_manager.get_llm_result(
+            cache_key, self.model, **param
+        )
+        if cache_result:
+            logger.info("使用缓存的翻译结果")
+            try:
+                return json.loads(cache_result)
+            except Exception:
+                logger.warning("缓存结果解析失败，重新翻译")
+
+        # 调用API
+        response = self._call_api(prompt, subtitle_chunk)
+
+        # 解析响应
+        try:
+            result = self._parse_response(response)
+            
+            # 保存到缓存
+            self.cache_manager.set_llm_result(
                 cache_key,
+                json.dumps(result, ensure_ascii=False),
                 self.model,
-                **cache_params,
+                **param,
             )
-
-            result = {}
-            if cache_result:
-                result = json.loads(cache_result)
-            else:
-                # 调用API翻译
-                response = self._call_api(
-                    prompt, json.dumps(subtitle_chunk, ensure_ascii=False)
-                )
-                # 解析结果
-                result = json_repair.loads(response.choices[0].message.content)
-                # 检查翻译结果数量是否匹配
-                if len(result) != len(subtitle_chunk):
-                    logger.warning(f"翻译结果数量不匹配，将使用单条翻译模式重试")
-                    return self._translate_chunk_single(subtitle_chunk)
-                # 保存到缓存
-                self.cache_manager.set_llm_result(
-                    cache_key,
-                    json.dumps(result, ensure_ascii=False),
-                    self.model,
-                    **cache_params,
-                )
-
-            if self.is_reflect:
-                result = {k: f"{v['revised_translation']}" for k, v in result.items()}
-            else:
-                result = {k: f"{v}" for k, v in result.items()}
-
+            
+            elapsed = time.time() - start_time
+            logger.info(f"翻译完成，耗时 {elapsed:.2f}s")
             return result
         except Exception as e:
-            try:
-                return self._translate_chunk_single(subtitle_chunk)
-            except Exception as e:
-                logger.error(f"翻译失败：{str(e)}")
-                raise RuntimeError(f"OpenAI API调用失败：{str(e)}")
+            elapsed = time.time() - start_time
+            logger.error(f"解析翻译结果失败，耗时 {elapsed:.2f}s: {str(e)}")
+            raise
 
     def _translate_chunk_single(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:
         """单条翻译模式"""
