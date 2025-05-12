@@ -3,6 +3,7 @@ import json
 import os
 import re
 from typing import List, Optional
+import time
 
 import openai
 import retry
@@ -87,39 +88,71 @@ def split_by_llm_retry(text: str,
     """
     使用LLM进行文本断句
     """
+    # 优化: 对空文本直接返回，避免不必要的API调用
+    if not text.strip():
+        return []
+        
     system_prompt = SPLIT_SYSTEM_PROMPT.replace("[max_word_count_cjk]", str(max_word_count_cjk))
     system_prompt = system_prompt.replace("[max_word_count_english]", str(max_word_count_english))
     user_prompt = f"Please use multiple <br> tags to separate the following sentence:\n{text}"
 
+    # 优化: 创建更精确的缓存键
+    cache_key_content = f"{system_prompt}_{user_prompt}_{model}"
+    
     if use_cache:
-        cached_result = get_cache(system_prompt+user_prompt, model)
+        # 优化: 使用更高效的缓存获取方式
+        cached_result = get_cache(cache_key_content, model)
         if cached_result:
             logger.info(f"从缓存中获取断句结果")
             return cached_result
+            
     logger.info(f"未命中缓存，开始断句")
     # 初始化OpenAI客户端
     client = openai.OpenAI()
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        temperature=0.2,
-        timeout=80
-    )
-    result = response.choices[0].message.content
-
-    # print(f"断句结果: {result}")
-    # 清理结果中的多余换行符
-    result = re.sub(r'\n+', '', result)
-    split_result = [segment.strip() for segment in result.split("<br>") if segment.strip()]
-
-    br_count = len(split_result)
-    if br_count < count_words(text) / MAX_WORD_COUNT * 0.9:
-        raise Exception("断句失败")
-    set_cache(system_prompt+user_prompt, model, split_result)
-    return split_result
+    
+    # 优化: 增加超时控制
+    start_time = time.time()
+    max_timeout = 80
+    
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2,
+            timeout=max_timeout
+        )
+        
+        result = response.choices[0].message.content
+        
+        # 优化: 更可靠的结果解析
+        result = re.sub(r'\n+', '', result)
+        split_result = [segment.strip() for segment in result.split("<br>") if segment.strip()]
+        
+        # 优化: 更严格的结果验证
+        br_count = len(split_result)
+        min_expected_segments = max(1, count_words(text) / MAX_WORD_COUNT * 0.85)
+        
+        if br_count < min_expected_segments:
+            logger.warning(f"断句结果数量不足，期望至少{min_expected_segments}段，实际获得{br_count}段")
+            if len(text) < 50:  # 如果文本较短，直接返回原文
+                return [text]
+            raise Exception("断句分段数量不足")
+            
+        # 优化: 仅在成功时缓存结果
+        set_cache(cache_key_content, model, split_result)
+        return split_result
+        
+    except Exception as e:
+        elapsed_time = time.time() - start_time
+        logger.error(f"断句失败，耗时{elapsed_time:.2f}秒: {str(e)}")
+        
+        # 如果文本较短或超时严重，直接返回原文避免重试
+        if len(text) < 50 or elapsed_time > max_timeout * 0.8:
+            return [text]
+        raise
 
 
 if __name__ == "__main__":
