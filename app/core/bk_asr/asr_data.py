@@ -95,13 +95,13 @@ class ASRData:
         """Check if there are any utterances"""
         return len(self.segments) > 0
 
-    def is_word_timestamp(self) -> bool:
+    def is_word_timestamp(self, tolerance: float = 0.2) -> bool:
         """
         判断是否是字级时间戳
         规则：
         1. 对于英文，每个segment应该只包含一个单词
         2. 对于中文，每个segment应该只包含一个汉字
-        3. 允许20%的误差率
+        3. 默认允许20%的误差率
         """
         if not self.segments:
             return False
@@ -114,7 +114,18 @@ class ASRData:
             # 检查是否只包含一个英文单词或一个汉字
             if (len(text.split()) == 1 and text.isascii()) or len(text.strip()) <= 2:
                 valid_segments += 1
-        return (valid_segments / total_segments) >= 0.8
+        return (valid_segments / total_segments) >= (1 - tolerance)
+
+    def get_word_timestamps(self) -> List[Tuple[str, int, int]]:
+        """
+        获取字级时间戳，要求ASRData是严格的字级时间戳
+
+        Returns:
+            List: 元组（单词, 开始时间, 结束时间）组成的列表
+        """
+        if not self.is_word_timestamp(0):
+            raise ValueError("ASRData不是严格的字级时间戳")
+        return [(seg.text.strip(), seg.start_time, seg.end_time) for seg in self.segments]
 
     def split_to_word_segments(self) -> "ASRData":
         """
