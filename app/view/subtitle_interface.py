@@ -417,16 +417,11 @@ class SubtitleInterface(QWidget):
             self.subtitle_optimization_thread.stop()
         self.start_button.setEnabled(True)
         self.task = task
-        self.subtitle_path = task.subtitle_path
         self.update_info(task)
 
     def update_info(self, task: SubtitleTask):
         """更新页面信息"""
-        original_subtitle_save_path = Path(self.task.subtitle_path)
-        asr_data = ASRData.from_subtitle_file(original_subtitle_save_path)
-        self.model._data = asr_data.to_json()
-        self.model.layoutChanged.emit()
-        self.status_label.setText(self.tr("已加载文件"))
+        self.load_subtitle_file(task.subtitle_path)
 
     def start_subtitle_optimization(self, need_create_task=True):
         # 检查是否有任务
