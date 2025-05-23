@@ -5,6 +5,7 @@ import sys
 import tempfile
 import json
 from pathlib import Path
+from types import MethodType
 
 from PyQt5.QtCore import Qt, QTime, QUrl, QAbstractTableModel, pyqtSignal
 from PyQt5.QtGui import QColor, QDragEnterEvent, QDropEvent
@@ -16,6 +17,7 @@ from PyQt5.QtWidgets import (
     QHeaderView,
     QVBoxLayout,
     QWidget,
+    QLineEdit,
 )
 from qfluentwidgets import Action, BodyLabel, CommandBar
 from qfluentwidgets import FluentIcon as FIF
@@ -30,6 +32,7 @@ from qfluentwidgets import (
     TableView,
     TextEdit,
     TransparentDropDownPushButton,
+    LineEditMenu,
 )
 
 from app.common.config import cfg
@@ -191,6 +194,7 @@ class SubtitleInterface(QWidget):
         self.setAcceptDrops(True)
         self.task = None
         self.subtitle_path = None
+        self.word_timestamps = None
         self.custom_prompt_text = cfg.custom_prompt_text.value
         self.setAttribute(Qt.WA_DeleteOnClose)
         self._init_ui()
@@ -367,6 +371,29 @@ class SubtitleInterface(QWidget):
         self.subtitle_table.customContextMenuRequested.connect(self.show_context_menu)
         self.main_layout.addWidget(self.subtitle_table)
 
+        # 为编辑框的右键菜单加入分割选项
+        def show_context_menu(pos, editor: QLineEdit):
+            menu = LineEditMenu(editor)
+            menu.exec(editor.mapToGlobal(pos))
+
+            line_index = editor.cursorPosition()
+            if line_index != 0 and line_index != len(editor.text()):
+                split_action = Action(FIF.CUT, self.tr("分割"))
+                split_action.setShortcut("Ctrl+N")
+                split_action.triggered.connect(lambda: self.split_subtitle(editor))
+                menu.addAction(split_action)
+
+        custom_delegate = self.subtitle_table.itemDelegate()
+        original_createEditor = custom_delegate.createEditor
+
+        def createEditor(self, parent, option, index):
+            editor = original_createEditor(parent, option, index)
+            editor.setContextMenuPolicy(Qt.CustomContextMenu)
+            editor.customContextMenuRequested.connect(lambda pos: show_context_menu(pos, editor))
+            return editor
+
+        custom_delegate.createEditor = MethodType(createEditor, custom_delegate)
+
     def _setup_bottom_layout(self):
         self.bottom_layout = QHBoxLayout()
         self.progress_bar = ProgressBar(self)
@@ -417,16 +444,11 @@ class SubtitleInterface(QWidget):
             self.subtitle_optimization_thread.stop()
         self.start_button.setEnabled(True)
         self.task = task
-        self.subtitle_path = task.subtitle_path
         self.update_info(task)
 
     def update_info(self, task: SubtitleTask):
         """更新页面信息"""
-        original_subtitle_save_path = Path(self.task.subtitle_path)
-        asr_data = ASRData.from_subtitle_file(original_subtitle_save_path)
-        self.model._data = asr_data.to_json()
-        self.model.layoutChanged.emit()
-        self.status_label.setText(self.tr("已加载文件"))
+        self.load_subtitle_file(task.subtitle_path)
 
     def start_subtitle_optimization(self, need_create_task=True):
         # 检查是否有任务
@@ -584,6 +606,8 @@ class SubtitleInterface(QWidget):
         self.subtitle_path = file_path
         asr_data = ASRData.from_subtitle_file(file_path)
         self.model._data = asr_data.to_json()
+        word_segments = asr_data.split_to_word_segments() if not asr_data.is_word_timestamp(0.1) else asr_data
+        self.word_timestamps = word_segments.get_word_timestamps()
         self.model.layoutChanged.emit()
         self.status_label.setText(self.tr("已加载文件"))
 
@@ -777,6 +801,81 @@ class SubtitleInterface(QWidget):
             parent=self,
         )
 
+    def split_subtitle(self, editor: QLineEdit):
+        """分割选中的字幕行"""
+        row = self.subtitle_table.currentIndex().row()
+        index = editor.cursorPosition()
+        editor.clearFocus()
+
+        if not self.word_timestamps:
+            InfoBar.error(
+                self.tr("分割失败"),
+                self.tr("无法获取字级时间戳"),
+                duration=2000,
+                parent=self,
+            )
+            return
+
+        # 获取选中行的数据
+        data = self.model._data
+        keys = list(data.keys())
+        row_data = data[keys[row]]
+        start_time = row_data["start_time"]
+        end_time = row_data["end_time"]
+        original_sub = row_data["original_subtitle"]
+        translated_sub = row_data["translated_subtitle"]
+
+        # 检查是否需要分割
+        if not original_sub[:index].strip() or not original_sub[index:].strip():
+            return
+
+        # 找到分割点时间
+        stamps_in_range = [stamp for stamp in self.word_timestamps if stamp[1] >= start_time and stamp[2] <= end_time]
+        matched = 0
+        for stamp in stamps_in_range:
+            i = original_sub[matched:].find(stamp[0])
+            if i == -1:
+                continue
+            matched += i + len(stamp[0])
+            if matched > index:
+                mid_time = stamp[1]
+                break
+        else:
+            InfoBar.error(
+                self.tr("分割失败"),
+                self.tr("无法找到分割点时间"),
+                duration=2000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self.parent(),
+            )
+            return
+
+        # 分割字幕
+        first_sub = {
+            "start_time": start_time,
+            "end_time": mid_time,
+            "original_subtitle": original_sub[:index].strip(),
+            "translated_subtitle": translated_sub,
+        }
+        second_sub = {
+            "start_time": mid_time,
+            "end_time": end_time,
+            "original_subtitle": original_sub[index:].strip(),
+            "translated_subtitle": translated_sub,
+        }
+
+        # 更新数据
+        new_data = {}
+        for i, key in enumerate(keys):
+            if i < row:
+                new_data[str(len(new_data) + 1)] = data[key]
+            elif i == row:
+                new_data[str(len(new_data) + 1)] = first_sub
+                new_data[str(len(new_data) + 1)] = second_sub
+            else:
+                new_data[str(len(new_data) + 1)] = data[key]
+        self.model.update_all(new_data)
+
     def keyPressEvent(self, event):
         """处理键盘事件"""
         # 处理 Ctrl+M 快捷键
@@ -787,6 +886,13 @@ class SubtitleInterface(QWidget):
                 if len(rows) > 1:
                     self.merge_selected_rows(rows)
             event.accept()
+        # 处理 Ctrl+N 快捷键
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_N:
+            editor = QApplication.focusWidget()
+            if not isinstance(editor, QLineEdit):
+                super().keyPressEvent(event)
+                return
+            self.split_subtitle(editor)
         else:
             super().keyPressEvent(event)
 
