@@ -132,6 +132,7 @@ class VideoDownloadThread(QThread):
             "writeautomaticsub": need_subtitle,  # 下载自动生成的字幕
             "writethumbnail": need_thumbnail,  # 下载缩略图
             "thumbnail_format": "jpg",  # 指定缩略图的格式
+            "nocheckcertificate": True,  # 禁用SSL证书验证
         }
 
         # 检查 cookies 文件
@@ -143,6 +144,11 @@ class VideoDownloadThread(QThread):
         with yt_dlp.YoutubeDL(initial_ydl_opts) as ydl:
             # 提取视频信息（不下载）
             info_dict = ydl.extract_info(self.url, download=False)
+            if not info_dict:
+                logger.error("无法提取视频信息，可能视频不存在或网络有问题。")
+                raise yt_dlp.utils.DownloadError(
+                    "无法提取视频信息，可能视频不存在或网络有问题。"
+                )
 
             # 设置动态下载文件夹为视频标题
             video_title = self.sanitize_filename(info_dict.get("title", "MyVideo"))
