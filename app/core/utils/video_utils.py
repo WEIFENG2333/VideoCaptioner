@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
@@ -123,11 +124,11 @@ def add_subtitles(
     assert Path(input_file).is_file(), "输入文件不存在"
     assert Path(subtitle_file).is_file(), "字幕文件不存在"
 
-    # 移动到临时文件  Fix: 路径错误
+    # 移动到临时文件 - 使用唯一文件名避免冲突
     suffix = Path(subtitle_file).suffix.lower()
     temp_dir = Path(tempfile.gettempdir()) / "VideoCaptioner"
     temp_dir.mkdir(exist_ok=True)
-    temp_subtitle = temp_dir / f"temp_subtitle.{suffix}"
+    temp_subtitle = temp_dir / f"temp_subtitle_{os.getpid()}_{int(time.time())}.{suffix}"
     shutil.copy2(subtitle_file, temp_subtitle)
     subtitle_file = str(temp_subtitle)
 
@@ -215,6 +216,7 @@ def add_subtitles(
         cmd_str = subprocess.list2cmdline(cmd)
         logger.info(f"添加硬字幕执行命令: {cmd_str}")
 
+        process = None
         try:
             process = subprocess.Popen(
                 cmd,
@@ -274,14 +276,22 @@ def add_subtitles(
             logger.info("视频合成完成")
 
         except Exception as e:
-            logger.exception(f"关闭 FFmpeg: {str(e)}")
-            if process and process.poll() is None:  # 如果进程还在运行
-                process.kill()  # 如果进程没有及时终止，强制结束它
+            logger.exception(f"处理过程中出现错误: {str(e)}")
+            if process and process.poll() is None:
+                try:
+                    process.terminate()
+                    process.wait(timeout=5)  # 等待最多5秒进行优雅终止
+                except subprocess.TimeoutExpired:
+                    process.kill()  # 如果优雅终止失败，强制结束
+                    process.wait()  # 等待进程被回收
             raise
         finally:
-            # 删除临时文件
-            if temp_subtitle.exists():
-                temp_subtitle.unlink()
+            # 确保清理操作无论成功或失败都会执行
+            if temp_subtitle and temp_subtitle.exists():
+                try:
+                    temp_subtitle.unlink()
+                except OSError as e:
+                    logger.warning(f"无法删除临时文件 {temp_subtitle}: {e}")
 
 
 def get_video_info(file_path: str) -> Optional[Dict]:

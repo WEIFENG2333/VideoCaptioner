@@ -19,9 +19,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 设置环境变量
-os.environ["OPENAI_BASE_URL"] = os.getenv("OPENAI_BASE_URL")
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+# 设置环境变量 - 安全处理可能为None的值
+openai_base_url = os.getenv("OPENAI_BASE_URL")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+if openai_base_url:
+    os.environ["OPENAI_BASE_URL"] = openai_base_url
+if openai_api_key:
+    os.environ["OPENAI_API_KEY"] = openai_api_key
 
 # 设置自定义样式
 st.set_page_config(

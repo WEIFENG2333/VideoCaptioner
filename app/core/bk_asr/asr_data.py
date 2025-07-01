@@ -473,13 +473,21 @@ class ASRData:
             # 计算时间间隔
             time_gap = next_seg.start_time - current_seg.end_time
 
-            # 如果间隔小于阈值，将交界点设置为 3/4 时间点
-            if time_gap < threshold_ms:
-                mid_time = (
-                    current_seg.end_time + next_seg.start_time
-                ) // 2 + time_gap // 4
-                current_seg.end_time = mid_time
-                next_seg.start_time = mid_time
+            # 如果间隔小于阈值，调整交界点
+            if abs(time_gap) < threshold_ms:  # 处理正负间隔
+                # 计算当前段结束和下一段开始之间的真实中点
+                mid_time = (current_seg.end_time + next_seg.start_time) // 2
+                
+                # 确保调整不会创建无效的时间戳
+                if mid_time > current_seg.start_time and mid_time < next_seg.end_time:
+                    current_seg.end_time = mid_time
+                    next_seg.start_time = mid_time
+                else:
+                    # 备用方案：最小调整以避免重叠
+                    if time_gap < 0:  # 重叠的段
+                        adjustment_point = current_seg.end_time + abs(time_gap) // 2
+                        current_seg.end_time = adjustment_point
+                        next_seg.start_time = adjustment_point
 
         return self
 
