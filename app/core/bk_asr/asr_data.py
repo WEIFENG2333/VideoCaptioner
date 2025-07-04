@@ -6,6 +6,8 @@ from typing import List, Tuple
 import os
 import platform
 
+from ..utils.platform_utils import PlatformUtils
+
 
 def handle_long_path(path: str) -> str:
     """处理Windows系统中的长路径问题
@@ -16,14 +18,7 @@ def handle_long_path(path: str) -> str:
     Returns:
         处理后的路径
     """
-    # 检查是否是Windows系统
-    if platform.system() == "Windows":
-        # 如果路径长度超过260个字符，添加\\?\前缀
-        if len(path) > 260 and not path.startswith("\\\\?\\"):
-            # 转换为绝对路径
-            abs_path = os.path.abspath(path)
-            return f"\\\\?\\{abs_path}"
-    return path
+    return PlatformUtils.handle_long_path(path)
 
 
 class ASRDataSeg:

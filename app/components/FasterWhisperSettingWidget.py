@@ -58,24 +58,58 @@ from ..core.entities import (
 )
 from .EditComboBoxSettingCard import EditComboBoxSettingCard
 from .LineEditSettingCard import LineEditSettingCard
+from ..core.utils.platform_utils import PlatformUtils
 
 # 在文件开头添加常量定义
-FASTER_WHISPER_PROGRAMS = [
-    {
-        "label": "GPU（cuda） + CPU 版本",
-        "value": "faster-whisper-gpu.7z",
-        "type": "GPU",
-        "size": "1.35 GB",
-        "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/Faster-Whisper-XXL_r245.2_windows.7z",
-    },
-    {
-        "label": "CPU版本",
-        "value": "faster-whisper.exe",
-        "type": "CPU",
-        "size": "78.7 MB",
-        "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/whisper-faster.exe",
-    },
-]
+def get_faster_whisper_programs():
+    """根据平台动态获取Faster Whisper程序配置"""
+    platform = PlatformUtils.get_platform()
+    download_links = PlatformUtils.get_download_links()
+    
+    programs = []
+    
+    if platform == 'windows':
+        programs = [
+            {
+                "label": "GPU（cuda） + CPU 版本",
+                "value": "faster-whisper-gpu.7z",
+                "type": "GPU",
+                "size": "1.35 GB",
+                "downloadLink": download_links['faster_whisper']['windows']['gpu']['url'],
+            },
+            {
+                "label": "CPU版本",
+                "value": PlatformUtils.get_executable_name("faster-whisper"),
+                "type": "CPU", 
+                "size": "78.7 MB",
+                "downloadLink": download_links['faster_whisper']['windows']['cpu']['url'],
+            },
+        ]
+    elif platform == 'macos':
+        programs = [
+            {
+                "label": "CPU版本",
+                "value": "faster-whisper",
+                "type": "CPU",
+                "size": "78.7 MB", 
+                "downloadLink": download_links['faster_whisper']['macos']['cpu']['url'],
+            },
+        ]
+    elif platform == 'linux':
+        programs = [
+            {
+                "label": "CPU版本",
+                "value": "faster-whisper",
+                "type": "CPU",
+                "size": "78.7 MB",
+                "downloadLink": download_links['faster_whisper']['linux']['cpu']['url'],
+            },
+        ]
+    
+    return programs
+
+# 动态获取程序配置
+FASTER_WHISPER_PROGRAMS = get_faster_whisper_programs()
 
 FASTER_WHISPER_MODELS = [
     {
@@ -141,9 +175,9 @@ FASTER_WHISPER_MODELS = [
 def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     """检查 faster-whisper 程序是否存在
 
-    检查以下两种情况:
-    1. bin目录下是否有 faster-whisper.exe
-    2. bin目录下是否有 Faster-Whisper-XXL/faster-whisper-xxl.exe
+    检查以下情况:
+    1. bin目录下是否有 faster-whisper (跨平台)
+    2. bin目录下是否有 Faster-Whisper-XXL/faster-whisper-xxl.exe (Windows GPU版本)
 
     Returns:
         tuple[bool, list[str]]: (是否存在程序, 已安装的版本列表)
@@ -151,16 +185,18 @@ def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     bin_path = Path(BIN_PATH)
     installed_versions = []
 
-    # 检查 faster-whisper.exe(CPU版本)
-    if (bin_path / "faster-whisper.exe").exists():
+    # 检查 faster-whisper 程序 (CPU版本, 跨平台)
+    cpu_executable = PlatformUtils.get_executable_name("faster-whisper")
+    if (bin_path / cpu_executable).exists():
         installed_versions.append("CPU")
 
-    # 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe(GPU版本)
-    xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe"
-    if xxl_path.exists():
-        installed_versions.extend(["GPU", "CPU"])
+    # 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe (GPU版本, 仅Windows)
+    if PlatformUtils.is_windows():
+        xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe"
+        if xxl_path.exists():
+            installed_versions.extend(["GPU", "CPU"])
+    
     installed_versions = list(set(installed_versions))
-
     return bool(installed_versions), installed_versions
 
 
@@ -471,21 +507,30 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
     def _on_program_download_finished(self, save_path):
         """程序下载完成处理"""
         try:
-            # 检查是否是 CPU 版本的直接下载
-            if save_path.endswith(".exe"):
-                # 如果是exe文件,重命名为faster-whisper.exe
-                os.rename(save_path, os.path.join(BIN_PATH, "faster-whisper.exe"))
-                self._finish_program_installation()
-            else:
+            # 检查是否是压缩文件（GPU版本）
+            if save_path.endswith(".7z"):
                 # GPU 版本需要解压
                 self.progress_label.setText(self.tr("正在解压文件..."))
-
+                
                 # 创建并启动解压线程
                 self.unzip_thread = UnzipThread(save_path, BIN_PATH)
                 self.unzip_thread.finished.connect(self._finish_program_installation)
                 self.unzip_thread.error.connect(self._on_unzip_error)
                 self.unzip_thread.start()
                 return  # 提前返回,等待解压完成
+            else:
+                # CPU版本的直接下载
+                target_name = PlatformUtils.get_executable_name("faster-whisper")
+                target_path = os.path.join(BIN_PATH, target_name)
+                
+                # 重命名为正确的可执行文件名
+                os.rename(save_path, target_path)
+                
+                # 在非Windows系统上设置可执行权限
+                if not PlatformUtils.is_windows():
+                    PlatformUtils.make_executable(target_path)
+                
+                self._finish_program_installation()
 
         except Exception as e:
             InfoBar.error(self.tr("安装失败"), str(e), duration=3000, parent=self)
@@ -613,24 +658,24 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
     def _open_model_folder(self):
         """打开模型文件夹"""
         if os.path.exists(MODEL_PATH):
-            # 根据操作系统打开文件夹
-            if sys.platform == "win32":
-                os.startfile(MODEL_PATH)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", MODEL_PATH])
-            else:  # Linux
-                subprocess.run(["xdg-open", MODEL_PATH])
+            if not PlatformUtils.open_folder(str(MODEL_PATH)):
+                InfoBar.warning(
+                    self.tr("警告"),
+                    self.tr("无法打开文件夹"),
+                    duration=2000,
+                    parent=self,
+                )
 
     def _open_program_folder(self):
         """打开程序文件夹"""
         if os.path.exists(BIN_PATH):
-            # 根据操作系统打开文件夹
-            if sys.platform == "win32":
-                os.startfile(BIN_PATH)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", BIN_PATH])
-            else:  # Linux
-                subprocess.run(["xdg-open", BIN_PATH])
+            if not PlatformUtils.open_folder(str(BIN_PATH)):
+                InfoBar.warning(
+                    self.tr("警告"),
+                    self.tr("无法打开文件夹"),
+                    duration=2000,
+                    parent=self,
+                )
 
     def _finish_program_installation(self):
         """完成程序安装"""

@@ -45,6 +45,7 @@ from app.core.entities import (
 )
 from app.core.task_factory import TaskFactory
 from app.core.utils.get_subtitle_style import get_subtitle_style
+from app.core.utils.platform_utils import PlatformUtils
 from app.thread.subtitle_thread import SubtitleThread
 
 
@@ -573,12 +574,15 @@ class SubtitleInterface(QWidget):
             if output_path.exists()
             else Path(self.task.subtitle_path).parent
         )
-        if sys.platform == "win32":
-            os.startfile(target_dir)
-        elif sys.platform == "darwin":  # macOS
-            subprocess.run(["open", target_dir])
-        else:  # Linux
-            subprocess.run(["xdg-open", target_dir])
+        # 使用跨平台工具打开文件夹
+        if not PlatformUtils.open_folder(target_dir):
+            InfoBar.warning(
+                self.tr("警告"),
+                self.tr("无法打开文件夹"),
+                duration=2000,
+                position=InfoBarPosition.TOP,
+                parent=self,
+            )
 
     def load_subtitle_file(self, file_path):
         self.subtitle_path = file_path
