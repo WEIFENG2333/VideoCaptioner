@@ -28,7 +28,6 @@ from ..core.entities import (
     TranscribeLanguageEnum,
     TranslatorServiceEnum,
     WhisperModelEnum,
-    VadMethodEnum,
 )
 
 

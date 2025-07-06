@@ -22,7 +22,6 @@ from ..common.config import cfg
 from ..core.entities import (
     TranscribeLanguageEnum,
     TranscribeModelEnum,
-    VadMethodEnum,
     WhisperModelEnum,
 )
 from .EditComboBoxSettingCard import EditComboBoxSettingCard

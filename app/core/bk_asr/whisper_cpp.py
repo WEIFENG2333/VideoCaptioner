@@ -8,7 +8,8 @@ import time
 from pathlib import Path
 from typing import Optional, Callable, List
 
-from ...config import MODEL_PATH
+from app.config import MODEL_PATH
+from app.common.config import cfg
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg, ASRData
 from .base import BaseASR
@@ -32,25 +33,109 @@ class WhisperCppASR(BaseASR):
         assert os.path.exists(audio_path), f"音频文件 {audio_path} 不存在"
         assert audio_path.endswith(".wav"), f"音频文件 {audio_path} 必须是WAV格式"
 
-        # 如果指定了 whisper_model，则在 models 目录下查找对应模型
-        if whisper_model:
-            models_dir = Path(MODEL_PATH)
-            model_files = list(models_dir.glob(f"*ggml*{whisper_model}*.bin"))
-            if not model_files:
-                raise ValueError(
-                    f"在 {models_dir} 目录下未找到包含 '{whisper_model}' 的模型文件"
-                )
-            model_path = str(model_files[0])
-            logger.info(f"找到模型文件: {model_path}")
-        else:
-            raise ValueError("whisper_model 不能为空")
+        # 解析模型名称并查找模型文件
+        self.whisper_model = self._resolve_model_name(whisper_model)
+        self.model_path = self._find_model_file(self.whisper_model)
 
-        self.model_path = model_path
         self.whisper_cpp_path = Path(whisper_cpp_path)
         self.need_word_time_stamp = need_word_time_stamp
         self.language = language
-
         self.process = None
+
+    def _resolve_model_name(self, whisper_model: Optional[str]) -> str:
+        """解析模型名称"""
+        if whisper_model is not None:
+            return whisper_model
+
+        # 使用配置中的模型
+        try:
+            model_value = cfg.whisper_model.value
+            
+            if hasattr(model_value, 'value'):
+                # 如果是枚举类型，获取其值
+                return model_value.value
+            else:
+                # 如果是字符串类型，直接使用
+                return model_value
+        except Exception as e:
+            raise ValueError(f"无法获取用户选择的模型配置: {e}")
+
+    def _find_model_file(self, model_name: str) -> str:
+        """查找模型文件，支持多种命名格式"""
+        models_dir = Path(MODEL_PATH)
+        if not models_dir.exists():
+            raise ValueError(f"模型目录不存在: {models_dir}")
+
+        # 支持多种可能的文件名格式
+        possible_patterns = [
+            f"ggml-{model_name}.bin",      # 标准格式
+            f"ggml-{model_name}-*.bin",    # 带版本号
+            f"{model_name}.bin",           # 简化格式
+            f"{model_name}-*.bin",         # 带版本号的简化格式
+            f"*{model_name}*.bin",         # 包含模型名的任意格式
+        ]
+
+        for pattern in possible_patterns:
+            model_files = list(models_dir.glob(pattern))
+            if model_files:
+                # 如果找到多个文件，选择第一个并记录
+                selected_file = str(model_files[0])
+                if len(model_files) > 1:
+                    logger.warning(f"找到多个匹配的模型文件: {[str(f) for f in model_files]}")
+                    logger.warning(f"选择第一个: {selected_file}")
+                else:
+                    logger.info(f"找到模型文件: {selected_file}")
+                return selected_file
+
+        # 如果没有找到指定模型，给出清晰的错误信息和解决方案
+        available_models = list(models_dir.glob("*.bin"))
+        available_model_names = [f.stem for f in available_models]
+        
+        error_message = f"模型 '{model_name}' 未下载。\n\n"
+        
+        if available_model_names:
+            error_message += f"已下载的模型: {available_model_names}\n\n"
+        else:
+            error_message += "没有任何已下载的模型。\n\n"
+        
+        error_message += f"解决方案:\n"
+        error_message += f"1. 在设置界面中点击 '模型管理' 下载 {model_name} 模型\n"
+        error_message += f"2. 或者选择其他已下载的模型\n"
+        error_message += f"3. 模型文件应保存在: {models_dir}"
+
+        raise ValueError(error_message)
+
+    def update_model(self, new_model_name: str) -> None:
+        """更新模型，允许运行时动态切换模型"""
+        try:
+            old_model = self.whisper_model
+            self.whisper_model = new_model_name
+            self.model_path = self._find_model_file(new_model_name)
+            logger.info(f"模型已更新: {old_model} -> {new_model_name}")
+        except Exception as e:
+            logger.error(f"更新模型失败: {e}")
+            raise
+
+    def get_available_models(self) -> List[str]:
+        """获取所有可用的模型名称"""
+        return self._get_available_models()
+    
+    def _get_available_models(self) -> List[str]:
+        """内部方法：获取所有可用的模型名称"""
+        models_dir = Path(MODEL_PATH)
+        if not models_dir.exists():
+            return []
+
+        model_files = list(models_dir.glob("*.bin"))
+        # 提取模型名称，去掉 ggml- 前缀和 .bin 后缀
+        model_names = []
+        for file in model_files:
+            name = file.stem
+            if name.startswith("ggml-"):
+                name = name[5:]  # 去掉 "ggml-" 前缀
+            model_names.append(name)
+
+        return sorted(set(model_names))  # 去重并排序
 
     def _make_segments(self, resp_data: str) -> List[ASRDataSeg]:
         asr_data = ASRData.from_srt(resp_data)
@@ -105,7 +190,7 @@ class WhisperCppASR(BaseASR):
                 shutil.copy2(self.audio_path, wav_path)
 
                 whisper_params = self._build_command(wav_path, output_path, is_const_me_version)
-                logger.info("完整命令行参数: %s", " ".join(whisper_params))
+                logger.info("使用模型: %s (路径: %s)", self.whisper_model, self.model_path)
 
                 total_duration = self.get_audio_duration(self.audio_path) or self.DEFAULT_DURATION
                 logger.info("音频总时长: %d 秒", total_duration)
@@ -190,6 +275,18 @@ if __name__ == "__main__":
         language="zh",
         need_word_time_stamp=False,
     )
+
+    # 获取可用模型
+    available_models = asr.get_available_models()
+    print(f"可用模型: {available_models}")
+
+    # 动态切换模型
+    try:
+        asr.update_model("base")
+        print("模型切换成功")
+    except Exception as e:
+        print(f"模型切换失败: {e}")
+
     result = asr._run(callback=test_callback)
     print("识别结果：")
     print(result)

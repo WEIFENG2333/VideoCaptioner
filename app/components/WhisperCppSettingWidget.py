@@ -45,7 +45,6 @@ from app.components.SpinBoxSettingCard import DoubleSpinBoxSettingCard
 from app.config import BIN_PATH, CACHE_PATH, MODEL_PATH
 from app.core.entities import (
     TranscribeLanguageEnum,
-    VadMethodEnum,
     WhisperModelEnum,
 )
 from app.core.utils.logger import setup_logger
@@ -442,16 +441,14 @@ class WhisperCppDownloadDialog(MessageBoxBase):
             # 获取当前下载的模型信息
             model = WHISPER_CPP_MODELS[row]
 
-            # 更新主设置对话框的模型选择
+            # 更新主设置对话框的模型显示状态
             if self.setting_widget:
                 try:
-                    self.setting_widget.model_card.comboBox.clear()  # 清空现有选项
-                    # 重新添加所有已下载的模型
-                    for m in WHISPER_CPP_MODELS:
-                        if os.path.exists(os.path.join(MODEL_PATH, m["value"])):
-                            self.setting_widget.model_card.comboBox.addItem(m["label"])
+                    logger.info(f"模型 {model['label']} 下载完成，更新显示状态")
+                    # 只更新显示状态，不修改用户选择
+                    self.setting_widget._update_model_display_status()
                 except Exception as e:
-                    logger.error(f"更新模型选择失败: {e}")
+                    logger.error(f"更新模型显示状态失败: {e}")
 
             InfoBar.success(
                 self.tr("下载成功"),
@@ -530,26 +527,22 @@ class WhisperCppSettingWidget(QWidget):
             self.tr("Whisper CPP 设置"), self
         )
 
-        # 模型选择
-        self.model_card = ComboBoxSettingCard(
-            cfg.whisper_model,
+        # 模型选择 - 使用手动控制而不依赖自动绑定
+        # 因为我们需要显示状态标识，这会与 ComboBoxSettingCard 的自动绑定冲突
+        from app.components.MySettingCard import ComboBoxSettingCard as ManualComboBoxSettingCard
+        
+        self.model_card = ManualComboBoxSettingCard(
             FIF.ROBOT,
             self.tr("模型"),
             self.tr("选择Whisper模型"),
-            [model.value for model in WhisperModelEnum],
-            self.setting_group,
+            parent=self.setting_group,
         )
-
-        # 检查未下载的模型并从下拉框中移除
-        for i in range(self.model_card.comboBox.count() - 1, -1, -1):
-            model_text = self.model_card.comboBox.itemText(i).lower()
-            model_configs = {
-                model["label"].lower(): model for model in WHISPER_CPP_MODELS
-            }
-            model_config = model_configs.get(model_text)
-            if model_config and (MODEL_PATH / model_config["value"]).exists():
-                continue
-            self.model_card.comboBox.removeItem(i)
+        
+        # 手动初始化模型选项和状态
+        self._initialize_model_options()
+        
+        # 连接信号来处理模型选择变化
+        self.model_card.comboBox.currentTextChanged.connect(self._on_model_selection_changed)
 
         # 语言选择
         self.language_card = ComboBoxSettingCard(
@@ -593,6 +586,110 @@ class WhisperCppSettingWidget(QWidget):
 
         # 将滚动区域添加到主布局
         self.main_layout.addWidget(self.scrollArea)
+
+    def _initialize_model_options(self):
+        """初始化模型选项并设置当前选择"""
+        logger.info("初始化模型选项")
+        
+        # 获取当前配置的模型
+        current_config_model = cfg.whisper_model.value.value if cfg.whisper_model.value else 'tiny'
+        logger.info(f"当前配置模型: {current_config_model}")
+        
+        # 添加所有模型选项带有状态标识
+        selected_index = 0
+        for i, model_enum in enumerate(WhisperModelEnum):
+            # 检查模型文件是否存在
+            model_file_found = False
+            for whisper_model in WHISPER_CPP_MODELS:
+                model_value = whisper_model["value"].replace("ggml-", "").replace(".bin", "")
+                if model_value == model_enum.value:
+                    model_file = MODEL_PATH / whisper_model["value"]
+                    if model_file.exists():
+                        model_file_found = True
+                    break
+            
+            # 创建显示文本
+            status_icon = "✓ " if model_file_found else "✗ "
+            display_text = f"{status_icon}{model_enum.value}"
+            self.model_card.comboBox.addItem(display_text)
+            
+            # 记录当前配置对应的索引
+            if model_enum.value == current_config_model:
+                selected_index = i
+                logger.info(f"找到当前配置模型 {current_config_model} 在索引 {i}")
+            
+            logger.info(f"模型 {model_enum.value}: {'已下载' if model_file_found else '未下载'}")
+        
+        # 设置当前选择
+        self.model_card.comboBox.setCurrentIndex(selected_index)
+        logger.info(f"设置初始选择为索引 {selected_index}")
+
+    def _update_model_display_status(self):
+        """更新模型显示状态，添加视觉标识显示哪些模型已下载"""
+        logger.info("更新模型显示状态")
+        
+        # 获取当前选中的模型
+        current_index = self.model_card.comboBox.currentIndex()
+        current_text = self.model_card.comboBox.currentText()
+        
+        # 临时断开信号
+        self.model_card.comboBox.blockSignals(True)
+        
+        # 清空并重新添加项目，带有下载状态标识
+        self.model_card.comboBox.clear()
+        
+        for model_enum in WhisperModelEnum:
+            # 查找对应的模型文件
+            model_file_found = False
+            for whisper_model in WHISPER_CPP_MODELS:
+                model_value = whisper_model["value"].replace("ggml-", "").replace(".bin", "")
+                if model_value == model_enum.value:
+                    model_file = MODEL_PATH / whisper_model["value"]
+                    if model_file.exists():
+                        model_file_found = True
+                    break
+            
+            # 添加项目带有状态标识
+            status_icon = "✓ " if model_file_found else "✗ "
+            display_text = f"{status_icon}{model_enum.value}"
+            self.model_card.comboBox.addItem(display_text)
+            
+            logger.info(f"模型 {model_enum.value}: {'已下载' if model_file_found else '未下载'}")
+        
+        # 恢复之前的选择
+        if current_index >= 0 and current_index < self.model_card.comboBox.count():
+            self.model_card.comboBox.setCurrentIndex(current_index)
+        
+        # 重新启用信号
+        self.model_card.comboBox.blockSignals(False)
+        
+        logger.info(f"模型显示状态更新完成")
+
+    def _on_model_selection_changed(self, text: str):
+        """处理模型选择变化"""
+        logger.info(f"_on_model_selection_changed 被调用! 原始文本: '{text}'")
+        # 提取实际的模型名称（去掉状态标识）
+        if text.startswith("✓ ") or text.startswith("✗ "):
+            actual_model_name = text[2:]  # 去掉前面的标识和空格
+        else:
+            actual_model_name = text
+        
+        logger.info(f"用户选择模型: {actual_model_name}")
+        logger.info(f"当前配置值 (更新前): {cfg.whisper_model.value}")
+        # 更新配置
+        for enum_model in WhisperModelEnum:
+            if enum_model.value == actual_model_name:
+                cfg.whisper_model.value = enum_model
+                logger.info(f"更新配置为: {enum_model}")
+                logger.info(f"当前配置值 (更新后): {cfg.whisper_model.value}")
+                logger.info(f"当前配置值类型: {type(cfg.whisper_model.value)}")
+                # 再次检查配置值是否实际更新
+                import time
+                time.sleep(0.1)  # 短暂延迟确保配置系统处理
+                logger.info(f"延迟后配置值: {cfg.whisper_model.value}")
+                break
+        else:
+            logger.error(f"未找到对应的枚举值: {actual_model_name}")
 
     def setup_signals(self):
         self.manage_model_card.linkButton.clicked.connect(self.show_download_dialog)

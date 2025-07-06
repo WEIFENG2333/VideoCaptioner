@@ -61,7 +61,7 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
                 "prompt": config.whisper_api_prompt,
             }
         )
-   
+
     # 创建ASR实例并运行
     asr = asr_class(audio_path, **asr_args)
 
