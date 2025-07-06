@@ -12,8 +12,8 @@
 
 # 画饼
 
-1.小饼：未来可能会更新WhisperKit支持或者打包的macOS应用。  
-2.大饼：很小可能会有swift UI重新开发的原生macOS本地应用。
+1.小饼：未来可能会发布打包的macOS应用Release。  
+2.大饼：很小可能会更新WhisperKit支持，极小可能会有swift UI重新开发的原生macOS本地应用。
 
 # 如何运行
 推荐使用 conda 创建独立环境进行部署。
