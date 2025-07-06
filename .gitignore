@@ -23,3 +23,4 @@
 /output/
 /work-dir/
 .vscode/
+.DS_Store
