@@ -16,19 +16,19 @@
 
 1. 创建并激活虚拟环境
 
-‘’‘conda create -n whisper-env python=3.10
-’‘’conda activate whisper-env
+```conda create -n whisper-env python=3.10
+```conda activate whisper-env
 
 2. 安装依赖（使用 Homebrew）
 
-‘’‘brew install ffmpeg aria2 whisper-cpp
+```brew install ffmpeg aria2 whisper-cpp
 
 3. 克隆仓库
 
-’‘’cd Documents #打开你想储存仓库文件的文件夹，这里打开的是macOS的【文稿】文件夹
-‘’‘git clone https://github.com/TensorP7/VideoCaptioneronMac.git #仓库文件会被复制到上一步打开的文件夹
-’‘’cd VideoCaptioneronMac #打开仓库文件夹
+```cd Documents #打开你想储存仓库文件的文件夹，这里打开的是macOS的【文稿】文件夹
+```git clone https://github.com/TensorP7/VideoCaptioneronMac.git #仓库文件会被复制到上一步打开的文件夹
+```cd VideoCaptioneronMac #打开仓库文件夹
 
 5. 运行主程序
 
-’‘’python main.py
+```python main.py
