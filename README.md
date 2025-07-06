@@ -8,7 +8,7 @@
 
 **本项目为卡卡字幕助手的macOS适配项目，支持通过 Whisper CPP 实现语音识别，并利用 Apple GPU 加速（MPS）。**
 
-⚠️ 注意：本项目不支持 Faster Whisper且已删除Fast Whisper相关选项，因为Faster Whisper的加速方式已不再积极更新，且目前仍然不支持MPS在Apple Silicon上只能依赖CPU运行。
+⚠️ 注意：本项目不支持 Faster Whisper且已删除Fast Whisper相关选项，因为Faster Whisper的加速方式CTranslate2已不再积极更新，且目前仍然不支持MPS，在Apple Silicon上只能依赖CPU运行，为运行效率考虑已经删掉相关选项。
 
 # 画饼
 
