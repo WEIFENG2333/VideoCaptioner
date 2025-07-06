@@ -91,7 +91,6 @@ class TranscribeModelEnum(Enum):
 
     BIJIAN = "B 接口"
     JIANYING = "J 接口"
-    FASTER_WHISPER = "FasterWhisper ✨"
     WHISPER_CPP = "WhisperCpp"
     WHISPER_API = "Whisper [API]"
 
@@ -354,17 +353,6 @@ class WhisperModelEnum(Enum):
     LARGE_V2 = "large-v2"
 
 
-class FasterWhisperModelEnum(Enum):
-    TINY = "tiny"
-    BASE = "base"
-    SMALL = "small"
-    MEDIUM = "medium"
-    LARGE_V1 = "large-v1"
-    LARGE_V2 = "large-v2"
-    LARGE_V3 = "large-v3"
-    LARGE_V3_TURBO = "large-v3-turbo"
-
-
 LANGUAGES = {
     "英语": "en",
     "中文": "zh",
@@ -512,17 +500,6 @@ class TranscribeConfig:
     whisper_api_base: Optional[str] = None
     whisper_api_model: Optional[str] = None
     whisper_api_prompt: Optional[str] = None
-    # Faster Whisper 配置
-    faster_whisper_program: Optional[str] = None
-    faster_whisper_model: Optional[FasterWhisperModelEnum] = None
-    faster_whisper_model_dir: Optional[str] = None
-    faster_whisper_device: str = "cuda"
-    faster_whisper_vad_filter: bool = True
-    faster_whisper_vad_threshold: float = 0.5
-    faster_whisper_vad_method: Optional[VadMethodEnum] = VadMethodEnum.SILERO_V3
-    faster_whisper_ff_mdx_kim2: bool = False
-    faster_whisper_one_word: bool = True
-    faster_whisper_prompt: Optional[str] = None
 
 
 @dataclass

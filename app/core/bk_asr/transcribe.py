@@ -1,7 +1,6 @@
 from typing import Optional
 
 from app.core.bk_asr.bcut import BcutASR
-from app.core.bk_asr.faster_whisper import FasterWhisperASR
 from app.core.bk_asr.jianying import JianYingASR
 from app.core.bk_asr.kuaishou import KuaiShouASR
 from app.core.bk_asr.whisper_api import WhisperAPI
@@ -32,7 +31,6 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
         TranscribeModelEnum.BIJIAN: BcutASR,
         TranscribeModelEnum.WHISPER_CPP: WhisperCppASR,
         TranscribeModelEnum.WHISPER_API: WhisperAPI,
-        TranscribeModelEnum.FASTER_WHISPER: FasterWhisperASR,
     }
 
     asr_class = ASR_MODELS.get(config.transcribe_model)
@@ -63,23 +61,7 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
                 "prompt": config.whisper_api_prompt,
             }
         )
-    elif config.transcribe_model == TranscribeModelEnum.FASTER_WHISPER:
-        asr_args.update(
-            {
-                "faster_whisper_program": config.faster_whisper_program,
-                "language": config.transcribe_language,
-                "whisper_model": config.faster_whisper_model,
-                "model_dir": config.faster_whisper_model_dir,
-                "device": config.faster_whisper_device,
-                "vad_filter": config.faster_whisper_vad_filter,
-                "vad_threshold": config.faster_whisper_vad_threshold,
-                "vad_method": config.faster_whisper_vad_method,
-                "ff_mdx_kim2": config.faster_whisper_ff_mdx_kim2,
-                "one_word": config.faster_whisper_one_word,
-                "prompt": config.faster_whisper_prompt,
-            }
-        )
-
+   
     # 创建ASR实例并运行
     asr = asr_class(audio_path, **asr_args)
 

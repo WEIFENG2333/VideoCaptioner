@@ -44,7 +44,6 @@ from app.components.LineEditSettingCard import LineEditSettingCard
 from app.components.SpinBoxSettingCard import DoubleSpinBoxSettingCard
 from app.config import BIN_PATH, CACHE_PATH, MODEL_PATH
 from app.core.entities import (
-    FasterWhisperModelEnum,
     TranscribeLanguageEnum,
     VadMethodEnum,
     WhisperModelEnum,
@@ -528,7 +527,7 @@ class WhisperCppSettingWidget(QWidget):
         self.containerLayout = QVBoxLayout(self.container)
 
         self.setting_group = SettingCardGroup(
-            self.tr("Whisper CPP 设置（不稳定 🤔）"), self
+            self.tr("Whisper CPP 设置"), self
         )
 
         # 模型选择

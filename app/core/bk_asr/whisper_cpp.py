@@ -1,10 +1,12 @@
 import os
+import threading
 import re
 import shutil
 import subprocess
 import tempfile
 import time
 from pathlib import Path
+from typing import Optional, Callable, List
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
@@ -15,6 +17,8 @@ logger = setup_logger("whisper_asr")
 
 
 class WhisperCppASR(BaseASR):
+    DEFAULT_DURATION = 600
+
     def __init__(
         self,
         audio_path,
@@ -48,36 +52,19 @@ class WhisperCppASR(BaseASR):
 
         self.process = None
 
-    def _make_segments(self, resp_data: str) -> list[ASRDataSeg]:
+    def _make_segments(self, resp_data: str) -> List[ASRDataSeg]:
         asr_data = ASRData.from_srt(resp_data)
-        # 过滤掉纯音乐标记
         filtered_segments = []
         for seg in asr_data.segments:
             text = seg.text.strip()
-            # 保留不以【、[、(、（开头的文本
-            if not (
-                text.startswith("【")
-                or text.startswith("[")
-                or text.startswith("(")
-                or text.startswith("（")
-            ):
+            if not re.match(r'[【\[(（]', text):
                 filtered_segments.append(seg)
         return filtered_segments
 
     def _build_command(
         self, wav_path, output_path, is_const_me_version: bool
-    ) -> list[str]:
-        """构建 whisper-cpp 命令行参数
-
-        Args:
-            wav_path: 输入的WAV文件路径
-            output_path: 输出文件路径
-            is_const_me_version: 是否为 const_me 版本
-
-        Returns:
-            list[str]: 命令行参数列表
-        """
-        # 构建基础命令参数列表
+    ) -> List[str]:
+        """构建 whisper-cpp 命令行参数"""
         whisper_params = [
             str(self.whisper_cpp_path),
             "-m",
@@ -89,85 +76,68 @@ class WhisperCppASR(BaseASR):
             "--output-srt",
         ]
 
-        # 根据版本添加额外参数
         if not is_const_me_version:
-            whisper_params.extend(
-                ["--no-gpu", "--output-file", str(output_path.with_suffix(""))]
-            )
+            whisper_params.extend(["--output-file", str(output_path.with_suffix(""))])
 
-        # 中文模式下添加提示语
         if self.language == "zh":
-            whisper_params.extend(
-                ["--prompt", "你好，我们需要使用简体中文，以下是普通话的句子。"]
-            )
+            whisper_params.extend([
+                "--prompt",
+                "我需要简体中文的结果，下面是简体中文的句子，请忠实地转录内容"
+            ])
 
         return whisper_params
 
-    def _run(self, callback=None) -> str:
+    def _run(self, callback: Optional[Callable[[int, str], None]] = None) -> str:
         if callback is None:
             callback = lambda x, y: None
 
         temp_dir = Path(tempfile.gettempdir()) / "bk_asr"
         temp_dir.mkdir(parents=True, exist_ok=True)
 
-        is_const_me_version = True if os.name == "nt" else False
+        is_const_me_version = (os.name == "nt")
 
-        # 使用 with 语句管理临时文件的生命周期
         with tempfile.TemporaryDirectory(dir=temp_dir) as temp_path:
             temp_dir = Path(temp_path)
             wav_path = temp_dir / "audio.wav"
             output_path = wav_path.with_suffix(".srt")
 
             try:
-                # 把self.audio_path 复制到 wav_path
                 shutil.copy2(self.audio_path, wav_path)
 
-                # 使用新的 _build_command 方法构建命令
-                whisper_params = self._build_command(
-                    wav_path, output_path, is_const_me_version
-                )
+                whisper_params = self._build_command(wav_path, output_path, is_const_me_version)
                 logger.info("完整命令行参数: %s", " ".join(whisper_params))
 
-                # 启动进程
+                total_duration = self.get_audio_duration(self.audio_path) or self.DEFAULT_DURATION
+                logger.info("音频总时长: %d 秒", total_duration)
+
+                # 启动子进程
                 self.process = subprocess.Popen(
                     whisper_params,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
                     encoding="utf-8",
+                    errors="replace"
                 )
-                # 获取音频时长
-                total_duration = self.get_audio_duration(self.audio_path) or 600
-                logger.info("音频总时长: %d 秒", total_duration)
 
-                # 处理输出和进度
-                full_output = []
-                while True:
-                    try:
-                        line = self.process.stdout.readline()
-                    except Exception as e:
-                        break
-                    if not line:
-                        continue
+                # 单独开线程读取 stderr，防止缓冲区满导致卡死
+                def read_stderr():
+                    for line in iter(self.process.stderr.readline, ''):
+                        logger.debug("STDERR: %s", line.strip())
 
-                    full_output.append(line)
+                threading.Thread(target=read_stderr, daemon=True).start()
 
-                    # 简化的进度处理
-                    if " --> " in line and "[" in line:
-                        try:
-                            time_str = line.split("[")[1].split(" -->")[0].strip()
-                            current_time = sum(
-                                float(x) * y
-                                for x, y in zip(
-                                    reversed(time_str.split(":")), [1, 60, 3600]
-                                )
-                            )
-                            progress = int(min(current_time / total_duration * 100, 98))
-                            callback(progress, f"{progress}% 正在转换")
-                        except (ValueError, IndexError):
-                            continue
-                # 等待进程完成
-                stdout, stderr = self.process.communicate()
+                # 实时更新进度条（每秒一次）
+                start_time = time.time()
+                while self.process.poll() is None:
+                    elapsed = time.time() - start_time
+                    progress = int(min(elapsed / total_duration * 95, 95))
+                    callback(progress, f"{progress}% 正在识别...")
+                    time.sleep(1)
+
+                # 等待完成
+                stdout, stderr = self.process.communicate(timeout=60)
+
                 if self.process.returncode != 0:
                     raise RuntimeError(f"WhisperCPP 执行失败: {stderr}")
 
@@ -187,7 +157,7 @@ class WhisperCppASR(BaseASR):
     def _get_key(self):
         return f"{self.crc32_hex}-{self.need_word_time_stamp}-{self.model_path}-{self.language}"
 
-    def get_audio_duration(self, filepath: str) -> int:
+    def get_audio_duration(self, filepath: str) -> Optional[int]:
         try:
             cmd = ["ffmpeg", "-i", filepath]
             result = subprocess.run(
@@ -199,24 +169,27 @@ class WhisperCppASR(BaseASR):
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
             info = result.stderr
-            # 提取时长
             if duration_match := re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info):
                 hours, minutes, seconds = map(float, duration_match.groups())
-                duration_seconds = hours * 3600 + minutes * 60 + seconds
-                return int(duration_seconds)
-            return 600
+                return int(hours * 3600 + minutes * 60 + seconds)
+            return self.DEFAULT_DURATION
         except Exception as e:
-            logger.exception("获取音频时长时出错: %s", str(e))
-            return 600
+            logger.warning("获取音频时长失败: %s", str(e))
+            return self.DEFAULT_DURATION
 
 
 if __name__ == "__main__":
-    # 简短示例
+    # 示例调用
+    def test_callback(progress, message):
+        print(f"[回调] 进度: {progress}% - {message}")
+
     asr = WhisperCppASR(
-        audio_path="audio.mp3",
-        model_path="models/ggml-tiny.bin",
-        whisper_cpp_path="bin/whisper-cpp.exe",
-        language="en",
-        need_word_time_stamp=True,
+        audio_path="audio.wav",
+        whisper_cpp_path="/opt/homebrew/bin/whisper-cpp",
+        whisper_model="large-v2",
+        language="zh",
+        need_word_time_stamp=False,
     )
-    asr_data = asr._run(callback=print)
+    result = asr._run(callback=test_callback)
+    print("识别结果：")
+    print(result)
