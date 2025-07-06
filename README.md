@@ -27,8 +27,10 @@ conda activate whisper-env`
 
 打开你想储存仓库文件的文件夹，这里打开的是macOS的【文稿】文件夹
 `cd Documents`
+
 仓库文件会被复制到上一步打开的文件夹
 `git clone https://github.com/TensorP7/VideoCaptioneronMac.git`
+
 打开仓库文件夹
 `cd VideoCaptioneronMac`
 
