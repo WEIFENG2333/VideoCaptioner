@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
+from ..utils.platform_utils import PlatformUtils
 from .asr_data import ASRDataSeg, ASRData
 from .base import BaseASR
 
@@ -212,10 +213,11 @@ class WhisperCppASR(BaseASR):
 
 if __name__ == "__main__":
     # 简短示例
+    whisper_executable = PlatformUtils.get_executable_name("whisper-cpp")
     asr = WhisperCppASR(
         audio_path="audio.mp3",
         model_path="models/ggml-tiny.bin",
-        whisper_cpp_path="bin/whisper-cpp.exe",
+        whisper_cpp_path=f"bin/{whisper_executable}",
         language="en",
         need_word_time_stamp=True,
     )

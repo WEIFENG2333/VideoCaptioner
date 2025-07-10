@@ -42,7 +42,36 @@
 
 ## 🚀 快速开始
 
-### Windows 用户
+### 一键启动脚本（推荐）
+
+为了方便小白用户，我们提供了一键启动和更新脚本：
+
+**Windows 用户：**
+```cmd
+# 启动程序
+start.bat
+
+# 更新程序  
+update.bat
+```
+
+**macOS/Linux 用户：**
+```bash
+# 启动程序
+./start.sh
+
+# 更新程序
+./update.sh
+```
+
+这些脚本会自动：
+- ✅ 检查并安装系统依赖
+- ✅ 创建Python虚拟环境
+- ✅ 安装所需的Python包
+- ✅ 启动应用程序
+- ✅ 备份用户数据（更新时）
+
+### Windows 用户（传统方式）
 
 软件较为轻量，打包大小不足 60M,已集成所有必要环境，下载后可直接运行。
 
@@ -62,17 +91,35 @@
 
 <details>
 <summary>MacOS 用户</summary>
- 
- 
-由于本人缺少 Mac，所以没法测试和打包，暂无法提供 MacOS 的可执行程序。
 
-Mac 用户请自行使用下载源码和安装 python 依赖运行。（本地 Whisper 功能暂不支持 MacOS）
+### 方法一：一键启动（推荐）
 
-1. 安装 ffmpeg 和 Aria2 下载工具
+1. 克隆项目
 ```bash
-brew install ffmpeg
-brew install aria2
-brew install python@3.**
+git clone https://github.com/WEIFENG2333/VideoCaptioner.git
+cd VideoCaptioner
+```
+
+2. 运行一键启动脚本
+```bash
+./start.sh
+```
+
+脚本会自动：
+- 检查并安装系统依赖（ffmpeg、aria2、python3）
+- 创建虚拟环境
+- 安装Python依赖
+- 启动程序
+
+### 方法二：手动安装
+
+1. 安装系统依赖
+```bash
+# 如果未安装 Homebrew，请先安装
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 安装依赖
+brew install ffmpeg aria2 python@3.11
 ```
 
 2. 克隆项目
@@ -81,9 +128,9 @@ git clone https://github.com/WEIFENG2333/VideoCaptioner.git
 cd VideoCaptioner
 ```
 
-3. 安装依赖
+3. 创建虚拟环境并安装依赖
 ```bash
-python3.** -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -92,6 +139,20 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
+
+### 更新程序
+
+使用一键更新脚本：
+```bash
+./update.sh
+```
+
+### 注意事项
+
+- macOS 版本已完全支持，包括本地 Whisper 功能
+- 首次运行可能需要授权访问麦克风和文件夹
+- 如遇到权限问题，请检查"系统偏好设置" > "安全性与隐私"
+
 </details>
 
 <details>

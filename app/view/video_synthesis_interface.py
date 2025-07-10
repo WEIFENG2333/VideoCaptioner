@@ -29,6 +29,7 @@ from app.core.entities import (
     SynthesisTask,
 )
 from app.core.task_factory import TaskFactory
+from app.core.utils.platform_utils import PlatformUtils
 from app.thread.video_synthesis_thread import VideoSynthesisThread
 
 
@@ -334,13 +335,15 @@ class VideoSynthesisInterface(QWidget):
                 if file_path.exists()
                 else Path(self.task.video_path).parent
             )
-            # Cross-platform folder opening
-            if sys.platform == "win32":
-                os.startfile(target_dir)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", target_dir])
-            else:  # Linux
-                subprocess.run(["xdg-open", target_dir])
+            # 使用跨平台工具打开文件夹
+            if not PlatformUtils.open_folder(target_dir):
+                InfoBar.warning(
+                    self.tr("警告"),
+                    self.tr("无法打开文件夹"),
+                    duration=2000,
+                    position=InfoBarPosition.TOP,
+                    parent=self,
+                )
         else:
             InfoBar.warning(
                 self.tr("警告"),
