@@ -19,6 +19,7 @@ from app.thread.subtitle_thread import SubtitleThread
 from app.thread.video_synthesis_thread import VideoSynthesisThread
 from app.core.utils.logger import setup_logger
 from app.core.entities import BatchTaskType, BatchTaskStatus
+from app.common.config import cfg
 
 logger = setup_logger("batch_process_thread")
 
@@ -89,6 +90,8 @@ class BatchProcessThread(QThread):
                 self._handle_trans_sub_task(batch_task)
             elif batch_task.task_type == BatchTaskType.FULL_PROCESS:
                 self._handle_full_process_task(batch_task)
+            elif batch_task.task_type == BatchTaskType.SYNTHESIS:
+                self._handle_synthesis_task(batch_task)
 
         except Exception as e:
             logger.exception(f"处理任务失败: {str(e)}")
@@ -229,6 +232,39 @@ class BatchProcessThread(QThread):
         """转录+字幕任务字幕进度包装器"""
         progress = 50 + progress // 2  # 字幕处理占后50%进度
         self.task_progress.emit(batch_task.file_path, progress, message)
+
+    def _handle_synthesis_task(self, batch_task: BatchTask):
+        """处理视频合成任务"""
+
+        # 根据配置寻找命名的字幕文件
+        video_name = Path(batch_task.file_path).stem
+        suffix = (
+            f"-{cfg.translator_service.value.value}" if cfg.need_translate.value else ""
+        )
+        subtitle_path = str(
+                Path(batch_task.file_path).parent / f"【字幕】{video_name}{suffix}.srt"
+            )
+
+        
+        # 创建视频合成任务
+        synthesis_task = self.factory.create_synthesis_task(batch_task.file_path, subtitle_path)
+        thread = VideoSynthesisThread(synthesis_task)
+        batch_task.current_thread = thread
+
+        # 保存线程引用
+        self.threads.append(thread)
+
+        thread.progress.connect(
+            partial(self._on_progress_wrapper, batch_task), Qt.QueuedConnection
+        )
+        thread.error.connect(
+            partial(self._on_error_wrapper, batch_task), Qt.QueuedConnection
+        )
+        thread.finished.connect(
+            partial(self._on_finished_wrapper, batch_task), Qt.QueuedConnection
+        )
+
+        thread.start()
 
     def _handle_full_process_task(self, batch_task: BatchTask):
         task = self.factory.create_full_process_task(batch_task.file_path)

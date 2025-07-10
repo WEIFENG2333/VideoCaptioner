@@ -145,6 +145,10 @@ class BatchProcessInterface(QWidget):
             # 获取所有支持的字幕格式
             subtitle_formats = [f"*.{fmt.value}" for fmt in SupportedSubtitleFormats]
             file_filter = f"字幕文件 ({' '.join(subtitle_formats)})"
+        elif task_type == BatchTaskType.SYNTHESIS:
+            # 视频合成任务
+            video_formats = [f"*.{fmt.value}" for fmt in SupportedVideoFormats]
+            file_filter = f"视频文件 ({' '.join(video_formats)})"
 
         files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", file_filter)
         if files:
@@ -252,6 +256,8 @@ class BatchProcessInterface(QWidget):
             }
         elif task_type == BatchTaskType.SUBTITLE:
             valid_extensions = {f".{fmt.value}" for fmt in SupportedSubtitleFormats}
+        elif task_type == BatchTaskType.SYNTHESIS:
+            valid_extensions = {f".{fmt.value}" for fmt in SupportedVideoFormats}
 
         return [
             f
@@ -316,8 +322,8 @@ class BatchProcessInterface(QWidget):
         task_type = BatchTaskType(self.task_type_combo.currentText())
         file_dir = os.path.dirname(file_path)
 
-        if task_type == BatchTaskType.FULL_PROCESS:
-            # 对于全流程任务，输出在视频同目录下
+        if task_type == BatchTaskType.FULL_PROCESS or task_type == BatchTaskType.SYNTHESIS:
+            # 对于全流程任务或者字幕视频合成任务，输出在视频同目录下
             output_dir = file_dir
         else:
             # 其他任务输出在文件同目录下
