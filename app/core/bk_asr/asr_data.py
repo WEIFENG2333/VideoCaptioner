@@ -621,6 +621,9 @@ class ASRData:
         timestamp_pattern = re.compile(
             r"(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})"
         )
+        timestamp_pattern2 = re.compile(
+            r"(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2})\.(\d{3})"
+        )
 
         for block in content:
             lines = block.strip().split("\n")
@@ -628,32 +631,56 @@ class ASRData:
                 continue
 
             # 解析时间戳行
-            timestamp_line = lines[1]
+            if "-->" not in lines[0]:
+                timestamp_line = lines[1]
+            else:
+                timestamp_line = lines[0]
             match = timestamp_pattern.match(timestamp_line)
+            if not match:
+                match = timestamp_pattern2.match(timestamp_line)
             if not match:
                 continue
 
             # 提取开始和结束时间
             time_parts = list(map(int, match.groups()))
-            start_time = sum(
-                [
-                    time_parts[0] * 3600000,
-                    time_parts[1] * 60000,
-                    time_parts[2] * 1000,
-                    time_parts[3],
-                ]
-            )
-            end_time = sum(
-                [
-                    time_parts[4] * 3600000,
-                    time_parts[5] * 60000,
-                    time_parts[6] * 1000,
-                    time_parts[7],
-                ]
-            )
+            if len(time_parts) == 8:
+                start_time = sum(
+                    [
+                        time_parts[0] * 3600000,
+                        time_parts[1] * 60000,
+                        time_parts[2] * 1000,
+                        time_parts[3],
+                    ]
+                )
+                end_time = sum(
+                    [
+                        time_parts[4] * 3600000,
+                        time_parts[5] * 60000,
+                        time_parts[6] * 1000,
+                        time_parts[7],
+                    ]
+                )
+            elif len(time_parts) == 6:
+                 start_time = sum(
+                    [
+                        time_parts[0] * 60000,
+                        time_parts[1] * 1000,
+                        time_parts[2],
+                    ]
+                )
+                 end_time = sum(
+                    [
+                        time_parts[3] * 60000,
+                        time_parts[4] * 1000,
+                        time_parts[5],
+                    ]
+                )
 
             # 处理文本内容
-            text_line = " ".join(lines[2:])
+            if "-->" not in lines[0]:
+                text_line = " ".join(lines[2:])
+            else:
+                text_line = " ".join(lines[1:])
             cleaned_text = re.sub(r"<\d{2}:\d{2}:\d{2}\.\d{3}>", "", text_line)
             cleaned_text = re.sub(r"</?c>", "", cleaned_text)
             cleaned_text = cleaned_text.strip()
