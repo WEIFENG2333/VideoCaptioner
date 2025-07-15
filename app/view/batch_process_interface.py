@@ -175,7 +175,7 @@ class BatchProcessInterface(QWidget):
                     for root, dirs, filenames in os.walk(path):
                         for filename in filenames:
                             file_path = os.path.join(root, filename)
-                            if not os.path.basename(path).startswith("【卡卡】") and not filename.startswith("【断句字幕】") and not filename.startswith("【字幕】"):
+                            if not filename.startswith("【卡卡】") and not filename.startswith("【断句字幕】") and not filename.startswith("【字幕】"):
                                 files.append(file_path)
                 except (OSError, PermissionError):
                     # 如果访问目录时出现权限问题，显示警告但不中断处理
