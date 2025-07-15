@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
-from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
+from ..utils.ass_auto_wrap import auto_wrap_ass_file
 
 logger = setup_logger("video_utils")
 
@@ -123,19 +123,6 @@ def add_subtitles(
     assert Path(input_file).is_file(), "输入文件不存在"
     assert Path(subtitle_file).is_file(), "字幕文件不存在"
 
-    # 获取原视频信息
-    video_info = get_video_info(input_file)
-    if video_info:
-        logger.info(
-            f"原视频信息 - 总码率: {video_info['bitrate_kbps']}kbps, "
-            f"时长: {video_info['duration_seconds']}秒, "
-            f"视频编码: {video_info['video_codec']}, "
-            f"视频流码率: {video_info['video_bitrate_kbps']}kbps, "
-            f"分辨率: {video_info['width']}x{video_info['height']}, "
-            f"帧率: {video_info['fps']}fps, "
-            f"编码器: {video_info['video_codec']}"
-        )
-
     # 移动到临时文件  Fix: 路径错误
     suffix = Path(subtitle_file).suffix.lower()
     temp_dir = Path(tempfile.gettempdir()) / "VideoCaptioner"
@@ -150,8 +137,6 @@ def add_subtitles(
             subtitle_file,
             # video_width=video_info["width"],
             # video_height=video_info["height"],
-            video_width=video_info["width"] if video_info else None,
-            video_height=video_info["height"] if video_info else None,
         )
 
     # 如果是WebM格式，强制使用硬字幕
@@ -222,8 +207,6 @@ def add_subtitles(
                 quality,
                 "-vf",
                 vf,
-                "-b:v",
-                str(video_info["video_bitrate_kbps"]) + "k",  # 使用原始的视频流码率
                 "-y",  # 覆盖输出文件
                 output,
             ]
@@ -330,7 +313,6 @@ def get_video_info(file_path: str) -> Optional[Dict]:
             "width": 0,
             "height": 0,
             "fps": 0,
-            "video_bitrate_kbps": 0,  # 视频流码率
             "audio_codec": "",
             "audio_sampling_rate": 0,
             "thumbnail_path": "",
@@ -347,7 +329,7 @@ def get_video_info(file_path: str) -> Optional[Dict]:
 
         # 提取视频流信息
         if video_stream_match := re.search(
-            r"Stream #.*?Video: (\w+)(?:\s*\([^)]*\))?.* (\d+)x(\d+).*?(?:(\d+) kb/s).*?(?:(\d+(?:\.\d+)?)\s*(?:fps|tb[rn]))",
+            r"Stream #.*?Video: (\w+)(?:\s*\([^)]*\))?.* (\d+)x(\d+).*?(?:(\d+(?:\.\d+)?)\s*(?:fps|tb[rn]))",
             info,
             re.DOTALL,
         ):
@@ -356,8 +338,7 @@ def get_video_info(file_path: str) -> Optional[Dict]:
                     "video_codec": video_stream_match.group(1),
                     "width": int(video_stream_match.group(2)),
                     "height": int(video_stream_match.group(3)),
-                    "video_bitrate_kbps": video_stream_match.group(4),
-                    "fps": float(video_stream_match.group(5)),
+                    "fps": float(video_stream_match.group(4)),
                 }
             )
         else:
