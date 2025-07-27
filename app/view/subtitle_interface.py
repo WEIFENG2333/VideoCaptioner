@@ -6,6 +6,8 @@ import tempfile
 import json
 from pathlib import Path
 
+from app.core.utils.platform_utils import open_folder
+
 from PyQt5.QtCore import Qt, QTime, QUrl, QAbstractTableModel, pyqtSignal
 from PyQt5.QtGui import QColor, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import (
@@ -573,12 +575,7 @@ class SubtitleInterface(QWidget):
             if output_path.exists()
             else Path(self.task.subtitle_path).parent
         )
-        if sys.platform == "win32":
-            os.startfile(target_dir)
-        elif sys.platform == "darwin":  # macOS
-            subprocess.run(["open", target_dir])
-        else:  # Linux
-            subprocess.run(["xdg-open", target_dir])
+        open_folder(target_dir)
 
     def load_subtitle_file(self, file_path):
         self.subtitle_path = file_path

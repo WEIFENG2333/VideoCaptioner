@@ -3,6 +3,8 @@ import platform
 import shutil
 import subprocess
 
+from app.core.utils.platform_utils import get_subprocess_kwargs
+
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 from app.config import CACHE_PATH
@@ -58,9 +60,8 @@ class FileDownloadThread(QThread):
                 'encoding': 'utf-8'
             }
             
-            # 仅在 Windows 系统上添加 CREATE_NO_WINDOW 标志
-            if platform.system() == 'Windows':
-                subprocess_args['creationflags'] = subprocess.CREATE_NO_WINDOW
+            # 获取跨平台的subprocess参数
+            subprocess_args.update(get_subprocess_kwargs())
             
             logger.info("运行下载命令: %s", " ".join(cmd))
             
