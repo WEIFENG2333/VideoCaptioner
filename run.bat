@@ -33,14 +33,8 @@ if %errorlevel% neq 0 (
     pip install -r requirements.txt
 )
 
-:: Create required directories
-if not exist "AppData" mkdir AppData
-if not exist "AppData\cache" mkdir AppData\cache
-if not exist "AppData\logs" mkdir AppData\logs
-if not exist "AppData\models" mkdir AppData\models
-if not exist "work-dir" mkdir work-dir
-
-:: Run the application
+::
+ Run the application
 echo Starting VideoCaptioner...
 python main.py
 

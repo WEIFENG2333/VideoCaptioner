@@ -49,12 +49,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     fi
 fi
 
-# Create required directories
-mkdir -p AppData/cache
-mkdir -p AppData/logs
-mkdir -p AppData/models
-mkdir -p work-dir
-
 # Run the application
 echo "Starting VideoCaptioner..."
 $PYTHON_CMD main.py
