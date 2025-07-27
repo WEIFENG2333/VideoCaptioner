@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from app.core.utils.platform_utils import open_folder
+
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import (
@@ -614,23 +616,13 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         """打开模型文件夹"""
         if os.path.exists(MODEL_PATH):
             # 根据操作系统打开文件夹
-            if sys.platform == "win32":
-                os.startfile(MODEL_PATH)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", MODEL_PATH])
-            else:  # Linux
-                subprocess.run(["xdg-open", MODEL_PATH])
+            open_folder(str(MODEL_PATH))
 
     def _open_program_folder(self):
         """打开程序文件夹"""
         if os.path.exists(BIN_PATH):
             # 根据操作系统打开文件夹
-            if sys.platform == "win32":
-                os.startfile(BIN_PATH)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", BIN_PATH])
-            else:  # Linux
-                subprocess.run(["xdg-open", BIN_PATH])
+            open_folder(str(BIN_PATH))
 
     def _finish_program_installation(self):
         """完成程序安装"""

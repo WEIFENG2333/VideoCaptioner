@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from app.core.utils.platform_utils import open_folder
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
@@ -335,12 +337,7 @@ class VideoSynthesisInterface(QWidget):
                 else Path(self.task.video_path).parent
             )
             # Cross-platform folder opening
-            if sys.platform == "win32":
-                os.startfile(target_dir)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", target_dir])
-            else:  # Linux
-                subprocess.run(["xdg-open", target_dir])
+            open_folder(target_dir)
         else:
             InfoBar.warning(
                 self.tr("警告"),

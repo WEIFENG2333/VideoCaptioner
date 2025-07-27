@@ -15,8 +15,11 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(project_root)
 
 # Fix Chinese path problem
+import platform
+# Use appropriate library folder name based on OS
+lib_folder = "Lib" if platform.system() == "Windows" else "lib"
 plugin_path = os.path.join(
-    sys.prefix, "Lib", "site-packages", "PyQt5", "Qt5", "plugins"
+    sys.prefix, lib_folder, "site-packages", "PyQt5", "Qt5", "plugins"
 )
 os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = plugin_path
 

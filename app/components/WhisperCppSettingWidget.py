@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from app.core.utils.platform_utils import open_folder
+
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import (
     QDialog,
@@ -500,12 +502,7 @@ class WhisperCppDownloadDialog(MessageBoxBase):
         """打开模型文件夹"""
         if os.path.exists(MODEL_PATH):
             # 根据操作系统打开文件夹
-            if sys.platform == "win32":
-                os.startfile(MODEL_PATH)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["open", MODEL_PATH])
-            else:  # Linux
-                subprocess.run(["xdg-open", MODEL_PATH])
+            open_folder(str(MODEL_PATH))
 
 
 class WhisperCppSettingWidget(QWidget):

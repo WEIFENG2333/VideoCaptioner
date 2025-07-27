@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 from typing import Optional, Tuple
 
+from app.core.utils.platform_utils import open_folder
+
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QFontDatabase
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
@@ -444,12 +446,7 @@ class SubtitleStyleInterface(QWidget):
 
     def on_open_style_folder_clicked(self):
         """打开样式文件夹"""
-        if sys.platform == "win32":
-            os.startfile(SUBTITLE_STYLE_PATH)
-        elif sys.platform == "darwin":  # macOS
-            subprocess.run(["open", SUBTITLE_STYLE_PATH])
-        else:  # Linux
-            subprocess.run(["xdg-open", SUBTITLE_STYLE_PATH])
+        open_folder(str(SUBTITLE_STYLE_PATH))
 
     def on_subtitle_layout_changed(self, layout: str):
         cfg.subtitle_layout.value = layout
