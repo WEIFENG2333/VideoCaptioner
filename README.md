@@ -58,28 +58,6 @@
 
 6. 拖拽视频文件到软件窗口，即可全自动处理
 
-#### 方式二：从源码运行
-
-1. 克隆项目
-
-```cmd
-git clone https://github.com/WEIFENG2333/VideoCaptioner.git
-cd VideoCaptioner
-```
-
-2. 运行启动脚本
-
-```cmd
-run.bat
-```
-
-脚本会自动：
-
-- 检测Python环境（需要Python 3.8+）
-- 创建虚拟环境并安装依赖
-- 创建必要的目录结构
-- 启动应用程序
-
 提示：每一个步骤均支持单独处理，均支持文件拖拽。软件具体模型选择和参数配置说明，请查看下文。
 
 ### macOS / Linux 用户
