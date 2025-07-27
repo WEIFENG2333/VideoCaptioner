@@ -127,7 +127,7 @@ python main.py
 <details>
 <summary>Docker 部署（beta）</summary>
 
-目前本项目streamlit应用因为项目重构过，Docker不可以使用。欢迎各位PR贡献新代码。
+目前Docker部署方式正在重构中，暂时不可用。欢迎各位PR贡献新代码。
 
 ### 1. 克隆项目
 
