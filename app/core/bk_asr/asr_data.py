@@ -593,15 +593,28 @@ class ASRData:
             )
 
             if has_translated_subtitle and len(lines) >= 4:
+                # 如果是翻译格式，第3行是原文，第4行是译文
                 text = lines[2]
                 translated_text = lines[3]
+                # 如果还有更多行，它们可能是原文的续行，需要合并
+                if len(lines) > 4:
+                    for i in range(4, len(lines)):
+                        if i % 2 == 0:  # 偶数行是原文的续行
+                            text += " " + lines[i]
+                        else:  # 奇数行是译文的续行
+                            translated_text += " " + lines[i]
                 segments.append(
                     ASRDataSeg(
                         text, start_time, end_time, translated_text=translated_text
                     )
                 )
             else:
+                # 不是翻译格式，原文可能有多行，需要全部合并
                 text = lines[2]
+                # 合并后续行（如果有）
+                if len(lines) > 3:
+                    for i in range(3, len(lines)):
+                        text += " " + lines[i]
                 segments.append(ASRDataSeg(text, start_time, end_time))
 
         return ASRData(segments)
