@@ -121,8 +121,8 @@ class VideoDownloadThread(QThread):
         initial_ydl_opts = {
             "outtmpl": {
                 "default": "%(title)s.%(ext)s",
-                "subtitle": "【下载字幕】.%(ext)s",
-                "thumbnail": "thumbnail",
+                "subtitle": "【下载字幕】%(title)s.%(ext)s",
+                "thumbnail": "【thumbnail】%(title)s.%(ext)s",
             },
             "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",  # 优先下载mp4格式
             "progress_hooks": [self.progress_hook],  # 下载进度钩子

@@ -145,6 +145,10 @@ class BatchProcessInterface(QWidget):
             # 获取所有支持的字幕格式
             subtitle_formats = [f"*.{fmt.value}" for fmt in SupportedSubtitleFormats]
             file_filter = f"字幕文件 ({' '.join(subtitle_formats)})"
+        elif task_type == BatchTaskType.SYNTHESIS:
+            # 视频合成任务
+            video_formats = [f"*.{fmt.value}" for fmt in SupportedVideoFormats]
+            file_filter = f"视频文件 ({' '.join(video_formats)})"
 
         files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", file_filter)
         if files:
@@ -157,7 +161,32 @@ class BatchProcessInterface(QWidget):
             event.ignore()
 
     def dropEvent(self, event):
-        files = [url.toLocalFile() for url in event.mimeData().urls()]
+        paths = [url.toLocalFile() for url in event.mimeData().urls()]
+        
+        files = []
+        for path in paths:
+            # 排除当前程序生成的文件，一般的判断逻辑是不希望当前程序生成的处理结果被二次处理
+            if os.path.isfile(path) and not os.path.basename(path).startswith("【卡卡】") and not os.path.basename(path).startswith("【断句字幕】") and not os.path.basename(path).startswith("【字幕】"):
+                # 如果是文件，直接添加
+                files.append(path)
+            elif os.path.isdir(path):
+                # 如果是目录，递归获取所有文件
+                try:
+                    for root, dirs, filenames in os.walk(path):
+                        for filename in filenames:
+                            file_path = os.path.join(root, filename)
+                            if not filename.startswith("【卡卡】") and not filename.startswith("【断句字幕】") and not filename.startswith("【字幕】"):
+                                files.append(file_path)
+                except (OSError, PermissionError):
+                    # 如果访问目录时出现权限问题，显示警告但不中断处理
+                    InfoBar.warning(
+                        title="目录访问失败",
+                        content=f"无法访问目录：{os.path.basename(path)}",
+                        duration=3000,
+                        position=InfoBarPosition.TOP,
+                        parent=self,
+                    )
+        
         self.add_files(files)
 
     def add_files(self, file_paths):
@@ -252,6 +281,8 @@ class BatchProcessInterface(QWidget):
             }
         elif task_type == BatchTaskType.SUBTITLE:
             valid_extensions = {f".{fmt.value}" for fmt in SupportedSubtitleFormats}
+        elif task_type == BatchTaskType.SYNTHESIS:
+            valid_extensions = {f".{fmt.value}" for fmt in SupportedVideoFormats}
 
         return [
             f
@@ -316,8 +347,8 @@ class BatchProcessInterface(QWidget):
         task_type = BatchTaskType(self.task_type_combo.currentText())
         file_dir = os.path.dirname(file_path)
 
-        if task_type == BatchTaskType.FULL_PROCESS:
-            # 对于全流程任务，输出在视频同目录下
+        if task_type == BatchTaskType.FULL_PROCESS or task_type == BatchTaskType.SYNTHESIS:
+            # 对于全流程任务或者字幕视频合成任务，输出在视频同目录下
             output_dir = file_dir
         else:
             # 其他任务输出在文件同目录下

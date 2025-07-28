@@ -665,6 +665,7 @@ class BatchTaskType(Enum):
 
     TRANSCRIBE = "批量转录"
     SUBTITLE = "批量字幕"
+    SYNTHESIS = "批量合成"
     TRANS_SUB = "转录+字幕"
     FULL_PROCESS = "全流程处理"
 
