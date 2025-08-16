@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-from pathlib import Path
 from urllib.parse import urlparse
 
 from PyQt5.QtCore import QStandardPaths, Qt, pyqtSignal
@@ -26,17 +25,17 @@ from qfluentwidgets import (
 )
 
 from app.common.config import cfg
+from app.components.DonateDialog import DonateDialog
+from app.components.LanguageSettingDialog import LanguageSettingDialog
 from app.config import APPDATA_PATH, ASSETS_PATH, VERSION
 from app.core.entities import (
     LLMServiceEnum,
     SupportedAudioFormats,
     SupportedVideoFormats,
+    TranscribeModelEnum,
 )
 from app.thread.video_download_thread import VideoDownloadThread
 from app.view.log_window import LogWindow
-from app.components.DonateDialog import DonateDialog
-from app.components.LanguageSettingDialog import LanguageSettingDialog
-from app.core.entities import TranscribeModelEnum
 
 LOGO_PATH = ASSETS_PATH / "logo.png"
 

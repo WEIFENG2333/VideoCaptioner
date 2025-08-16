@@ -1,8 +1,12 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import ComboBoxSettingCard
+from PyQt5.QtWidgets import QVBoxLayout
+from qfluentwidgets import (
+    ComboBoxSettingCard,
+    InfoBar,
+    InfoBarPosition,
+    MessageBoxBase,
+    SettingCardGroup,
+)
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import InfoBar, InfoBarPosition, MessageBoxBase, SettingCardGroup
 
 from app.common.config import cfg
 from app.core.entities import TranscribeLanguageEnum

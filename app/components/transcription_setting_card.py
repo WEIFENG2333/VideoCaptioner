@@ -1,34 +1,13 @@
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QHBoxLayout,
-    QScrollArea,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import BodyLabel, CardWidget, ComboBox, ComboBoxSettingCard
-from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import (
-    HyperlinkCard,
-    RangeSettingCard,
-    SettingCardGroup,
-    SingleDirectionScrollArea,
-    SwitchSettingCard,
-)
 
-from app.components.SpinBoxSettingCard import DoubleSpinBoxSettingCard
-
-from ..common.config import cfg
 from ..core.entities import (
-    FasterWhisperModelEnum,
-    TranscribeLanguageEnum,
     TranscribeModelEnum,
-    VadMethodEnum,
-    WhisperModelEnum,
 )
-from .EditComboBoxSettingCard import EditComboBoxSettingCard
 from .FasterWhisperSettingWidget import FasterWhisperSettingWidget
-from .LineEditSettingCard import LineEditSettingCard
 from .WhisperAPISettingWidget import WhisperAPISettingWidget
 from .WhisperCppSettingWidget import WhisperCppSettingWidget
 

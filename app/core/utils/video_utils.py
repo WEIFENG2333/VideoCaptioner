@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
-from ..utils.logger import setup_logger
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
+from ..utils.logger import setup_logger
 
 logger = setup_logger("video_utils")
 

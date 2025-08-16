@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
+import json
 import os
-import subprocess
 import sys
 import tempfile
-import json
 from pathlib import Path
 
-from app.core.utils.platform_utils import open_folder
-
-from PyQt5.QtCore import Qt, QTime, QUrl, QAbstractTableModel, pyqtSignal
+from PyQt5.QtCore import QAbstractTableModel, Qt, QTime, QUrl, pyqtSignal
 from PyQt5.QtGui import QColor, QDragEnterEvent, QDropEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -19,9 +16,10 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import Action, BodyLabel, CommandBar
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
+    Action,
+    BodyLabel,
+    CommandBar,
     InfoBar,
     InfoBarPosition,
     MessageBoxBase,
@@ -33,6 +31,7 @@ from qfluentwidgets import (
     TextEdit,
     TransparentDropDownPushButton,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
@@ -47,6 +46,7 @@ from app.core.entities import (
 )
 from app.core.task_factory import TaskFactory
 from app.core.utils.get_subtitle_style import get_subtitle_style
+from app.core.utils.platform_utils import open_folder
 from app.thread.subtitle_thread import SubtitleThread
 
 

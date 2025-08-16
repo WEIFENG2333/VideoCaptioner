@@ -1,6 +1,6 @@
 # app/core/storage/constants.py
-from enum import Enum
 from datetime import timedelta
+from enum import Enum
 
 
 class TranslatorType(Enum):

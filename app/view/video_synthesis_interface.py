@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import os
-import subprocess
 import sys
 from pathlib import Path
-
-from app.core.utils.platform_utils import open_folder
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import Action, BodyLabel, CardWidget, CommandBar
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
+    Action,
+    BodyLabel,
+    CardWidget,
+    CommandBar,
     InfoBar,
     InfoBarPosition,
     LineEdit,
@@ -22,6 +21,7 @@ from qfluentwidgets import (
     ToolTipFilter,
     ToolTipPosition,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
@@ -31,8 +31,8 @@ from app.core.entities import (
     SynthesisTask,
 )
 from app.core.task_factory import TaskFactory
+from app.core.utils.platform_utils import open_folder
 from app.thread.video_synthesis_thread import VideoSynthesisThread
-
 
 current_dir = Path(__file__).parent.parent
 SUBTITLE_STYLE_DIR = current_dir / "resource" / "subtitle_style"

@@ -6,7 +6,6 @@ from PyQt5.QtGui import QColor, QIcon, QPainter
 from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QToolButton, QVBoxLayout
 from qfluentwidgets import ColorDialog, ComboBox, CompactDoubleSpinBox, CompactSpinBox
 from qfluentwidgets.common.config import isDarkTheme
-from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.common.icon import FluentIconBase, drawIcon
 from qfluentwidgets.common.style_sheet import FluentStyleSheet
 from qfluentwidgets.components.widgets.icon_widget import IconWidget

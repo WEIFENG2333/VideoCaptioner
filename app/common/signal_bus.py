@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, pyqtSignal, QUrl
+from PyQt5.QtCore import QObject, QUrl, pyqtSignal
 
 
 class SignalBus(QObject):

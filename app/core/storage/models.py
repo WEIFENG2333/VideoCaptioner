@@ -1,8 +1,8 @@
 # app/core/storage/models.py
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Index, Date
+from datetime import date, datetime
+
+from sqlalchemy import JSON, Column, Date, DateTime, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime, date
-from .constants import TranslatorType, OperationType
 
 Base = declarative_base()
 

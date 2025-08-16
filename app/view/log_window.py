@@ -1,11 +1,9 @@
 import os
-import time
-from pathlib import Path
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QTextEdit, QVBoxLayout, QWidget, QHBoxLayout
-from qfluentwidgets import Dialog, FluentStyleSheet, TextEdit, isDarkTheme, PushButton
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import FluentStyleSheet, PushButton, TextEdit, isDarkTheme
 
 from app.config import LOG_PATH, RESOURCE_PATH
 

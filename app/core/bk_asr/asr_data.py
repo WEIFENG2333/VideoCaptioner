@@ -1,10 +1,10 @@
 import json
 import math
+import os
+import platform
 import re
 from pathlib import Path
 from typing import List, Tuple
-import os
-import platform
 
 
 def handle_long_path(path: str) -> str:

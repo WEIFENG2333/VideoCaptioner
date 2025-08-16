@@ -7,6 +7,10 @@
 *.pyc
 */__pycache__/
 *.env
+venv/
+
+# 系统文件
+.DS_Store
 
 # 测试和脚本
 /test/

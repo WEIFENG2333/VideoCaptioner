@@ -3,12 +3,12 @@ import webbrowser
 from PyQt5.QtCore import Qt, QThread, QUrl, pyqtSignal
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QFileDialog, QLabel, QWidget
-from qfluentwidgets import ComboBoxSettingCard, CustomColorSettingCard, ExpandLayout
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
+    ComboBoxSettingCard,
+    CustomColorSettingCard,
+    ExpandLayout,
     HyperlinkCard,
     InfoBar,
-    MessageBox,
     OptionsSettingCard,
     PrimaryPushSettingCard,
     PushSettingCard,
@@ -19,16 +19,15 @@ from qfluentwidgets import (
     setTheme,
     setThemeColor,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.EditComboBoxSettingCard import EditComboBoxSettingCard
 from app.components.LineEditSettingCard import LineEditSettingCard
 from app.config import AUTHOR, FEEDBACK_URL, HELP_URL, RELEASE_URL, VERSION, YEAR
-from app.core.entities import LLMServiceEnum, TranscribeModelEnum, TranslatorServiceEnum
+from app.core.entities import LLMServiceEnum, TranslatorServiceEnum
 from app.core.utils.test_opanai import get_openai_models, test_openai
-from app.thread.version_manager_thread import VersionManager
-from app.components.MySettingCard import ComboBoxSettingCard as MyComboBoxSettingCard
 
 
 class SettingInterface(ScrollArea):

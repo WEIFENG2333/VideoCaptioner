@@ -1,9 +1,7 @@
 import datetime
-import logging
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from app.common.config import cfg
 from app.core.entities import SynthesisTask
 from app.core.utils.logger import setup_logger
 from app.core.utils.video_utils import add_subtitles

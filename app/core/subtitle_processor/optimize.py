@@ -1,19 +1,16 @@
 import json
-import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
-import retry
 from openai import OpenAI
 
 from app.config import CACHE_PATH
 from app.core.bk_asr.asr_data import ASRData, ASRDataSeg
 from app.core.storage.cache_manager import CacheManager
-from app.core.utils import json_repair
 from app.core.subtitle_processor.alignment import SubtitleAligner
 from app.core.subtitle_processor.prompt import OPTIMIZER_PROMPT
+from app.core.utils import json_repair
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("subtitle_optimizer")

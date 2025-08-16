@@ -2,11 +2,8 @@
 
 import datetime
 import os
-import subprocess
 import sys
 from pathlib import Path
-
-from app.core.utils.platform_utils import open_folder
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPixmap
@@ -15,7 +12,6 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -49,6 +45,7 @@ from app.core.entities import (
     VideoInfo,
 )
 from app.core.task_factory import TaskFactory
+from app.core.utils.platform_utils import open_folder
 from app.thread.transcript_thread import TranscriptThread
 from app.thread.video_info_thread import VideoInfoThread
 

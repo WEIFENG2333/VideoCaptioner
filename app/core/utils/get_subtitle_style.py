@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from app.config import SUBTITLE_STYLE_PATH
 

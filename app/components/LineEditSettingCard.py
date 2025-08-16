@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from qfluentwidgets import SettingCard, LineEdit
+from qfluentwidgets import LineEdit, SettingCard
 from qfluentwidgets.common.config import ConfigItem, qconfig
 
 

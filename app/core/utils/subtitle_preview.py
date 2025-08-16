@@ -5,9 +5,8 @@ from typing import Optional, Tuple
 
 from app.config import CACHE_PATH, RESOURCE_PATH
 
-from .logger import setup_logger
 from .ass_auto_wrap import auto_wrap_ass_file
-from .video_utils import get_video_info
+from .logger import setup_logger
 
 logger = setup_logger("subtitle_preview")
 

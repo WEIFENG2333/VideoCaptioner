@@ -1,10 +1,9 @@
-import os
 from typing import Optional
 
 from openai import OpenAI
 
 from ..utils.logger import setup_logger
-from .asr_data import ASRData, ASRDataSeg
+from .asr_data import ASRDataSeg
 from .base import BaseASR
 
 logger = setup_logger("whisper_api")

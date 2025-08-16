@@ -1,17 +1,12 @@
-import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Optional, Tuple
-
-from app.core.utils.platform_utils import open_folder
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QFontDatabase
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
+    BodyLabel,
+    CardWidget,
     ImageLabel,
     InfoBar,
     InfoBarPosition,
@@ -21,6 +16,7 @@ from qfluentwidgets import (
     ScrollArea,
     SettingCardGroup,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
@@ -30,7 +26,8 @@ from app.components.MySettingCard import (
     DoubleSpinBoxSettingCard,
     SpinBoxSettingCard,
 )
-from app.config import SUBTITLE_STYLE_PATH, ASSETS_PATH
+from app.config import ASSETS_PATH, SUBTITLE_STYLE_PATH
+from app.core.utils.platform_utils import open_folder
 from app.core.utils.subtitle_preview import generate_preview
 
 PERVIEW_TEXTS = {

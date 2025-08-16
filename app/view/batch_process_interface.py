@@ -1,43 +1,43 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QComboBox,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QProgressBar,
-    QFileDialog,
-    QSizePolicy,
-)
-from PyQt5.QtGui import QDesktopServices, QColor, QFont
-from PyQt5.QtCore import QUrl
-from qfluentwidgets import (
-    ComboBox,
-    PushButton,
-    TableWidget,
-    ProgressBar,
-    InfoBar,
-    InfoBarPosition,
-    RoundMenu,
-    Action,
-    FluentIcon as FIF,
-)
 import os
 
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QColor, QDesktopServices, QFont
+from PyQt5.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QSizePolicy,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+from qfluentwidgets import (
+    Action,
+    ComboBox,
+    InfoBar,
+    InfoBarPosition,
+    ProgressBar,
+    PushButton,
+    RoundMenu,
+    TableWidget,
+)
+from qfluentwidgets import (
+    FluentIcon as FIF,
+)
+
+from app.core.entities import (
+    BatchTaskStatus,
+    BatchTaskType,
+    SupportedAudioFormats,
+    SupportedSubtitleFormats,
+    SupportedVideoFormats,
+)
 from app.thread.batch_process_thread import (
     BatchProcessThread,
     BatchTask,
     BatchTaskStatus,
 )
-from app.core.entities import (
-    SupportedAudioFormats,
-    SupportedVideoFormats,
-    SupportedSubtitleFormats,
-)
-from app.core.entities import BatchTaskType, BatchTaskStatus
 
 
 class BatchProcessInterface(QWidget):
