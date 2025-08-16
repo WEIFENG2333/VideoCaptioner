@@ -352,12 +352,12 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         """添加模型表格行"""
         # 模型名称
         name_item = QTableWidgetItem(model["label"])
-        name_item.setTextAlignment(Qt.AlignCenter)
+        name_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 0, name_item)
 
         # 大小
         size_item = QTableWidgetItem(f"{int(model['size'])/1024:.1f} MB")
-        size_item.setTextAlignment(Qt.AlignCenter)
+        size_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 1, size_item)
 
         # 状态 - 检查model.bin文件是否存在
@@ -369,8 +369,8 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
             self.tr("已下载") if is_downloaded else self.tr("未下载")
         )
         if is_downloaded:
-            status_item.setForeground(Qt.green)
-        status_item.setTextAlignment(Qt.AlignCenter)
+            status_item.setForeground(Qt.green)  # type: ignore
+        status_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 2, status_item)
 
         # 下载按钮
@@ -546,8 +546,8 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
             self._set_all_download_buttons_enabled(True)
             # 更新状态
             status_item = QTableWidgetItem(self.tr("已下载"))
-            status_item.setForeground(Qt.green)
-            status_item.setTextAlignment(Qt.AlignCenter)
+            status_item.setForeground(Qt.green)  # type: ignore
+            status_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
             self.model_table.setItem(row, 2, status_item)
 
             # 更新下载按钮文本
@@ -657,7 +657,7 @@ class FasterWhisperSettingWidget(QWidget):
         self.main_layout = QVBoxLayout(self)
 
         # 创建单向滚动区域和容器
-        self.scrollArea = SingleDirectionScrollArea(orient=Qt.Vertical, parent=self)
+        self.scrollArea = SingleDirectionScrollArea(orient=Qt.Vertical, parent=self)  # type: ignore
         self.scrollArea.setStyleSheet(
             "QScrollArea{background: transparent; border: none}"
         )
@@ -747,7 +747,7 @@ class FasterWhisperSettingWidget(QWidget):
         # VAD阈值
         self.vad_threshold_card = DoubleSpinBoxSettingCard(
             cfg.faster_whisper_vad_threshold,
-            FIF.VOLUME,
+            FIF.VOLUME,  # type: ignore
             self.tr("VAD阈值"),
             self.tr("语音概率阈值，高于此值视为语音"),
             minimum=0.00,

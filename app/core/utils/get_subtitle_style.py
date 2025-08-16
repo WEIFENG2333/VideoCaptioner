@@ -1,8 +1,8 @@
-
+from typing import Optional
 from app.config import SUBTITLE_STYLE_PATH
 
 
-def get_subtitle_style(style_name: str) -> str:
+def get_subtitle_style(style_name: str) -> Optional[str]:
     """获取字幕样式内容
 
     Args:

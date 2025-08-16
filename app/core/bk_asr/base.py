@@ -28,7 +28,7 @@ class BaseASR:
     def _set_data(self):
         if isinstance(self.audio_path, bytes):
             self.file_binary = self.audio_path
-        else:
+        elif isinstance(self.audio_path, str):
             ext = self.audio_path.split(".")[-1].lower()
             assert (
                 ext in self.SUPPORTED_SOUND_FORMAT
@@ -36,6 +36,8 @@ class BaseASR:
             assert os.path.exists(self.audio_path), f"File not found: {self.audio_path}"
             with open(self.audio_path, "rb") as f:
                 self.file_binary = f.read()
+        else:
+            raise ValueError("audio_path must be provided as string or bytes")
         crc32_value = zlib.crc32(self.file_binary) & 0xFFFFFFFF
         self.crc32_hex = format(crc32_value, "08x")
 

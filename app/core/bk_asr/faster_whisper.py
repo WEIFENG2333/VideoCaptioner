@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Callable, Any
 
 from ..utils.logger import setup_logger
 from .asr_data import ASRData, ASRDataSeg
@@ -23,7 +23,7 @@ class FasterWhisperASR(BaseASR):
         model_dir: str,
         language: str = "zh",
         device: str = "cpu",
-        output_dir: str = None,
+        output_dir: Optional[str] = None,
         output_format: str = "srt",
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
@@ -40,7 +40,7 @@ class FasterWhisperASR(BaseASR):
         max_line_count: int = 1,
         max_comma: int = 20,
         max_comma_cent: int = 50,
-        prompt: str = None,
+        prompt: Optional[str] = None,
     ):
         super().__init__(audio_path, use_cache)
 
@@ -94,7 +94,7 @@ class FasterWhisperASR(BaseASR):
                 if not shutil.which("faster-whisper"):
                     raise EnvironmentError("faster-whisper程序未找到，请确保已经下载。")
                 self.faster_whisper_program = "faster-whisper"
-                self.vad_method = None
+                self.vad_method = ""
         elif self.device == "cuda":
             if not shutil.which("faster-whisper-xxl"):
                 raise EnvironmentError(
@@ -189,7 +189,7 @@ class FasterWhisperASR(BaseASR):
 
         return cmd
 
-    def _make_segments(self, resp_data: str) -> list[ASRDataSeg]:
+    def _make_segments(self, resp_data: str) -> List[ASRDataSeg]:
         asr_data = ASRData.from_srt(resp_data)
         # 过滤掉纯音乐标记
         filtered_segments = []
@@ -204,7 +204,9 @@ class FasterWhisperASR(BaseASR):
                 filtered_segments.append(seg)
         return filtered_segments
 
-    def _run(self, callback=None) -> str:
+    def _run(
+        self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
+    ) -> str:
         if callback is None:
             callback = lambda x, y: None
 
@@ -216,9 +218,16 @@ class FasterWhisperASR(BaseASR):
             wav_path = temp_dir / "audio.wav"
             output_path = wav_path.with_suffix(".srt")
 
-            shutil.copy2(self.audio_path, wav_path)
+            if isinstance(self.audio_path, str):
+                shutil.copy2(self.audio_path, wav_path)
+            else:
+                # Handle bytes case
+                if self.file_binary:
+                    wav_path.write_bytes(self.file_binary)
+                else:
+                    raise ValueError("No audio data available")
 
-            cmd = self._build_command(wav_path)
+            cmd = self._build_command(str(wav_path))
 
             logger.info("Faster Whisper 执行命令: %s", " ".join(cmd))
             callback(5, "Whisper识别")

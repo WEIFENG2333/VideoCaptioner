@@ -35,7 +35,7 @@ class TaskFactory:
         style_path = SUBTITLE_STYLE_PATH / f"{style_name}.txt"
         if style_path.exists():
             return style_path.read_text(encoding="utf-8")
-        return None
+        return ""
 
     @staticmethod
     def create_transcribe_task(
@@ -171,7 +171,11 @@ class TaskFactory:
             # 翻译服务
             translator_service=cfg.translator_service.value,
             # 字幕处理
-            split_type=split_type,
+            split_type=(
+                SplitTypeEnum.SENTENCE
+                if split_type == "sentence"
+                else SplitTypeEnum.SEMANTIC
+            ),
             need_reflect=cfg.need_reflect_translate.value,
             need_translate=cfg.need_translate.value,
             need_optimize=cfg.need_optimize.value,

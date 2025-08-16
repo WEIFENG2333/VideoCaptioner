@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
@@ -16,8 +16,8 @@ class EditComboBoxSettingCard(SettingCard):
         configItem: ConfigItem,
         icon: Union[str, QIcon],
         title: str,
-        content: str = None,
-        items: List[str] = None,
+        content: Optional[str] = None,
+        items: Optional[List[str]] = None,
         parent=None,
     ):
         super().__init__(icon, title, content, parent)
@@ -31,7 +31,7 @@ class EditComboBoxSettingCard(SettingCard):
             self.comboBox.addItem(item)
 
         # 设置布局
-        self.hBoxLayout.addWidget(self.comboBox, 1, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.comboBox, 1, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(16)
 
         # 设置最小宽度

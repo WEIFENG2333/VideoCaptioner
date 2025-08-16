@@ -1,4 +1,4 @@
-
+from typing import Any, Dict, Optional, Callable
 from app.core.bk_asr.asr_data import ASRData
 from app.core.bk_asr.bcut import BcutASR
 from app.core.bk_asr.faster_whisper import FasterWhisperASR
@@ -33,50 +33,48 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
         TranscribeModelEnum.FASTER_WHISPER: FasterWhisperASR,
     }
 
+    if config.transcribe_model is None:
+        raise ValueError("转录模型未设置")
     asr_class = ASR_MODELS.get(config.transcribe_model)
     if not asr_class:
         raise ValueError(f"无效的转录模型: {config.transcribe_model}")
 
     # 构建ASR参数
-    asr_args = {
+    asr_args: Dict[str, Any] = {
         "use_cache": config.use_asr_cache,
         "need_word_time_stamp": config.need_word_time_stamp,
     }
 
     # 根据不同模型添加特定参数
     if config.transcribe_model == TranscribeModelEnum.WHISPER_CPP:
-        asr_args.update(
-            {
-                "language": config.transcribe_language,
-                "whisper_model": config.whisper_model,
-            }
+        asr_args["language"] = config.transcribe_language
+        asr_args["whisper_model"] = (
+            config.whisper_model.value if config.whisper_model else None
         )
     elif config.transcribe_model == TranscribeModelEnum.WHISPER_API:
-        asr_args.update(
-            {
-                "language": config.transcribe_language,
-                "whisper_model": config.whisper_api_model,
-                "api_key": config.whisper_api_key,
-                "base_url": config.whisper_api_base,
-                "prompt": config.whisper_api_prompt,
-            }
-        )
+        asr_args["language"] = config.transcribe_language
+        asr_args["whisper_model"] = config.whisper_api_model
+        asr_args["api_key"] = config.whisper_api_key
+        asr_args["base_url"] = config.whisper_api_base
+        asr_args["prompt"] = config.whisper_api_prompt
     elif config.transcribe_model == TranscribeModelEnum.FASTER_WHISPER:
-        asr_args.update(
-            {
-                "faster_whisper_program": config.faster_whisper_program,
-                "language": config.transcribe_language,
-                "whisper_model": config.faster_whisper_model,
-                "model_dir": config.faster_whisper_model_dir,
-                "device": config.faster_whisper_device,
-                "vad_filter": config.faster_whisper_vad_filter,
-                "vad_threshold": config.faster_whisper_vad_threshold,
-                "vad_method": config.faster_whisper_vad_method,
-                "ff_mdx_kim2": config.faster_whisper_ff_mdx_kim2,
-                "one_word": config.faster_whisper_one_word,
-                "prompt": config.faster_whisper_prompt,
-            }
+        asr_args["faster_whisper_program"] = config.faster_whisper_program
+        asr_args["language"] = config.transcribe_language
+        asr_args["whisper_model"] = (
+            config.faster_whisper_model.value if config.faster_whisper_model else None
         )
+        asr_args["model_dir"] = config.faster_whisper_model_dir
+        asr_args["device"] = config.faster_whisper_device
+        asr_args["vad_filter"] = config.faster_whisper_vad_filter
+        asr_args["vad_threshold"] = config.faster_whisper_vad_threshold
+        asr_args["vad_method"] = (
+            config.faster_whisper_vad_method.value
+            if config.faster_whisper_vad_method
+            else None
+        )
+        asr_args["ff_mdx_kim2"] = config.faster_whisper_ff_mdx_kim2
+        asr_args["one_word"] = config.faster_whisper_one_word
+        asr_args["prompt"] = config.faster_whisper_prompt
 
     # 创建ASR实例并运行
     asr = asr_class(audio_path, **asr_args)

@@ -39,9 +39,7 @@ class VersionManager(QObject):
         self.history = []
 
         # 修改 QSettings 的初始化方式，指定完整的组织和应用名称，并设置为 IniFormat
-        self.settings = QSettings(
-            QSettings.IniFormat, QSettings.UserScope, "VideoCaptioner", "VideoCaptioner"
-        )
+        self.settings = QSettings("VideoCaptioner", "VideoCaptioner")  # type: ignore
 
     def getLatestVersionInfo(self):
         """获取最新版本信息"""
@@ -106,6 +104,7 @@ class VersionManager(QObject):
 
             # 执行更新下载
             exec(update_code, update_namespace)
+            return True
 
         except Exception as e:
             logger.exception("执行更新代码失败: %s", str(e))
@@ -163,8 +162,12 @@ class VersionManager(QObject):
                 f"announcement/shown_announcement_{announcement_id}", False, type=bool
             ):
                 return
-            start_date = datetime.strptime(ann.get("start_date"), "%Y-%m-%d").date()
-            end_date = datetime.strptime(ann.get("end_date"), "%Y-%m-%d").date()
+            start_date_str = ann.get("start_date")
+            end_date_str = ann.get("end_date")
+            if not start_date_str or not end_date_str:
+                return
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
             today = datetime.today().date()
             if start_date <= today <= end_date:
                 content = ann.get("content", "")

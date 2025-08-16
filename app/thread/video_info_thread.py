@@ -11,6 +11,7 @@ from app.core.utils.logger import setup_logger
 
 logger = setup_logger("video_info_thread")
 
+
 class VideoInfoThread(QThread):
     finished = pyqtSignal(VideoInfo)
     error = pyqtSignal(str)
@@ -25,7 +26,7 @@ class VideoInfoThread(QThread):
             temp_dir = tempfile.gettempdir()
             file_name = Path(self.file_path).stem
             thumbnail_path = os.path.join(temp_dir, f"{file_name}_thumbnail.jpg")
-            
+
             # 获取视频信息
             video_info = self._get_video_info(thumbnail_path)
             self.finished.emit(video_info)
@@ -42,59 +43,72 @@ class VideoInfoThread(QThread):
                 cmd,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
-                errors='replace',
-                creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
+                encoding="utf-8",
+                errors="replace",
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
             info = result.stderr
 
             video_info_dict = {
-                'file_name': Path(self.file_path).stem,
-                'file_path': self.file_path,
-                'duration_seconds': 0,
-                'bitrate_kbps': 0,
-                'video_codec': '',
-                'width': 0,
-                'height': 0,
-                'fps': 0,
-                'audio_codec': '',
-                'audio_sampling_rate': 0,
-                'thumbnail_path': '',
+                "file_name": Path(self.file_path).stem,
+                "file_path": self.file_path,
+                "duration_seconds": 0,
+                "bitrate_kbps": 0,
+                "video_codec": "",
+                "width": 0,
+                "height": 0,
+                "fps": 0,
+                "audio_codec": "",
+                "audio_sampling_rate": 0,
+                "thumbnail_path": "",
             }
 
             # 提取时长
-            if duration_match := re.search(r'Duration: (\d+):(\d+):(\d+\.\d+)', info):
+            if duration_match := re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info):
                 hours, minutes, seconds = map(float, duration_match.groups())
-                video_info_dict['duration_seconds'] = hours * 3600 + minutes * 60 + seconds
+                video_info_dict["duration_seconds"] = (
+                    hours * 3600 + minutes * 60 + seconds
+                )
                 logger.info(f"视频时长: {video_info_dict['duration_seconds']}秒")
 
             # 提取比特率
-            if bitrate_match := re.search(r'bitrate: (\d+) kb/s', info):
-                video_info_dict['bitrate_kbps'] = int(bitrate_match.group(1))
+            if bitrate_match := re.search(r"bitrate: (\d+) kb/s", info):
+                video_info_dict["bitrate_kbps"] = int(bitrate_match.group(1))
 
             # 提取视频流信息
-            if video_stream_match := re.search(r'Stream #\d+:\d+.*Video: (\w+).*?, (\d+)x(\d+).*?, ([\d.]+) (?:fps|tb)',
-                                               info, re.DOTALL):
-                video_info_dict.update({
-                    'video_codec': video_stream_match.group(1),
-                    'width': int(video_stream_match.group(2)),
-                    'height': int(video_stream_match.group(3)),
-                    'fps': float(video_stream_match.group(4))
-                })
-                
+            if video_stream_match := re.search(
+                r"Stream #\d+:\d+.*Video: (\w+).*?, (\d+)x(\d+).*?, ([\d.]+) (?:fps|tb)",
+                info,
+                re.DOTALL,
+            ):
+                video_info_dict.update(
+                    {
+                        "video_codec": video_stream_match.group(1),
+                        "width": int(video_stream_match.group(2)),
+                        "height": int(video_stream_match.group(3)),
+                        "fps": float(video_stream_match.group(4)),
+                    }
+                )
+
                 if thumbnail_path:
-                    if self._extract_thumbnail(video_info_dict['duration_seconds'] * 0.3, thumbnail_path):
-                        video_info_dict['thumbnail_path'] = thumbnail_path
+                    if self._extract_thumbnail(
+                        video_info_dict["duration_seconds"] * 0.3, thumbnail_path
+                    ):
+                        video_info_dict["thumbnail_path"] = thumbnail_path
             else:
-                video_info_dict['thumbnail_path'] = thumbnail_path
+                video_info_dict["thumbnail_path"] = thumbnail_path
                 logger.warning("未找到视频流信息")
 
             # 提取音频流信息
-            if audio_stream_match := re.search(r'Stream #\d+:\d+.*Audio: (\w+).* (\d+) Hz', info):
-                video_info_dict.update({
-                    'audio_codec': audio_stream_match.group(1),
-                    'audio_sampling_rate': int(audio_stream_match.group(2))
-                })
+            if audio_stream_match := re.search(
+                r"Stream #\d+:\d+.*Audio: (\w+).* (\d+) Hz", info
+            ):
+                video_info_dict.update(
+                    {
+                        "audio_codec": audio_stream_match.group(1),
+                        "audio_sampling_rate": int(audio_stream_match.group(2)),
+                    }
+                )
 
             return VideoInfo(**video_info_dict)
         except Exception as e:
@@ -118,24 +132,28 @@ class VideoInfoThread(QThread):
 
             cmd = [
                 "ffmpeg",
-                "-ss", timestamp,
-                "-i", video_path,
-                "-vframes", "1",
-                "-q:v", "2",
+                "-ss",
+                timestamp,
+                "-i",
+                video_path,
+                "-vframes",
+                "1",
+                "-q:v",
+                "2",
                 "-y",
-                thumbnail_path
+                thumbnail_path,
             ]
             # logger.info(f"提取缩略图执行命令: {' '.join(cmd)}")
             result = subprocess.run(
-                cmd, 
-                capture_output=True, 
-                text=True, 
-                encoding='utf-8', 
-                errors='replace',
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
             return result.returncode == 0
 
         except Exception as e:
             logger.exception(f"提取缩略图时出错: {str(e)}")
-            return False 
+            return False

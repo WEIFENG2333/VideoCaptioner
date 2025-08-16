@@ -4,7 +4,7 @@ import os
 import platform
 import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 
 def handle_long_path(path: str) -> str:
@@ -197,7 +197,7 @@ class ASRData:
         return self
 
     def save(
-        self, save_path: str, ass_style: str = None, layout: str = "原文在上"
+        self, save_path: str, ass_style: Optional[str] = None, layout: str = "原文在上"
     ) -> None:
         """
         Save the ASRData to a file
@@ -305,7 +305,10 @@ class ASRData:
         return result_json
 
     def to_ass(
-        self, style_str: str = None, layout: str = "原文在上", save_path: str = None
+        self,
+        style_str: Optional[str] = None,
+        layout: str = "原文在上",
+        save_path: Optional[str] = None,
     ) -> str:
         """转换为ASS字幕格式
 
@@ -420,7 +423,9 @@ class ASRData:
 
         # return vtt_text
 
-    def merge_segments(self, start_index: int, end_index: int, merged_text: str = None):
+    def merge_segments(
+        self, start_index: int, end_index: int, merged_text: Optional[str] = None
+    ):
         """合并从 start_index 到 end_index 的段（包含）。"""
         if (
             start_index < 0
@@ -499,16 +504,16 @@ class ASRData:
         Raises:
             ValueError: 不支持的文件格式或文件读取错误
         """
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"文件不存在: {file_path}")
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists():
+            raise FileNotFoundError(f"文件不存在: {file_path_obj}")
 
         try:
-            content = file_path.read_text(encoding="utf-8")
+            content = file_path_obj.read_text(encoding="utf-8")
         except UnicodeDecodeError:
-            content = file_path.read_text(encoding="gbk")
+            content = file_path_obj.read_text(encoding="gbk")
 
-        suffix = file_path.suffix.lower()
+        suffix = file_path_obj.suffix.lower()
 
         if suffix == ".srt":
             return ASRData.from_srt(content)

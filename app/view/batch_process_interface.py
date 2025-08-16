@@ -125,7 +125,7 @@ class BatchProcessInterface(QWidget):
         self.batch_thread.task_completed.connect(self.on_task_completed)
 
         # 表格右键菜单
-        self.task_table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.task_table.setContextMenuPolicy(Qt.CustomContextMenu)  # type: ignore
         self.task_table.customContextMenuRequested.connect(self.show_context_menu)
 
     def on_add_file_clicked(self):
@@ -277,8 +277,8 @@ class BatchProcessInterface(QWidget):
 
         # 状态
         status = QTableWidgetItem(str(BatchTaskStatus.WAITING))
-        status.setTextAlignment(Qt.AlignCenter)
-        status.setForeground(Qt.gray)  # 设置字体颜色为灰色
+        status.setTextAlignment(Qt.AlignCenter)  # type: ignore
+        status.setForeground(Qt.gray)  # type: ignore  # 设置字体颜色为灰色
         font = QFont()
         font.setBold(True)
         status.setFont(font)

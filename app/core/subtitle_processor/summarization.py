@@ -35,14 +35,18 @@ class SubtitleSummarizer:
                     },
                 ],
             )
-            return str(json_repair.loads(response.choices[0].message.content))
+            content = response.choices[0].message.content
+            if content is None:
+                return ""
+            return str(json_repair.loads(content))
         except Exception as e:
             logger.exception(f"摘要化字幕内容失败: {e}")
             return ""
 
 
 if __name__ == "__main__":
-    summarizer = SubtitleSummarizer()
+    # 测试代码，需要提供模型名称
+    summarizer = SubtitleSummarizer("gpt-3.5-turbo")
     example_subtitles = {
         0: "既然是想做并发编程",
         1: "比如说肯定是想干嘛",

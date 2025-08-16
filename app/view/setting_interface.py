@@ -82,7 +82,7 @@ class SettingInterface(ScrollArea):
             FIF.MICROPHONE,
             self.tr("转录模型"),
             self.tr("语音转换文字要使用的语音识别模型"),
-            texts=[model.value for model in cfg.transcribe_model.validator.options],
+            texts=[model.value for model in cfg.transcribe_model.validator.options],  # type: ignore
             parent=self.transcribeGroup,
         )
 
@@ -112,7 +112,7 @@ class SettingInterface(ScrollArea):
             FIF.LANGUAGE,
             self.tr("目标语言"),
             self.tr("选择翻译字幕的目标语言"),
-            texts=[lang.value for lang in cfg.target_language.validator.options],
+            texts=[lang.value for lang in cfg.target_language.validator.options],  # type: ignore
             parent=self.translateGroup,
         )
 
@@ -248,7 +248,7 @@ class SettingInterface(ScrollArea):
             FIF.ROBOT,
             self.tr("LLM服务)"),
             self.tr("选择大服务，用于字幕断句、字幕优化、字幕翻译（如果选择"),
-            texts=[service.value for service in cfg.llm_service.validator.options],
+            texts=[service.value for service in cfg.llm_service.validator.options],  # type: ignore
             parent=self.llmGroup,
         )
 
@@ -378,7 +378,7 @@ class SettingInterface(ScrollArea):
             # 创建模型选择卡片
             model_card = EditComboBoxSettingCard(
                 config["model_cfg"],
-                FIF.ROBOT,
+                FIF.ROBOT,  # type: ignore
                 self.tr("模型"),
                 self.tr(f"选择 {service.value} 模型"),
                 config["default_models"],
@@ -417,7 +417,7 @@ class SettingInterface(ScrollArea):
             self.tr("翻译服务"),
             self.tr("选择翻译服务"),
             texts=[
-                service.value for service in cfg.translator_service.validator.options
+                service.value for service in cfg.translator_service.validator.options  # type: ignore
             ],
             parent=self.translate_serviceGroup,
         )
@@ -475,7 +475,7 @@ class SettingInterface(ScrollArea):
 
     def __initWidget(self):
         self.resize(1000, 800)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore
         self.setViewportMargins(0, 80, 0, 20)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
@@ -569,7 +569,7 @@ class SettingInterface(ScrollArea):
 
         # 反馈
         self.feedbackCard.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
+            lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))  # type: ignore
         )
 
         # 关于

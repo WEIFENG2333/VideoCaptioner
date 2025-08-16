@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Optional
+from typing import Optional, Union, List, Callable, Any
 
 import requests
 
@@ -32,23 +32,23 @@ class BcutASR(BaseASR):
 
     def __init__(
         self,
-        audio_path: str | bytes,
+        audio_path: Union[str, bytes],
         use_cache: bool = True,
         need_word_time_stamp: bool = False,
     ):
         super().__init__(audio_path, use_cache=use_cache)
         self.session = requests.Session()
         self.task_id: Optional[str] = None
-        self.__etags: list[str] = []
+        self.__etags: List[str] = []
 
         self.__in_boss_key: Optional[str] = None
         self.__resource_id: Optional[str] = None
         self.__upload_id: Optional[str] = None
-        self.__upload_urls: list[str] = []
+        self.__upload_urls: List[str] = []
         self.__per_size: Optional[int] = None
         self.__clips: Optional[int] = None
 
-        self.__etags: Optional[list[str]] = []
+        self.__etags_final: Optional[List[str]] = []
         self.__download_url: Optional[str] = None
         self.task_id: Optional[str] = None
 
@@ -88,6 +88,14 @@ class BcutASR(BaseASR):
 
     def __upload_part(self) -> None:
         """上传音频数据"""
+        if (
+            self.__clips is None
+            or self.__per_size is None
+            or self.__upload_urls is None
+            or self.file_binary is None
+        ):
+            raise ValueError("Upload parameters not initialized")
+
         for clip in range(self.__clips):
             start_range = clip * self.__per_size
             end_range = (clip + 1) * self.__per_size
@@ -99,7 +107,8 @@ class BcutASR(BaseASR):
             )
             resp.raise_for_status()
             etag = resp.headers.get("Etag")
-            self.__etags.append(etag)
+            if etag is not None:
+                self.__etags.append(etag)
             logger.info(f"分片{clip}上传成功: {etag}")
 
     def __commit_upload(self) -> None:
@@ -108,7 +117,7 @@ class BcutASR(BaseASR):
             {
                 "InBossKey": self.__in_boss_key,
                 "ResourceId": self.__resource_id,
-                "Etags": ",".join(self.__etags),
+                "Etags": ",".join(self.__etags) if self.__etags else "",
                 "UploadId": self.__upload_id,
                 "model_id": "8",
             }
@@ -130,7 +139,7 @@ class BcutASR(BaseASR):
         resp = resp.json()
         self.task_id = resp["data"]["task_id"]
         logger.info(f"任务已创建: {self.task_id}")
-        return self.task_id
+        return self.task_id or ""
 
     def result(self, task_id: Optional[str] = None):
         """查询转换结果"""
@@ -143,7 +152,9 @@ class BcutASR(BaseASR):
         resp = resp.json()
         return resp["data"]
 
-    def _run(self, callback=None, **kwargs):
+    def _run(
+        self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
+    ) -> dict:
         if callback is None:
             callback = lambda x, y: None
 
@@ -168,7 +179,7 @@ class BcutASR(BaseASR):
         logger.info(f"转换成功")
         return json.loads(task_resp["result"])
 
-    def _make_segments(self, resp_data: dict) -> list[ASRDataSeg]:
+    def _make_segments(self, resp_data: dict) -> List[ASRDataSeg]:
         if self.need_word_time_stamp:
             return [
                 ASRDataSeg(w["label"].strip(), w["start_time"], w["end_time"])

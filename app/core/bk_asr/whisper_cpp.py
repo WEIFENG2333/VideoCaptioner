@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import List, Optional, Callable, Any
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
@@ -47,7 +48,7 @@ class WhisperCppASR(BaseASR):
 
         self.process = None
 
-    def _make_segments(self, resp_data: str) -> list[ASRDataSeg]:
+    def _make_segments(self, resp_data: str) -> List[ASRDataSeg]:
         asr_data = ASRData.from_srt(resp_data)
         # 过滤掉纯音乐标记
         filtered_segments = []
@@ -102,7 +103,9 @@ class WhisperCppASR(BaseASR):
 
         return whisper_params
 
-    def _run(self, callback=None) -> str:
+    def _run(
+        self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
+    ) -> str:
         if callback is None:
             callback = lambda x, y: None
 
@@ -119,7 +122,14 @@ class WhisperCppASR(BaseASR):
 
             try:
                 # 把self.audio_path 复制到 wav_path
-                shutil.copy2(self.audio_path, wav_path)
+                if isinstance(self.audio_path, str):
+                    shutil.copy2(self.audio_path, wav_path)
+                else:
+                    # Handle bytes case
+                    if self.file_binary:
+                        wav_path.write_bytes(self.file_binary)
+                    else:
+                        raise ValueError("No audio data available")
 
                 # 使用新的 _build_command 方法构建命令
                 whisper_params = self._build_command(
@@ -136,7 +146,10 @@ class WhisperCppASR(BaseASR):
                     encoding="utf-8",
                 )
                 # 获取音频时长
-                total_duration = self.get_audio_duration(self.audio_path) or 600
+                if isinstance(self.audio_path, str):
+                    total_duration = self.get_audio_duration(self.audio_path) or 600
+                else:
+                    total_duration = 600  # Default duration for bytes input
                 logger.info("音频总时长: %d 秒", total_duration)
 
                 # 处理输出和进度
@@ -213,7 +226,7 @@ if __name__ == "__main__":
     # 简短示例
     asr = WhisperCppASR(
         audio_path="audio.mp3",
-        model_path="models/ggml-tiny.bin",
+        whisper_model="tiny",
         whisper_cpp_path="bin/whisper-cpp.exe",
         language="en",
         need_word_time_stamp=True,
