@@ -20,7 +20,7 @@ from app.core.subtitle_processor.prompt import (
     SINGLE_TRANSLATE_PROMPT,
     TRANSLATE_PROMPT,
 )
-from app.core.utils import json_repair
+import json_repair
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("subtitle_translator")

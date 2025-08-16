@@ -7,3 +7,4 @@ yt_dlp
 modelscope
 psutil
 sqlalchemy
+json-repair

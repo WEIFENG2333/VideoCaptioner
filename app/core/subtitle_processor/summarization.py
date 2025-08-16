@@ -2,7 +2,7 @@ import os
 
 from openai import OpenAI
 
-from ..utils import json_repair
+import json_repair
 from ..utils.logger import setup_logger
 from .prompt import SUMMARIZER_PROMPT
 
