@@ -100,9 +100,7 @@ class TaskFactory:
     ) -> SubtitleTask:
         """创建字幕任务"""
         output_name = (
-            Path(file_path)
-            .stem.replace("【原始字幕】", "")
-            .replace(f"【下载字幕】", "")
+            Path(file_path).stem.replace("【原始字幕】", "").replace("【下载字幕】", "")
         )
         # 只在需要翻译时添加翻译服务后缀
         suffix = (

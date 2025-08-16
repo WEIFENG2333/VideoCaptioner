@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from PyQt5.QtCore import QAbstractTableModel, Qt, QTime, QUrl, pyqtSignal, QModelIndex
+from PyQt5.QtCore import QAbstractTableModel, Qt, QTime, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QColor, QDragEnterEvent, QDropEvent, QKeyEvent, QCloseEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -125,7 +125,10 @@ class SubtitleTableModel(QAbstractTableModel):
         return False
 
     def headerData(
-        self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole  # type: ignore
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.DisplayRole,  # type: ignore
     ) -> Any:  # type: ignore
         if role == Qt.DisplayRole:  # type: ignore
             if orientation == Qt.Horizontal:  # type: ignore
@@ -256,7 +259,10 @@ class SubtitleInterface(QWidget):
         for layout in ["译文在上", "原文在上", "仅译文", "仅原文"]:
             action = Action(text=layout)
             action.triggered.connect(
-                lambda checked, l=layout: signalBus.subtitle_layout_changed.emit(l)
+                lambda checked,
+                layout_value=layout: signalBus.subtitle_layout_changed.emit(
+                    layout_value
+                )
             )
             self.layout_menu.addAction(action)
         self.layout_button.setMenu(self.layout_menu)
@@ -293,7 +299,10 @@ class SubtitleInterface(QWidget):
         for lang in TargetLanguageEnum:
             action = Action(text=lang.value)
             action.triggered.connect(
-                lambda checked, l=lang.value: signalBus.target_language_changed.emit(l)
+                lambda checked,
+                lang_value=lang.value: signalBus.target_language_changed.emit(
+                    lang_value
+                )
             )
             self.target_language_menu.addAction(action)
         self.target_language_button.setMenu(self.target_language_menu)
@@ -560,7 +569,7 @@ class SubtitleInterface(QWidget):
                 asr_data.save(file_path, layout=layout)
             InfoBar.success(
                 self.tr("保存成功"),
-                self.tr(f"字幕已保存至:") + file_path,
+                self.tr("字幕已保存至:") + file_path,
                 duration=3000,
                 parent=self,
             )
@@ -618,7 +627,7 @@ class SubtitleInterface(QWidget):
                 self.load_subtitle_file(file_path)
                 InfoBar.success(
                     self.tr("导入成功"),
-                    self.tr(f"成功导入") + os.path.basename(file_path),
+                    self.tr("成功导入") + os.path.basename(file_path),
                     duration=3000,
                     position=InfoBarPosition.BOTTOM,
                     parent=self,
@@ -626,8 +635,8 @@ class SubtitleInterface(QWidget):
                 break
             else:
                 InfoBar.error(
-                    self.tr(f"格式错误") + file_ext,
-                    self.tr(f"支持的字幕格式:") + str(supported_formats),
+                    self.tr("格式错误") + file_ext,
+                    self.tr("支持的字幕格式:") + str(supported_formats),
                     duration=3000,
                     parent=self,
                 )
@@ -769,14 +778,14 @@ class SubtitleInterface(QWidget):
         new_data = {}
         for i, key in enumerate(preserved_keys):
             if i == rows[0]:
-                new_key = f"{len(new_data)+1}"
+                new_key = f"{len(new_data) + 1}"
                 new_data[new_key] = merged_item
-            new_key = f"{len(new_data)+1}"
+            new_key = f"{len(new_data) + 1}"
             new_data[new_key] = data[key]
 
         # 如果合并的是最后几行，需要确保合并项被添加
         if rows[0] >= len(preserved_keys):
-            new_key = f"{len(new_data)+1}"
+            new_key = f"{len(new_data) + 1}"
             new_data[new_key] = merged_item
 
         # 更新模型数据

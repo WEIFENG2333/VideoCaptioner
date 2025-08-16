@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict
 from app.core.bk_asr.asr_data import ASRData
 from app.core.bk_asr.bcut import BcutASR
 from app.core.bk_asr.faster_whisper import FasterWhisperASR
@@ -20,8 +20,12 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
     Returns:
         ASRData: 转录结果数据
     """
+
+    def _default_callback(x, y):
+        pass
+
     if callback is None:
-        callback = lambda x, y: None
+        callback = _default_callback
 
     # 获取ASR模型类
     ASR_MODELS = {

@@ -25,7 +25,6 @@ LOGO_PATH = ASSETS_PATH / "logo.png"
 
 
 class MainWindow(FluentWindow):
-
     def __init__(self):
         super().__init__()
         self.initWindow()

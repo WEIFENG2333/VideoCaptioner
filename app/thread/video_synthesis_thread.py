@@ -21,7 +21,7 @@ class VideoSynthesisThread(QThread):
 
     def run(self):
         try:
-            logger.info(f"\n===========视频合成任务开始===========")
+            logger.info("\n===========视频合成任务开始===========")
             logger.info(f"时间：{datetime.datetime.now()}")
             video_file = self.task.video_path
             subtitle_file = self.task.subtitle_path
@@ -30,7 +30,7 @@ class VideoSynthesisThread(QThread):
             need_video = self.task.synthesis_config.need_video
 
             if not need_video:
-                logger.info(f"不需要合成视频，跳过")
+                logger.info("不需要合成视频，跳过")
                 self.progress.emit(100, self.tr("合成完成"))
                 self.finished.emit(self.task)
                 return

@@ -36,7 +36,6 @@ from app.core.entities import (
 from app.thread.batch_process_thread import (
     BatchProcessThread,
     BatchTask,
-    BatchTaskStatus,
 )
 
 
@@ -195,11 +194,6 @@ class BatchProcessInterface(QWidget):
             is_subtitle = any(
                 first_file.endswith(f".{fmt.value}") for fmt in SupportedSubtitleFormats
             )
-            is_media = any(
-                first_file.endswith(f".{fmt.value}") for fmt in SupportedAudioFormats
-            ) or any(
-                first_file.endswith(f".{fmt.value}") for fmt in SupportedVideoFormats
-            )
             if is_subtitle:
                 self.task_type_combo.setCurrentText(str(BatchTaskType.SUBTITLE))
                 task_type = BatchTaskType.SUBTITLE
@@ -213,7 +207,7 @@ class BatchProcessInterface(QWidget):
         if not valid_files:
             InfoBar.warning(
                 title="无效文件",
-                content=f"请选择正确的文件类型",
+                content="请选择正确的文件类型",
                 duration=3000,
                 position=InfoBarPosition.TOP,
                 parent=self,
@@ -228,7 +222,7 @@ class BatchProcessInterface(QWidget):
                     exists = True
                     InfoBar.warning(
                         title="任务已存在",
-                        content=f"任务已存在",
+                        content="任务已存在",
                         duration=2000,
                         position=InfoBarPosition.TOP_RIGHT,
                         parent=self,

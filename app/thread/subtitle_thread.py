@@ -61,10 +61,12 @@ class SubtitleThread(QThread):
             return self.task.subtitle_config
 
         if self.task.subtitle_config.base_url and self.task.subtitle_config.api_key:
+            # Check if model is None and provide a default
+            model = self.task.subtitle_config.llm_model or "gpt-3.5-turbo"
             if not test_openai(
                 self.task.subtitle_config.base_url,
                 self.task.subtitle_config.api_key,
-                self.task.subtitle_config.llm_model,
+                model,
             )[0]:
                 raise Exception(
                     self.tr(
@@ -86,7 +88,7 @@ class SubtitleThread(QThread):
 
     def run(self):
         try:
-            logger.info(f"\n===========字幕处理任务开始===========")
+            logger.info("\n===========字幕处理任务开始===========")
             logger.info(f"时间：{datetime.datetime.now()}")
 
             # 字幕文件路径检查、对断句字幕路径进行定义
@@ -114,15 +116,13 @@ class SubtitleThread(QThread):
                 subtitle_config.need_optimize
                 or asr_data.is_word_timestamp()
                 or (
-                    (
-                        subtitle_config.need_translate
-                        and subtitle_config.translator_service
-                        not in [
-                            TranslatorServiceEnum.DEEPLX,
-                            TranslatorServiceEnum.BING,
-                            TranslatorServiceEnum.GOOGLE,
-                        ]
-                    )
+                    subtitle_config.need_translate
+                    and subtitle_config.translator_service
+                    not in [
+                        TranslatorServiceEnum.DEEPLX,
+                        TranslatorServiceEnum.BING,
+                        TranslatorServiceEnum.GOOGLE,
+                    ]
                 )
             ):
                 self.progress.emit(2, self.tr("开始验证API配置..."))

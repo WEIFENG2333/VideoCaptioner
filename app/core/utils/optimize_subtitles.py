@@ -15,8 +15,8 @@ def count_words(text: str) -> int:
         int: 文本中的总词数。
     """
     # 使用正则表达式统计英文单词和中文字符
-    english_words = re.findall(r'\b\w+\b', text)
-    chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
+    english_words = re.findall(r"\b\w+\b", text)
+    chinese_chars = re.findall(r"[\u4e00-\u9fff]", text)
     return len(english_words) + len(chinese_chars)
 
 
@@ -33,5 +33,9 @@ def optimize_subtitles(asr_data):
         prev_seg = segments[i - 1]
 
         # 判断前一个段落的词数是否小于等于4且时间相邻
-        if count_words(prev_seg.text) <= 4 and abs(seg.start_time - prev_seg.end_time) < 100 and count_words(seg.text) <= 10:
+        if (
+            count_words(prev_seg.text) <= 4
+            and abs(seg.start_time - prev_seg.end_time) < 100
+            and count_words(seg.text) <= 10
+        ):
             asr_data.merge_with_next_segment(i - 1)

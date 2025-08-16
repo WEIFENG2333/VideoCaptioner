@@ -147,7 +147,7 @@ class JianYingASR(BaseASR):
     def _get_tid(self):
         i = str(datetime.datetime.now().year)[3]
         fr = 390 + int(i)
-        ed = f"3278516897751" if int(i) % 2 != 0 else f"{uuid.getnode():013d}"
+        ed = "3278516897751" if int(i) % 2 != 0 else f"{uuid.getnode():013d}"
         return f"{fr}{ed}"
 
     def _generate_sign_parameters(
@@ -278,7 +278,7 @@ class JianYingASR(BaseASR):
         """Commit the uploaded file"""
         url = f"https://{self.upload_hosts}/{self.store_uri}?uploadID={self.upload_id}&partNumber=1&x-amz-security-token={self.session_token}"
         headers = self._uplosd_headers()
-        response = requests.put(url, data=self.file_binary, headers=headers)
+        requests.put(url, data=self.file_binary, headers=headers)
         return self.store_uri
 
 

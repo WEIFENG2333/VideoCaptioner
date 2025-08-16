@@ -252,7 +252,7 @@ class MediaPlayer(MediaPlayerBase):
                     return spu[1].decode("utf-8")
 
             return None
-        except Exception as e:
+        except Exception:
             return None
 
     def pause(self):
@@ -363,11 +363,11 @@ class MediaPlayer(MediaPlayerBase):
                 vlc.MediaSlaveType.subtitle, subtitle_uri, True
             )
 
-            # 获取字幕轨道信息
-            spu_description = self._player.video_get_spu_description()
+            # 获取字幕轨道信息 (unused but potentially useful for debugging)
+            # spu_description = self._player.video_get_spu_description()
 
             return result == 0
-        except Exception as e:
+        except Exception:
             return False
 
     def get_subtitle_tracks(self) -> list:

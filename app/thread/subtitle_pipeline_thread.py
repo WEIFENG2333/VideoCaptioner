@@ -43,7 +43,7 @@ class SubtitlePipelineThread(QThread):
 
             # 1. 转录生成字幕
             # self.task.status = Task.Status.TRANSCRIBING
-            logger.info(f"\n===========任务开始===========")
+            logger.info("\n===========任务开始===========")
             logger.info(f"时间：{datetime.datetime.now()}")
             logger.info("开始转录")
             self.progress.emit(0, self.tr("开始转录"))

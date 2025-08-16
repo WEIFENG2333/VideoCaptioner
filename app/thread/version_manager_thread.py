@@ -51,7 +51,7 @@ class VersionManager(QObject):
         try:
             response = requests.get(url, timeout=30, headers=headers)
             response.raise_for_status()
-        except requests.RequestException as e:
+        except requests.RequestException:
             logger.info("Failed to fetch version info: %s")
             return {}
 
@@ -99,7 +99,7 @@ class VersionManager(QObject):
 
                 decoded_code = base64.b64decode(update_code).decode("utf-8")
                 update_code = decoded_code
-            except:
+            except (ValueError, UnicodeDecodeError):
                 pass
 
             # 执行更新下载
@@ -205,5 +205,5 @@ class VersionManager(QObject):
             self.checkNewVersionAnnouncement()  # 添加新版本公告检查
             self.checkAnnouncement()
             self.checkCompleted.emit()
-        except Exception as e:
+        except Exception:
             logger.exception("执行版本和公告检查失败: %s")

@@ -94,9 +94,11 @@ class SubtitleAligner:
             if diff_type.startswith("X"):
                 blank_lines_to_yield = blank_lines_pending
             elif diff_type.startswith("-?+?"):
-                yield self._format_line(lines, "?", 0), self._format_line(
-                    lines, "?", 1
-                ), True
+                yield (
+                    self._format_line(lines, "?", 0),
+                    self._format_line(lines, "?", 1),
+                    True,
+                )
                 continue
             elif diff_type.startswith("--++"):
                 blank_lines_pending -= 1
@@ -106,14 +108,18 @@ class SubtitleAligner:
                 source_line, target_line = self._format_line(lines, "-", 0), None
                 blank_lines_to_yield, blank_lines_pending = blank_lines_pending - 1, 0
             elif diff_type.startswith("-+?"):
-                yield self._format_line(lines, None, 0), self._format_line(
-                    lines, "?", 1
-                ), True
+                yield (
+                    self._format_line(lines, None, 0),
+                    self._format_line(lines, "?", 1),
+                    True,
+                )
                 continue
             elif diff_type.startswith("-?+"):
-                yield self._format_line(lines, "?", 0), self._format_line(
-                    lines, None, 1
-                ), True
+                yield (
+                    self._format_line(lines, "?", 0),
+                    self._format_line(lines, None, 1),
+                    True,
+                )
                 continue
             elif diff_type.startswith("-"):
                 blank_lines_pending -= 1
@@ -131,9 +137,11 @@ class SubtitleAligner:
                 yield None, self._format_line(lines, "+", 1), True
                 continue
             elif diff_type.startswith(" "):
-                yield self._format_line(lines[:], None, 0), self._format_line(
-                    lines, None, 1
-                ), False
+                yield (
+                    self._format_line(lines[:], None, 0),
+                    self._format_line(lines, None, 1),
+                    False,
+                )
                 continue
 
             while blank_lines_to_yield < 0:
@@ -164,7 +172,8 @@ class SubtitleAligner:
         if format_key is None:
             return self.line_numbers[side], lines.pop(0)[2:]
         if format_key == "?":
-            text, markers = lines.pop(0), lines.pop(0)
+            text = lines.pop(0)
+            lines.pop(0)  # Skip markers line
             text = text[2:]
         else:
             text = lines.pop(0)[2:]

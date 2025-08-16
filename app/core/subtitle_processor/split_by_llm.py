@@ -106,9 +106,9 @@ def split_by_llm_retry(
     if use_cache:
         cached_result = get_cache(system_prompt + user_prompt, model)
         if cached_result:
-            logger.info(f"从缓存中获取断句结果")
+            logger.info("从缓存中获取断句结果")
             return cached_result
-    logger.info(f"未命中缓存，开始断句")
+    logger.info("未命中缓存，开始断句")
     # 初始化OpenAI客户端
     client = openai.OpenAI()
     response = client.chat.completions.create(

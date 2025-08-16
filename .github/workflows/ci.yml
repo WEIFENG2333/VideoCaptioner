@@ -32,14 +32,11 @@ jobs:
       - name: Lint with ruff
         run: |
           ruff check app/ main.py
-        continue-on-error: true
 
       - name: Format check with ruff
         run: |
           ruff format --check app/ main.py
-        continue-on-error: true
 
       - name: Type check with pyright
         run: |
           pyright
-        continue-on-error: true

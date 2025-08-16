@@ -385,7 +385,7 @@ class VideoSynthesisInterface(QWidget):
                 break
             else:
                 InfoBar.error(
-                    self.tr(f"格式错误") + file_ext,
+                    self.tr("格式错误") + file_ext,
                     self.tr("请拖入视频或者字幕文件"),
                     duration=3000,
                     parent=self,

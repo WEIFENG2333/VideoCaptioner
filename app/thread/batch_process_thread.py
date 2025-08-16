@@ -3,7 +3,7 @@ import time
 from functools import partial
 from typing import Dict, Optional
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.core.entities import (
     BatchTaskStatus,
@@ -154,7 +154,6 @@ class BatchProcessThread(QThread):
         thread.start()
 
     def _handle_trans_sub_task(self, batch_task: BatchTask):
-        task = self.factory.create_transcript_and_subtitle_task(batch_task.file_path)
         trans_task = self.factory.create_transcribe_task(
             batch_task.file_path, need_next_task=True
         )
@@ -220,7 +219,6 @@ class BatchProcessThread(QThread):
         self.task_progress.emit(batch_task.file_path, progress, message)
 
     def _handle_full_process_task(self, batch_task: BatchTask):
-        task = self.factory.create_full_process_task(batch_task.file_path)
         # 首先创建转录任务
         trans_task = self.factory.create_transcribe_task(
             batch_task.file_path, need_next_task=True

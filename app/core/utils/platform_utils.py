@@ -29,7 +29,7 @@ def open_folder(path):
         # 其他系统，尝试使用默认方式
         try:
             subprocess.Popen(["xdg-open", path])
-        except:
+        except (OSError, subprocess.SubprocessError):
             print(f"无法在当前系统打开文件夹: {path}")
 
 
@@ -55,7 +55,7 @@ def open_file(path):
         # 其他系统，尝试使用默认方式
         try:
             subprocess.Popen(["xdg-open", path])
-        except:
+        except (OSError, subprocess.SubprocessError):
             print(f"无法在当前系统打开文件: {path}")
 
 

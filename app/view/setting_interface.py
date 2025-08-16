@@ -417,7 +417,8 @@ class SettingInterface(ScrollArea):
             self.tr("翻译服务"),
             self.tr("选择翻译服务"),
             texts=[
-                service.value for service in cfg.translator_service.validator.options  # type: ignore
+                service.value
+                for service in cfg.translator_service.validator.options  # type: ignore
             ],
             parent=self.translate_serviceGroup,
         )
@@ -557,10 +558,10 @@ class SettingInterface(ScrollArea):
 
         # 字幕样式修改跳转
         self.subtitleStyleCard.linkButton.clicked.connect(
-            lambda: self.window().switchTo(self.window().subtitleStyleInterface)
+            lambda: self.window().switchTo(self.window().subtitleStyleInterface)  # type: ignore
         )
         self.subtitleLayoutCard.linkButton.clicked.connect(
-            lambda: self.window().switchTo(self.window().subtitleStyleInterface)
+            lambda: self.window().switchTo(self.window().subtitleStyleInterface)  # type: ignore
         )
 
         # 个性化
