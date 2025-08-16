@@ -8,20 +8,20 @@
 
 </div>
 
-## 📖 项目介绍
+## 项目介绍
 
-卡卡字幕助手（VideoCaptioner）操作简单且无需高配置，支持网络调用和本地离线（支持调用GPU）两种方式进行语音识别，利用可用通过大语言模型进行字幕智能断句、校正、翻译，字幕视频全流程一键处理！为视频配上效果惊艳的字幕。
+卡卡字幕助手（VideoCaptioner）操作简单且无需高配置，支持网络调用和本地离线（支持调用GPU）两种方式进行语音识别，利用大语言模型进行字幕智能断句、校正、翻译，字幕视频全流程一键处理。为视频配上效果惊艳的字幕。
 
-最新版本已经支持 VAD 、 人声分离、 字级时间戳 批量字幕等实用功能
+最新版本已经支持 VAD 、人声分离、字级时间戳、批量字幕等实用功能
 
-- 🎯 无需GPU即可使用强大的语音识别引擎，生成精准字幕
-- ✂️ 基于 LLM 的智能分割与断句，字幕阅读更自然流畅
-- 🔄 AI字幕多线程优化与翻译，调整字幕格式、表达更地道专业
-- 🎬 支持批量视频字幕合成，提升处理效率
-- 📝 直观的字幕编辑查看界面，支持实时预览和快捷编辑
-- 🤖 消耗模型 Token 少，且内置基础 LLM 模型，保证开箱即用
+- 无需GPU即可使用强大的语音识别引擎，生成精准字幕
+- 基于 LLM 的智能分割与断句，字幕阅读更自然流畅
+- AI字幕多线程优化与翻译，调整字幕格式、表达更地道专业
+- 支持批量视频字幕合成，提升处理效率
+- 直观的字幕编辑查看界面，支持实时预览和快捷编辑
+- 消耗模型 Token 少，且内置基础 LLM 模型，保证开箱即用
 
-## 📸 界面预览
+## 界面预览
 
 <div align="center">
   <img src="https://h1.appinn.me/file/1731487405884_main.png" alt="软件界面预览" width="90%" style="border-radius: 5px;">
@@ -30,7 +30,7 @@
 ![页面预览](https://h1.appinn.me/file/1731487410170_preview1.png)
 ![页面预览](https://h1.appinn.me/file/1731487410832_preview2.png)
 
-## 🧪 测试
+## 测试
 
 全流程处理一个14分钟1080P的 [B站英文 TED 视频](https://www.bilibili.com/video/BV1jT411X7Dz)，调用本地 Whisper 模型进行语音识别，使用 `gpt-4o-mini` 模型优化和翻译为中文，总共消耗时间约 **4 分钟**。
 
@@ -38,7 +38,7 @@
 
 具体字幕和视频合成的效果的测试结果图片，请参考 [TED视频测试](./docs/test.md)
 
-## 🚀 快速开始
+## 快速开始
 
 ### Windows 用户
 
@@ -50,7 +50,7 @@
 
 2. 打开安装包进行安装
 
-3. LLM API 配置，（用于字幕断句、校正），可使用 [✨本项目的中转站 ](https://api.videocaptioner.cn)
+3. LLM API 配置，（用于字幕断句、校正），可使用[本项目的中转站](https://api.videocaptioner.cn)
 
 4. 翻译配置，选择是否启用翻译，翻译服务（默认使用微软翻译，质量一般，推荐使用大模型翻译）
 
@@ -88,10 +88,6 @@ chmod +x run.sh
 <details>
 <summary>手动安装步骤</summary>
  
- 
-由于本人缺少 Mac，所以没法测试和打包，暂无法提供 MacOS 的可执行程序。
-
-Mac 用户请自行使用下载源码和安装 python 依赖运行。（本地 Whisper 功能暂不支持 MacOS）
 
 1. 安装 ffmpeg 和 Aria2 下载工具
 
@@ -124,51 +120,9 @@ python main.py
 
 </details>
 
-<details>
-<summary>Docker 部署（beta）</summary>
 
-目前Docker部署方式正在重构中，暂时不可用。欢迎各位PR贡献新代码。
 
-### 1. 克隆项目
-
-```bash
-git clone https://github.com/WEIFENG2333/VideoCaptioner.git
-cd VideoCaptioner
-
-```
-
-### 2. 构建镜像
-
-```bash
-docker build -t video-captioner .
-```
-
-### 3. 运行容器
-
-使用自定义API配置运行：
-
-```bash
-docker run -d \
-  -p 8501:8501 \
-  -v $(pwd)/temp:/app/temp \
-  -e OPENAI_BASE_URL="你的API地址" \
-  -e OPENAI_API_KEY="你的API密钥" \
-  --name video-captioner \
-  video-captioner
-```
-
-### 4. 访问应用
-
-打开浏览器访问：`http://localhost:8501`
-
-### 注意事项
-
-- 容器内已预装ffmpeg等必要依赖
-- 如需使用其他模型，请通过环境变量配置
-
-</details>
-
-## ⚙️ 基本配置
+## 基本配置
 
 ### 1. LLM API 配置说明
 
@@ -186,7 +140,7 @@ LLM 大模型是用来字幕段句、字幕优化、以及字幕翻译（如果�
 
 ---
 
-如果希望高并发⚡️，或者希望在在软件内使用使用 OpenAI 或者 Claude 等优质大模型进行字幕校正和翻译。
+如果希望高并发，或者希望在在软件内使用使用 OpenAI 或者 Claude 等优质大模型进行字幕校正和翻译。
 
 可使用本项目的✨LLM API中转站✨： [https://api.videocaptioner.cn](https://api.videocaptioner.cn)
 
@@ -200,11 +154,11 @@ API-key: `个人中心-API 令牌页面自行获取。`
 
 💡 模型选择建议 (本人在各质量层级中精选出的高性价比模型)：
 
-- 高质量之选： `claude-3-5-sonnet-20241022` (耗费比例：3)
+- 高质量之选： `claude-sonnet-4-20250514` (耗费比例：3)
 
-- 较高质量之选： `gemini-2.0-flash`、`deepseek-chat` (耗费比例：1)
+- 较高质量之选： `gpt-5-2025-08-07`、`gemini-2.5-pro` (耗费比例：1.25)
 
-- 中质量之选： `gpt-4o-mini`、`gemini-1.5-flash` (耗费比例：0.15)
+- 中质量之选： `gpt-5-mini`、`gemini-2.5-flash` (耗费比例：0.3)
 
 本站支持超高并发，软件中线程数直接拉满即可~ 处理速度非常快~
 
@@ -273,7 +227,7 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 
 - 请参考 [Cookie 配置说明](./docs/get_cookies.md) 获取Cookie信息，并将cookies.txt文件放置到软件安装目录的 `AppData` 目录下，即可正常下载高质量视频。
 
-## 💡 软件流程介绍
+## 软件流程介绍
 
 程序简单的处理流程如下:
 
@@ -281,7 +235,7 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 语音识别转录 -> 字幕断句(可选) -> 字幕优化翻译(可选) -> 字幕视频合成
 ```
 
-## ✨ 软件主要功能
+## 软件主要功能
 
 软件利用大语言模型(LLM)在理解上下文方面的优势，对语音识别生成的字幕进一步处理。有效修正错别字、统一专业术语，让字幕内容更加准确连贯，为用户带来出色的观看体验！
 
@@ -336,7 +290,7 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 
 - `软字幕`：开启后，字幕不会烧录到视频中，处理速度极快。但是软字幕需要一些播放器（如PotPlayer）支持才可以进行显示播放。而且软字幕的样式不是软件内调整的字幕样式，而是播放器默认的白色样式。
 
-安装软件的主要目录结构说明如下：
+项目主要目录结构说明如下：
 
 ```
 VideoCaptioner/
