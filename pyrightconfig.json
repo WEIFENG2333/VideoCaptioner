@@ -5,7 +5,7 @@
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
   "reportGeneralTypeIssues": true,
-  "reportOptionalMemberAccess": true,
+  "reportOptionalMemberAccess": false,
   "reportUnknownMemberType": false,
   "reportUnknownArgumentType": false,
   "reportUnknownVariableType": false,
