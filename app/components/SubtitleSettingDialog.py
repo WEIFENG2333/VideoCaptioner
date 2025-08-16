@@ -28,16 +28,16 @@ class SubtitleSettingDialog(MessageBoxBase):
 
         self.split_type_card = ComboBoxSettingCard(
             cfg.split_type,
-            FIF.TILES,
+            FIF.TILES,  # type: ignore
             self.tr("字幕分割类型"),
             self.tr("根据句子或者根据语义对字幕进行断句"),
-            texts=[model.value for model in cfg.split_type.validator.options],
+            texts=[model.value for model in cfg.split_type.validator.options],  # type: ignore
             parent=self,
         )
 
         self.word_count_cjk_card = SpinBoxSettingCard(
             cfg.max_word_count_cjk,
-            FIF.TILES,
+            FIF.TILES,  # type: ignore
             self.tr("中文最大字数"),
             self.tr("单条字幕的最大字数 (对于中日韩等字符)"),
             minimum=8,
@@ -47,7 +47,7 @@ class SubtitleSettingDialog(MessageBoxBase):
 
         self.word_count_english_card = SpinBoxSettingCard(
             cfg.max_word_count_english,
-            FIF.TILES,
+            FIF.TILES,  # type: ignore
             self.tr("英文最大单词数"),
             self.tr("单条字幕的最大单词数 (英文)"),
             minimum=8,

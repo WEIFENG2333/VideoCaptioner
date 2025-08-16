@@ -152,12 +152,12 @@ class VideoDownloadThread(QThread):
 
             try:
                 subtitle_download_link = None
-                for l in info_dict["automatic_captions"]:
-                    if l.startswith(subtitle_language):
-                        subtitle_download_link = info_dict["automatic_captions"][l][-1][
-                            "url"
-                        ]
-                        break
+                automatic_captions = info_dict.get("automatic_captions")
+                if automatic_captions and subtitle_language:
+                    for l in automatic_captions:
+                        if l.startswith(subtitle_language):
+                            subtitle_download_link = automatic_captions[l][-1]["url"]
+                            break
             except Exception:
                 subtitle_download_link = None
 

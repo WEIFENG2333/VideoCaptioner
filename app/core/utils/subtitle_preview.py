@@ -104,7 +104,7 @@ def generate_preview(
 
     ass_file = generate_ass_file(style_str, preview_text, width, height)
     ass_file = auto_wrap_ass_file(ass_file)
-    bg_path = ensure_background(Path(bg_path))
+    bg_path_obj = ensure_background(Path(bg_path))
 
     output_path = PREVIEW_IMAGE_FILENAME
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -114,7 +114,7 @@ def generate_preview(
         "ffmpeg",
         "-y",
         "-i",
-        str(bg_path),
+        str(bg_path_obj),
         "-vf",
         f"ass={ass_file_processed}",
         "-frames:v",
@@ -133,4 +133,4 @@ Style: Translate,微软雅黑,40,&H00eff0f3,&H000000FF,&H00000000,&H00000000,-1,
 """
     bg_path = r"C:\Users\weifeng\Pictures\Animated_character_spraying_liquid.jpg"
     preview_text = ("Hello, world!", "你好，世界！")
-    print(generate_preview(style_str, preview_text, bg_path))
+    print(generate_preview(style_str, preview_text, bg_path, 1920, 1080))

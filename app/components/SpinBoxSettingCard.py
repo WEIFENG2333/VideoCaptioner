@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
@@ -16,7 +16,7 @@ class DoubleSpinBoxSettingCard(SettingCard):
         configItem: ConfigItem,
         icon: Union[str, QIcon],
         title: str,
-        content: str = None,
+        content: Optional[str] = None,
         minimum: float = 0.0,
         maximum: float = 100.0,
         decimals: int = 1,
@@ -35,7 +35,7 @@ class DoubleSpinBoxSettingCard(SettingCard):
         self.spinBox.setSingleStep(step)  # 设置步长为0.2
 
         # 添加到布局
-        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(8)
 
         # 设置初始值和连接信号
@@ -64,7 +64,7 @@ class SpinBoxSettingCard(SettingCard):
         configItem: ConfigItem,
         icon: Union[str, QIcon],
         title: str,
-        content: str = None,
+        content: Optional[str] = None,
         minimum: int = 0,
         maximum: int = 100,
         parent=None,
@@ -79,7 +79,7 @@ class SpinBoxSettingCard(SettingCard):
         self.spinBox.setMinimumWidth(60)
 
         # 添加到布局
-        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(8)
 
         # 设置初始值和连接信号

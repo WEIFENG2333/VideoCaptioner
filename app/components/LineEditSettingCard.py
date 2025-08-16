@@ -1,3 +1,4 @@
+from typing import Optional
 from PyQt5.QtCore import Qt, pyqtSignal
 from qfluentwidgets import LineEdit, SettingCard
 from qfluentwidgets.common.config import ConfigItem, qconfig
@@ -13,7 +14,7 @@ class LineEditSettingCard(SettingCard):
         configItem: ConfigItem,
         icon,
         title: str,
-        content: str = None,
+        content: Optional[str] = None,
         placeholder: str = "",
         parent=None,
     ):
@@ -23,7 +24,7 @@ class LineEditSettingCard(SettingCard):
 
         self.lineEdit = LineEdit(self)
         self.lineEdit.setPlaceholderText(placeholder)
-        self.hBoxLayout.addWidget(self.lineEdit, 1, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.lineEdit, 1, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(16)
 
         self.lineEdit.setMinimumWidth(280)

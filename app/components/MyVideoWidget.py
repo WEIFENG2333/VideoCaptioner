@@ -2,6 +2,7 @@
 import sys
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 import vlc
 from PyQt5.QtCore import QObject, Qt, QTimer, QUrl, pyqtSignal
@@ -296,11 +297,11 @@ class MediaPlayer(MediaPlayerBase):
             self._player.audio_set_mute(isMuted)
             self.mutedChanged.emit(isMuted)
 
-    def videoOutput(self) -> QObject:
+    def videoOutput(self) -> Optional[QObject]:
         return None  # VLC不需要这个
 
     def setVideoOutput(self, output: QObject) -> None:
-        if isinstance(output, QObject) and hasattr(output, "winId"):
+        if isinstance(output, QWidget) and hasattr(output, "winId"):  # type: ignore
             self._player.set_hwnd(output.winId())
 
     def hasMedia(self):
@@ -418,12 +419,12 @@ class StandardMediaPlayBar(MediaPlayBarBase):
         self.setFixedHeight(102)
         self.vBoxLayout.setSpacing(6)
         self.vBoxLayout.setContentsMargins(5, 9, 5, 9)
-        self.vBoxLayout.addWidget(self.progressSlider, 1, Qt.AlignTop)
+        self.vBoxLayout.addWidget(self.progressSlider, 1, Qt.AlignTop)  # type: ignore
 
         self.vBoxLayout.addLayout(self.timeLayout)
         self.timeLayout.setContentsMargins(10, 0, 10, 0)
-        self.timeLayout.addWidget(self.currentTimeLabel, 0, Qt.AlignLeft)
-        self.timeLayout.addWidget(self.remainTimeLabel, 0, Qt.AlignRight)
+        self.timeLayout.addWidget(self.currentTimeLabel, 0, Qt.AlignLeft)  # type: ignore
+        self.timeLayout.addWidget(self.remainTimeLabel, 0, Qt.AlignRight)  # type: ignore
 
         self.vBoxLayout.addStretch(1)
         self.vBoxLayout.addLayout(self.buttonLayout, 1)
@@ -432,14 +433,14 @@ class StandardMediaPlayBar(MediaPlayBarBase):
         self.centerButtonLayout.setContentsMargins(0, 0, 0, 0)
         self.rightButtonLayout.setContentsMargins(0, 0, 4, 0)
 
-        self.leftButtonLayout.addWidget(self.volumeButton, 0, Qt.AlignLeft)
+        self.leftButtonLayout.addWidget(self.volumeButton, 0, Qt.AlignLeft)  # type: ignore
         self.centerButtonLayout.addWidget(self.skipBackButton)
         self.centerButtonLayout.addWidget(self.playButton)
         self.centerButtonLayout.addWidget(self.skipForwardButton)
 
-        self.buttonLayout.addWidget(self.leftButtonContainer, 0, Qt.AlignLeft)
-        self.buttonLayout.addWidget(self.centerButtonContainer, 0, Qt.AlignHCenter)
-        self.buttonLayout.addWidget(self.rightButtonContainer, 0, Qt.AlignRight)
+        self.buttonLayout.addWidget(self.leftButtonContainer, 0, Qt.AlignLeft)  # type: ignore
+        self.buttonLayout.addWidget(self.centerButtonContainer, 0, Qt.AlignHCenter)  # type: ignore
+        self.buttonLayout.addWidget(self.rightButtonContainer, 0, Qt.AlignRight)  # type: ignore
 
         self.skipBackButton.clicked.connect(lambda: self.skipBack(5000))
         self.skipForwardButton.clicked.connect(lambda: self.skipForward(5000))
@@ -499,11 +500,11 @@ class MyVideoWidget(QWidget):
 
         # 创建布局使标签居中
         tipLayout = QVBoxLayout(self.videoWidget)
-        tipLayout.addWidget(self.tipLabel, 0, Qt.AlignCenter)
+        tipLayout.addWidget(self.tipLabel, 0, Qt.AlignCenter)  # type: ignore
 
         # 创建播放控制栏
         self.playBar = StandardMediaPlayBar(self)
-        self.playBar.setAttribute(Qt.WA_TranslucentBackground)
+        self.playBar.setAttribute(Qt.WA_TranslucentBackground)  # type: ignore
 
         # 设置字幕文件
         self.subtitle_file = None
@@ -519,14 +520,14 @@ class MyVideoWidget(QWidget):
         self.vlc_player = MediaPlayer(self)
 
         # 设置新的播放器
-        self.playBar.setMediaPlayer(self.vlc_player)
+        self.playBar.setMediaPlayer(self.vlc_player)  # type: ignore
         self.playBar.setVolume(80)
         self.vlc_player.setVideoOutput(self.videoWidget)
         FluentStyleSheet.MEDIA_PLAYER.apply(self)
 
         # 设置焦点和事件过滤
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.videoWidget.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.StrongFocus)  # type: ignore
+        self.videoWidget.setFocusPolicy(Qt.StrongFocus)  # type: ignore
 
         # 安装事件过滤器
         self.videoWidget.installEventFilter(self)
@@ -607,11 +608,11 @@ class MyVideoWidget(QWidget):
 
     def keyPressEvent(self, event):
         """处理键盘事件"""
-        if event.key() == Qt.Key_Space:
+        if event.key() == Qt.Key_Space:  # type: ignore
             self.playBar.togglePlayState()
-        elif event.key() == Qt.Key_Left:
+        elif event.key() == Qt.Key_Left:  # type: ignore
             self.playBar.skipBack(3000)
-        elif event.key() == Qt.Key_Right:
+        elif event.key() == Qt.Key_Right:  # type: ignore
             self.playBar.skipForward(3000)
         else:
             super().keyPressEvent(event)
@@ -648,7 +649,7 @@ class MyVideoWidget(QWidget):
     def eventFilter(self, obj, event):
         """事件过滤器，用于捕获所有子部件的按键事件"""
         if event.type() == event.KeyPress:
-            if event.key() in (Qt.Key_Left, Qt.Key_Right):
+            if event.key() in (Qt.Key_Left, Qt.Key_Right):  # type: ignore
                 self.keyPressEvent(event)
                 return True
         return super().eventFilter(obj, event)

@@ -34,14 +34,14 @@ from qfluentwidgets import FluentTranslator
 
 from app.common.config import cfg
 from app.config import RESOURCE_PATH
-from app.core.utils import logger
+from app.core.utils.logger import setup_logger
 from app.view.main_window import MainWindow
 
-logger = logger.setup_logger("VideoCaptioner")
+logger_instance = setup_logger("VideoCaptioner")
 
 
 def exception_hook(exctype, value, tb):
-    logger.error("".join(traceback.format_exception(exctype, value, tb)))
+    logger_instance.error("".join(traceback.format_exception(exctype, value, tb)))
     sys.__excepthook__(exctype, value, tb)  # 调用默认的异常处理
 
 
@@ -51,16 +51,16 @@ sys.excepthook = exception_hook
 # Enable DPI Scale
 if cfg.get(cfg.dpiScale) == "Auto":
     QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough  # type: ignore
     )
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # type: ignore
 else:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
-QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore
 
 app = QApplication(sys.argv)
-app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
+app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings, True)  # type: ignore
 
 # Internationalization (Multi-language)
 locale = cfg.get(cfg.language).value

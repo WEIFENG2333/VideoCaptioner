@@ -38,6 +38,13 @@ class VideoSynthesisThread(QThread):
             logger.info(f"开始合成视频: {video_file}")
             self.progress.emit(5, self.tr("正在合成"))
 
+            if not video_file:
+                raise ValueError(self.tr("视频路径为空"))
+            if not subtitle_file:
+                raise ValueError(self.tr("字幕路径为空"))
+            if not output_path:
+                raise ValueError(self.tr("输出路径为空"))
+
             add_subtitles(
                 video_file,
                 subtitle_file,

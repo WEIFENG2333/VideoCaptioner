@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Callable, Any, List
 
 from openai import OpenAI
 
@@ -52,11 +52,13 @@ class WhisperAPI(BaseASR):
         )
         self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
 
-    def _run(self, callback=None) -> dict:
+    def _run(
+        self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
+    ) -> dict:
         """执行语音识别"""
         return self._submit()
 
-    def _make_segments(self, resp_data: dict) -> list[ASRDataSeg]:
+    def _make_segments(self, resp_data: dict) -> List[ASRDataSeg]:
         """从响应数据构建语音片段"""
         segments = []
         for seg in resp_data["segments"]:
@@ -79,18 +81,27 @@ class WhisperAPI(BaseASR):
             if self.language == "zh" and not self.prompt:
                 self.prompt = "你好，我们需要使用简体中文，以下是普通话的句子。"
             args = {}
-            if self.need_word_time_stamp and "groq" not in self.base_url:
+            if (
+                self.need_word_time_stamp
+                and self.base_url
+                and "groq" not in self.base_url
+            ):
                 args["timestamp_granularities"] = ["word", "segment"]
             logger.info("开始识别音频...")
-            completion = self.client.audio.transcriptions.create(
-                model=self.model,
-                temperature=0,
-                response_format="verbose_json",
-                file=("audio.mp3", self.file_binary, "audio/mp3"),
-                prompt=self.prompt,
-                language=None,
+            # Remove language parameter to avoid type issues - OpenAI will auto-detect
+            create_args = {
+                "model": self.model,
+                "temperature": 0,
+                "response_format": "verbose_json",
+                "file": ("audio.mp3", self.file_binary or b"", "audio/mp3"),
+                "prompt": self.prompt,
                 **args,
-            )
+            }
+            # Only add language if it's a valid string
+            if self.language and isinstance(self.language, str):
+                create_args["language"] = self.language
+
+            completion = self.client.audio.transcriptions.create(**create_args)
             logger.info("音频识别完成")
             return completion.to_dict()
         except Exception as e:

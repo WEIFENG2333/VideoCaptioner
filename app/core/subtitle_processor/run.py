@@ -1,6 +1,6 @@
 from typing import Callable, Dict, Optional
 
-from app.core.bk_asr.asr_data import ASRData, from_subtitle_file
+from app.core.bk_asr.asr_data import ASRData
 from app.core.entities import SubtitleConfig
 from app.core.subtitle_processor.optimization import SubtitleOptimizer
 from app.core.subtitle_processor.splitting import merge_segments
@@ -28,7 +28,7 @@ def run(
     logger.info(f"\n===========字幕处理任务开始===========")
 
     # 1. 加载字幕文件
-    asr_data = from_subtitle_file(subtitle_path)
+    asr_data = ASRData.from_subtitle_file(subtitle_path)
 
     # 2. 如果需要分割字幕
     # 检查是否需要合并重新断句
@@ -51,8 +51,8 @@ def run(
         # 设置环境变量
         import os
 
-        os.environ["OPENAI_BASE_URL"] = config.base_url
-        os.environ["OPENAI_API_KEY"] = config.api_key
+        os.environ["OPENAI_BASE_URL"] = config.base_url or ""
+        os.environ["OPENAI_API_KEY"] = config.api_key or ""
 
         # 创建优化器
         optimizer = SubtitleOptimizer(

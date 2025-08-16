@@ -26,7 +26,7 @@ class TranscriptThread(QThread):
         super().__init__()
         self.task = task
         # 初始化服务管理器
-        db_manager = DatabaseManager(CACHE_PATH)
+        db_manager = DatabaseManager(str(CACHE_PATH))
         self.service_manager = ServiceUsageManager(db_manager)
 
     def run(self):
@@ -43,6 +43,8 @@ class TranscriptThread(QThread):
             #     return
 
             # 检查视频文件是否存在
+            if not self.task.file_path:
+                raise ValueError(self.tr("文件路径为空"))
             video_path = Path(self.task.file_path)
             if not video_path.exists():
                 logger.error(f"视频文件不存在：{video_path}")
@@ -61,7 +63,7 @@ class TranscriptThread(QThread):
                     )
 
             # 检查是否存在下载的字幕文件（对于视频url的任务，前面可能已下载字幕文件）
-            if self.task.need_next_task:
+            if self.task.need_next_task and self.task.file_path:
                 subtitle_dir = Path(self.task.file_path).parent / "subtitle"
                 downloaded_subtitles = (
                     list(subtitle_dir.glob("【下载字幕】*"))
@@ -98,6 +100,8 @@ class TranscriptThread(QThread):
             logger.info("开始语音转录")
 
             # 进行转录，并回调进度。 （传入 transcribe_config）
+            if not self.task.transcribe_config:
+                raise ValueError(self.tr("转录配置为空"))
             asr_data = transcribe(
                 temp_file.name,
                 self.task.transcribe_config,
@@ -112,6 +116,8 @@ class TranscriptThread(QThread):
                 self.service_manager.increment_usage("asr", self.MAX_DAILY_ASR_CALLS)
 
             # 保存字幕文件
+            if not self.task.output_path:
+                raise ValueError(self.tr("输出路径为空"))
             output_path = Path(self.task.output_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             asr_data.to_srt(save_path=str(output_path))

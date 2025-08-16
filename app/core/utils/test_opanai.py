@@ -1,7 +1,12 @@
+from typing import Literal, Optional
+
+
 import openai
 
 
-def test_openai(base_url, api_key, model):
+def test_openai(
+    base_url: str, api_key: str, model: str
+) -> tuple[Literal[True], Optional[str]] | tuple[Literal[False], Optional[str]]:
     """
     这是一个测试OpenAI API的函数。
     它使用指定的API设置与OpenAI的GPT模型进行对话。
@@ -23,11 +28,11 @@ def test_openai(base_url, api_key, model):
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": "Hello!"},
             ],
-            max_tokens=100,
+            max_completion_tokens=10,
             timeout=10,
         )
         # 返回AI的回复
-        return True, str(response.choices[0].message.content)
+        return True, response.choices[0].message.content
     except Exception as e:
         return False, str(e)
 
@@ -42,11 +47,11 @@ def get_openai_models(base_url, api_key):
         # 根据不同模型设置权重进行排序
         def get_model_weight(model_name):
             model_name = model_name.lower()
-            if model_name.startswith(("gpt-4o", "claude-3-5")):
+            if model_name.startswith(("gpt-5", "claude-4")):
                 return 10
             elif model_name.startswith("gpt-4"):
                 return 5
-            elif model_name.startswith("claude-3"):
+            elif model_name.startswith("gemini-2"):
                 return 6
             elif model_name.startswith(("deepseek", "glm")):
                 return 3

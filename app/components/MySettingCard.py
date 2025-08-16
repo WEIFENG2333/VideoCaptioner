@@ -1,5 +1,5 @@
 # coding:utf-8
-from typing import List, Union
+from typing import List, Union, Optional
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QPainter
@@ -60,17 +60,17 @@ class SettingCard(QFrame):
         # initialize layout
         self.hBoxLayout.setSpacing(0)
         self.hBoxLayout.setContentsMargins(16, 0, 0, 0)
-        self.hBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.hBoxLayout.setAlignment(Qt.AlignVCenter)  # type: ignore
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
-        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.vBoxLayout.setAlignment(Qt.AlignVCenter)  # type: ignore
 
-        self.hBoxLayout.addWidget(self.iconLabel, 0, Qt.AlignLeft)
+        self.hBoxLayout.addWidget(self.iconLabel, 0, Qt.AlignLeft)  # type: ignore
         self.hBoxLayout.addSpacing(16)
 
         self.hBoxLayout.addLayout(self.vBoxLayout)
-        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
-        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignLeft)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)  # type: ignore
+        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignLeft)  # type: ignore
 
         self.hBoxLayout.addSpacing(16)
         self.hBoxLayout.addStretch(1)
@@ -116,9 +116,9 @@ class DoubleSpinBoxSettingCard(SettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon],
+        icon: Union[str, QIcon, FluentIconBase],
         title: str,
-        content: str = None,
+        content: Optional[str] = None,
         minimum: float = 0.0,
         maximum: float = 100.0,
         decimals: int = 1,
@@ -134,7 +134,7 @@ class DoubleSpinBoxSettingCard(SettingCard):
         self.spinBox.setSingleStep(0.2)  # 设置步长为0.1
 
         # 添加到布局
-        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(8)
 
         # 设置初始值和连接信号
@@ -159,7 +159,7 @@ class SpinBoxSettingCard(SettingCard):
         self,
         icon: Union[str, QIcon],
         title: str,
-        content: str = None,
+        content: Optional[str] = None,
         minimum: int = 0,
         maximum: int = 100,
         parent=None,
@@ -173,7 +173,7 @@ class SpinBoxSettingCard(SettingCard):
         self.spinBox.setSingleStep(2)  # 设置步长为2
 
         # 添加到布局
-        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(8)
 
         # 设置初始值和连接信号
@@ -199,15 +199,15 @@ class ComboBoxSettingCard(SettingCard):
         self,
         icon: Union[str, QIcon],
         title: str,
-        content: str = None,
-        texts: List[str] = None,
+        content: Optional[str] = None,
+        texts: Optional[List[str]] = None,
         parent=None,
     ):
         super().__init__(icon, title, content, parent)
 
         # 创建ComboBox
         self.comboBox = ComboBox(self)
-        self.hBoxLayout.addWidget(self.comboBox, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.comboBox, 0, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(16)
 
         # 添加选项
@@ -258,7 +258,7 @@ class ColorSettingCard(SettingCard):
         color: QColor,
         icon: Union[str, QIcon, FluentIconBase],
         title: str,
-        content: str = None,
+        content: Optional[str] = None,
         parent=None,
         enableAlpha=False,
     ):
@@ -286,7 +286,7 @@ class ColorSettingCard(SettingCard):
         super().__init__(icon, title, content, parent)
         self.colorPicker = ColorPickerButton(color, title, self, enableAlpha)
         self.colorPicker.setFixedWidth(60)
-        self.hBoxLayout.addWidget(self.colorPicker, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.colorPicker, 0, Qt.AlignRight)  # type: ignore
         self.hBoxLayout.addSpacing(16)
         self.colorPicker.colorChanged.connect(self.__onColorChanged)
 
@@ -309,10 +309,10 @@ class ColorPickerButton(QToolButton):
         self.title = title
         self.enableAlpha = enableAlpha
         self.setFixedSize(96, 32)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_TranslucentBackground)  # type: ignore
 
         self.setColor(color)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.PointingHandCursor)  # type: ignore
         self.clicked.connect(self.__showColorDialog)
 
     def __showColorDialog(self):

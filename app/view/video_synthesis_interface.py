@@ -44,7 +44,7 @@ class VideoSynthesisInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("VideoSynthesisInterface")
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WA_StyledBackground, True)  # type: ignore
         self.setAcceptDrops(True)  # 启用拖放功能
         self.setup_ui()
         self.setup_style()
@@ -63,7 +63,7 @@ class VideoSynthesisInterface(QWidget):
 
         # 添加顶部命令栏
         self.command_bar = CommandBar(self)
-        self.command_bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.command_bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)  # type: ignore
         top_layout.addWidget(self.command_bar, 1)  # 设置stretch为1，使其尽可能占用空间
 
         # 设置命令栏
@@ -119,7 +119,7 @@ class VideoSynthesisInterface(QWidget):
         self.progress_bar = ProgressBar(self)
         self.status_label = BodyLabel(self.tr("就绪"), self)
         self.status_label.setMinimumWidth(100)  # 设置最小宽度
-        self.status_label.setAlignment(Qt.AlignCenter)  # 设置文本居中对齐
+        self.status_label.setAlignment(Qt.AlignCenter)  # type: ignore  # 设置文本居中对齐
         self.bottom_layout.addWidget(self.progress_bar, 1)  # 进度条使用剩余空间
         self.bottom_layout.addWidget(self.status_label)  # 状态标签使用固定宽度
         self.main_layout.addLayout(self.bottom_layout)
@@ -334,7 +334,11 @@ class VideoSynthesisInterface(QWidget):
             target_dir = str(
                 file_path.parent
                 if file_path.exists()
-                else Path(self.task.video_path).parent
+                else (
+                    Path(str(self.task.video_path)).parent
+                    if self.task.video_path
+                    else file_path.parent
+                )
             )
             # Cross-platform folder opening
             open_folder(target_dir)
@@ -392,8 +396,8 @@ if __name__ == "__main__":
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # type: ignore
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)  # type: ignore
 
     app = QApplication(sys.argv)
     window = VideoSynthesisInterface()

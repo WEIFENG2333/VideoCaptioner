@@ -344,12 +344,12 @@ class WhisperCppDownloadDialog(MessageBoxBase):
         """添加模型表格行"""
         # 模型名称
         name_item = QTableWidgetItem(model["label"])
-        name_item.setTextAlignment(Qt.AlignCenter)
+        name_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 0, name_item)
 
         # 大小
         size_item = QTableWidgetItem(f"{model['size']}")
-        size_item.setTextAlignment(Qt.AlignCenter)
+        size_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 1, size_item)
 
         # 状态
@@ -358,8 +358,8 @@ class WhisperCppDownloadDialog(MessageBoxBase):
             self.tr("已下载") if os.path.exists(model_bin_path) else self.tr("未下载")
         )
         if os.path.exists(model_bin_path):
-            status_item.setForeground(Qt.green)
-        status_item.setTextAlignment(Qt.AlignCenter)
+            status_item.setForeground(Qt.green)  # type: ignore
+        status_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 2, status_item)
 
         # 下载按钮
@@ -414,8 +414,8 @@ class WhisperCppDownloadDialog(MessageBoxBase):
             self._set_all_download_buttons_enabled(True)
             # 更新状态
             status_item = QTableWidgetItem(self.tr("已下载"))
-            status_item.setForeground(Qt.green)
-            status_item.setTextAlignment(Qt.AlignCenter)
+            status_item.setForeground(Qt.green)  # type: ignore
+            status_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
             self.model_table.setItem(row, 2, status_item)
 
             # 更新下载按钮文本
@@ -496,7 +496,7 @@ class WhisperCppSettingWidget(QWidget):
         self.main_layout = QVBoxLayout(self)
 
         # 创建单向滚动区域和容器
-        self.scrollArea = SingleDirectionScrollArea(orient=Qt.Vertical, parent=self)
+        self.scrollArea = SingleDirectionScrollArea(orient=Qt.Vertical, parent=self)  # type: ignore
         self.scrollArea.setStyleSheet(
             "QScrollArea{background: transparent; border: none}"
         )

@@ -23,12 +23,12 @@ class LogWindow(QWidget):
             self.setStyleSheet(f.read())
 
         # 设置为非模态对话框
-        self.setWindowModality(Qt.NonModal)
+        self.setWindowModality(Qt.NonModal)  # type: ignore
         # 设置窗口标志
         self.setWindowFlags(
-            Qt.Window  # 让窗口成为独立窗口
-            | Qt.WindowCloseButtonHint  # 添加关闭按钮
-            | Qt.WindowMinMaxButtonsHint  # 添加最小化最大化按钮
+            Qt.Window  # type: ignore  # 让窗口成为独立窗口
+            | Qt.WindowCloseButtonHint  # type: ignore  # 添加关闭按钮
+            | Qt.WindowMinMaxButtonsHint  # type: ignore  # 添加最小化最大化按钮
         )
         # 创建主布局
         layout = QVBoxLayout(self)
@@ -155,4 +155,15 @@ class LogWindow(QWidget):
 
     def open_log_folder(self):
         """打开日志文件所在文件夹"""
-        os.startfile(str(LOG_PATH))
+        import platform
+
+        if platform.system() == "Windows":
+            os.startfile(str(LOG_PATH))  # type: ignore
+        elif platform.system() == "Darwin":  # macOS
+            import subprocess
+
+            subprocess.run(["open", str(LOG_PATH)])
+        else:  # Linux
+            import subprocess
+
+            subprocess.run(["xdg-open", str(LOG_PATH)])
