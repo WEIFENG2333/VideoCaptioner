@@ -74,7 +74,10 @@ class TaskCreationInterface(QWidget):
         self.logo_label = QLabel(self)
         self.logo_pixmap = QPixmap(str(LOGO_PATH))
         self.logo_pixmap = self.logo_pixmap.scaled(
-            150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation  # type: ignore
+            150,
+            150,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.SmoothTransformation,  # type: ignore
         )
 
         self.logo_label.setPixmap(self.logo_pixmap)
@@ -273,7 +276,7 @@ class TaskCreationInterface(QWidget):
                 break
             else:
                 InfoBar.error(
-                    self.tr(f"格式错误") + file_ext,
+                    self.tr("格式错误") + file_ext,
                     self.tr("不支持该文件格式"),
                     duration=3000,
                     parent=self,

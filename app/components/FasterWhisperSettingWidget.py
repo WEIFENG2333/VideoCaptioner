@@ -43,14 +43,6 @@ from app.core.utils.platform_utils import open_folder
 from app.thread.file_download_thread import FileDownloadThread
 from app.thread.modelscope_download_thread import ModelscopeDownloadThread
 
-from ..common.config import cfg
-from ..core.entities import (
-    FasterWhisperModelEnum,
-    TranscribeLanguageEnum,
-    VadMethodEnum,
-)
-from .LineEditSettingCard import LineEditSettingCard
-
 # 在文件开头添加常量定义
 FASTER_WHISPER_PROGRAMS = [
     {
@@ -356,7 +348,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         self.model_table.setItem(row, 0, name_item)
 
         # 大小
-        size_item = QTableWidgetItem(f"{int(model['size'])/1024:.1f} MB")
+        size_item = QTableWidgetItem(f"{int(model['size']) / 1024:.1f} MB")
         size_item.setTextAlignment(Qt.AlignCenter)  # type: ignore
         self.model_table.setItem(row, 1, size_item)
 

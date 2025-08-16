@@ -30,9 +30,9 @@ class BaseASR:
             self.file_binary = self.audio_path
         elif isinstance(self.audio_path, str):
             ext = self.audio_path.split(".")[-1].lower()
-            assert (
-                ext in self.SUPPORTED_SOUND_FORMAT
-            ), f"Unsupported sound format: {ext}"
+            assert ext in self.SUPPORTED_SOUND_FORMAT, (
+                f"Unsupported sound format: {ext}"
+            )
             assert os.path.exists(self.audio_path), f"File not found: {self.audio_path}"
             with open(self.audio_path, "rb") as f:
                 self.file_binary = f.read()

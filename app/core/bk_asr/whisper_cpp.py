@@ -106,8 +106,11 @@ class WhisperCppASR(BaseASR):
     def _run(
         self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
     ) -> str:
+        def _default_callback(x, y):
+            pass
+
         if callback is None:
-            callback = lambda x, y: None
+            callback = _default_callback
 
         temp_dir = Path(tempfile.gettempdir()) / "bk_asr"
         temp_dir.mkdir(parents=True, exist_ok=True)
@@ -157,7 +160,7 @@ class WhisperCppASR(BaseASR):
                 while True:
                     try:
                         line = self.process.stdout.readline()
-                    except Exception as e:
+                    except Exception:
                         break
                     if not line:
                         continue

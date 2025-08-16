@@ -8,13 +8,11 @@ Author: Weifeng
 import os
 import sys
 import traceback
+import platform
 
 # Add project root directory to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(project_root)
-
-# Fix Chinese path problem
-import platform
 
 # Use appropriate library folder name based on OS
 lib_folder = "Lib" if platform.system() == "Windows" else "lib"
@@ -28,14 +26,15 @@ for file in os.listdir():
     if file.startswith("app") and file.endswith(".pyd"):
         os.remove(file)
 
-from PyQt5.QtCore import Qt, QTranslator
-from PyQt5.QtWidgets import QApplication
-from qfluentwidgets import FluentTranslator
+# Now import the modules that depend on the setup above
+from PyQt5.QtCore import Qt, QTranslator  # noqa: E402
+from PyQt5.QtWidgets import QApplication  # noqa: E402
+from qfluentwidgets import FluentTranslator  # noqa: E402
 
-from app.common.config import cfg
-from app.config import RESOURCE_PATH
-from app.core.utils.logger import setup_logger
-from app.view.main_window import MainWindow
+from app.common.config import cfg  # noqa: E402
+from app.config import RESOURCE_PATH  # noqa: E402
+from app.core.utils.logger import setup_logger  # noqa: E402
+from app.view.main_window import MainWindow  # noqa: E402
 
 logger_instance = setup_logger("VideoCaptioner")
 

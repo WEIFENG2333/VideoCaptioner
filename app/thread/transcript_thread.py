@@ -32,7 +32,7 @@ class TranscriptThread(QThread):
     def run(self):
         temp_file = None
         try:
-            logger.info(f"\n===========转录任务开始===========")
+            logger.info("\n===========转录任务开始===========")
             logger.info(f"时间：{datetime.datetime.now()}")
 
             # 检查是否已经存在字幕文件
@@ -83,7 +83,7 @@ class TranscriptThread(QThread):
                     return
 
             self.progress.emit(5, self.tr("转换音频中"))
-            logger.info(f"开始转换音频")
+            logger.info("开始转换音频")
 
             # 转换音频文件
             temp_dir = tempfile.gettempdir()

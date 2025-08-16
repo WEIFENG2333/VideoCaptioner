@@ -39,7 +39,10 @@ class DonateDialog(MessageBoxBase):
         self.alipayQR = QLabel()
         self.alipayQR.setPixmap(
             QPixmap(self.ALIPAY_QR_PATH).scaled(
-                300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation  # type: ignore
+                300,
+                300,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.SmoothTransformation,  # type: ignore
             )
         )
         self.alipayLabel = BodyLabel(self.tr("支付宝"))
@@ -52,7 +55,10 @@ class DonateDialog(MessageBoxBase):
         self.wechatQR = QLabel()
         self.wechatQR.setPixmap(
             QPixmap(self.WECHAT_QR_PATH).scaled(
-                300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation  # type: ignore
+                300,
+                300,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.SmoothTransformation,  # type: ignore
             )
         )
         self.wechatLabel = BodyLabel(self.tr("微信"))

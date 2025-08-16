@@ -150,7 +150,10 @@ class SubtitleStyleInterface(QWidget):
         self.previewBottomLayout = QVBoxLayout(self.previewBottomWidget)
 
         self.styleNameComboBox = ComboBoxSettingCard(
-            FIF.VIEW, self.tr("选择样式"), self.tr("选择已保存的字幕样式"), texts=[]  # type: ignore
+            FIF.VIEW,  # type: ignore
+            self.tr("选择样式"),
+            self.tr("选择已保存的字幕样式"),
+            texts=[],  # type: ignore
         )
 
         self.newStyleButton = PushSettingCard(

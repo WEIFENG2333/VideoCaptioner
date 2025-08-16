@@ -21,7 +21,7 @@ class SubtitleSummarizer:
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
     def summarize(self, subtitle_content: str) -> str:
-        logger.info(f"开始摘要化字幕内容")
+        logger.info("开始摘要化字幕内容")
         try:
             subtitle_content = subtitle_content[:3000]
             response = self.client.chat.completions.create(

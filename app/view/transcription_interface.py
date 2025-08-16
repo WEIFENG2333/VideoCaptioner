@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from PyQt5.QtCore import Qt, QThread, QUrl, QStandardPaths, pyqtSignal
-from PyQt5.QtGui import QFont, QPixmap, QDragEnterEvent, QDropEvent
+from PyQt5.QtCore import Qt, QStandardPaths, pyqtSignal
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -75,7 +75,6 @@ class VideoInfoCard(CardWidget):
         self.setup_button_layout()
 
     def setup_thumbnail(self) -> None:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
         default_thumbnail_path = os.path.join(DEFAULT_THUMBNAIL_PATH)
 
         self.video_thumbnail = QLabel(self)
@@ -83,7 +82,9 @@ class VideoInfoCard(CardWidget):
         self.video_thumbnail.setStyleSheet("background-color: #1E1F22;")
         self.video_thumbnail.setAlignment(Qt.AlignCenter)  # type: ignore
         pixmap = QPixmap(default_thumbnail_path).scaled(
-            self.video_thumbnail.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation  # type: ignore
+            self.video_thumbnail.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.SmoothTransformation,  # type: ignore
         )
         self.video_thumbnail.setPixmap(pixmap)
         self.main_layout.addWidget(self.video_thumbnail, 0, Qt.AlignLeft)  # type: ignore
@@ -153,7 +154,7 @@ class VideoInfoCard(CardWidget):
         self.file_size_info.setText(self.tr("大小: ") + f"{file_size_mb:.1f} MB")
         duration = datetime.timedelta(seconds=int(video_info.duration_seconds))
         self.duration_info.setText(self.tr("时长: ") + f"{duration}")
-        if self.transcription_interface and self.transcription_interface.is_processing:
+        if self.transcription_interface and self.transcription_interface.is_processing:  # type: ignore
             self.start_button.setEnabled(False)
         else:
             self.start_button.setEnabled(True)
@@ -165,7 +166,9 @@ class VideoInfoCard(CardWidget):
             thumbnail_path = RESOURCE_PATH / "assets" / "audio-thumbnail.png"
 
         pixmap = QPixmap(str(thumbnail_path)).scaled(
-            self.video_thumbnail.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation  # type: ignore
+            self.video_thumbnail.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.SmoothTransformation,  # type: ignore
         )
         self.video_thumbnail.setPixmap(pixmap)
 
@@ -215,7 +218,7 @@ class VideoInfoCard(CardWidget):
 
     def start_transcription(self, need_create_task=True):
         """开始转录过程"""
-        self.transcription_interface.is_processing = True
+        self.transcription_interface.is_processing = True  # type: ignore
         self.start_button.setEnabled(False)
 
         if need_create_task:
@@ -430,7 +433,6 @@ class TranscriptionInterface(QWidget):
     def dropEvent(self, event):
         """拖拽放下事件处理"""
         if self.is_processing:
-
             InfoBar.warning(
                 self.tr("警告"),
                 self.tr("正在处理中，请等待当前任务完成"),
@@ -463,8 +465,8 @@ class TranscriptionInterface(QWidget):
                 break
             else:
                 InfoBar.error(
-                    self.tr(f"格式错误") + file_ext,
-                    self.tr(f"请拖入音频或视频文件"),
+                    self.tr("格式错误") + file_ext,
+                    self.tr("请拖入音频或视频文件"),
                     duration=3000,
                     parent=self,
                 )

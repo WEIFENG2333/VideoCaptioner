@@ -189,7 +189,6 @@ class ASRData:
         """
         punctuation = r"[，。]"
         for seg in self.segments:
-
             seg.text = re.sub(f"{punctuation}+$", "", seg.text.strip())
             seg.translated_text = re.sub(
                 f"{punctuation}+$", "", seg.translated_text.strip()
@@ -715,17 +714,6 @@ class ASRData:
             match = timestamp_pattern.match(lines[0])
             if not match:
                 continue
-
-            block_start_time = (
-                int(match.group(1)) * 3600000
-                + int(match.group(2)) * 60000
-                + float(match.group(3)) * 1000
-            )
-            block_end_time = (
-                int(match.group(4)) * 3600000
-                + int(match.group(5)) * 60000
-                + float(match.group(6)) * 1000
-            )
 
             # 获取文本内容
             text = "\n".join(lines)

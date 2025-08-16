@@ -25,7 +25,7 @@ def run(
     Returns:
         ASRData: 处理后的字幕数据
     """
-    logger.info(f"\n===========字幕处理任务开始===========")
+    logger.info("\n===========字幕处理任务开始===========")
 
     # 1. 加载字幕文件
     asr_data = ASRData.from_subtitle_file(subtitle_path)

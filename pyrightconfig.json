@@ -1,19 +1,11 @@
 {
-  "include": [
-    "app",
-    "main.py"
-  ],
-  "exclude": [
-    "**/node_modules",
-    "**/__pycache__",
-    "**/venv",
-    "**/env"
-  ],
+  "include": ["app", "main.py"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/venv", "**/env"],
   "typeCheckingMode": "basic",
-  "reportMissingImports": false,
+  "reportMissingImports": true,
   "reportMissingTypeStubs": false,
   "reportGeneralTypeIssues": true,
-  "reportOptionalMemberAccess": false,
+  "reportOptionalMemberAccess": true,
   "reportUnknownMemberType": false,
   "reportUnknownArgumentType": false,
   "reportUnknownVariableType": false,

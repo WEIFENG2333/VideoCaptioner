@@ -4,8 +4,8 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Optional, Callable, Union
-from typing import Dict, Literal, Optional
+from typing import Optional, Callable
+from typing import Dict, Literal
 
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
@@ -140,7 +140,6 @@ def add_subtitles(
 
     # 如果是WebM格式，强制使用硬字幕
     if Path(output).suffix.lower() == ".webm":
-
         soft_subtitle = False
         logger.info("WebM格式视频，强制使用硬字幕")
 
@@ -162,7 +161,7 @@ def add_subtitles(
             "-y",
         ]
         logger.info(f"添加软字幕执行命令: {' '.join(cmd)}")
-        result = subprocess.run(
+        subprocess.run(
             cmd,
             capture_output=True,
             text=True,

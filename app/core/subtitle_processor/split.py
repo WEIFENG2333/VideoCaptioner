@@ -399,7 +399,7 @@ class SubtitleSplitter:
                 if i == self.retry_times - 1:
                     logger.warning(f"LLM处理失败，使用规则based方法进行分割: {str(e)}")
                     return self._process_by_rules(asr_data_part.segments)
-                logger.warning(f"分割重试 {i+1}/{self.retry_times}: {str(e)}")
+                logger.warning(f"分割重试 {i + 1}/{self.retry_times}: {str(e)}")
         return self._process_by_rules(asr_data_part.segments)  # 确保总是有返回值
 
     def _process_by_llm(self, segments: List[ASRDataSeg]) -> List[ASRDataSeg]:
@@ -723,7 +723,7 @@ class SubtitleSplitter:
                 and len(current_group) >= int(max_word_count * 0.4)
             ):
                 result.append(current_group)
-                logger.debug(f"在后缀词 {segments[i-1].text} 后分割")
+                logger.debug(f"在后缀词 {segments[i - 1].text} 后分割")
                 current_group = []
 
             current_group.append(seg)
@@ -912,7 +912,7 @@ class SubtitleSplitter:
         new_segments = []
 
         for sentence in sentences:
-            logger.debug(f"==========")
+            logger.debug("==========")
             logger.debug(f"处理句子: {sentence}")
             logger.debug("后续句子:" + "".join(asr_texts[asr_index : asr_index + 10]))
 

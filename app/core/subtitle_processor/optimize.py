@@ -129,7 +129,7 @@ class SubtitleOptimizer:
             except Exception as e:
                 if i == self.retry_times - 1:
                     raise
-                logger.warning(f"优化重试 {i+1}/{self.retry_times}: {str(e)}")
+                logger.warning(f"优化重试 {i + 1}/{self.retry_times}: {str(e)}")
         return chunk
 
     def _optimize_chunk(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:

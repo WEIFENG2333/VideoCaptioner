@@ -137,7 +137,7 @@ class BaseTranslator(ABC):
             except Exception as e:
                 if i == self.retry_times - 1:
                     raise
-                logger.warning(f"翻译重试 {i+1}/{self.retry_times}: {str(e)}")
+                logger.warning(f"翻译重试 {i + 1}/{self.retry_times}: {str(e)}")
         return chunk  # 返回原始块作为默认值
 
     @staticmethod
@@ -260,7 +260,7 @@ class OpenAITranslator(BaseTranslator):
                     result = parsed_result
                 # 检查翻译结果数量是否匹配
                 if isinstance(result, dict) and len(result) != len(subtitle_chunk):
-                    logger.warning(f"翻译结果数量不匹配，将使用单条翻译模式重试")
+                    logger.warning("翻译结果数量不匹配，将使用单条翻译模式重试")
                     return self._translate_chunk_single(subtitle_chunk)
                 # 保存到缓存
                 self.cache_manager.set_llm_result(
@@ -283,7 +283,7 @@ class OpenAITranslator(BaseTranslator):
                 return subtitle_chunk
 
             return result
-        except Exception as e:
+        except Exception:
             try:
                 return self._translate_chunk_single(subtitle_chunk)
             except Exception as e:
@@ -380,7 +380,7 @@ class OpenAITranslator(BaseTranslator):
                     }
                 return {k: str(v) for k, v in result.items()}
             else:
-                raise ValueError(f"翻译结果不是字典格式")
+                raise ValueError("翻译结果不是字典格式")
         except Exception as e:
             raise ValueError(f"解析翻译结果失败：{str(e)}")
 

@@ -50,7 +50,6 @@ class BcutASR(BaseASR):
 
         self.__etags_final: Optional[List[str]] = []
         self.__download_url: Optional[str] = None
-        self.task_id: Optional[str] = None
 
         self.need_word_time_stamp = need_word_time_stamp
 
@@ -126,7 +125,7 @@ class BcutASR(BaseASR):
         resp.raise_for_status()
         resp = resp.json()
         self.__download_url = resp["data"]["download_url"]
-        logger.info(f"提交成功")
+        logger.info("提交成功")
 
     def create_task(self) -> str:
         """开始创建转换任务"""
@@ -155,8 +154,11 @@ class BcutASR(BaseASR):
     def _run(
         self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
     ) -> dict:
+        def _default_callback(x, y):
+            pass
+
         if callback is None:
-            callback = lambda x, y: None
+            callback = _default_callback
 
         callback(0, "上传中")
         self.upload()
@@ -176,7 +178,7 @@ class BcutASR(BaseASR):
 
         callback(100, "转录成功")
 
-        logger.info(f"转换成功")
+        logger.info("转换成功")
         return json.loads(task_resp["result"])
 
     def _make_segments(self, resp_data: dict) -> List[ASRDataSeg]:

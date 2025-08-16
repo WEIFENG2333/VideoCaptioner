@@ -12,7 +12,6 @@ from qfluentwidgets.components.widgets.icon_widget import IconWidget
 
 
 class SettingIconWidget(IconWidget):
-
     def paintEvent(self, e):
         painter = QPainter(self)
 
