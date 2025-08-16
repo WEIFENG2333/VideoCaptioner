@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-import vlc
+import vlc  # type: ignore
 from PyQt5.QtCore import QObject, Qt, QTimer, QUrl, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
