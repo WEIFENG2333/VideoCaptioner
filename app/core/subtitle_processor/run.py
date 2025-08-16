@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Callable, Dict, Optional
 
 from app.core.bk_asr.asr_data import ASRData, from_subtitle_file

@@ -5,10 +5,10 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List
 
 from ..utils.logger import setup_logger
-from .asr_data import ASRDataSeg, ASRData
+from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
 
 logger = setup_logger("faster_whisper")

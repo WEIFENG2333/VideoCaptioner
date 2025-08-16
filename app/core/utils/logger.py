@@ -2,8 +2,6 @@ import logging
 import logging.handlers
 from pathlib import Path
 
-from urllib3.exceptions import InsecureRequestWarning
-
 from ...config import LOG_LEVEL, LOG_PATH
 
 

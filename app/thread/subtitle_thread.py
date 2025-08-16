@@ -3,20 +3,18 @@ import os
 from pathlib import Path
 from typing import Dict
 
-from PyQt5.QtCore import QSettings, QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal
 
-from app.common.config import cfg
+from app.config import CACHE_PATH
 from app.core.bk_asr.asr_data import ASRData
 from app.core.entities import SubtitleConfig, SubtitleTask, TranslatorServiceEnum
-from app.core.subtitle_processor.split import SubtitleSplitter
-from app.core.subtitle_processor.summarization import SubtitleSummarizer
+from app.core.storage.cache_manager import ServiceUsageManager
+from app.core.storage.database import DatabaseManager
 from app.core.subtitle_processor.optimize import SubtitleOptimizer
+from app.core.subtitle_processor.split import SubtitleSplitter
 from app.core.subtitle_processor.translate import TranslatorFactory, TranslatorType
 from app.core.utils.logger import setup_logger
 from app.core.utils.test_opanai import test_openai
-from app.core.storage.cache_manager import ServiceUsageManager
-from app.core.storage.database import DatabaseManager
-from app.config import CACHE_PATH
 
 # 配置日志
 logger = setup_logger("subtitle_optimization_thread")

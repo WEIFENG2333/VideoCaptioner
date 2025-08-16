@@ -5,13 +5,13 @@ from pathlib import Path
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
+from app.config import CACHE_PATH
 from app.core.bk_asr import transcribe
-from app.core.entities import TranscribeTask, TranscribeModelEnum
-from app.core.utils.logger import setup_logger
-from app.core.utils.video_utils import video2audio
+from app.core.entities import TranscribeModelEnum, TranscribeTask
 from app.core.storage.cache_manager import ServiceUsageManager
 from app.core.storage.database import DatabaseManager
-from app.config import CACHE_PATH
+from app.core.utils.logger import setup_logger
+from app.core.utils.video_utils import video2audio
 
 logger = setup_logger("transcript_thread")
 

@@ -3,33 +3,33 @@ from enum import Enum
 
 from PyQt5.QtCore import QLocale
 from PyQt5.QtGui import QColor
-import openai
 from qfluentwidgets import (
-    qconfig,
-    QConfig,
-    ConfigItem,
-    OptionsConfigItem,
     BoolValidator,
+    ConfigItem,
+    ConfigSerializer,
+    EnumSerializer,
+    FolderValidator,
+    OptionsConfigItem,
     OptionsValidator,
+    QConfig,
     RangeConfigItem,
     RangeValidator,
     Theme,
-    FolderValidator,
-    ConfigSerializer,
-    EnumSerializer,
+    qconfig,
 )
 
-from app.config import WORK_PATH, SETTINGS_PATH
+from app.config import SETTINGS_PATH, WORK_PATH
+
 from ..core.entities import (
+    FasterWhisperModelEnum,
     LLMServiceEnum,
     SplitTypeEnum,
     TargetLanguageEnum,
-    TranscribeModelEnum,
     TranscribeLanguageEnum,
+    TranscribeModelEnum,
     TranslatorServiceEnum,
-    WhisperModelEnum,
-    FasterWhisperModelEnum,
     VadMethodEnum,
+    WhisperModelEnum,
 )
 
 

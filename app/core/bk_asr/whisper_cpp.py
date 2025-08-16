@@ -3,12 +3,11 @@ import re
 import shutil
 import subprocess
 import tempfile
-import time
 from pathlib import Path
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
-from .asr_data import ASRDataSeg, ASRData
+from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
 
 logger = setup_logger("whisper_asr")

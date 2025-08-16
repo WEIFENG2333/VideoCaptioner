@@ -1,12 +1,10 @@
-import logging
+import difflib
+import json
 import os
 import re
-import difflib
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from string import Template
-from typing import List, Optional, Union
-import json
-from concurrent.futures import as_completed
+from typing import List, Union
 
 from openai import OpenAI
 

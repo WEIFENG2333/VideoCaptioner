@@ -1,33 +1,26 @@
 import os
 import subprocess
-import sys
 from pathlib import Path
-
-from app.core.utils.platform_utils import open_folder
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
-    QScrollArea,
-    QStackedWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import BodyLabel, CardWidget, ComboBox, ComboBoxSettingCard
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
+    BodyLabel,
+    ComboBox,
+    ComboBoxSettingCard,
     HyperlinkButton,
     HyperlinkCard,
     InfoBar,
-    InfoBarPosition,
     MessageBoxBase,
     ProgressBar,
     PushButton,
-    PushSettingCard,
-    RangeSettingCard,
     SettingCardGroup,
     SingleDirectionScrollArea,
     SubtitleLabel,
@@ -35,18 +28,18 @@ from qfluentwidgets import (
     TableItemDelegate,
     TableWidget,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from app.common.config import cfg
-from app.components.EditComboBoxSettingCard import EditComboBoxSettingCard
 from app.components.LineEditSettingCard import LineEditSettingCard
 from app.components.SpinBoxSettingCard import DoubleSpinBoxSettingCard
-from app.config import BIN_PATH, CACHE_PATH, MODEL_PATH
+from app.config import BIN_PATH, MODEL_PATH
 from app.core.entities import (
     FasterWhisperModelEnum,
     TranscribeLanguageEnum,
     VadMethodEnum,
-    WhisperModelEnum,
 )
+from app.core.utils.platform_utils import open_folder
 from app.thread.file_download_thread import FileDownloadThread
 from app.thread.modelscope_download_thread import ModelscopeDownloadThread
 
@@ -54,11 +47,8 @@ from ..common.config import cfg
 from ..core.entities import (
     FasterWhisperModelEnum,
     TranscribeLanguageEnum,
-    TranscribeModelEnum,
     VadMethodEnum,
-    WhisperModelEnum,
 )
-from .EditComboBoxSettingCard import EditComboBoxSettingCard
 from .LineEditSettingCard import LineEditSettingCard
 
 # 在文件开头添加常量定义

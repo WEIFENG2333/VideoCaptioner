@@ -1,14 +1,12 @@
 import os
-import platform
 import shutil
 import subprocess
 
-from app.core.utils.platform_utils import get_subprocess_kwargs
-
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.config import CACHE_PATH
 from app.core.utils.logger import setup_logger
+from app.core.utils.platform_utils import get_subprocess_kwargs
 
 logger = setup_logger("download_thread")
 

@@ -8,7 +8,6 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     FluentWindow,
     MessageBox,
-    NavigationAvatarWidget,
     NavigationItemPosition,
     SplashScreen,
 )

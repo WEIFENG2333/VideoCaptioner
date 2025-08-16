@@ -1,12 +1,10 @@
-from typing import Optional
 
+from app.core.bk_asr.asr_data import ASRData
 from app.core.bk_asr.bcut import BcutASR
 from app.core.bk_asr.faster_whisper import FasterWhisperASR
 from app.core.bk_asr.jianying import JianYingASR
-from app.core.bk_asr.kuaishou import KuaiShouASR
 from app.core.bk_asr.whisper_api import WhisperAPI
 from app.core.bk_asr.whisper_cpp import WhisperCppASR
-from app.core.bk_asr.asr_data import ASRData
 from app.core.entities import TranscribeConfig, TranscribeModelEnum
 
 

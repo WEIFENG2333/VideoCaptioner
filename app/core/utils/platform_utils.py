@@ -4,7 +4,6 @@
 import os
 import platform
 import subprocess
-import sys
 
 
 def open_folder(path):

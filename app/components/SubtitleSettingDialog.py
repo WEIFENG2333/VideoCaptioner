@@ -1,12 +1,13 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget
-from qfluentwidgets import BodyLabel
+from qfluentwidgets import (
+    BodyLabel,
+    ComboBoxSettingCard,
+    MessageBoxBase,
+    SwitchSettingCard,
+)
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import MessageBoxBase, SwitchSettingCard, ComboBoxSettingCard
 
 from app.common.config import cfg
 from app.components.SpinBoxSettingCard import SpinBoxSettingCard
-from app.core.entities import SplitTypeEnum
 
 
 class SubtitleSettingDialog(MessageBoxBase):

@@ -2,19 +2,19 @@
 import hashlib
 import json
 import logging
-from datetime import datetime, date
-from typing import Any, Dict, List, Optional, TypeVar, Generic
+from datetime import date, datetime
+from typing import Any, Dict, Optional
+
 from sqlalchemy import and_
-from sqlalchemy.orm import Session
 
 from .constants import CACHE_CONFIG, OperationType, TranslatorType
 from .database import DatabaseManager
 from .models import (
+    ASRCache,
+    DailyServiceUsage,
     LLMCache,
     TranslationCache,
     UsageStatistics,
-    ASRCache,
-    DailyServiceUsage,
 )
 
 logger = logging.getLogger(__name__)

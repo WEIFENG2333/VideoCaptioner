@@ -1,34 +1,27 @@
 import hashlib
-from string import Template
-from typing import Callable, Dict, Optional, List, Any, Union
-import logging
-from pathlib import Path
-import os
-import retry
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from abc import ABC, abstractmethod
-from enum import Enum
-from openai import OpenAI
-import json
-from dataclasses import dataclass
-from functools import lru_cache
-import signal
-import requests
-import re
 import html
-from urllib.parse import quote
+import json
+import os
+import re
+from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import Enum
+from string import Template
+from typing import Any, Callable, Dict, List, Optional, Union
 
+import requests
+from openai import OpenAI
+
+from app.config import CACHE_PATH
 from app.core.bk_asr.asr_data import ASRData, ASRDataSeg
-from app.core.utils import json_repair
+from app.core.storage.cache_manager import CacheManager
 from app.core.subtitle_processor.prompt import (
-    TRANSLATE_PROMPT,
     REFLECT_TRANSLATE_PROMPT,
     SINGLE_TRANSLATE_PROMPT,
+    TRANSLATE_PROMPT,
 )
-from app.core.storage.cache_manager import CacheManager
-from app.config import CACHE_PATH
+from app.core.utils import json_repair
 from app.core.utils.logger import setup_logger
-
 
 logger = setup_logger("subtitle_translator")
 

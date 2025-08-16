@@ -1,20 +1,14 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QHBoxLayout,
-    QScrollArea,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import BodyLabel, CardWidget, ComboBox, ComboBoxSettingCard
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
-    HyperlinkCard,
-    RangeSettingCard,
+    ComboBoxSettingCard,
     SettingCardGroup,
     SingleDirectionScrollArea,
-    SwitchSettingCard,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..core.entities import TranscribeLanguageEnum

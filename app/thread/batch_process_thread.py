@@ -1,24 +1,20 @@
-from re import S
-from typing import List, Dict, Optional
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from pathlib import Path
 import queue
 import time
 from functools import partial
+from typing import Dict, Optional
 
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
-from app.core.task_factory import TaskFactory
 from app.core.entities import (
+    BatchTaskStatus,
+    BatchTaskType,
     TranscribeTask,
-    SubtitleTask,
-    TranscriptAndSubtitleTask,
-    FullProcessTask,
 )
-from app.thread.transcript_thread import TranscriptThread
-from app.thread.subtitle_thread import SubtitleThread
-from app.thread.video_synthesis_thread import VideoSynthesisThread
+from app.core.task_factory import TaskFactory
 from app.core.utils.logger import setup_logger
-from app.core.entities import BatchTaskType, BatchTaskStatus
+from app.thread.subtitle_thread import SubtitleThread
+from app.thread.transcript_thread import TranscriptThread
+from app.thread.video_synthesis_thread import VideoSynthesisThread
 
 logger = setup_logger("batch_process_thread")
 

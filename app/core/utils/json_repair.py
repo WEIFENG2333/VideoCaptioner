@@ -22,9 +22,9 @@ If something is wrong (a missing parantheses or quotes for example) it will use 
 All supported use cases are in the unit tests
 """
 
-import os
 import json
-from typing import Any, Dict, List, Optional, Union, TextIO, Tuple
+import os
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 
 class StringFileWrapper:
