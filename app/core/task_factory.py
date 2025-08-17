@@ -67,7 +67,7 @@ class TaskFactory:
             use_asr_cache=cfg.use_asr_cache.value,
             need_word_time_stamp=need_word_time_stamp,
             # Whisper Cpp 配置
-            whisper_model=cfg.whisper_model.value.value,
+            whisper_model=cfg.whisper_model.value,
             # Whisper API 配置
             whisper_api_key=cfg.whisper_api_key.value,
             whisper_api_base=cfg.whisper_api_base.value,
@@ -75,12 +75,12 @@ class TaskFactory:
             whisper_api_prompt=cfg.whisper_api_prompt.value,
             # Faster Whisper 配置
             faster_whisper_program=cfg.faster_whisper_program.value,
-            faster_whisper_model=cfg.faster_whisper_model.value.value,
+            faster_whisper_model=cfg.faster_whisper_model.value,
             faster_whisper_model_dir=str(MODEL_PATH),
             faster_whisper_device=cfg.faster_whisper_device.value,
             faster_whisper_vad_filter=cfg.faster_whisper_vad_filter.value,
             faster_whisper_vad_threshold=cfg.faster_whisper_vad_threshold.value,
-            faster_whisper_vad_method=cfg.faster_whisper_vad_method.value.value,
+            faster_whisper_vad_method=cfg.faster_whisper_vad_method.value,
             faster_whisper_ff_mdx_kim2=cfg.faster_whisper_ff_mdx_kim2.value,
             faster_whisper_one_word=cfg.faster_whisper_one_word.value,
             faster_whisper_prompt=cfg.faster_whisper_prompt.value,

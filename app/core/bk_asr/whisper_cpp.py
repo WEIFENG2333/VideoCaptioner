@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import time
 import subprocess
 import tempfile
 from pathlib import Path
@@ -84,6 +85,7 @@ class WhisperCppASR(BaseASR):
             str(self.model_path),
             "-f",
             str(wav_path),
+            "-pp",
             "-l",
             self.language,
             "--output-srt",
@@ -112,13 +114,10 @@ class WhisperCppASR(BaseASR):
         if callback is None:
             callback = _default_callback
 
-        temp_dir = Path(tempfile.gettempdir()) / "bk_asr"
-        temp_dir.mkdir(parents=True, exist_ok=True)
-
         is_const_me_version = True if os.name == "nt" else False
 
         # 使用 with 语句管理临时文件的生命周期
-        with tempfile.TemporaryDirectory(dir=temp_dir) as temp_path:
+        with tempfile.TemporaryDirectory() as temp_path:
             temp_dir = Path(temp_path)
             wav_path = temp_dir / "audio.wav"
             output_path = wav_path.with_suffix(".srt")
@@ -128,7 +127,6 @@ class WhisperCppASR(BaseASR):
                 if isinstance(self.audio_path, str):
                     shutil.copy2(self.audio_path, wav_path)
                 else:
-                    # Handle bytes case
                     if self.file_binary:
                         wav_path.write_bytes(self.file_binary)
                     else:
@@ -148,6 +146,7 @@ class WhisperCppASR(BaseASR):
                     text=True,
                     encoding="utf-8",
                 )
+                logger.info(f"whisper-cpp 完整命令行参数: {self.process.args}")
                 # 获取音频时长
                 if isinstance(self.audio_path, str):
                     total_duration = self.get_audio_duration(self.audio_path) or 600
@@ -157,13 +156,17 @@ class WhisperCppASR(BaseASR):
 
                 # 处理输出和进度
                 full_output = []
-                while True:
+                while self.process.poll():
                     try:
-                        line = self.process.stdout.readline()
+                        # line = self.process.stdout.readline()
+                        line = self.process.stderr.readline()
                     except Exception:
                         break
                     if not line:
                         continue
+                    print(line)
+                    # print(err_line)
+                    time.sleep(0.1)
 
                     full_output.append(line)
 
@@ -178,11 +181,11 @@ class WhisperCppASR(BaseASR):
                                 )
                             )
                             progress = int(min(current_time / total_duration * 100, 98))
-                            callback(progress, f"{progress}% 正在转换")
+                            callback(progress, f"{progress}%")
                         except (ValueError, IndexError):
                             continue
                 # 等待进程完成
-                stdout, stderr = self.process.communicate()
+                stdout, stderr = self.process.communicate(timeout=5)
                 if self.process.returncode != 0:
                     raise RuntimeError(f"WhisperCPP 执行失败: {stderr}")
 

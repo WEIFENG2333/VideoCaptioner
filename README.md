@@ -295,15 +295,15 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 ```
 VideoCaptioner/
 ├── runtime/                    # 运行环境目录
-├── resources/               # 软件资源文件目录（二进制程序、图标等,以及下载的faster-whisper程序）
-├── work-dir/               # 工作目录，处理完成的视频和字幕文件保存在这里
+├── resources/                  # 软件资源文件目录（二进制程序、图标等,以及下载的faster-whisper程序）
+├── work-dir/                   # 工作目录，处理完成的视频和字幕文件保存在这里
 ├── AppData/                    # 应用数据目录
-    ├── cache/              # 缓存目录，缓存转录、大模型请求的数据。
-    ├── models/              # 存放 Whisper 模型文件
-    ├── logs/               # 日志目录，记录软件运行状态
-    ├── settings.json          # 存储用户设置
-    └──  cookies.txt           # 视频平台的 cookie 信息（下载高清视频时需要）
-└── VideoCaptioner.exe      # 主程序执行文件
+    ├── cache/                  # 缓存目录，缓存转录、大模型请求的数据。
+    ├── models/                 # 存放 Whisper 模型文件
+    ├── logs/                   # 日志目录，记录软件运行状态
+    ├── settings.json           # 存储用户设置
+    └──  cookies.txt            # 视频平台的 cookie 信息（下载高清视频时需要）
+└── VideoCaptioner.exe          # 主程序执行文件
 ```
 
 ## 📝 说明
@@ -318,7 +318,7 @@ VideoCaptioner/
 
 ## 🤝 贡献指南
 
-作者是一名大三学生，个人能力和项目都还有许多不足，项目也在不断完善中，如果在使用过程遇到的Bug，欢迎提交 [Issue](https://github.com/WEIFENG2333/VideoCaptioner/issues) 和 Pull Request 帮助改进项目。
+项目在不断完善中，如果在使用过程遇到的Bug，欢迎提交 [Issue](https://github.com/WEIFENG2333/VideoCaptioner/issues) 和 Pull Request 帮助改进项目。
 
 ## 📝 更新日志
 
@@ -326,7 +326,7 @@ VideoCaptioner/
 
 ## 💖 支持作者
 
-如果觉得项目对你有帮助，可以给项目点个Star，这将是对我最大的鼓励和支持！
+如果觉得项目对你有帮助，可以给项目点个Star！
 
 <details>
 <summary>捐助支持</summary>
