@@ -429,11 +429,33 @@ class WhisperCppDownloadDialog(MessageBoxBase):
             # 更新主设置对话框的模型选择
             if self.setting_widget:
                 try:
-                    self.setting_widget.model_card.comboBox.clear()  # 清空现有选项
-                    # 重新添加所有已下载的模型
-                    for m in WHISPER_CPP_MODELS:
-                        if os.path.exists(os.path.join(MODEL_PATH, m["value"])):
-                            self.setting_widget.model_card.comboBox.addItem(m["label"])
+                    # 保存当前值并清空
+                    current_value = cfg.whisper_model.value
+                    combo = self.setting_widget.model_card.comboBox
+                    combo.clear()
+
+                    # 找出已下载的模型
+                    available = []
+                    model_map = {
+                        m["label"].lower(): m["value"] for m in WHISPER_CPP_MODELS
+                    }
+                    for enum_val in WhisperModelEnum:
+                        if enum_val.value in model_map:
+                            if (MODEL_PATH / model_map[enum_val.value]).exists():
+                                available.append(enum_val)
+
+                    # 重建下拉框
+                    self.setting_widget.model_card.optionToText = {
+                        e: e.value for e in available
+                    }
+                    for enum_val in available:
+                        combo.addItem(enum_val.value, userData=enum_val)
+
+                    # 恢复选择
+                    if current_value in available:
+                        combo.setCurrentText(current_value.value)
+                    elif combo.count() > 0:
+                        combo.setCurrentIndex(0)
                 except Exception as e:
                     logger.error(f"更新模型选择失败: {e}")
 

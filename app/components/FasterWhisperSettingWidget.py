@@ -551,9 +551,33 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
 
             # 更新主设置对话框的模型选择
             if self.setting_widget:
-                model_text = model["label"]
-                if self.setting_widget.model_card.comboBox.findText(model_text) == -1:
-                    self.setting_widget.model_card.comboBox.addItem(model_text)
+                # 保存当前值并清空
+                current_value = cfg.faster_whisper_model.value
+                combo = self.setting_widget.model_card.comboBox
+                combo.clear()
+
+                # 找出已下载的模型
+                available = []
+                model_map = {
+                    m["label"].lower(): m["value"] for m in FASTER_WHISPER_MODELS
+                }
+                for enum_val in FasterWhisperModelEnum:
+                    if enum_val.value in model_map:
+                        if (MODEL_PATH / model_map[enum_val.value]).exists():
+                            available.append(enum_val)
+
+                # 重建下拉框
+                self.setting_widget.model_card.optionToText = {
+                    e: e.value for e in available
+                }
+                for enum_val in available:
+                    combo.addItem(enum_val.value, userData=enum_val)
+
+                # 恢复选择
+                if current_value in available:
+                    combo.setCurrentText(current_value.value)
+                elif combo.count() > 0:
+                    combo.setCurrentIndex(0)
 
             InfoBar.success(
                 self.tr("下载成功"),
