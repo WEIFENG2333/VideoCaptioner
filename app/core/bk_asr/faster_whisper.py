@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional, Callable, Any
 
 from ..utils.logger import setup_logger
+from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
 
@@ -213,10 +214,7 @@ class FasterWhisperASR(BaseASR):
         if callback is None:
             callback = _default_callback
 
-        temp_dir = Path(tempfile.gettempdir()) / "bk_asr"
-        temp_dir.mkdir(parents=True, exist_ok=True)
-
-        with tempfile.TemporaryDirectory(dir=temp_dir) as temp_path:
+        with tempfile.TemporaryDirectory() as temp_path:
             temp_dir = Path(temp_path)
             wav_path = temp_dir / "audio.wav"
             output_path = wav_path.with_suffix(".srt")
@@ -224,7 +222,6 @@ class FasterWhisperASR(BaseASR):
             if isinstance(self.audio_path, str):
                 shutil.copy2(self.audio_path, wav_path)
             else:
-                # Handle bytes case
                 if self.file_binary:
                     wav_path.write_bytes(self.file_binary)
                 else:
@@ -245,32 +242,48 @@ class FasterWhisperASR(BaseASR):
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
 
+            # 使用 StreamReader 处理输出
+            reader = StreamReader(self.process)
+            reader.start_reading()
+
             is_finish = False
             error_msg = ""
 
-            # 实时打印日志和错误输出
-            while self.process.poll() is None:
-                output = self.process.stdout.readline()
-                output = output.strip()
-                if output:
-                    # 解析进度百分比
-                    if match := re.search(r"(\d+)%", output):
-                        progress = int(match.group(1))
-                        if progress == 100:
-                            is_finish = True
-                        mapped_progress = int(5 + (progress * 0.9))
-                        callback(mapped_progress, f"{mapped_progress} %")
-                    if "Subtitles are written to" in output:
-                        is_finish = True
-                        callback(100, "识别完成")
-                    if "error" in output:
-                        error_msg += output
-                        logger.error(output)
-                    else:
-                        logger.info(output)
+            # 实时处理输出
+            while True:
+                # 检查进程状态
+                if self.process.poll() is not None:
+                    # 进程已结束，读取剩余输出
+                    for stream_name, line in reader.get_remaining_output():
+                        line = line.strip()
+                        if line:
+                            if "error" in line:
+                                error_msg += line
+                            else:
+                                logger.info(line)
+                    break
 
-            # 获取所有输出和错误信息
-            self.process.communicate()
+                # 读取输出
+                output = reader.get_output(timeout=0.1)
+                if output:
+                    stream_name, line = output
+                    line = line.strip()
+                    if line:
+                        # 解析进度百分比
+                        if match := re.search(r"(\d+)%", line):
+                            progress = int(match.group(1))
+                            if progress == 100:
+                                is_finish = True
+                            mapped_progress = int(5 + (progress * 0.9))
+                            callback(mapped_progress, f"{mapped_progress} %")
+                        if "Subtitles are written to" in line:
+                            is_finish = True
+                            callback(100, "识别完成")
+                        if "error" in line:
+                            error_msg += line
+                            logger.error(line)
+                        else:
+                            logger.info(line)
 
             logger.info("Faster Whisper 返回值: %s", self.process.returncode)
             if not is_finish:
