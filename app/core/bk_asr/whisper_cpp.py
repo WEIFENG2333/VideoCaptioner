@@ -9,6 +9,7 @@ from typing import List, Optional, Callable, Any
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
+from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
 
@@ -85,7 +86,6 @@ class WhisperCppASR(BaseASR):
             str(self.model_path),
             "-f",
             str(wav_path),
-            "-pp",
             "-l",
             self.language,
             "--output-srt",
@@ -116,14 +116,13 @@ class WhisperCppASR(BaseASR):
 
         is_const_me_version = True if os.name == "nt" else False
 
-        # 使用 with 语句管理临时文件的生命周期
         with tempfile.TemporaryDirectory() as temp_path:
             temp_dir = Path(temp_path)
             wav_path = temp_dir / "audio.wav"
             output_path = wav_path.with_suffix(".srt")
 
             try:
-                # 把self.audio_path 复制到 wav_path
+                # 复制音频文件
                 if isinstance(self.audio_path, str):
                     shutil.copy2(self.audio_path, wav_path)
                 else:
@@ -132,11 +131,18 @@ class WhisperCppASR(BaseASR):
                     else:
                         raise ValueError("No audio data available")
 
-                # 使用新的 _build_command 方法构建命令
+                # 构建命令
                 whisper_params = self._build_command(
                     wav_path, output_path, is_const_me_version
                 )
                 logger.info("完整命令行参数: %s", " ".join(whisper_params))
+
+                # 获取音频时长
+                if isinstance(self.audio_path, str):
+                    total_duration = self.get_audio_duration(self.audio_path)
+                else:
+                    total_duration = 600
+                logger.info("音频总时长: %d 秒", total_duration)
 
                 # 启动进程
                 self.process = subprocess.Popen(
@@ -145,61 +151,87 @@ class WhisperCppASR(BaseASR):
                     stderr=subprocess.PIPE,
                     text=True,
                     encoding="utf-8",
+                    bufsize=1,  # 行缓冲
                 )
-                logger.info(f"whisper-cpp 完整命令行参数: {self.process.args}")
-                # 获取音频时长
-                if isinstance(self.audio_path, str):
-                    total_duration = self.get_audio_duration(self.audio_path) or 600
-                else:
-                    total_duration = 600  # Default duration for bytes input
-                logger.info("音频总时长: %d 秒", total_duration)
 
-                # 处理输出和进度
-                full_output = []
-                while self.process.poll():
-                    try:
-                        # line = self.process.stdout.readline()
-                        line = self.process.stderr.readline()
-                    except Exception:
+                logger.info(f"whisper-cpp 进程已启动，PID: {self.process.pid}")
+
+                # 使用 StreamReader 处理输出流
+                reader = StreamReader(self.process)
+                reader.start_reading()
+
+                # 处理输出
+                last_progress = 0
+
+                while True:
+                    # 检查进程状态
+                    if self.process.poll() is not None:
+                        # 进程已结束，读取剩余输出
+                        time.sleep(0.2)
+                        for stream_name, line in reader.get_remaining_output():
+                            if stream_name == "stderr":
+                                logger.debug(f"[stderr] {line.strip()}")
                         break
-                    if not line:
-                        continue
-                    print(line)
-                    # print(err_line)
-                    time.sleep(0.1)
 
-                    full_output.append(line)
+                    # 非阻塞读取输出
+                    output = reader.get_output(timeout=0.1)
+                    if output:
+                        stream_name, line = output
 
-                    # 简化的进度处理
-                    if " --> " in line and "[" in line:
-                        try:
-                            time_str = line.split("[")[1].split(" -->")[0].strip()
-                            current_time = sum(
-                                float(x) * y
-                                for x, y in zip(
-                                    reversed(time_str.split(":")), [1, 60, 3600]
-                                )
-                            )
-                            progress = int(min(current_time / total_duration * 100, 98))
-                            callback(progress, f"{progress}%")
-                        except (ValueError, IndexError):
-                            continue
-                # 等待进程完成
-                stdout, stderr = self.process.communicate(timeout=5)
+                        if stream_name == "stdout":
+                            logger.debug(f"[stdout] {line.strip()}")
+
+                            # 解析进度
+                            if " --> " in line and "[" in line:
+                                try:
+                                    time_str = (
+                                        line.split("[")[1].split(" -->")[0].strip()
+                                    )
+                                    parts = time_str.split(":")
+                                    current_time = sum(
+                                        float(x) * y
+                                        for x, y in zip(reversed(parts), [1, 60, 3600])
+                                    )
+                                    progress = int(
+                                        min(current_time / total_duration * 100, 98)
+                                    )
+
+                                    if progress > last_progress:
+                                        last_progress = progress
+                                        callback(progress, f"{progress}%")
+                                except (ValueError, IndexError) as e:
+                                    logger.debug(f"解析进度失败: {e}")
+                        else:
+                            logger.debug(f"[stderr] {line.strip()}")
+
+                # 检查返回码
                 if self.process.returncode != 0:
-                    raise RuntimeError(f"WhisperCPP 执行失败: {stderr}")
+                    raise RuntimeError(
+                        f"WhisperCPP 执行失败，返回码: {self.process.returncode}"
+                    )
 
                 callback(100, "转换完成")
+                logger.info("whisper-cpp 处理完成")
 
                 # 读取结果文件
                 srt_path = output_path
                 if not srt_path.exists():
-                    raise RuntimeError(f"输出文件未生成: {srt_path}")
+                    time.sleep(5)
+                    if not srt_path.exists():
+                        raise RuntimeError(f"输出文件未生成: {srt_path}")
 
                 return srt_path.read_text(encoding="utf-8")
 
             except Exception as e:
                 logger.exception("处理失败")
+                # 确保进程被终止
+                if self.process and self.process.poll() is None:
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        self.process.kill()
+                        self.process.wait()
                 raise RuntimeError(f"生成 SRT 文件失败: {str(e)}")
 
     def _get_key(self):
