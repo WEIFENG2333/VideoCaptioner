@@ -1,3 +1,7 @@
+更新日志：
+优化苹果m4芯片
+支持苹果m4 gpu 生成字幕
+
 <div align="center">
   <img src="./docs/images/logo.png"alt="VideoCaptioner Logo" width="100">
   <p>卡卡字幕助手</p>
