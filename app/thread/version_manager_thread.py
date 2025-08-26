@@ -1,18 +1,13 @@
 # coding: utf-8
 import hashlib
-import os
 import re
-import subprocess
-import sys
-import time
 import uuid
 from datetime import datetime
-from pathlib import Path
 
 import requests
 from PyQt5.QtCore import QObject, QSettings, QVersionNumber, pyqtSignal
 
-from app.config import ROOT_PATH, VERSION
+from app.config import VERSION
 from app.core.utils.logger import setup_logger
 
 # 配置日志
@@ -74,41 +69,15 @@ class VersionManager(QObject):
         self.downloadURL = data.get("download_url", "")
         self.announcement = data.get("announcement", {})
         self.history = data.get("history", [])
-        self.update_code = data.get("update_code", "")
+        # update_code 字段已弃用，保留向后兼容性但不使用
+        # self.update_code = data.get("update_code", "")
         logger.info("Latest version info: %s", self.latestVersion)
         return data
 
     def execute_update_code(self, update_code: str) -> bool:
-        """执行更新代码"""
-        try:
-            # 创建一个新的命名空间
-            update_namespace = {
-                "requests": requests,
-                "subprocess": subprocess,
-                "os": os,
-                "time": time,
-                "Path": Path,
-                "ROOT_PATH": ROOT_PATH.parent,
-                "logger": logger,
-                "sys": sys,  # 添加sys模块到命名空间
-            }
-
-            # 判断是否为base64编码
-            try:
-                import base64
-
-                decoded_code = base64.b64decode(update_code).decode("utf-8")
-                update_code = decoded_code
-            except (ValueError, UnicodeDecodeError):
-                pass
-
-            # 执行更新下载
-            exec(update_code, update_namespace)
-            return True
-
-        except Exception as e:
-            logger.exception("执行更新代码失败: %s", str(e))
-            return False
+        """已弃用：执行更新代码（已移除安全风险）"""
+        logger.warning("更新代码执行功能已移除，以防止安全风险")
+        return False
 
     def hasNewVersion(self):
         """检查是否有新版本"""
@@ -124,9 +93,10 @@ class VersionManager(QObject):
         current_version_available = True
         for version_info in self.history:
             if version_info["version"] == self.currentVersion.lower():
-                if version_info["update_code"]:
-                    # 执行更新代码
-                    self.execute_update_code(version_info["update_code"])
+                # 已移除更新代码执行功能以防止安全风险
+                if version_info.get("update_code"):
+                    logger.warning("检测到版本 %s 的更新代码，但代码执行功能已移除以确保安全", 
+                                 version_info["version"])
                 current_version_available = version_info.get("available", True)
                 break
 
