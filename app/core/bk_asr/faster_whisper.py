@@ -149,6 +149,10 @@ class FasterWhisperASR(BaseASR):
             )
             if self.vad_method:
                 cmd.extend(["--vad_method", self.vad_method])
+                # 如果是 pyannote_v3 方法，并且检测到是 RTX 5000 系列 GPU，则强制使用 CPU 进行 VAD
+                if self.vad_method == "pyannote_v3" and self._check_rtx_5000_series():
+                    cmd.extend(["--vad_device", "cpu"])
+                    
         else:
             cmd.extend(["--vad_filter", "false"])
 
@@ -187,6 +191,17 @@ class FasterWhisperASR(BaseASR):
 
         # 完成的提示音
         cmd.extend(["--beep_off"])
+
+        # 指定用於 CPU 推理的執行緒數。
+        # cmd.extend(["--threads", str(os.cpu_count())])
+
+        # compute_type参数 指定用於模型運算的量化類型
+        # 只有在 RTX 5000 系列 GPU 上運行時才設置為 "default"(float16)，但float32 比較快，也比較占用VRAM
+        if self._check_rtx_5000_series():
+            cmd.extend(["--compute_type", "default"])
+
+        # hallucination_silence_threshold参数 幻覺靜音閾值
+        # cmd.extend(["--hallucination_silence_threshold", "2"])
 
         return cmd
 
@@ -305,3 +320,31 @@ class FasterWhisperASR(BaseASR):
         cmd = self._build_command("")
         cmd_hash = hashlib.md5(str(cmd).encode()).hexdigest()
         return f"{self.crc32_hex}-{cmd_hash}"
+    
+    def _check_rtx_5000_series(self):
+        try:
+            # Execute nvidia-smi command to get GPU information
+            result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'], 
+                                    capture_output=True, text=True, check=True)
+            
+            gpu_names = result.stdout.strip().split('\n')
+            
+            for name in gpu_names:
+                # Check if the name contains "RTX" and "50" to broadly identify 5000 series
+                # This is a simplified check and might need refinement for future series
+                if "RTX" in name and "50" in name:
+                    # print(f"Detected NVIDIA RTX 5000 series GPU: {name}")
+                    return True
+            
+            # print("No NVIDIA RTX 5000 series GPU detected.")
+            return False
+
+        except FileNotFoundError:
+            # print("nvidia-smi not found. Ensure NVIDIA drivers are installed and in your PATH.")
+            return False
+        except subprocess.CalledProcessError as e:
+            # print(f"Error running nvidia-smi: {e}")
+            return False
+        except Exception as e:
+            # print(f"An unexpected error occurred: {e}")
+            return False
