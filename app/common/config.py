@@ -132,7 +132,7 @@ class Config(QConfig):
         "Translate", "NeedReflectTranslate", False, BoolValidator()
     )
     deeplx_endpoint = ConfigItem("Translate", "DeeplxEndpoint", "")
-    batch_size = RangeConfigItem("Translate", "BatchSize", 10, RangeValidator(5, 30))
+    batch_size = RangeConfigItem("Translate", "BatchSize", 10, RangeValidator(5, 100))
     thread_num = RangeConfigItem("Translate", "ThreadNum", 10, RangeValidator(1, 100))
 
     # ------------------- 转录配置 -------------------
