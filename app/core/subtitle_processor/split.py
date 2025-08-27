@@ -884,7 +884,7 @@ class SubtitleSplitter:
         self, segments: List[ASRDataSeg], sentences: List[str], max_unmatched: int = 5
     ) -> List[ASRDataSeg]:
         """
-        基于提供的句子列表合并ASR分段
+        基于提供的句子列表合并ASR分段 - 优化版本
 
         Args:
             segments: ASR数据分段列表
@@ -902,7 +902,22 @@ class SubtitleSplitter:
             """通过转换为小写并规范化空格来标准化文本"""
             return " ".join(s.lower().split())
 
+        def fast_similarity(s1: str, s2: str) -> float:
+            """快速相似度计算，用于预筛选"""
+            if s1 == s2:
+                return 1.0
+            # 使用简单的词汇重叠率作为快速筛选
+            words1 = set(s1.split())
+            words2 = set(s2.split())
+            if not words1 or not words2:
+                return 0.0
+            intersection = words1 & words2
+            union = words1 | words2
+            return len(intersection) / len(union)
+
+        # 预处理ASR文本，避免重复计算
         asr_texts = [seg.text for seg in segments]
+        asr_processed = [preprocess_text(text) for text in asr_texts]
         asr_len = len(asr_texts)
         asr_index = 0  # 当前分段索引位置
         threshold = 0.5  # 相似度阈值
@@ -917,37 +932,52 @@ class SubtitleSplitter:
             logger.debug("后续句子:" + "".join(asr_texts[asr_index : asr_index + 10]))
 
             sentence_proc = preprocess_text(sentence)
-            word_count = count_words(sentence_proc)
+            word_count = len(sentence_proc.split())
             best_ratio = 0.0
             best_pos = None
             best_window_size = 0
 
-            # 滑动窗口大小，优先考虑接近句子词数的窗口
+            # 优化：动态调整搜索范围
             max_window_size = min(word_count * 2, asr_len - asr_index)
             min_window_size = max(1, word_count // 2)
-            window_sizes = sorted(
-                range(min_window_size, max_window_size + 1),
-                key=lambda x: abs(x - word_count),
-            )
+            
+            # 优化：优先尝试最接近的窗口大小
+            optimal_window_size = min(word_count, max_window_size)
+            if optimal_window_size >= min_window_size:
+                window_sizes = [optimal_window_size] + list(range(min_window_size, max_window_size + 1))
+                window_sizes = list(dict.fromkeys(window_sizes))  # 去重
+            else:
+                window_sizes = list(range(min_window_size, max_window_size + 1))
 
-            # 对每个窗口大小尝试匹配
+            # 优化：单次遍历，减少嵌套循环
+            found_exact_match = False
             for window_size in window_sizes:
+                if found_exact_match:
+                    break
+                    
                 max_start = min(asr_index + max_shift + 1, asr_len - window_size + 1)
+                
+                # 优化：批量预计算窗口文本，避免重复join操作
                 for start in range(asr_index, max_start):
-                    substr = "".join(asr_texts[start : start + window_size])
-                    substr_proc = preprocess_text(substr)
-                    ratio = difflib.SequenceMatcher(
-                        None, sentence_proc, substr_proc
-                    ).ratio()
+                    # 使用缓存的预处理文本
+                    substr_proc = " ".join(asr_processed[start : start + window_size])
+                    
+                    # 快速预筛选
+                    fast_ratio = fast_similarity(sentence_proc, substr_proc)
+                    if fast_ratio < threshold - 0.2:  # 略微放宽预筛选阈值
+                        continue
+                    
+                    # 只有通过预筛选的才进行精确计算
+                    ratio = difflib.SequenceMatcher(None, sentence_proc, substr_proc).ratio()
 
                     if ratio > best_ratio:
                         best_ratio = ratio
                         best_pos = start
                         best_window_size = window_size
+                    
                     if ratio == 1.0:
+                        found_exact_match = True
                         break
-                if best_ratio == 1.0:
-                    break
 
             # 处理匹配结果
             if best_ratio >= threshold and best_pos is not None:
