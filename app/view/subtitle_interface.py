@@ -737,7 +737,7 @@ class SubtitleInterface(QWidget):
         menu.exec(self.subtitle_table.viewport().mapToGlobal(pos))
 
     def merge_selected_rows(self, rows: List[int]) -> None:
-        """合并选中的字幕行"""
+        """合并选中的字幕行 - 高性能优化版本"""
         if not rows or len(rows) < 2:
             return
 
@@ -770,12 +770,13 @@ class SubtitleInterface(QWidget):
             "translated_subtitle": merged_translated,
         }
 
-        # 优化算法：使用字典重建而不是嵌套循环
+        # 优化：使用集合进行O(1)的查找，避免O(n²)的嵌套循环
+        rows_set = set(rows)  # 将列表转换为集合，实现O(1)查找
         keys = list(data.keys())
         new_data = {}
         new_index = 1
         
-        # 遍历所有键，只保留不在选中范围内的项
+        # 优化：单次遍历重建数据，避免嵌套循环
         for i, key in enumerate(keys):
             if i == rows[0]:
                 # 在第一个选中行的位置插入合并项
@@ -783,7 +784,8 @@ class SubtitleInterface(QWidget):
                 new_data[new_key] = merged_item
                 new_index += 1
             
-            if i not in rows:
+            # 优化：使用集合的O(1)查找替代O(n)的列表查找
+            if i not in rows_set:
                 # 只保留未选中的行
                 new_key = str(new_index)
                 new_data[new_key] = data[key]

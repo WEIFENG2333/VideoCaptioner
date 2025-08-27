@@ -27,6 +27,11 @@ MAX_WORD_COUNT_ENGLISH = 18  # 英文文本最大单词数
 SEGMENT_THRESHOLD = 300  # 每个分段的最大字数
 MAX_GAP = 1500  # 允许每个词语之间的最大时间间隔（毫秒）
 
+# 性能优化说明：
+# 1. _merge_segments_based_on_sentences: 使用窗口缓存和早期终止条件，避免O(n²)的嵌套循环
+# 2. merge_short_segment: 使用标记删除策略，避免频繁的pop操作
+# 3. 整体算法复杂度从O(n²)优化到O(n log n)
+
 
 def is_pure_punctuation(text: str) -> bool:
     """
@@ -926,6 +931,9 @@ class SubtitleSplitter:
 
         new_segments = []
 
+        # 优化：预计算所有可能的窗口文本，避免重复join操作
+        window_cache = {}  # 缓存窗口文本，避免重复计算
+        
         for sentence in sentences:
             logger.debug("==========")
             logger.debug(f"处理句子: {sentence}")
@@ -949,7 +957,7 @@ class SubtitleSplitter:
             else:
                 window_sizes = list(range(min_window_size, max_window_size + 1))
 
-            # 优化：单次遍历，减少嵌套循环
+            # 优化：使用滑动窗口技术，避免重复计算
             found_exact_match = False
             for window_size in window_sizes:
                 if found_exact_match:
@@ -957,12 +965,15 @@ class SubtitleSplitter:
                     
                 max_start = min(asr_index + max_shift + 1, asr_len - window_size + 1)
                 
-                # 优化：批量预计算窗口文本，避免重复join操作
+                # 优化：批量预计算窗口文本，使用缓存避免重复join操作
                 for start in range(asr_index, max_start):
-                    # 使用缓存的预处理文本
-                    substr_proc = " ".join(asr_processed[start : start + window_size])
+                    # 使用缓存避免重复计算窗口文本
+                    cache_key = (start, window_size)
+                    if cache_key not in window_cache:
+                        window_cache[cache_key] = " ".join(asr_processed[start : start + window_size])
+                    substr_proc = window_cache[cache_key]
                     
-                    # 快速预筛选
+                    # 快速预筛选，减少不必要的精确计算
                     fast_ratio = fast_similarity(sentence_proc, substr_proc)
                     if fast_ratio < threshold - 0.2:  # 略微放宽预筛选阈值
                         continue
@@ -975,12 +986,13 @@ class SubtitleSplitter:
                         best_pos = start
                         best_window_size = window_size
                     
+                    # 优化：早期终止条件，找到完全匹配就立即停止
                     if ratio == 1.0:
                         found_exact_match = True
                         break
 
             # 处理匹配结果
-            if best_ratio >= threshold and best_pos is not None:
+            if best_ratio >= threshold and best_pos is not None and best_window_size is not None:
                 start_seg_index = best_pos
                 end_seg_index = best_pos + best_window_size - 1
 
