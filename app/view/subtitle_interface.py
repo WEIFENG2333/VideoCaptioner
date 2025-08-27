@@ -737,7 +737,7 @@ class SubtitleInterface(QWidget):
         menu.exec(self.subtitle_table.viewport().mapToGlobal(pos))
 
     def merge_selected_rows(self, rows: List[int]) -> None:
-        """合并选中的字幕行"""
+        """合并选中的字幕行 - 高性能优化版本"""
         if not rows or len(rows) < 2:
             return
 
@@ -770,23 +770,32 @@ class SubtitleInterface(QWidget):
             "translated_subtitle": merged_translated,
         }
 
-        # 获取所有需要保留的键
+        # 优化：使用集合进行O(1)的查找，避免O(n²)的嵌套循环
+        rows_set = set(rows)  # 将列表转换为集合，实现O(1)查找
         keys = list(data.keys())
-        preserved_keys = keys[: rows[0]] + keys[rows[-1] + 1 :]
-
-        # 创建新的数据字典
         new_data = {}
-        for i, key in enumerate(preserved_keys):
+        new_index = 1
+        
+        # 优化：单次遍历重建数据，避免嵌套循环
+        for i, key in enumerate(keys):
             if i == rows[0]:
-                new_key = f"{len(new_data) + 1}"
+                # 在第一个选中行的位置插入合并项
+                new_key = str(new_index)
                 new_data[new_key] = merged_item
-            new_key = f"{len(new_data) + 1}"
-            new_data[new_key] = data[key]
-
-        # 如果合并的是最后几行，需要确保合并项被添加
-        if rows[0] >= len(preserved_keys):
-            new_key = f"{len(new_data) + 1}"
-            new_data[new_key] = merged_item
+                new_index += 1
+            
+            # 优化：使用集合的O(1)查找替代O(n)的列表查找
+            if i not in rows_set:
+                # 只保留未选中的行
+                new_key = str(new_index)
+                new_data[new_key] = data[key]
+                new_index += 1
+        
+        # 如果选中的行是最后的几行，确保合并项被添加
+        if rows[0] >= len(keys) - len(rows):
+            if str(len(new_data)) not in new_data:
+                new_key = str(len(new_data) + 1)
+                new_data[new_key] = merged_item
 
         # 更新模型数据
         self.model.update_all(new_data)
