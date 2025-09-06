@@ -145,9 +145,9 @@ class SubtitleThread(QThread):
                     timeout=60,
                     retry_times=1,
                     split_type=(
-                        str(subtitle_config.split_type)
+                        str(subtitle_config.split_type).lower().split(".")[-1]
                         if subtitle_config.split_type
-                        else "SEMANTIC"
+                        else "semantic"
                     ),
                     max_word_count_cjk=subtitle_config.max_word_count_cjk,
                     max_word_count_english=subtitle_config.max_word_count_english,
