@@ -145,7 +145,7 @@ class SubtitleThread(QThread):
                     timeout=60,
                     retry_times=1,
                     split_type=(
-                        str(subtitle_config.split_type).lower().split(".")[-1]
+                        subtitle_config.split_type.name.lower()
                         if subtitle_config.split_type
                         else "semantic"
                     ),
