@@ -316,17 +316,19 @@ class FasterWhisperASR(BaseASR):
     def _get_gpu_name(self):
         gpus = GPUtil.getGPUs()
         if not gpus:
-            print("未检测到 NVIDIA GPU")
-        else:
+            logger.info("未检测到 NVIDIA GPU")
+        elif len(gpus) > 0:
             gpu_name = gpus[0].name
             logger.info(f"检测到使用了 GPU:{gpu_name}")
             return gpu_name
+        else:
+            return ''
 
 
     def _is_need_use_float32(self):
         if self.device != 'cuda':
             return False
         gpu_name = self._get_gpu_name()
-        print("gpu_name", gpu_name)
         if "RTX 50" in gpu_name:
             return True
+        return False
