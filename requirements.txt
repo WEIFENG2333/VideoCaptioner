@@ -8,3 +8,4 @@ modelscope
 psutil
 sqlalchemy
 json-repair
+GPUtil

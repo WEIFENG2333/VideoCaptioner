@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import List, Optional, Callable, Any
+import GPUtil
+
 
 from ..utils.logger import setup_logger
 from ..utils.subprocess_helper import StreamReader
@@ -73,6 +75,8 @@ class FasterWhisperASR(BaseASR):
         self.prompt = prompt
 
         self.process = None
+
+        self.gpu_name = ''
 
         # 断句宽度
         if self.language in ["zh", "ja", "ko"]:
@@ -187,6 +191,9 @@ class FasterWhisperASR(BaseASR):
 
         # 完成的提示音
         cmd.extend(["--beep_off"])
+
+        if self._is_need_use_float32():
+            cmd.extend(["--compute_type","float32"])
 
         return cmd
 
@@ -305,3 +312,21 @@ class FasterWhisperASR(BaseASR):
         cmd = self._build_command("")
         cmd_hash = hashlib.md5(str(cmd).encode()).hexdigest()
         return f"{self.crc32_hex}-{cmd_hash}"
+
+    def _get_gpu_name(self):
+        gpus = GPUtil.getGPUs()
+        if not gpus:
+            print("未检测到 NVIDIA GPU")
+        else:
+            gpu_name = gpus[0].name
+            logger.info(f"检测到使用了 GPU:{gpu_name}")
+            return gpu_name
+
+
+    def _is_need_use_float32(self):
+        if self.device != 'cuda':
+            return False
+        gpu_name = self._get_gpu_name()
+        print("gpu_name", gpu_name)
+        if "RTX 50" in gpu_name:
+            return True
