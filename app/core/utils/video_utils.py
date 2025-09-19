@@ -114,21 +114,29 @@ def add_subtitles(
         "slow",
         "slower",
         "veryslow",
+        "1","2","3","4","5","6","7","8","9","10","11","12","13", #libsvtav1 
+        "p1","p2","p3","p4","p5","p6","p7" #GPU编码
     ] = "superfast",
     vcodec: str = "libx265",
     soft_subtitle: bool = False,
     progress_callback: Optional[Callable] = None,
+    use_cuda_encoding_if_available: bool = True,
+    quality_control_method: str = "-crf",
+    quality_control_parameters: str = "25",
+    use_av1: bool = False,
+    _retrying: bool = False,
 ) -> None:
     assert Path(input_file).is_file(), "输入文件不存在"
     assert Path(subtitle_file).is_file(), "字幕文件不存在"
-
+    
     # 移动到临时文件  Fix: 路径错误
     suffix = Path(subtitle_file).suffix.lower()
-    temp_dir = Path(tempfile.gettempdir()) / "VideoCaptioner"
-    temp_dir.mkdir(exist_ok=True)
-    temp_subtitle = temp_dir / f"temp_subtitle{suffix}"
-    shutil.copy2(subtitle_file, temp_subtitle)
-    subtitle_file = str(temp_subtitle)
+    if not _retrying:  #防止重试重复复制
+        temp_dir = Path(tempfile.gettempdir()) / "VideoCaptioner"
+        temp_dir.mkdir(exist_ok=True)
+        temp_subtitle = temp_dir / f"temp_subtitle{suffix}"
+        shutil.copy2(subtitle_file, temp_subtitle)
+        subtitle_file = str(temp_subtitle)
 
     # video_info = get_video_info(input_file)
     if suffix == ".ass":
@@ -185,13 +193,32 @@ def add_subtitles(
             vcodec = "libvpx-vp9"
             logger.info("WebM格式视频，使用libvpx-vp9编码器")
 
-        crf = "24"
+        if use_av1:
+            vcodec = "libsvtav1"
+            quality = "8"
+            quality_control_method = "-crf"
+            quality_control_parameters = "34"
+            logger.info("使用libsvtav1编码器") #WebM格式可以使用av1编码
+
         # 检查CUDA是否可用
         use_cuda = check_cuda_available()
         cmd = ["ffmpeg"]
         if use_cuda:
             logger.info("使用CUDA加速")
             cmd.extend(["-hwaccel", "cuda"])
+            if use_cuda_encoding_if_available and use_av1:
+                vcodec = "av1_nvenc" #需要40系及以上显卡
+                quality_control_method = "-cq"
+                quality_control_parameters = "36"
+                quality = "p1"
+                logger.info("使用AV1 GPU编码")
+            elif use_cuda_encoding_if_available:
+                vcodec = "hevc_nvenc"
+                quality_control_method = "-cq"
+                quality_control_parameters = "29"
+                quality = "p4"
+                logger.info("使用GPU编码")
+                
         cmd.extend(
             [
                 "-i",
@@ -202,8 +229,8 @@ def add_subtitles(
                 vcodec,
                 "-preset",
                 quality,
-                "-crf",
-                crf,
+                quality_control_method,
+                quality_control_parameters,
                 "-vf",
                 vf,
                 "-y",  # 覆盖输出文件
@@ -266,6 +293,30 @@ def add_subtitles(
             return_code = process.wait()
             if return_code != 0:
                 error_info = process.stderr.read()
+                # 如果是由于显卡不支持 av1_nvenc 导致的错误，尝试使用 H.265 重试
+                if (
+                    ("no capable devices found" in error_info.lower() or "not supported" in error_info.lower())
+                    and "av1_nvenc" in vcodec
+                    and not _retrying
+                ):
+                    logger.error(
+                        "检测到 av1_nvenc 不可用（可能显卡不支持），使用 H.265 进行重试。原始错误: %s",
+                        error_info,
+                    )
+                    # 通过重新调用 add_subtitles 来重试
+                    # 将 _retrying 设为 True 防止无限递归
+                    return add_subtitles(
+                        input_file=input_file,
+                        subtitle_file=subtitle_file,
+                        output=output,
+                        quality=quality,
+                        soft_subtitle=soft_subtitle,
+                        progress_callback=progress_callback,
+                        use_cuda_encoding_if_available=use_cuda_encoding_if_available,
+                        use_av1=False,
+                        _retrying=True,
+                    )
+
                 logger.error(f"视频合成失败， {error_info}")
                 raise Exception(return_code)
             logger.info("视频合成完成")
