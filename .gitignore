@@ -1,0 +1,32 @@
+# win 二进制文件资源目录
+/resource/bin/
+!/resource/bin/bin_environment.txt
+
+# 开发环境
+.idea/
+*.pyc
+*/__pycache__/
+*.env
+venv/
+
+# 系统文件
+.DS_Store
+
+# 测试和脚本
+/test/
+/release/
+/my_content/
+
+# 媒体文件
+*.srt
+*.mp4
+*.exe
+
+# 应用数据
+/AppData/
+/output/
+/work-dir/
+.vscode/
+
+# 项目文档
+CLAUDE.md
