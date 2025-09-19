@@ -115,7 +115,7 @@ def add_subtitles(
         "slower",
         "veryslow",
     ] = "superfast",
-    vcodec: str = "libx264",
+    vcodec: str = "libx265",
     soft_subtitle: bool = False,
     progress_callback: Optional[Callable] = None,
 ) -> None:
@@ -185,6 +185,7 @@ def add_subtitles(
             vcodec = "libvpx-vp9"
             logger.info("WebM格式视频，使用libvpx-vp9编码器")
 
+        crf = "24"
         # 检查CUDA是否可用
         use_cuda = check_cuda_available()
         cmd = ["ffmpeg"]
@@ -201,6 +202,8 @@ def add_subtitles(
                 vcodec,
                 "-preset",
                 quality,
+                "-crf",
+                crf,
                 "-vf",
                 vf,
                 "-y",  # 覆盖输出文件
