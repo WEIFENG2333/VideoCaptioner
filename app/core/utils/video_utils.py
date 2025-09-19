@@ -156,7 +156,7 @@ def add_subtitles(
             "-c:a",
             "copy",
             "-c:s",
-            "mov_text",
+            "copy",
             output,
             "-y",
         ]
