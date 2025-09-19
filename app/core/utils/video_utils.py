@@ -114,7 +114,7 @@ def add_subtitles(
         "slow",
         "slower",
         "veryslow",
-    ] = "medium",
+    ] = "superfast",
     vcodec: str = "libx264",
     soft_subtitle: bool = False,
     progress_callback: Optional[Callable] = None,
@@ -126,7 +126,7 @@ def add_subtitles(
     suffix = Path(subtitle_file).suffix.lower()
     temp_dir = Path(tempfile.gettempdir()) / "VideoCaptioner"
     temp_dir.mkdir(exist_ok=True)
-    temp_subtitle = temp_dir / f"temp_subtitle.{suffix}"
+    temp_subtitle = temp_dir / f"temp_subtitle{suffix}"
     shutil.copy2(subtitle_file, temp_subtitle)
     subtitle_file = str(temp_subtitle)
 
