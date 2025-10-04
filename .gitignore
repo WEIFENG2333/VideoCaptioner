@@ -31,6 +31,7 @@ venv/
 /output/
 /work-dir/
 .vscode/
+.claude/
 
 # 测试相关
 .pytest_cache/
