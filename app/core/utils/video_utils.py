@@ -4,8 +4,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Optional, Callable
-from typing import Dict, Literal
+from typing import Callable, Dict, Literal, Optional
 
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger

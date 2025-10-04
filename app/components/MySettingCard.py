@@ -1,5 +1,5 @@
 # coding:utf-8
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QPainter

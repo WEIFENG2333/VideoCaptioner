@@ -1,23 +1,4 @@
-import re
-
-
-def count_words(text: str) -> int:
-    """
-    统计文本中的中文和英文词数。
-
-    对于英文，通过空格和标点符号分割单词。
-    对于中文，每个汉字视为一个词。
-
-    参数:
-        text (str): 要统计的文本。
-
-    返回:
-        int: 文本中的总词数。
-    """
-    # 使用正则表达式统计英文单词和中文字符
-    english_words = re.findall(r"\b\w+\b", text)
-    chinese_chars = re.findall(r"[\u4e00-\u9fff]", text)
-    return len(english_words) + len(chinese_chars)
+from .text_utils import count_words
 
 
 def optimize_subtitles(asr_data):

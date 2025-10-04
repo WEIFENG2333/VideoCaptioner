@@ -7,7 +7,11 @@
 *.pyc
 */__pycache__/
 *.env
+*.env.local
+*.env.*.local
+.env.test
 venv/
+.venv/
 
 # 系统文件
 .DS_Store
@@ -27,6 +31,12 @@ venv/
 /output/
 /work-dir/
 .vscode/
+
+# 测试相关
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
 
 # 项目文档
 CLAUDE.md
