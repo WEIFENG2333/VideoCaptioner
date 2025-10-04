@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from PyQt5.QtCore import QAbstractTableModel, Qt, QTime, pyqtSignal, QModelIndex
-from PyQt5.QtGui import QColor, QDragEnterEvent, QDropEvent, QKeyEvent, QCloseEvent
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QTime, pyqtSignal
+from PyQt5.QtGui import QCloseEvent, QColor, QDragEnterEvent, QDropEvent, QKeyEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -38,7 +38,7 @@ from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.SubtitleSettingDialog import SubtitleSettingDialog
 from app.config import SUBTITLE_STYLE_PATH
-from app.core.bk_asr.asr_data import ASRData
+from app.core.asr.asr_data import ASRData
 from app.core.entities import (
     OutputSubtitleFormatEnum,
     SubtitleTask,
@@ -168,12 +168,7 @@ class SubtitleTableModel(QAbstractTableModel):
         # 更新内部数据
         for key, value in new_data.items():
             if key in self._data:
-                if "||" in value:
-                    original_subtitle, translated_subtitle = value.split("||", 1)
-                    self._data[key]["original_subtitle"] = original_subtitle
-                    self._data[key]["translated_subtitle"] = translated_subtitle
-                else:
-                    self._data[key]["translated_subtitle"] = value
+                self._data[key]["translated_subtitle"] = value
                 row = list(self._data.keys()).index(key)
                 updated_rows.add(row)
 

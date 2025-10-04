@@ -4,9 +4,9 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.core.entities import (
     FullProcessTask,
-    TranscribeTask,
     SubtitleTask,
     SynthesisTask,
+    TranscribeTask,
 )
 from app.core.utils.logger import setup_logger
 

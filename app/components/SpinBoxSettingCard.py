@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon

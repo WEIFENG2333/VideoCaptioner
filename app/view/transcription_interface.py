@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from PyQt5.QtCore import Qt, QStandardPaths, pyqtSignal
+from PyQt5.QtCore import QStandardPaths, Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
