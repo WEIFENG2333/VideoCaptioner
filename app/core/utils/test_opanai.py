@@ -1,6 +1,5 @@
 from typing import Literal, Optional
 
-
 import openai
 
 

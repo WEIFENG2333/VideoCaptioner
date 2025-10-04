@@ -6,7 +6,7 @@ from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.config import CACHE_PATH
-from app.core.bk_asr import transcribe
+from app.core.asr import transcribe
 from app.core.entities import TranscribeModelEnum, TranscribeTask
 from app.core.storage.cache_manager import ServiceUsageManager
 from app.core.storage.database import DatabaseManager

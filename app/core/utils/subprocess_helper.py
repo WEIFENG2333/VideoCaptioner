@@ -1,9 +1,10 @@
 """子进程输出流处理工具模块"""
 
 import queue
+import subprocess
 import threading
 from typing import Callable, Optional, Tuple
-import subprocess
+
 from ..utils.logger import setup_logger
 
 logger = setup_logger("subprocess_helper")

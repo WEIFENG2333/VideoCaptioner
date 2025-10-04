@@ -1,4 +1,5 @@
 from typing import Optional
+
 from app.config import SUBTITLE_STYLE_PATH
 
 

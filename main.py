@@ -6,9 +6,9 @@ Author: Weifeng
 """
 
 import os
+import platform
 import sys
 import traceback
-import platform
 
 # Add project root directory to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))

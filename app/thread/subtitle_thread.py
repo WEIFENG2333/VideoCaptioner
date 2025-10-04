@@ -1,18 +1,18 @@
 import datetime
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import List, Optional
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.config import CACHE_PATH
-from app.core.bk_asr.asr_data import ASRData
+from app.core.asr.asr_data import ASRData
 from app.core.entities import SubtitleConfig, SubtitleTask, TranslatorServiceEnum
 from app.core.storage.cache_manager import ServiceUsageManager
 from app.core.storage.database import DatabaseManager
 from app.core.subtitle_processor.optimize import SubtitleOptimizer
 from app.core.subtitle_processor.split import SubtitleSplitter
-from app.core.subtitle_processor.translate import TranslatorFactory, TranslatorType
+from app.core.translate import TranslateData, TranslatorFactory, TranslatorType
 from app.core.utils.logger import setup_logger
 from app.core.utils.test_opanai import test_openai
 
@@ -141,14 +141,6 @@ class SubtitleThread(QThread):
                 splitter = SubtitleSplitter(
                     thread_num=subtitle_config.thread_num,
                     model=subtitle_config.llm_model,
-                    temperature=0.3,
-                    timeout=60,
-                    retry_times=1,
-                    split_type=(
-                        str(subtitle_config.split_type)
-                        if subtitle_config.split_type
-                        else "SEMANTIC"
-                    ),
                     max_word_count_cjk=subtitle_config.max_word_count_cjk,
                     max_word_count_english=subtitle_config.max_word_count_english,
                 )
@@ -208,8 +200,9 @@ class SubtitleThread(QThread):
                             if subtitle_config.target_language
                             else "zh-CN"
                         ),
-                        model=subtitle_config.llm_model
-                        or "",  # 非 OpenAI 服务不需要 model
+                        model=subtitle_config.llm_model or "",
+                        base_url=subtitle_config.base_url or "",
+                        api_key=subtitle_config.api_key or "",
                         custom_prompt=custom_prompt or "",
                         is_reflect=subtitle_config.need_reflect,
                         update_callback=self.callback,
@@ -280,14 +273,19 @@ class SubtitleThread(QThread):
             self.error.emit(str(e))
             self.progress.emit(100, self.tr("优化失败"))
 
-    def callback(self, result: Dict):
+    def callback(self, result: List[TranslateData]):
         self.finished_subtitle_length += len(result)
         # 简单计算当前进度（0-100%）
         progress = min(
             int((self.finished_subtitle_length / self.subtitle_length) * 100), 100
         )
         self.progress.emit(progress, self.tr("{0}% 处理字幕").format(progress))
-        self.update.emit(result)
+        # 转换为字典格式供UI使用
+        result_dict = {
+            str(data.index): data.translated_text or data.original_text
+            for data in result
+        }
+        self.update.emit(result_dict)
 
     def stop(self):
         """停止所有处理"""

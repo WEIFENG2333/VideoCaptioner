@@ -1,23 +1,7 @@
 import re
 from typing import Dict, Optional
 
-
-def is_mainly_cjk(text: str) -> bool:
-    """
-    判断文本是否主要由中日韩文字组成
-    """
-    # 定义CJK字符的Unicode范围
-    cjk_patterns = [
-        r"[\u4e00-\u9fff]",  # 中日韩统一表意文字
-        r"[\u3040-\u309f]",  # 平假名
-        r"[\u30a0-\u30ff]",  # 片假名
-        r"[\uac00-\ud7af]",  # 韩文音节
-    ]
-    cjk_count = 0
-    for pattern in cjk_patterns:
-        cjk_count += len(re.findall(pattern, text))
-    total_chars = len("".join(text.split()))
-    return cjk_count / total_chars > 0.4 if total_chars > 0 else False
+from .text_utils import is_mainly_cjk
 
 
 def parse_ass_info(ass_content: str) -> tuple[int, Dict[str, int]]:
