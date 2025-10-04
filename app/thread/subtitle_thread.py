@@ -5,13 +5,10 @@ from typing import List, Optional
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from app.config import CACHE_PATH
 from app.core.asr.asr_data import ASRData
 from app.core.entities import SubtitleConfig, SubtitleTask, TranslatorServiceEnum
-from app.core.storage.cache_manager import ServiceUsageManager
-from app.core.storage.database import DatabaseManager
-from app.core.subtitle_processor.optimize import SubtitleOptimizer
-from app.core.subtitle_processor.split import SubtitleSplitter
+from app.core.optimize.optimize import SubtitleOptimizer
+from app.core.split.split import SubtitleSplitter
 from app.core.translate import TranslateData, TranslatorFactory, TranslatorType
 from app.core.utils.logger import setup_logger
 from app.core.utils.test_opanai import test_openai
@@ -26,7 +23,6 @@ class SubtitleThread(QThread):
     update = pyqtSignal(dict)
     update_all = pyqtSignal(dict)
     error = pyqtSignal(str)
-    MAX_DAILY_LLM_CALLS = 30
 
     def __init__(self, task: SubtitleTask):
         super().__init__()
@@ -35,9 +31,6 @@ class SubtitleThread(QThread):
         self.finished_subtitle_length = 0
         self.custom_prompt_text = ""
         self.optimizer = None  # Initialize optimizer attribute
-        # 初始化数据库和服务使用管理器
-        self.db_manager = DatabaseManager(str(CACHE_PATH))
-        self.service_manager = ServiceUsageManager(self.db_manager)
 
     def set_custom_prompt_text(self, text: str):
         self.custom_prompt_text = text
@@ -46,16 +39,7 @@ class SubtitleThread(QThread):
         """设置API配置，返回SubtitleConfig"""
         public_base_url = "https://ddg.bkfeng.top/v1"
         if self.task.subtitle_config.base_url == public_base_url:
-            # 检查是否可以使用服务
-
-            if not self.service_manager.check_service_available(
-                "llm", self.MAX_DAILY_LLM_CALLS
-            ):
-                raise Exception(
-                    self.tr(
-                        f"公益LLM服务已达到每日使用限制 {self.MAX_DAILY_LLM_CALLS} 次，建议使用自己的API"
-                    )
-                )
+            # 使用公益服务时限制并发
             self.task.subtitle_config.thread_num = 5
             self.task.subtitle_config.batch_size = 10
             return self.task.subtitle_config
@@ -73,9 +57,6 @@ class SubtitleThread(QThread):
                         "（字幕断句或字幕修正需要大模型）\nOpenAI API 测试失败, 请检查LLM配置"
                     )
                 )
-            # 增加服务使用次数
-            if self.task.subtitle_config.base_url == public_base_url:
-                self.service_manager.increment_usage("llm", self.MAX_DAILY_LLM_CALLS)
             return self.task.subtitle_config
         else:
             raise Exception(
@@ -159,10 +140,11 @@ class SubtitleThread(QThread):
                 if not subtitle_config.llm_model:
                     raise Exception(self.tr("字幕优化需要配置LLM模型"))
                 self.optimizer = SubtitleOptimizer(
-                    custom_prompt=custom_prompt or "",
-                    model=subtitle_config.llm_model,
-                    batch_num=subtitle_config.batch_size,
                     thread_num=subtitle_config.thread_num,
+                    batch_num=subtitle_config.batch_size,
+                    model=subtitle_config.llm_model,
+                    custom_prompt=custom_prompt or "",
+                    temperature=0.3,
                     update_callback=self.callback,
                 )
                 asr_data = self.optimizer.optimize_subtitle(asr_data)
