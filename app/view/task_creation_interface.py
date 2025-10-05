@@ -209,16 +209,6 @@ class TaskCreationInterface(QWidget):
 
     def setup_values(self):
         self.search_input.setText("")
-        # 根据当前选择的LLM服务获取对应的配置
-        current_service = cfg.llm_service.value
-        if current_service == LLMServiceEnum.PUBLIC:
-            InfoBar.warning(
-                self.tr("警告"),
-                self.tr("为确保字幕修正的准确性，建议到设置中配置自己的API"),
-                duration=6000,
-                parent=self,
-                position=InfoBarPosition.BOTTOM_RIGHT,
-            )
 
     def on_start_clicked(self):
         if self.start_button._icon == FluentIcon.FOLDER:
