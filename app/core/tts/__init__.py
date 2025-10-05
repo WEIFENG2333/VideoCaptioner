@@ -6,17 +6,18 @@
 from .base import BaseTTS
 from .openai_fm import OpenAIFmTTS
 from .openai_tts import OpenAITTS
-from .siliconflow import SiliconFlowTTS
+from .siliconflow import SiliconFlowTTS, VoiceCloneManager
 from .status import TTSStatus
-from .tts_data import TTSBatchResult, TTSConfig, TTSData
+from .tts_data import TTSConfig, TTSData, TTSDataSeg
 
 __all__ = [
     "BaseTTS",
     "OpenAITTS",
     "OpenAIFmTTS",
     "SiliconFlowTTS",
+    "VoiceCloneManager",
     "TTSStatus",
     "TTSConfig",
     "TTSData",
-    "TTSBatchResult",
+    "TTSDataSeg",
 ]
