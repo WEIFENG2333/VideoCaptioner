@@ -41,11 +41,12 @@ from app.config import SUBTITLE_STYLE_PATH
 from app.core.asr.asr_data import ASRData
 from app.core.entities import (
     OutputSubtitleFormatEnum,
+    SubtitleLayoutEnum,
     SubtitleTask,
     SupportedSubtitleFormats,
-    TargetLanguageEnum,
 )
 from app.core.task_factory import TaskFactory
+from app.core.translate.types import TargetLanguage
 from app.core.utils.get_subtitle_style import get_subtitle_style
 from app.core.utils.platform_utils import open_folder
 from app.thread.subtitle_thread import SubtitleThread
@@ -211,7 +212,9 @@ class SubtitleInterface(QWidget):
         self._setup_bottom_layout()
 
     def set_values(self):
-        self.layout_button.setText(cfg.subtitle_layout.value)
+        self.layout_button.setText(
+            cfg.subtitle_layout.value.value
+        )  # Get enum's string value
         self.translate_button.setChecked(cfg.need_translate.value)
         self.optimize_button.setChecked(cfg.need_optimize.value)
         self.target_language_button.setText(cfg.target_language.value.value)
@@ -254,8 +257,7 @@ class SubtitleInterface(QWidget):
         for layout in ["译文在上", "原文在上", "仅译文", "仅原文"]:
             action = Action(text=layout)
             action.triggered.connect(
-                lambda checked,
-                layout_value=layout: signalBus.subtitle_layout_changed.emit(
+                lambda checked, layout_value=layout: signalBus.subtitle_layout_changed.emit(
                     layout_value
                 )
             )
@@ -291,11 +293,10 @@ class SubtitleInterface(QWidget):
         self.target_language_button.setMinimumWidth(125)
         self.target_language_menu = RoundMenu(parent=self)
         self.target_language_menu.setMaxVisibleItems(10)
-        for lang in TargetLanguageEnum:
+        for lang in TargetLanguage:
             action = Action(text=lang.value)
             action.triggered.connect(
-                lambda checked,
-                lang_value=lang.value: signalBus.target_language_changed.emit(
+                lambda checked, lang_value=lang.value: signalBus.target_language_changed.emit(
                     lang_value
                 )
             )
@@ -821,7 +822,7 @@ class SubtitleInterface(QWidget):
 
     def on_target_language_changed(self, language: str) -> None:
         """处理翻译语言变更"""
-        for lang in TargetLanguageEnum:
+        for lang in TargetLanguage:
             if lang.value == language:
                 self.target_language_button.setText(lang.value)
                 cfg.set(cfg.target_language, lang)
@@ -841,7 +842,8 @@ class SubtitleInterface(QWidget):
 
     def on_subtitle_layout_changed(self, layout: str) -> None:
         """处理字幕排布变更"""
-        cfg.set(cfg.subtitle_layout, layout)
+        layout_enum = SubtitleLayoutEnum(layout)  # Convert string to enum
+        cfg.set(cfg.subtitle_layout, layout_enum)
         self.layout_button.setText(layout)
 
 
