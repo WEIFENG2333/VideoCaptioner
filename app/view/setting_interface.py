@@ -27,7 +27,7 @@ from app.components.EditComboBoxSettingCard import EditComboBoxSettingCard
 from app.components.LineEditSettingCard import LineEditSettingCard
 from app.config import AUTHOR, FEEDBACK_URL, HELP_URL, RELEASE_URL, VERSION, YEAR
 from app.core.entities import LLMServiceEnum, TranslatorServiceEnum
-from app.core.utils.test_opanai import get_openai_models, test_openai
+from app.core.llm.check_llm import check_llm_connection, get_available_models
 
 
 class SettingInterface(ScrollArea):
@@ -246,7 +246,7 @@ class SettingInterface(ScrollArea):
         self.llmServiceCard = ComboBoxSettingCard(
             cfg.llm_service,
             FIF.ROBOT,
-            self.tr("LLM服务)"),
+            self.tr("LLM服务"),
             self.tr("选择大服务，用于字幕断句、字幕优化、字幕翻译（如果选择"),
             texts=[service.value for service in cfg.llm_service.validator.options],  # type: ignore
             parent=self.llmGroup,
@@ -326,14 +326,6 @@ class SettingInterface(ScrollArea):
                 "default_base": "https://open.bigmodel.cn/api/paas/v4",
                 "default_models": ["glm-4-flash"],
             },
-            LLMServiceEnum.PUBLIC: {
-                "prefix": "public",
-                "api_key_cfg": cfg.public_api_key,
-                "api_base_cfg": cfg.public_api_base,
-                "model_cfg": cfg.public_model,
-                "default_base": "https://api.public-model.com/v1",
-                "default_models": ["public-model"],
-            },
         }
 
         # 创建服务配置映射
@@ -342,16 +334,6 @@ class SettingInterface(ScrollArea):
         # 为每个服务创建配置卡片
         for service, config in service_configs.items():
             prefix = config["prefix"]
-
-            # 如果是公益模型，只添加配置不创建卡片
-            if service == LLMServiceEnum.PUBLIC:
-                self.llm_service_configs[service] = {
-                    "cards": [],
-                    "api_base": None,
-                    "api_key": None,
-                    "model": None,
-                }
-                continue
 
             # 创建API Key卡片
             api_key_card = LineEditSettingCard(
@@ -619,27 +601,21 @@ class SettingInterface(ScrollArea):
         if not service_config:
             return
 
-        # 如果是公益模型，使用配置文件中的值
-        if current_service == LLMServiceEnum.PUBLIC:
-            api_base = cfg.public_api_base.value
-            api_key = cfg.public_api_key.value
-            model = cfg.public_model.value
-        else:
-            api_base = (
-                service_config["api_base"].lineEdit.text()
-                if service_config["api_base"]
-                else ""
-            )
-            api_key = (
-                service_config["api_key"].lineEdit.text()
-                if service_config["api_key"]
-                else ""
-            )
-            model = (
-                service_config["model"].comboBox.currentText()
-                if service_config["model"]
-                else ""
-            )
+        api_base = (
+            service_config["api_base"].lineEdit.text()
+            if service_config["api_base"]
+            else ""
+        )
+        api_key = (
+            service_config["api_key"].lineEdit.text()
+            if service_config["api_key"]
+            else ""
+        )
+        model = (
+            service_config["model"].comboBox.currentText()
+            if service_config["model"]
+            else ""
+        )
 
         # 检查 API Base 是否属于网址
         if not api_base.startswith("http"):
@@ -777,8 +753,10 @@ class LLMConnectionThread(QThread):
     def run(self):
         """检查 LLM 连接并获取模型列表"""
         try:
-            is_success, message = test_openai(self.api_base, self.api_key, self.model)
-            models = get_openai_models(self.api_base, self.api_key)
+            is_success, message = check_llm_connection(
+                self.api_base, self.api_key, self.model
+            )
+            models = get_available_models(self.api_base, self.api_key)
             self.finished.emit(is_success, message, models)
         except Exception as e:
             self.error.emit(str(e))

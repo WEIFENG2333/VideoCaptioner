@@ -27,6 +27,7 @@ from app.components.MySettingCard import (
     SpinBoxSettingCard,
 )
 from app.config import ASSETS_PATH, SUBTITLE_STYLE_PATH
+from app.core.entities import SubtitleLayoutEnum
 from app.core.utils.platform_utils import open_folder
 from app.core.utils.subtitle_preview import generate_preview
 
@@ -370,7 +371,7 @@ class SubtitleStyleInterface(QWidget):
     def __setValues(self):
         """设置初始值"""
         # 设置字幕排布
-        self.layoutCard.comboBox.setCurrentText(cfg.get(cfg.subtitle_layout))
+        self.layoutCard.comboBox.setCurrentText(cfg.subtitle_layout.value.value)
         # 设置字幕样式
         self.styleNameComboBox.comboBox.setCurrentText(cfg.get(cfg.subtitle_style_name))
 
@@ -407,7 +408,10 @@ class SubtitleStyleInterface(QWidget):
         # 字幕排布
         self.layoutCard.currentTextChanged.connect(self.onSettingChanged)
         self.layoutCard.currentTextChanged.connect(
-            lambda: cfg.set(cfg.subtitle_layout, self.layoutCard.comboBox.currentText())
+            lambda: cfg.set(
+                cfg.subtitle_layout,
+                SubtitleLayoutEnum(self.layoutCard.comboBox.currentText()),
+            )
         )
         # 垂直间距
         self.verticalSpacingCard.spinBox.valueChanged.connect(self.onSettingChanged)
@@ -449,7 +453,8 @@ class SubtitleStyleInterface(QWidget):
         open_folder(str(SUBTITLE_STYLE_PATH))
 
     def on_subtitle_layout_changed(self, layout: str):
-        cfg.subtitle_layout.value = layout
+        layout_enum = SubtitleLayoutEnum(layout)
+        cfg.subtitle_layout.value = layout_enum
         self.layoutCard.setCurrentText(layout)
 
     def onOrientationChanged(self):
