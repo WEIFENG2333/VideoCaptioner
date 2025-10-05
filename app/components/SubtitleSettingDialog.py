@@ -26,15 +26,6 @@ class SubtitleSettingDialog(MessageBoxBase):
             self,
         )
 
-        self.split_type_card = ComboBoxSettingCard(
-            cfg.split_type,
-            FIF.TILES,  # type: ignore
-            self.tr("字幕分割类型"),
-            self.tr("根据句子或者根据语义对字幕进行断句"),
-            texts=[model.value for model in cfg.split_type.validator.options],  # type: ignore
-            parent=self,
-        )
-
         self.word_count_cjk_card = SpinBoxSettingCard(
             cfg.max_word_count_cjk,
             FIF.TILES,  # type: ignore
@@ -66,7 +57,6 @@ class SubtitleSettingDialog(MessageBoxBase):
         # 添加到布局
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.split_card)
-        self.viewLayout.addWidget(self.split_type_card)
         self.viewLayout.addWidget(self.word_count_cjk_card)
         self.viewLayout.addWidget(self.word_count_english_card)
         self.viewLayout.addWidget(self.remove_punctuation_card)
