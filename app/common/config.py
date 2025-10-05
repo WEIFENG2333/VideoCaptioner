@@ -23,14 +23,14 @@ from app.config import SETTINGS_PATH, WORK_PATH
 from ..core.entities import (
     FasterWhisperModelEnum,
     LLMServiceEnum,
-    SplitTypeEnum,
-    TargetLanguageEnum,
+    SubtitleLayoutEnum,
     TranscribeLanguageEnum,
     TranscribeModelEnum,
     TranslatorServiceEnum,
     VadMethodEnum,
     WhisperModelEnum,
 )
+from ..core.translate.types import TargetLanguage
 
 
 class Language(Enum):
@@ -40,15 +40,6 @@ class Language(Enum):
     CHINESE_TRADITIONAL = QLocale(QLocale.Chinese, QLocale.HongKong)
     ENGLISH = QLocale(QLocale.English)
     AUTO = QLocale()
-
-
-class SubtitleLayoutEnum(Enum):
-    """字幕布局"""
-
-    TRANSLATE_ON_TOP = "译文在上"
-    ORIGINAL_ON_TOP = "原文在上"
-    ONLY_ORIGINAL = "仅原文"
-    ONLY_TRANSLATE = "仅译文"
 
 
 class LanguageSerializer(ConfigSerializer):
@@ -68,7 +59,7 @@ class Config(QConfig):
     llm_service = OptionsConfigItem(
         "LLM",
         "LLMService",
-        LLMServiceEnum.PUBLIC,
+        LLMServiceEnum.OPENAI,
         OptionsValidator(LLMServiceEnum),
         EnumSerializer(LLMServiceEnum),
     )
@@ -112,13 +103,6 @@ class Config(QConfig):
     chatglm_api_base = ConfigItem(
         "LLM", "ChatGLM_API_Base", "https://open.bigmodel.cn/api/paas/v4"
     )
-
-    # 公益模型
-    public_model = ConfigItem("LLM", "Public_Model", "gpt-4o-mini")
-    public_api_key = ConfigItem(
-        "LLM", "Public_API_Key", "please-do-not-use-for-personal-purposes"
-    )
-    public_api_base = ConfigItem("LLM", "Public_API_Base", "https://ddg.bkfeng.top/v1")
 
     # ------------------- 翻译配置 -------------------
     translator_service = OptionsConfigItem(
@@ -213,19 +197,12 @@ class Config(QConfig):
     need_optimize = ConfigItem("Subtitle", "NeedOptimize", False, BoolValidator())
     need_translate = ConfigItem("Subtitle", "NeedTranslate", False, BoolValidator())
     need_split = ConfigItem("Subtitle", "NeedSplit", False, BoolValidator())
-    split_type = OptionsConfigItem(
-        "Subtitle",
-        "SplitType",
-        SplitTypeEnum.SENTENCE,
-        OptionsValidator(SplitTypeEnum),
-        EnumSerializer(SplitTypeEnum),
-    )
     target_language = OptionsConfigItem(
         "Subtitle",
         "TargetLanguage",
-        TargetLanguageEnum.CHINESE_SIMPLIFIED,
-        OptionsValidator(TargetLanguageEnum),
-        EnumSerializer(TargetLanguageEnum),
+        TargetLanguage.SIMPLIFIED_CHINESE,
+        OptionsValidator(TargetLanguage),
+        EnumSerializer(TargetLanguage),
     )
     max_word_count_cjk = ConfigItem(
         "Subtitle", "MaxWordCountCJK", 25, RangeValidator(8, 100)
@@ -244,7 +221,13 @@ class Config(QConfig):
 
     # ------------------- 字幕样式配置 -------------------
     subtitle_style_name = ConfigItem("SubtitleStyle", "StyleName", "default")
-    subtitle_layout = ConfigItem("SubtitleStyle", "Layout", "译文在上")
+    subtitle_layout = OptionsConfigItem(
+        "SubtitleStyle",
+        "Layout",
+        SubtitleLayoutEnum.TRANSLATE_ON_TOP,
+        OptionsValidator(SubtitleLayoutEnum),
+        EnumSerializer(SubtitleLayoutEnum),
+    )
     subtitle_preview_image = ConfigItem("SubtitleStyle", "PreviewImage", "")
 
     # ------------------- 保存配置 -------------------

@@ -1,7 +1,20 @@
 import datetime
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from app.core.translate.types import TargetLanguage
+
+
+@dataclass
+class SubtitleProcessData:
+    """字幕处理数据（翻译/优化通用）"""
+
+    index: int
+    original_text: str
+    translated_text: str = ""
+    optimized_text: str = ""
 
 
 class SupportedAudioFormats(Enum):
@@ -82,7 +95,6 @@ class LLMServiceEnum(Enum):
     LM_STUDIO = "LM Studio"
     GEMINI = "Gemini"
     CHATGLM = "ChatGLM"
-    PUBLIC = "软件公益模型"
 
 
 class TranscribeModelEnum(Enum):
@@ -124,118 +136,13 @@ class VadMethodEnum(Enum):
     AUDITOK = "auditok"  # 实际上这不是 VAD，而是 AAD - 音频活动检测
 
 
-class SplitTypeEnum(Enum):
-    """字幕分段类型"""
+class SubtitleLayoutEnum(Enum):
+    """字幕布局"""
 
-    SEMANTIC = "语义分段"
-    SENTENCE = "句子分段"
-
-
-class TargetLanguageEnum(Enum):
-    """翻译目标语言"""
-
-    CHINESE_SIMPLIFIED = "简体中文"
-    CHINESE_TRADITIONAL = "繁体中文"
-    ENGLISH = "英语"
-    JAPANESE = "日本語"
-    KOREAN = "韩语"
-    YUE = "粤语"
-    FRENCH = "法语"
-    GERMAN = "德语"
-    SPANISH = "西班牙语"
-    RUSSIAN = "俄语"
-    PORTUGUESE = "葡萄牙语"
-    TURKISH = "土耳其语"
-    POLISH = "Polish"
-    CATALAN = "Catalan"
-    DUTCH = "Dutch"
-    ARABIC = "Arabic"
-    SWEDISH = "Swedish"
-    ITALIAN = "Italian"
-    INDONESIAN = "Indonesian"
-    HINDI = "Hindi"
-    FINNISH = "Finnish"
-    VIETNAMESE = "Vietnamese"
-    HEBREW = "Hebrew"
-    UKRAINIAN = "Ukrainian"
-    GREEK = "Greek"
-    MALAY = "Malay"
-    CZECH = "Czech"
-    ROMANIAN = "Romanian"
-    DANISH = "Danish"
-    HUNGARIAN = "Hungarian"
-    TAMIL = "Tamil"
-    NORWEGIAN = "Norwegian"
-    THAI = "Thai"
-    URDU = "Urdu"
-    CROATIAN = "Croatian"
-    BULGARIAN = "Bulgarian"
-    LITHUANIAN = "Lithuanian"
-    LATIN = "Latin"
-    MAORI = "Maori"
-    MALAYALAM = "Malayalam"
-    WELSH = "Welsh"
-    SLOVAK = "Slovak"
-    TELUGU = "Telugu"
-    PERSIAN = "Persian"
-    LATVIAN = "Latvian"
-    BENGALI = "Bengali"
-    SERBIAN = "Serbian"
-    AZERBAIJANI = "Azerbaijani"
-    SLOVENIAN = "Slovenian"
-    KANNADA = "Kannada"
-    ESTONIAN = "Estonian"
-    MACEDONIAN = "Macedonian"
-    BRETON = "Breton"
-    BASQUE = "Basque"
-    ICELANDIC = "Icelandic"
-    ARMENIAN = "Armenian"
-    NEPALI = "Nepali"
-    MONGOLIAN = "Mongolian"
-    BOSNIAN = "Bosnian"
-    KAZAKH = "Kazakh"
-    ALBANIAN = "Albanian"
-    SWAHILI = "Swahili"
-    GALICIAN = "Galician"
-    MARATHI = "Marathi"
-    PUNJABI = "Punjabi"
-    SINHALA = "Sinhala"
-    KHMER = "Khmer"
-    SHONA = "Shona"
-    YORUBA = "Yoruba"
-    SOMALI = "Somali"
-    AFRIKAANS = "Afrikaans"
-    OCCITAN = "Occitan"
-    GEORGIAN = "Georgian"
-    BELARUSIAN = "Belarusian"
-    TAJIK = "Tajik"
-    SINDHI = "Sindhi"
-    GUJARATI = "Gujarati"
-    AMHARIC = "Amharic"
-    YIDDISH = "Yiddish"
-    LAO = "Lao"
-    UZBEK = "Uzbek"
-    FAROESE = "Faroese"
-    HAITIAN_CREOLE = "Haitian Creole"
-    PASHTO = "Pashto"
-    TURKMEN = "Turkmen"
-    NYNORSK = "Nynorsk"
-    MALTESE = "Maltese"
-    SANSKRIT = "Sanskrit"
-    LUXEMBOURGISH = "Luxembourgish"
-    MYANMAR = "Myanmar"
-    TIBETAN = "Tibetan"
-    TAGALOG = "Tagalog"
-    MALAGASY = "Malagasy"
-    ASSAMESE = "Assamese"
-    TATAR = "Tatar"
-    HAWAIIAN = "Hawaiian"
-    LINGALA = "Lingala"
-    HAUSA = "Hausa"
-    BASHKIR = "Bashkir"
-    JAVANESE = "Javanese"
-    SUNDANESE = "Sundanese"
-    CANTONESE = "Cantonese"
+    TRANSLATE_ON_TOP = "译文在上"
+    ORIGINAL_ON_TOP = "原文在上"
+    ONLY_ORIGINAL = "仅原文"
+    ONLY_TRANSLATE = "仅译文"
 
 
 class TranscribeLanguageEnum(Enum):
@@ -541,12 +448,11 @@ class SubtitleConfig:
     thread_num: int = 10
     batch_size: int = 10
     # 字幕布局和分割
-    split_type: Optional[SplitTypeEnum] = None
-    subtitle_layout: Optional[str] = None
+    subtitle_layout: Optional[SubtitleLayoutEnum] = None
     max_word_count_cjk: int = 12
     max_word_count_english: int = 18
     need_split: bool = True
-    target_language: Optional[TargetLanguageEnum] = None
+    target_language: Optional["TargetLanguage"] = None
     subtitle_style: Optional[str] = None
     need_remove_punctuation: bool = False
     custom_prompt_text: Optional[str] = None
