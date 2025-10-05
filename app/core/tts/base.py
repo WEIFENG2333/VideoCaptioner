@@ -3,10 +3,10 @@
 import hashlib
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from app.core.tts.status import TTSStatus
-from app.core.tts.tts_data import TTSBatchResult, TTSConfig, TTSData
+from app.core.tts.tts_data import TTSConfig, TTSData, TTSDataSeg
 from app.core.utils.cache import get_tts_cache, is_cache_enabled
 from app.core.utils.logger import setup_logger
 
@@ -18,7 +18,7 @@ class BaseTTS(ABC):
 
     提供通用功能：
     - 缓存机制（二进制数据缓存）
-    - 批量处理
+    - 批量处理（统一接口）
     - 配置管理
     """
 
@@ -31,21 +31,21 @@ class BaseTTS(ABC):
         self.config = config
         self.cache = get_tts_cache()  # 总是初始化缓存实例
 
-    def synthesize_batch(
+    def synthesize(
         self,
-        texts: List[str],
+        tts_data: TTSData,
         output_dir: str,
         callback: Optional[Callable[[int, str], None]] = None,
-    ) -> TTSBatchResult:
-        """批量合成语音
+    ) -> TTSData:
+        """合成语音（统一批量处理接口）
 
         Args:
-            texts: 文本列表
+            tts_data: TTS 数据（包含多个待合成的文本段）
             output_dir: 输出目录
             callback: 进度回调函数 callback(progress: int, message: str)
 
         Returns:
-            批量结果
+            TTS 数据（segments 已填充 audio_path 等信息）
         """
 
         def _default_callback(progress: int, message: str):
@@ -57,76 +57,68 @@ class BaseTTS(ABC):
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        result = TTSBatchResult()
-        total = len(texts)
+        total = len(tts_data.segments)
+        if total == 0:
+            logger.warning("TTS 数据为空，无需合成")
+            return tts_data
 
-        for idx, text in enumerate(texts):
+        logger.info(f"开始批量合成 {total} 条语音")
+
+        for idx, segment in enumerate(tts_data.segments):
             try:
-                # 计算进度：基于已完成数量的百分比
+                # 计算进度
                 progress = int((idx / total) * 100)
                 callback(progress, "synthesizing")
 
                 # 生成音频文件名
-                audio_filename = self._generate_filename(text, idx)
+                audio_filename = self._generate_filename(segment.text, idx)
                 audio_path = output_path / audio_filename
 
                 # 合成单条语音（带缓存）
-                tts_data = self.synthesize(text, str(audio_path))
-                result.items.append(tts_data)
+                self._synthesize_segment(segment, str(audio_path))
 
             except Exception as e:
-                logger.error(f"TTS 失败 [{idx+1}/{total}]: {text[:50]}... - {str(e)}")
-                # 失败时添加空数据（保持索引对齐）
-                result.items.append(
-                    TTSData(text=text, audio_path="", audio_duration=0.0)
+                logger.error(
+                    f"TTS 失败 [{idx+1}/{total}]: {segment.text[:50]}... - {str(e)}"
                 )
+                # 失败时保持 segment，但不设置 audio_path
 
         callback(*TTSStatus.COMPLETED.callback_tuple())
-        success_count = sum(1 for item in result.items if item.audio_path)
+        success_count = sum(1 for seg in tts_data.segments if seg.audio_path)
         logger.info(f"批量 TTS 完成: 成功 {success_count}/{total}")
-        return result
+        return tts_data
 
-    def synthesize(
-        self, text: str, output_path: str, use_cache: bool = False
-    ) -> TTSData:
-        """合成单条语音
+    def _synthesize_segment(self, segment: TTSDataSeg, output_path: str) -> None:
+        """合成单个片段的语音（带缓存）
 
         Args:
-            text: 输入文本
+            segment: TTS 数据段（会被修改，填充 audio_path 等）
             output_path: 输出音频路径
-            use_cache: 是否使用缓存（默认 False）
-
-        Returns:
-            TTS 数据
         """
-        # 确定是否使用缓存
-        should_use_cache = use_cache
+        # 生成缓存键（考虑声音克隆）
+        cache_key = self._generate_cache_key_for_segment(segment)
 
-        # 检查缓存（缓存二进制数据）
-        if should_use_cache and is_cache_enabled():
-            cache_key = self._generate_cache_key(text)
+        # 检查缓存
+        if self.config.use_cache and is_cache_enabled():
             cached_audio_data = self.cache.get(cache_key)
 
             if cached_audio_data:
-                logger.info(f"使用缓存: {text[:50]}...")
+                logger.info(f"使用缓存: {segment.text[:50]}...")
                 # 将缓存的二进制数据写入文件
                 Path(output_path).parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, "wb") as f:
                     f.write(cached_audio_data)
 
-                return TTSData(
-                    text=text,
-                    audio_path=output_path,
-                    model=self.config.model,
-                    voice=self.config.voice,
-                )
+                # 更新 segment
+                segment.audio_path = output_path
+                # TODO: 从缓存元数据中获取 audio_duration
+                return
 
         # 调用子类实现的核心方法
-        tts_data = self._synthesize(text, output_path)
+        self._synthesize(segment, output_path)
 
         # 保存二进制数据到缓存
-        if should_use_cache and is_cache_enabled():
-            cache_key = self._generate_cache_key(text)
+        if self.config.use_cache and is_cache_enabled():
             try:
                 with open(output_path, "rb") as f:
                     audio_data = f.read()
@@ -134,24 +126,42 @@ class BaseTTS(ABC):
             except Exception as e:
                 logger.warning(f"缓存保存失败: {str(e)}")
 
-        return tts_data
-
     @abstractmethod
-    def _synthesize(self, text: str, output_path: str) -> TTSData:
+    def _synthesize(self, segment: TTSDataSeg, output_path: str) -> None:
         """合成语音的核心实现（子类必须实现）
 
         Args:
-            text: 输入文本
+            segment: TTS 数据段（需要填充 audio_path, voice, clone_voice_uri 等字段）
             output_path: 输出音频路径
-
-        Returns:
-            TTS 数据
         """
         pass
 
-    def _generate_cache_key(self, text: str) -> str:
-        """生成缓存键"""
-        content = f"{text}_{self.config.model}_{self.config.voice}_{self.config.speed}"
+    def _generate_cache_key_for_segment(self, segment: TTSDataSeg) -> str:
+        """为 segment 生成缓存键（考虑声音克隆）"""
+        content_parts = [
+            segment.text,
+            self.config.model,
+            str(self.config.speed),
+            str(self.config.gain),
+        ]
+
+        # 音色信息
+        if segment.clone_audio_path and segment.clone_audio_text:
+            # 声音克隆：使用参考音频的哈希
+            try:
+                with open(segment.clone_audio_path, "rb") as f:
+                    audio_hash = hashlib.md5(f.read()).hexdigest()[:12]
+                content_parts.append(f"clone_{audio_hash}")
+            except Exception:
+                content_parts.append(f"clone_{segment.clone_audio_path}")
+        elif segment.voice:
+            # 指定音色
+            content_parts.append(f"voice_{segment.voice}")
+        elif self.config.voice:
+            # 默认音色
+            content_parts.append(f"voice_{self.config.voice}")
+
+        content = "_".join(content_parts)
         return hashlib.md5(content.encode()).hexdigest()
 
     def _generate_filename(self, text: str, index: int) -> str:

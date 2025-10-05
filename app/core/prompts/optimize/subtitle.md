@@ -41,26 +41,6 @@ Do not include any commentary, explanations, or markdown formatting.
 </output_format>
 
 <examples>
-<example>
-<input_subtitles>
-{
-  "0": "um today we'll learn about bython programming",
-  "1": "it was created by guidoan rossum in uhh 1991",
-  "2": "print hello world is an easy function *coughs*"
-}
-</input_subtitles>
-<reference>
-Content: Python programming introduction
-Terms: Python, Guido van Rossum
-</reference>
-<output>
-{
-  "0": "Today we'll learn about Python programming",
-  "1": "It was created by Guido van Rossum in 1991",
-  "2": "print('Hello World') is an easy function"
-}
-</output>
-</example>
 
 <example>
 <input_subtitles>
@@ -87,8 +67,8 @@ Terms: Pythagorean theorem, geometry, trigonometry
 <input_subtitles>
 {
   "0": "大家好呃今天我们来学习机器学习",
-  "1": "首先介绍一下咳咳神经网络的基本概念",
-  "2": "它使用啊反向传播算法来训练模型嗯"
+  "1": "首先介绍一下神经网络的几本概念",
+  "2": "它使用反向传播算法来训练模型嗯"
 }
 </input_subtitles>
 <reference>
