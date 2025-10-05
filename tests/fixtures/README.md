@@ -6,8 +6,10 @@ This directory contains shared test resources used across multiple test modules.
 
 ```
 tests/fixtures/
-└── audio/
-    └── zh.mp3    # Chinese speech audio for ASR testing
+├── audio/
+│   └── zh.mp3       # Chinese speech audio for ASR testing
+└── subtitle/
+    └── sample_en.srt # English subtitle sample for subtitle processing tests
 ```
 
 ## Audio Files
@@ -19,6 +21,16 @@ tests/fixtures/
 - **Format**: MP3
 - **Usage**: Used by ASR integration tests in `tests/test_asr/`
 - **Access**: Via `test_audio_path` fixture in `tests/test_asr/conftest.py`
+
+## Subtitle Files
+
+### sample_en.srt
+
+- **Content**: English tutorial about Python programming (10 segments)
+- **Duration**: ~38 seconds
+- **Format**: SRT (SubRip)
+- **Usage**: Used by subtitle processing tests (split, optimize, translate)
+- **Access**: Via fixtures in test modules
 
 ## Adding New Fixtures
 

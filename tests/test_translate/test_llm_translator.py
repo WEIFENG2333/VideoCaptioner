@@ -12,7 +12,7 @@ from typing import Callable, Dict, List
 import pytest
 
 from app.core.asr.asr_data import ASRData
-from app.core.translate import TargetLanguage, TranslateData
+from app.core.translate import TargetLanguage, SubtitleProcessData
 from app.core.translate.llm_translator import LLMTranslator
 from app.core.utils import cache
 from tests.conftest import assert_translation_quality
@@ -82,7 +82,7 @@ class TestLLMTranslator:
     def test_translate_chunk(
         self,
         llm_translator: LLMTranslator,
-        sample_translate_data: list[TranslateData],
+        sample_translate_data: list[SubtitleProcessData],
         expected_translations: Dict[str, Dict[str, List[str]]],
         target_language: TargetLanguage,
         check_env_vars: Callable,

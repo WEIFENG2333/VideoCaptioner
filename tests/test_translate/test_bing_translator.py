@@ -5,7 +5,7 @@ from typing import Dict, List
 import pytest
 
 from app.core.asr.asr_data import ASRData
-from app.core.translate import TargetLanguage, TranslateData
+from app.core.translate import TargetLanguage, SubtitleProcessData
 from app.core.translate.bing_translator import BingTranslator
 from tests.conftest import assert_translation_quality
 
@@ -61,7 +61,7 @@ class TestBingTranslator:
     def test_translate_chunk(
         self,
         bing_translator: BingTranslator,
-        sample_translate_data: list[TranslateData],
+        sample_translate_data: list[SubtitleProcessData],
         expected_translations: Dict[str, Dict[str, List[str]]],
         target_language: TargetLanguage,
     ) -> None:
@@ -88,6 +88,6 @@ class TestBingTranslator:
                     lang_expectations[data.original_text],
                 )
             else:
-                assert data.translated_text, (
-                    f"Translation is empty for: {data.original_text}"
-                )
+                assert (
+                    data.translated_text
+                ), f"Translation is empty for: {data.original_text}"
