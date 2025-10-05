@@ -83,8 +83,8 @@ class SubtitleSplitter:
 
     def __init__(
         self,
-        thread_num: int = 5,
-        model: str = "gpt-4o-mini",
+        thread_num,
+        model,
         max_word_count_cjk: int = MAX_WORD_COUNT_CJK,
         max_word_count_english: int = MAX_WORD_COUNT_ENGLISH,
     ):
@@ -154,7 +154,6 @@ class SubtitleSplitter:
 
             # 5. 合并并优化
             final_segments = self._merge_processed_segments(processed_segments)
-            self.merge_short_segment(final_segments)
 
             return ASRData(final_segments)
 
@@ -282,7 +281,7 @@ class SubtitleSplitter:
             处理后的分段列表
         """
         txt = "".join([seg.text for seg in segments])
-        logger.info(f"调用API进行分段,文本长度: {count_words(txt)}")
+        logger.info(f"开始调用API进行分段,文本长度: {count_words(txt)}")
 
         # 使用 split_by_llm (自动缓存,统一使用semantic分段)
         sentences = split_by_llm(
@@ -518,7 +517,7 @@ class SubtitleSplitter:
     def _split_long_segment(self, segments: List[ASRDataSeg]) -> List[ASRDataSeg]:
         """拆分超长分段
 
-        策略:递归寻找最大时间间隔点进行拆分
+        策略:寻找最大时间间隔点进行拆分
 
         Args:
             segments: 分段列表
@@ -597,7 +596,8 @@ class SubtitleSplitter:
         return final_segments
 
     def merge_short_segment(self, segments: List[ASRDataSeg]) -> None:
-        """合并短分段优化
+        """deprecated
+        合并短分段优化
 
         合并条件:
         1. 时间间隔小 + 字数少

@@ -8,7 +8,6 @@ from app.core.entities import (
     LANGUAGES,
     FullProcessTask,
     LLMServiceEnum,
-    SplitTypeEnum,
     SubtitleConfig,
     SubtitleTask,
     SynthesisConfig,
@@ -116,11 +115,6 @@ class TaskFactory:
                 Path(file_path).parent / f"【字幕】{output_name}{suffix}.srt"
             )
 
-        if cfg.split_type.value == SplitTypeEnum.SENTENCE.value:
-            split_type = "sentence"
-        else:
-            split_type = "semantic"
-
         # 根据当前选择的LLM服务获取对应的配置
         current_service = cfg.llm_service.value
         if current_service == LLMServiceEnum.OPENAI:
@@ -151,10 +145,6 @@ class TaskFactory:
             base_url = cfg.chatglm_api_base.value
             api_key = cfg.chatglm_api_key.value
             llm_model = cfg.chatglm_model.value
-        elif current_service == LLMServiceEnum.PUBLIC:
-            base_url = cfg.public_api_base.value
-            api_key = cfg.public_api_key.value
-            llm_model = cfg.public_model.value
         else:
             base_url = ""
             api_key = ""
@@ -169,18 +159,13 @@ class TaskFactory:
             # 翻译服务
             translator_service=cfg.translator_service.value,
             # 字幕处理
-            split_type=(
-                SplitTypeEnum.SENTENCE
-                if split_type == "sentence"
-                else SplitTypeEnum.SEMANTIC
-            ),
             need_reflect=cfg.need_reflect_translate.value,
             need_translate=cfg.need_translate.value,
             need_optimize=cfg.need_optimize.value,
             thread_num=cfg.thread_num.value,
             batch_size=cfg.batch_size.value,
             # 字幕布局、样式
-            subtitle_layout=cfg.subtitle_layout.value,
+            subtitle_layout=cfg.subtitle_layout.value,  # Now returns SubtitleLayoutEnum
             subtitle_style=TaskFactory.get_subtitle_style(
                 cfg.subtitle_style_name.value
             ),
@@ -189,7 +174,7 @@ class TaskFactory:
             max_word_count_english=cfg.max_word_count_english.value,
             need_split=cfg.need_split.value,
             # 字幕翻译
-            target_language=cfg.target_language.value.value,
+            target_language=cfg.target_language.value,
             # 字幕优化
             need_remove_punctuation=cfg.needs_remove_punctuation.value,
             # 字幕提示
