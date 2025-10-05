@@ -17,7 +17,7 @@ from opentelemetry.sdk import trace as trace_sdk
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.translate import TargetLanguage, TranslateData
+from app.core.translate import TargetLanguage, SubtitleProcessData
 from app.core.utils import cache
 
 # Load environment variables
@@ -76,9 +76,13 @@ def sample_asr_data():
 def sample_translate_data():
     """Create sample translation data for testing."""
     return [
-        TranslateData(index=1, original_text="I am a student", translated_text=""),
-        TranslateData(index=2, original_text="You are a teacher", translated_text=""),
-        TranslateData(
+        SubtitleProcessData(
+            index=1, original_text="I am a student", translated_text=""
+        ),
+        SubtitleProcessData(
+            index=2, original_text="You are a teacher", translated_text=""
+        ),
+        SubtitleProcessData(
             index=3,
             original_text="VideoCaptioner is a tool for captioning videos",
             translated_text="",
