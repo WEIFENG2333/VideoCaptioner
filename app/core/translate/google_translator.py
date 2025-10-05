@@ -6,7 +6,8 @@ from typing import Callable, List, Optional
 
 import requests
 
-from app.core.translate.base import BaseTranslator, TranslateData, logger
+from app.core.entities import SubtitleProcessData
+from app.core.translate.base import BaseTranslator, logger
 from app.core.translate.types import TargetLanguage, get_language_code
 
 
@@ -35,8 +36,8 @@ class GoogleTranslator(BaseTranslator):
         }
 
     def _translate_chunk(
-        self, subtitle_chunk: List[TranslateData]
-    ) -> List[TranslateData]:
+        self, subtitle_chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """翻译字幕块"""
         target_lang = get_language_code(self.target_language, "google")
 
@@ -60,9 +61,17 @@ class GoogleTranslator(BaseTranslator):
                 )
                 if re_result:
                     data.translated_text = html.unescape(re_result[0])
+                    data.translated_text = data.translated_text
                 else:
                     logger.warning(f"无法从Google翻译响应中提取翻译结果: {data.index}")
             except Exception as e:
                 logger.error(f"Google翻译失败 {data.index}: {str(e)}")
 
         return subtitle_chunk
+
+    def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
+        """生成缓存键"""
+        class_name = self.__class__.__name__
+        chunk_key = self._cache.generate_key(chunk)
+        lang = self.target_language.value
+        return f"{class_name}:{chunk_key}:{lang}"
