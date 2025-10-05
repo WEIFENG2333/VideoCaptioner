@@ -4,11 +4,12 @@ OpenAI.fm 是一个免费的 TTS 服务，提供多种音色和语音风格。
 API 文档: https://www.openai.fm/
 """
 
-import requests
 from urllib.parse import quote
 
+import requests
+
 from app.core.tts.base import BaseTTS
-from app.core.tts.tts_data import TTSConfig, TTSData
+from app.core.tts.tts_data import TTSConfig, TTSDataSeg
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("tts.openai_fm")
@@ -57,27 +58,29 @@ class OpenAIFmTTS(BaseTTS):
         if not config.voice:
             config.voice = "fable"
 
-    def _synthesize(self, text: str, output_path: str) -> TTSData:
+    def _synthesize(self, segment: TTSDataSeg, output_path: str) -> None:
         """合成语音的核心实现
 
         Args:
-            text: 输入文本
+            segment: TTS 数据段
             output_path: 输出音频路径
-
-        Returns:
-            TTS 数据
         """
         # 构建提示词
         prompt = self._build_prompt()
 
+        # 音色选择
+        voice_to_use = segment.voice or self.config.voice or "fable"
+
         # 构建请求参数
         params = {
-            "input": text,
+            "input": segment.text,
             "prompt": prompt,
-            "voice": self.config.voice or "fable",
+            "voice": voice_to_use,
         }
 
-        logger.info(f"调用 OpenAI.fm TTS API: {text[:50]}... (voice={params['voice']})")
+        logger.info(
+            f"调用 OpenAI.fm TTS API: {segment.text[:50]}... (voice={voice_to_use})"
+        )
 
         # 发送请求（使用固定 API URL）
         response = requests.get(
@@ -93,13 +96,9 @@ class OpenAIFmTTS(BaseTTS):
 
         logger.info(f"TTS 成功: {output_path}")
 
-        # 返回 TTS 数据
-        return TTSData(
-            text=text,
-            audio_path=output_path,
-            model="openai-fm",
-            voice=self.config.voice,
-        )
+        # 更新 segment
+        segment.audio_path = output_path
+        segment.voice = voice_to_use
 
     def _build_prompt(self) -> str:
         """构建提示词
@@ -108,15 +107,10 @@ class OpenAIFmTTS(BaseTTS):
             提示词字符串
         """
         # 如果配置中有自定义提示词，直接使用
-        if hasattr(self.config, "custom_prompt") and self.config.custom_prompt:
+        if self.config.custom_prompt:
             return self.config.custom_prompt
 
-        # 使用预定义模板
-        voice = self.config.voice or "fable"
-        if voice in self.PROMPT_TEMPLATES:
-            return self.PROMPT_TEMPLATES.get(voice, self.PROMPT_TEMPLATES["natural"])
-
-        # 默认提示词
+        # 使用默认提示词
         return self.PROMPT_TEMPLATES["natural"]
 
     @staticmethod

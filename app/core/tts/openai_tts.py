@@ -3,7 +3,7 @@
 from openai import OpenAI
 
 from app.core.tts.base import BaseTTS
-from app.core.tts.tts_data import TTSConfig, TTSData
+from app.core.tts.tts_data import TTSConfig, TTSDataSeg
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("tts.openai")
@@ -31,23 +31,23 @@ class OpenAITTS(BaseTTS):
             base_url=config.base_url,
         )
 
-    def _synthesize(self, text: str, output_path: str) -> TTSData:
+    def _synthesize(self, segment: TTSDataSeg, output_path: str) -> None:
         """合成语音的核心实现
 
         Args:
-            text: 输入文本
+            segment: TTS 数据段
             output_path: 输出音频路径
-
-        Returns:
-            TTS 数据
         """
-        logger.info(f"调用 OpenAI TTS API: {text[:50]}...")
+        logger.info(f"调用 OpenAI TTS API: {segment.text[:50]}...")
+
+        # 音色选择
+        voice_to_use = segment.voice or self.config.voice or "alloy"
 
         # 调用 OpenAI TTS API（流式响应）
         with self.client.audio.speech.with_streaming_response.create(
             model=self.config.model,
-            voice=self.config.voice or "alloy",  # 默认音色
-            input=text,
+            voice=voice_to_use,
+            input=segment.text,
             response_format=self.config.response_format,
             speed=self.config.speed,
         ) as response:
@@ -55,10 +55,6 @@ class OpenAITTS(BaseTTS):
 
         logger.info(f"TTS 成功: {output_path}")
 
-        # 返回 TTS 数据
-        return TTSData(
-            text=text,
-            audio_path=output_path,
-            model=self.config.model,
-            voice=self.config.voice,
-        )
+        # 更新 segment
+        segment.audio_path = output_path
+        segment.voice = voice_to_use
