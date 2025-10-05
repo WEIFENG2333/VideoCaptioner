@@ -21,28 +21,26 @@ class TranslatorFactory:
         translator_type: TranslatorType,
         thread_num: int = 5,
         batch_num: int = 10,
-        target_language: TargetLanguage = TargetLanguage.SIMPLIFIED_CHINESE,
+        target_language: Optional[TargetLanguage] = None,
         model: str = "gpt-4o-mini",
-        base_url: str = "",
-        api_key: str = "",
         custom_prompt: str = "",
         is_reflect: bool = False,
-        cache_ttl: int = 3600,
         update_callback: Optional[Callable] = None,
     ) -> BaseTranslator:
         """创建翻译器实例"""
         try:
+            # 如果没有指定目标语言，使用默认值
+            if target_language is None:
+                target_language = TargetLanguage.SIMPLIFIED_CHINESE
+
             if translator_type == TranslatorType.OPENAI:
                 return LLMTranslator(
                     thread_num=thread_num,
                     batch_num=batch_num,
                     target_language=target_language,
                     model=model,
-                    base_url=base_url,
-                    api_key=api_key,
                     custom_prompt=custom_prompt,
                     is_reflect=is_reflect,
-                    cache_ttl=cache_ttl,
                     update_callback=update_callback,
                 )
             elif translator_type == TranslatorType.GOOGLE:

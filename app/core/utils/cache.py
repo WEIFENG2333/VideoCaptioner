@@ -8,6 +8,7 @@ import functools
 import hashlib
 import json
 import logging
+from dataclasses import asdict, is_dataclass
 from typing import Any, Callable, Dict, Optional
 
 from diskcache import Cache
@@ -40,6 +41,9 @@ def is_cache_enabled() -> bool:
 class DiskCache:
     """Disk-based cache with TTL support."""
 
+    # Sentinel value to distinguish "not in cache" from "cached None"
+    _MISSING = object()
+
     def __init__(self, cache_name: str):
         """Initialize cache.
 
@@ -48,9 +52,6 @@ class DiskCache:
         """
         self.cache_dir = CACHE_PATH / cache_name
         self._cache = Cache(str(self.cache_dir))
-
-    # Sentinel value to distinguish "not in cache" from "cached None"
-    _MISSING = object()
 
     def get(self, key: str, default: Any = _MISSING) -> Any:
         """Get value from cache.
@@ -62,6 +63,8 @@ class DiskCache:
         Returns:
             Cached value, or default if not found/expired
         """
+        if not _cache_enabled:
+            return default
         return self._cache.get(key, default=default)
 
     def set(self, key: str, value: Any, expire: Optional[int] = None) -> None:
@@ -91,16 +94,37 @@ class DiskCache:
         self._cache.close()
 
     @staticmethod
-    def generate_key(data: Dict[str, Any]) -> str:
+    def _serialize_for_key(obj: Any) -> Any:
+        """递归序列化对象为可 JSON 序列化的格式
+
+        Args:
+            obj: 要序列化的对象
+
+        Returns:
+            可 JSON 序列化的对象
+        """
+        if is_dataclass(obj) and not isinstance(obj, type):
+            return asdict(obj)  # type: ignore
+        elif isinstance(obj, list):
+            return [DiskCache._serialize_for_key(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {k: DiskCache._serialize_for_key(v) for k, v in obj.items()}
+        else:
+            return obj
+
+    @staticmethod
+    def generate_key(data: Any) -> str:
         """Generate cache key from data dictionary.
 
         Args:
-            data: Dictionary to generate key from
+            data: Dictionary to generate key from (supports dataclasses)
 
         Returns:
             SHA256 hash of the data
         """
-        data_str = json.dumps(data, ensure_ascii=False, sort_keys=True)
+        # 序列化 dataclass 为字典
+        serialized_data = DiskCache._serialize_for_key(data)
+        data_str = json.dumps(serialized_data, ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(data_str.encode()).hexdigest()
 
 
@@ -108,6 +132,7 @@ class DiskCache:
 _llm_cache = DiskCache("llm_translation")
 _asr_cache = DiskCache("asr_results")
 _tts_cache = DiskCache("tts_audio")
+_translate_cache = DiskCache("translate_results")
 
 
 def get_llm_cache() -> DiskCache:
@@ -118,6 +143,11 @@ def get_llm_cache() -> DiskCache:
 def get_asr_cache() -> DiskCache:
     """Get ASR results cache instance."""
     return _asr_cache
+
+
+def get_translate_cache() -> DiskCache:
+    """Get translate cache instance."""
+    return _translate_cache
 
 
 def get_tts_cache() -> DiskCache:

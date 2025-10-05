@@ -5,7 +5,7 @@ from typing import Callable, List, Optional
 
 import requests
 
-from app.core.translate.base import BaseTranslator, TranslateData, logger
+from app.core.translate.base import BaseTranslator, SubtitleProcessData, logger
 from app.core.translate.types import TargetLanguage, get_language_code
 
 
@@ -31,8 +31,8 @@ class DeepLXTranslator(BaseTranslator):
         self.endpoint = os.getenv("DEEPLX_ENDPOINT", "https://api.deeplx.org/translate")
 
     def _translate_chunk(
-        self, subtitle_chunk: List[TranslateData]
-    ) -> List[TranslateData]:
+        self, subtitle_chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """翻译字幕块"""
         target_lang = get_language_code(self.target_language, "deeplx")
 
@@ -53,3 +53,10 @@ class DeepLXTranslator(BaseTranslator):
                 logger.error(f"DeepLX翻译失败 {data.index}: {str(e)}")
 
         return subtitle_chunk
+
+    def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
+        """生成缓存键"""
+        class_name = self.__class__.__name__
+        chunk_key = self._cache.generate_key(chunk)
+        lang = self.target_language.value
+        return f"{class_name}:{chunk_key}:{lang}"

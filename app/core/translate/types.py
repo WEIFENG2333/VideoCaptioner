@@ -67,143 +67,143 @@ class TargetLanguage(Enum):
 # Google Translate 语言代码映射
 GOOGLE_LANG_MAP = {
     # 中文
-    TargetLanguage.SIMPLIFIED_CHINESE.value: "zh-CN",
-    TargetLanguage.TRADITIONAL_CHINESE.value: "zh-TW",
+    TargetLanguage.SIMPLIFIED_CHINESE: "zh-CN",
+    TargetLanguage.TRADITIONAL_CHINESE: "zh-TW",
     # 英语
-    TargetLanguage.ENGLISH.value: "en",
-    TargetLanguage.ENGLISH_US.value: "en",
-    TargetLanguage.ENGLISH_UK.value: "en",
+    TargetLanguage.ENGLISH: "en",
+    TargetLanguage.ENGLISH_US: "en",
+    TargetLanguage.ENGLISH_UK: "en",
     # 亚洲语言
-    TargetLanguage.JAPANESE.value: "ja",
-    TargetLanguage.KOREAN.value: "ko",
-    TargetLanguage.CANTONESE.value: "yue",
-    TargetLanguage.THAI.value: "th",
-    TargetLanguage.VIETNAMESE.value: "vi",
-    TargetLanguage.INDONESIAN.value: "id",
-    TargetLanguage.MALAY.value: "ms",
-    TargetLanguage.TAGALOG.value: "tl",
+    TargetLanguage.JAPANESE: "ja",
+    TargetLanguage.KOREAN: "ko",
+    TargetLanguage.CANTONESE: "yue",
+    TargetLanguage.THAI: "th",
+    TargetLanguage.VIETNAMESE: "vi",
+    TargetLanguage.INDONESIAN: "id",
+    TargetLanguage.MALAY: "ms",
+    TargetLanguage.TAGALOG: "tl",
     # 欧洲语言
-    TargetLanguage.FRENCH.value: "fr",
-    TargetLanguage.GERMAN.value: "de",
-    TargetLanguage.SPANISH.value: "es",
-    TargetLanguage.SPANISH_LATAM.value: "es",
-    TargetLanguage.RUSSIAN.value: "ru",
-    TargetLanguage.PORTUGUESE.value: "pt",
-    TargetLanguage.PORTUGUESE_BR.value: "pt",
-    TargetLanguage.PORTUGUESE_PT.value: "pt",
-    TargetLanguage.ITALIAN.value: "it",
-    TargetLanguage.DUTCH.value: "nl",
-    TargetLanguage.POLISH.value: "pl",
-    TargetLanguage.TURKISH.value: "tr",
-    TargetLanguage.GREEK.value: "el",
-    TargetLanguage.CZECH.value: "cs",
-    TargetLanguage.SWEDISH.value: "sv",
-    TargetLanguage.DANISH.value: "da",
-    TargetLanguage.FINNISH.value: "fi",
-    TargetLanguage.NORWEGIAN.value: "no",
-    TargetLanguage.HUNGARIAN.value: "hu",
-    TargetLanguage.ROMANIAN.value: "ro",
-    TargetLanguage.BULGARIAN.value: "bg",
-    TargetLanguage.UKRAINIAN.value: "uk",
+    TargetLanguage.FRENCH: "fr",
+    TargetLanguage.GERMAN: "de",
+    TargetLanguage.SPANISH: "es",
+    TargetLanguage.SPANISH_LATAM: "es",
+    TargetLanguage.RUSSIAN: "ru",
+    TargetLanguage.PORTUGUESE: "pt",
+    TargetLanguage.PORTUGUESE_BR: "pt",
+    TargetLanguage.PORTUGUESE_PT: "pt",
+    TargetLanguage.ITALIAN: "it",
+    TargetLanguage.DUTCH: "nl",
+    TargetLanguage.POLISH: "pl",
+    TargetLanguage.TURKISH: "tr",
+    TargetLanguage.GREEK: "el",
+    TargetLanguage.CZECH: "cs",
+    TargetLanguage.SWEDISH: "sv",
+    TargetLanguage.DANISH: "da",
+    TargetLanguage.FINNISH: "fi",
+    TargetLanguage.NORWEGIAN: "no",
+    TargetLanguage.HUNGARIAN: "hu",
+    TargetLanguage.ROMANIAN: "ro",
+    TargetLanguage.BULGARIAN: "bg",
+    TargetLanguage.UKRAINIAN: "uk",
     # 中东语言
-    TargetLanguage.ARABIC.value: "ar",
-    TargetLanguage.HEBREW.value: "he",
-    TargetLanguage.PERSIAN.value: "fa",
+    TargetLanguage.ARABIC: "ar",
+    TargetLanguage.HEBREW: "he",
+    TargetLanguage.PERSIAN: "fa",
 }
 
 # Bing Translator 语言代码映射
 BING_LANG_MAP = {
     # 中文
-    TargetLanguage.SIMPLIFIED_CHINESE.value: "zh-Hans",
-    TargetLanguage.TRADITIONAL_CHINESE.value: "zh-Hant",
+    TargetLanguage.SIMPLIFIED_CHINESE: "zh-Hans",
+    TargetLanguage.TRADITIONAL_CHINESE: "zh-Hant",
     # 英语
-    TargetLanguage.ENGLISH.value: "en",
-    TargetLanguage.ENGLISH_US.value: "en",
-    TargetLanguage.ENGLISH_UK.value: "en",
+    TargetLanguage.ENGLISH: "en",
+    TargetLanguage.ENGLISH_US: "en",
+    TargetLanguage.ENGLISH_UK: "en",
     # 亚洲语言
-    TargetLanguage.JAPANESE.value: "ja",
-    TargetLanguage.KOREAN.value: "ko",
-    TargetLanguage.CANTONESE.value: "yue",
-    TargetLanguage.THAI.value: "th",
-    TargetLanguage.VIETNAMESE.value: "vi",
-    TargetLanguage.INDONESIAN.value: "id",
-    TargetLanguage.MALAY.value: "ms",
-    TargetLanguage.TAGALOG.value: "fil",
+    TargetLanguage.JAPANESE: "ja",
+    TargetLanguage.KOREAN: "ko",
+    TargetLanguage.CANTONESE: "yue",
+    TargetLanguage.THAI: "th",
+    TargetLanguage.VIETNAMESE: "vi",
+    TargetLanguage.INDONESIAN: "id",
+    TargetLanguage.MALAY: "ms",
+    TargetLanguage.TAGALOG: "fil",
     # 欧洲语言
-    TargetLanguage.FRENCH.value: "fr",
-    TargetLanguage.GERMAN.value: "de",
-    TargetLanguage.SPANISH.value: "es",
-    TargetLanguage.SPANISH_LATAM.value: "es",
-    TargetLanguage.RUSSIAN.value: "ru",
-    TargetLanguage.PORTUGUESE.value: "pt",
-    TargetLanguage.PORTUGUESE_BR.value: "pt",
-    TargetLanguage.PORTUGUESE_PT.value: "pt-PT",
-    TargetLanguage.ITALIAN.value: "it",
-    TargetLanguage.DUTCH.value: "nl",
-    TargetLanguage.POLISH.value: "pl",
-    TargetLanguage.TURKISH.value: "tr",
-    TargetLanguage.GREEK.value: "el",
-    TargetLanguage.CZECH.value: "cs",
-    TargetLanguage.SWEDISH.value: "sv",
-    TargetLanguage.DANISH.value: "da",
-    TargetLanguage.FINNISH.value: "fi",
-    TargetLanguage.NORWEGIAN.value: "nb",
-    TargetLanguage.HUNGARIAN.value: "hu",
-    TargetLanguage.ROMANIAN.value: "ro",
-    TargetLanguage.BULGARIAN.value: "bg",
-    TargetLanguage.UKRAINIAN.value: "uk",
+    TargetLanguage.FRENCH: "fr",
+    TargetLanguage.GERMAN: "de",
+    TargetLanguage.SPANISH: "es",
+    TargetLanguage.SPANISH_LATAM: "es",
+    TargetLanguage.RUSSIAN: "ru",
+    TargetLanguage.PORTUGUESE: "pt",
+    TargetLanguage.PORTUGUESE_BR: "pt",
+    TargetLanguage.PORTUGUESE_PT: "pt-PT",
+    TargetLanguage.ITALIAN: "it",
+    TargetLanguage.DUTCH: "nl",
+    TargetLanguage.POLISH: "pl",
+    TargetLanguage.TURKISH: "tr",
+    TargetLanguage.GREEK: "el",
+    TargetLanguage.CZECH: "cs",
+    TargetLanguage.SWEDISH: "sv",
+    TargetLanguage.DANISH: "da",
+    TargetLanguage.FINNISH: "fi",
+    TargetLanguage.NORWEGIAN: "nb",
+    TargetLanguage.HUNGARIAN: "hu",
+    TargetLanguage.ROMANIAN: "ro",
+    TargetLanguage.BULGARIAN: "bg",
+    TargetLanguage.UKRAINIAN: "uk",
     # 中东语言
-    TargetLanguage.ARABIC.value: "ar",
-    TargetLanguage.HEBREW.value: "he",
-    TargetLanguage.PERSIAN.value: "fa",
+    TargetLanguage.ARABIC: "ar",
+    TargetLanguage.HEBREW: "he",
+    TargetLanguage.PERSIAN: "fa",
 }
 
 # DeepL 语言代码映射
 DEEPL_LANG_MAP = {
     # 中文
-    TargetLanguage.SIMPLIFIED_CHINESE.value: "zh-Hans",
-    TargetLanguage.TRADITIONAL_CHINESE.value: "zh-Hant",
+    TargetLanguage.SIMPLIFIED_CHINESE: "zh-Hans",
+    TargetLanguage.TRADITIONAL_CHINESE: "zh-Hant",
     # 英语
-    TargetLanguage.ENGLISH.value: "en",
-    TargetLanguage.ENGLISH_US.value: "en-US",
-    TargetLanguage.ENGLISH_UK.value: "en-GB",
+    TargetLanguage.ENGLISH: "en",
+    TargetLanguage.ENGLISH_US: "en-US",
+    TargetLanguage.ENGLISH_UK: "en-GB",
     # 亚洲语言
-    TargetLanguage.JAPANESE.value: "ja",
-    TargetLanguage.KOREAN.value: "ko",
-    TargetLanguage.INDONESIAN.value: "id",
+    TargetLanguage.JAPANESE: "ja",
+    TargetLanguage.KOREAN: "ko",
+    TargetLanguage.INDONESIAN: "id",
     # 欧洲语言
-    TargetLanguage.FRENCH.value: "fr",
-    TargetLanguage.GERMAN.value: "de",
-    TargetLanguage.SPANISH.value: "es",
-    TargetLanguage.RUSSIAN.value: "ru",
-    TargetLanguage.PORTUGUESE.value: "pt",
-    TargetLanguage.PORTUGUESE_BR.value: "pt-BR",
-    TargetLanguage.PORTUGUESE_PT.value: "pt-PT",
-    TargetLanguage.ITALIAN.value: "it",
-    TargetLanguage.DUTCH.value: "nl",
-    TargetLanguage.POLISH.value: "pl",
-    TargetLanguage.TURKISH.value: "tr",
-    TargetLanguage.GREEK.value: "el",
-    TargetLanguage.CZECH.value: "cs",
-    TargetLanguage.SWEDISH.value: "sv",
-    TargetLanguage.DANISH.value: "da",
-    TargetLanguage.FINNISH.value: "fi",
-    TargetLanguage.NORWEGIAN.value: "nb",
-    TargetLanguage.HUNGARIAN.value: "hu",
-    TargetLanguage.ROMANIAN.value: "ro",
-    TargetLanguage.BULGARIAN.value: "bg",
-    TargetLanguage.UKRAINIAN.value: "uk",
+    TargetLanguage.FRENCH: "fr",
+    TargetLanguage.GERMAN: "de",
+    TargetLanguage.SPANISH: "es",
+    TargetLanguage.RUSSIAN: "ru",
+    TargetLanguage.PORTUGUESE: "pt",
+    TargetLanguage.PORTUGUESE_BR: "pt-BR",
+    TargetLanguage.PORTUGUESE_PT: "pt-PT",
+    TargetLanguage.ITALIAN: "it",
+    TargetLanguage.DUTCH: "nl",
+    TargetLanguage.POLISH: "pl",
+    TargetLanguage.TURKISH: "tr",
+    TargetLanguage.GREEK: "el",
+    TargetLanguage.CZECH: "cs",
+    TargetLanguage.SWEDISH: "sv",
+    TargetLanguage.DANISH: "da",
+    TargetLanguage.FINNISH: "fi",
+    TargetLanguage.NORWEGIAN: "nb",
+    TargetLanguage.HUNGARIAN: "hu",
+    TargetLanguage.ROMANIAN: "ro",
+    TargetLanguage.BULGARIAN: "bg",
+    TargetLanguage.UKRAINIAN: "uk",
     # 中东语言
-    TargetLanguage.ARABIC.value: "ar",
+    TargetLanguage.ARABIC: "ar",
 }
 
 
-def get_language_code(target_language: str, translator_type: str) -> str:
+def get_language_code(target_language: TargetLanguage, translator_type: str) -> str:
     """
     获取翻译服务对应的语言代码
 
     Args:
-        target_language: 目标语言（中文名称）
+        target_language: 目标语言枚举
         translator_type: 翻译器类型（google/bing/deeplx）
 
     Returns:
@@ -215,16 +215,12 @@ def get_language_code(target_language: str, translator_type: str) -> str:
         "deeplx": DEEPL_LANG_MAP,
     }
 
-    # 如果传入的已经是语言代码（例如 "zh-CN"），直接返回
-    if target_language in lang_map.get(translator_type, {}).values():
-        return target_language
-
     # 获取对应的语言映射
     mapping = lang_map.get(translator_type, {})
 
-    # 尝试直接获取
+    # 使用枚举的 value（中文名称）查找语言代码
     if target_language in mapping:
         return mapping[target_language]
 
     # 默认返回简体中文
-    return mapping.get(TargetLanguage.SIMPLIFIED_CHINESE.value, "zh-CN")
+    return mapping.get(TargetLanguage.SIMPLIFIED_CHINESE, "zh-CN")
