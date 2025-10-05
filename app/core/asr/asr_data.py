@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from ..entities import SubtitleLayoutEnum
 from ..utils.text_utils import is_mainly_cjk
 
 # 多语言分词模式(支持词级和字符级语言)
@@ -215,14 +216,17 @@ class ASRData:
         return self
 
     def save(
-        self, save_path: str, ass_style: Optional[str] = None, layout: str = "原文在上"
+        self,
+        save_path: str,
+        ass_style: Optional[str] = None,
+        layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP,
     ) -> None:
         """Save ASRData to file in specified format.
 
         Args:
             save_path: Output file path
             ass_style: ASS style string (optional, uses default if None)
-            layout: Subtitle layout mode ["原文在上", "译文在上", "仅原文", "仅译文"]
+            layout: Subtitle layout mode
         """
         save_path = handle_long_path(save_path)
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
@@ -239,23 +243,25 @@ class ASRData:
         else:
             raise ValueError(f"Unsupported file extension: {save_path}")
 
-    def to_txt(self, save_path=None, layout: str = "原文在上") -> str:
+    def to_txt(
+        self,
+        save_path=None,
+        layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP,
+    ) -> str:
         """Convert to plain text subtitle format (without timestamps)"""
         result = []
         for seg in self.segments:
             original = seg.text
             translated = seg.translated_text
 
-            if layout == "原文在上":
+            if layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 text = f"{original}\n{translated}" if translated else original
-            elif layout == "译文在上":
+            elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 text = f"{translated}\n{original}" if translated else original
-            elif layout == "仅原文":
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 text = original
-            elif layout == "仅译文":
+            else:  # ONLY_TRANSLATE
                 text = translated if translated else original
-            else:
-                text = seg.transcript
             result.append(text)
         text = "\n".join(result)
         if save_path:
@@ -264,23 +270,25 @@ class ASRData:
                 f.write("\n".join(result))
         return text
 
-    def to_srt(self, layout: str = "原文在上", save_path=None) -> str:
+    def to_srt(
+        self,
+        layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP,
+        save_path=None,
+    ) -> str:
         """Convert to SRT subtitle format"""
         srt_lines = []
         for n, seg in enumerate(self.segments, 1):
             original = seg.text
             translated = seg.translated_text
 
-            if layout == "原文在上":
+            if layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 text = f"{original}\n{translated}" if translated else original
-            elif layout == "译文在上":
+            elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 text = f"{translated}\n{original}" if translated else original
-            elif layout == "仅原文":
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 text = original
-            elif layout == "仅译文":
+            else:  # ONLY_TRANSLATE
                 text = translated if translated else original
-            else:
-                text = seg.transcript
 
             srt_lines.append(f"{n}\n{seg.to_srt_ts()}\n{text}\n")
 
@@ -310,14 +318,14 @@ class ASRData:
     def to_ass(
         self,
         style_str: Optional[str] = None,
-        layout: str = "原文在上",
+        layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP,
         save_path: Optional[str] = None,
     ) -> str:
         """Convert to ASS subtitle format
 
         Args:
             style_str: ASS style string (optional, uses default if None)
-            layout: Subtitle layout mode ["译文在上", "原文在上", "仅原文", "仅译文"]
+            layout: Subtitle layout mode
 
         Returns:
             ASS format subtitle content
@@ -353,7 +361,7 @@ class ASRData:
             translated = seg.translated_text
             has_translation = bool(translated and translated.strip())
 
-            if layout == "译文在上":
+            if layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 if has_translation:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Secondary", original
@@ -365,7 +373,7 @@ class ASRData:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Default", original
                     )
-            elif layout == "原文在上":
+            elif layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 if has_translation:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Secondary", translated
@@ -377,11 +385,11 @@ class ASRData:
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Default", original
                     )
-            elif layout == "仅原文":
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 ass_content += dialogue_template.format(
                     start_time, end_time, "Default", original
                 )
-            elif layout == "仅译文":
+            else:  # ONLY_TRANSLATE
                 text = translated if has_translation else original
                 ass_content += dialogue_template.format(
                     start_time, end_time, "Default", text

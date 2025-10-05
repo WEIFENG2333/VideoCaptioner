@@ -4,12 +4,21 @@ import os
 import threading
 from typing import Any, List, Optional
 
+import openai
 from openai import OpenAI
-
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+    retry_if_exception_type,
+)
 from app.core.utils.cache import cached, get_llm_cache, validate_openai_response
+from app.core.utils.logger import setup_logger
 
 _global_client: Optional[OpenAI] = None
 _client_lock = threading.Lock()
+
+logger = setup_logger("llm_client")
 
 
 def get_llm_client() -> OpenAI:
@@ -40,7 +49,19 @@ def get_llm_client() -> OpenAI:
     return _global_client
 
 
+def before_sleep_log():
+    logger.warning(
+        "Rate Limit Error, sleeping and retrying... Please lower your thread concurrency or use better OpenAI API."
+    )
+
+
 @cached(cache_instance=get_llm_cache(), validate=validate_openai_response)
+@retry(
+    stop=stop_after_attempt(10),
+    wait=wait_random_exponential(multiplier=1, min=5, max=60),
+    retry=retry_if_exception_type(openai.RateLimitError),
+    before_sleep=before_sleep_log,
+)
 def call_llm(
     messages: List[dict],
     model: str,
@@ -68,5 +89,4 @@ def call_llm(
         temperature=temperature,
         **kwargs,
     )
-
     return response

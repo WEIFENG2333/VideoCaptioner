@@ -12,15 +12,16 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import json_repair
 
 from ..asr.asr_data import ASRData, ASRDataSeg
+from ..entities import SubtitleProcessData
 from ..llm import call_llm
 from ..prompts import get_prompt
 from ..split.alignment import SubtitleAligner
+from ..utils.text_utils import count_words
 from ..utils.logger import setup_logger
 
 logger = setup_logger("subtitle_optimizer")
 
-MAX_STEPS = 3
-SIMILARITY_THRESHOLD = 0.7  # 相似度阈值，低于此值视为改动过大
+MAX_STEPS = 4
 
 
 class SubtitleOptimizer:
@@ -38,7 +39,6 @@ class SubtitleOptimizer:
         batch_num: int,
         model: str,
         custom_prompt: str,
-        temperature: float,
         update_callback: Optional[Callable] = None,
     ):
         """初始化优化器
@@ -55,7 +55,6 @@ class SubtitleOptimizer:
         self.batch_num = batch_num
         self.model = model
         self.custom_prompt = custom_prompt
-        self.temperature = temperature
         self.update_callback = update_callback
 
         self.is_running = True
@@ -169,7 +168,15 @@ class SubtitleOptimizer:
             result = self.agent_loop(subtitle_chunk)
 
             if self.update_callback:
-                self.update_callback(result)
+                callback_data = [
+                    SubtitleProcessData(
+                        index=int(idx),
+                        original_text=subtitle_chunk[idx],
+                        optimized_text=result[idx],
+                    )
+                    for idx in sorted(result.keys(), key=int)
+                ]
+                self.update_callback(callback_data)
 
             return result
 
@@ -215,7 +222,7 @@ class SubtitleOptimizer:
             response = call_llm(
                 messages=messages,
                 model=self.model,
-                temperature=self.temperature,
+                temperature=0.2,
             )
 
             result_text = response.choices[0].message.content
@@ -238,17 +245,18 @@ class SubtitleOptimizer:
             )
 
             if is_valid:
-                logger.info(f"优化成功 (第{step + 1}次尝试)")
                 return self._repair_subtitle(subtitle_chunk, result_dict)
 
             # 验证失败，添加反馈
-            logger.warning(f"优化验证失败 (第{step + 1}次尝试): {error_message}")
+            logger.warning(
+                f"优化验证失败，开始反馈循环 (第{step + 1}次尝试): {error_message}"
+            )
             messages.append({"role": "assistant", "content": result_text})
             messages.append(
                 {
                     "role": "user",
                     "content": (
-                        f"Error: {error_message}\n\n"
+                        f"Error: {error_message}\n"
                         f"Please fix the errors and return the COMPLETE optimized dictionary with ALL {len(subtitle_chunk)} keys."
                         "Output ONLY a valid JSON dictionary, no explanation."
                     ),
@@ -311,19 +319,20 @@ class SubtitleOptimizer:
             # 计算相似度
             matcher = difflib.SequenceMatcher(None, original_cleaned, optimized_cleaned)
             similarity = matcher.ratio()
+            similarity_threshold = 0.3 if count_words(original_text) <= 10 else 0.7
 
             # 相似度过低
-            if similarity < SIMILARITY_THRESHOLD:
+            if similarity < similarity_threshold:
                 excessive_changes.append(
-                    f"Key '{key}': similarity {similarity:.1%} < {SIMILARITY_THRESHOLD:.0%}. "
+                    f"Key '{key}': similarity {similarity:.1%} < {similarity_threshold:.0%}. "
                     f"Original: '{original_text}' → Optimized: '{optimized_text}' "
                 )
 
         if excessive_changes:
             error_msg = ";\n".join(excessive_changes)
             error_msg += (
-                f"\n\nSimilarity must be >= {SIMILARITY_THRESHOLD:.0%}. "
-                "Make MINIMAL changes: fix typos/grammar only, keep original words and structure."
+                "\nSimilarity must be suitable for the limit of the text length. "
+                "Please make less changes: optimize subtitles while keeping the original meaning and structure."
             )
             return False, error_msg
 
