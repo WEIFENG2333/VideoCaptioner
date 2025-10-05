@@ -4,10 +4,12 @@ import json
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import json_repair
+import openai
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from app.core.llm import call_llm
 from app.core.prompts import get_prompt
-from app.core.translate.base import BaseTranslator, TranslateData, logger
+from app.core.translate.base import BaseTranslator, SubtitleProcessData, logger
 from app.core.translate.types import TargetLanguage
 
 
@@ -24,7 +26,6 @@ class LLMTranslator(BaseTranslator):
         model: str,
         custom_prompt: str,
         is_reflect: bool,
-        cache_ttl: int,
         update_callback: Optional[Callable],
     ):
         super().__init__(
@@ -37,11 +38,10 @@ class LLMTranslator(BaseTranslator):
         self.model = model
         self.custom_prompt = custom_prompt
         self.is_reflect = is_reflect
-        self.cache_ttl = cache_ttl
 
     def _translate_chunk(
-        self, subtitle_chunk: List[TranslateData]
-    ) -> List[TranslateData]:
+        self, subtitle_chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """翻译字幕块"""
         logger.info(
             f"[+]正在翻译字幕：{subtitle_chunk[0].index} - {subtitle_chunk[-1].index}"
@@ -77,16 +77,20 @@ class LLMTranslator(BaseTranslator):
             else:
                 processed_result = {k: f"{v}" for k, v in result_dict.items()}
 
-            # 将结果填充回TranslateData
+            # 将结果填充回SubtitleProcessData
             for data in subtitle_chunk:
                 data.translated_text = processed_result.get(
                     str(data.index), data.original_text
                 )
-
             return subtitle_chunk
-
+        except openai.RateLimitError as e:
+            logger.error(f"OpenAI Rate Limit Error: {str(e)}")
+        except openai.AuthenticationError as e:
+            logger.error(f"OpenAI Authentication Error: {str(e)}")
+        except openai.NotFoundError as e:
+            logger.error(f"OpenAI NotFound Error: {str(e)}")
         except Exception as e:
-            logger.error(f"批量翻译失败：{str(e)}，将使用单条翻译模式重试")
+            logger.exception(f"Error: {str(e)}")
             return self._translate_chunk_single(subtitle_chunk)
 
     def _agent_loop(self, system_prompt: str, subtitle_dict: Dict[str, str]) -> str:
@@ -118,7 +122,7 @@ class LLMTranslator(BaseTranslator):
                 messages.append(
                     {
                         "role": "user",
-                        "content": f"Error: {error_message}\n\nPlease fix the error and output ONLY a valid JSON dictionary.",
+                        "content": f"Error: {error_message}\n\nFix the errors above and output ONLY a valid JSON dictionary with ALL {len(subtitle_dict)} keys",
                     }
                 )
 
@@ -179,8 +183,8 @@ class LLMTranslator(BaseTranslator):
         return True, ""
 
     def _translate_chunk_single(
-        self, subtitle_chunk: List[TranslateData]
-    ) -> List[TranslateData]:
+        self, subtitle_chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """单条翻译模式"""
         single_prompt = get_prompt(
             "translate/single", target_language=self.target_language
@@ -202,3 +206,11 @@ class LLMTranslator(BaseTranslator):
                 logger.error(f"单条翻译失败 {data.index}: {str(e)}")
 
         return subtitle_chunk
+
+    def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
+        """生成缓存键"""
+        class_name = self.__class__.__name__
+        chunk_key = self._cache.generate_key(chunk)
+        lang = self.target_language.value
+        model = self.model
+        return f"{class_name}:{chunk_key}:{lang}:{model}"

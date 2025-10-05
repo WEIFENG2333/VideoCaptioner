@@ -2,23 +2,15 @@
 
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from app.core.asr.asr_data import ASRData, ASRDataSeg
+from app.core.entities import SubtitleProcessData
 from app.core.translate.types import TargetLanguage
+from app.core.utils.cache import get_translate_cache
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("subtitle_translator")
-
-
-@dataclass
-class TranslateData:
-    """翻译数据"""
-
-    index: int
-    original_text: str
-    translated_text: str = ""
 
 
 class BaseTranslator(ABC):
@@ -33,10 +25,11 @@ class BaseTranslator(ABC):
     ):
         self.thread_num = thread_num
         self.batch_num = batch_num
-        self.target_language = target_language.value
+        self.target_language = target_language
         self.is_running = True
         self.update_callback = update_callback
         self.executor = None
+        self._cache = get_translate_cache()
 
         self._init_thread_pool()
 
@@ -52,9 +45,9 @@ class BaseTranslator(ABC):
         try:
             asr_data = subtitle_data
 
-            # 将ASRData转换为TranslateData列表
+            # 将ASRData转换为SubtitleProcessData列表
             translate_data_list = [
-                TranslateData(index=i, original_text=seg.text)
+                SubtitleProcessData(index=i, original_text=seg.text)
                 for i, seg in enumerate(asr_data.segments, 1)
             ]
 
@@ -75,8 +68,8 @@ class BaseTranslator(ABC):
             raise RuntimeError(f"翻译失败：{str(e)}")
 
     def _split_chunks(
-        self, translate_data_list: List[TranslateData]
-    ) -> List[List[TranslateData]]:
+        self, translate_data_list: List[SubtitleProcessData]
+    ) -> List[List[SubtitleProcessData]]:
         """将字幕分割成块"""
         return [
             translate_data_list[i : i + self.batch_num]
@@ -84,8 +77,8 @@ class BaseTranslator(ABC):
         ]
 
     def _parallel_translate(
-        self, chunks: List[List[TranslateData]]
-    ) -> List[TranslateData]:
+        self, chunks: List[List[SubtitleProcessData]]
+    ) -> List[SubtitleProcessData]:
         """并行翻译所有块"""
         futures = []
         translated_list = []
@@ -106,20 +99,38 @@ class BaseTranslator(ABC):
 
         return translated_list
 
-    def _safe_translate_chunk(self, chunk: List[TranslateData]) -> List[TranslateData]:
+    def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
+        """生成缓存键"""
+        class_name = self.__class__.__name__
+        chunk_key = self._cache.generate_key(chunk)
+        lang = self.target_language.value
+        return f"{class_name}:{chunk_key}:{lang}"
+
+    def _safe_translate_chunk(
+        self, chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """安全的翻译块"""
         try:
+            cache_key = self._get_cache_key(chunk)
+            cached_result = self._cache.get(cache_key)
+            if cached_result is not self._cache._MISSING:
+                return cached_result
+
             result = self._translate_chunk(chunk)
+
             if self.update_callback:
                 self.update_callback(result)
+
+            self._cache.set(cache_key, result)
             return result
+
         except Exception as e:
-            logger.error(f"翻译失败: {str(e)}")
+            logger.exception(f"翻译失败: {str(e)}")
             raise
 
     @staticmethod
     def _set_segments_translated_text(
-        original_segments: List[ASRDataSeg], translated_list: List[TranslateData]
+        original_segments: List[ASRDataSeg], translated_list: List[SubtitleProcessData]
     ) -> List[ASRDataSeg]:
         """设置字幕段的翻译文本"""
         # 创建索引到翻译文本的映射
@@ -135,8 +146,8 @@ class BaseTranslator(ABC):
 
     @abstractmethod
     def _translate_chunk(
-        self, subtitle_chunk: List[TranslateData]
-    ) -> List[TranslateData]:
+        self, subtitle_chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """翻译字幕块"""
         pass
 

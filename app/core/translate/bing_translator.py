@@ -4,7 +4,8 @@ from typing import Callable, List, Optional
 
 import requests
 
-from app.core.translate.base import BaseTranslator, TranslateData, logger
+from app.core.entities import SubtitleProcessData
+from app.core.translate.base import BaseTranslator, logger
 from app.core.translate.types import TargetLanguage, get_language_code
 
 
@@ -48,8 +49,8 @@ class BingTranslator(BaseTranslator):
             raise RuntimeError(f"初始化必应翻译会话失败: {str(e)}")
 
     def _translate_chunk(
-        self, subtitle_chunk: List[TranslateData]
-    ) -> List[TranslateData]:
+        self, subtitle_chunk: List[SubtitleProcessData]
+    ) -> List[SubtitleProcessData]:
         """翻译字幕块"""
         target_lang = get_language_code(self.target_language, "bing")
 
@@ -81,6 +82,7 @@ class BingTranslator(BaseTranslator):
                     subtitle_chunk[i].translated_text = translation["translations"][0][
                         "text"
                     ]
+                    print(translation)
 
             except Exception as e:
                 logger.error(f"必应翻译失败: {str(e)}")
@@ -94,3 +96,10 @@ class BingTranslator(BaseTranslator):
                         logger.error(f"重新初始化必应翻译会话失败: {str(e)}")
 
         return subtitle_chunk
+
+    def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
+        """生成缓存键"""
+        class_name = self.__class__.__name__
+        chunk_key = self._cache.generate_key(chunk)
+        lang = self.target_language.value
+        return f"{class_name}:{chunk_key}:{lang}"
