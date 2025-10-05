@@ -18,23 +18,21 @@ def split_by_llm(
     model: str = "gpt-4o-mini",
     max_word_count_cjk: int = 18,
     max_word_count_english: int = 12,
-    split_type: str = "semantic",
 ) -> List[str]:
-    """使用LLM进行文本断句
+    """使用LLM进行文本断句（固定使用句子分段）
 
     Args:
         text: 待断句的文本
         model: LLM模型名称
         max_word_count_cjk: 中文最大字符数
         max_word_count_english: 英文最大单词数
-        split_type: 分段类型("semantic"或"sentence")
 
     Returns:
         断句后的文本列表
     """
     try:
         return _split_with_agent_loop(
-            text, model, max_word_count_cjk, max_word_count_english, split_type
+            text, model, max_word_count_cjk, max_word_count_english
         )
     except Exception as e:
         logger.error(f"断句失败: {e}")
@@ -46,10 +44,9 @@ def _split_with_agent_loop(
     model: str,
     max_word_count_cjk: int,
     max_word_count_english: int,
-    split_type: str = "semantic",
 ) -> List[str]:
-    """使用agent loop进行文本断句，自动验证和修正"""
-    prompt_path = f"split/{split_type}"
+    """使用agent loop进行文本断句，自动验证和修正（固定使用句子分段）"""
+    prompt_path = "split/sentence"
     system_prompt = get_prompt(
         prompt_path,
         max_word_count_cjk=max_word_count_cjk,
@@ -97,12 +94,14 @@ def _split_with_agent_loop(
             return split_result
 
         # 添加反馈到对话
-        logger.warning(f"断句验证失败 (第{step + 1}次尝试): {error_message}")
+        logger.warning(
+            f"断句验证失败，开始反馈循环 (第{step + 1}次尝试): {error_message}"
+        )
         messages.append({"role": "assistant", "content": result_text})
         messages.append(
             {
                 "role": "user",
-                "content": f"Error: {error_message}\n\nPlease fix and output ONLY the corrected text with <br> tags.",
+                "content": f"Error: {error_message}\nFix the errors above and output ONLY the corrected text with <br> tags, no explanation",
             }
         )
 
@@ -173,7 +172,7 @@ def _validate_split_result(
             error_msg = f"Content modified (similarity: {similarity_ratio:.1%}):\n"
             error_msg += "\n".join(f"- {diff}" for diff in differences)
             error_msg += (
-                "\n\nKeep original text unchanged, only insert <br> between words."
+                "\nKeep original text unchanged, only insert <br> between words."
             )
             return False, error_msg
 
@@ -183,10 +182,10 @@ def _validate_split_result(
         word_count = count_words(segment)
 
         max_allowed = max_word_count_cjk if text_is_cjk else max_word_count_english
-        tolerance = max_allowed * 1.1  # 10%容差
+        tolerance = max_allowed * 1  # 0容差
 
         if word_count > tolerance:
-            segment_preview = segment[:30] + "..." if len(segment) > 30 else segment
+            segment_preview = segment[:40] + "..." if len(segment) > 40 else segment
             violations.append(
                 f"Segment {i} '{segment_preview}': {word_count} {'chars' if text_is_cjk else 'words'} > {max_allowed} limit"
             )
