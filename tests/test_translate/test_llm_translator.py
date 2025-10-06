@@ -38,7 +38,6 @@ class TestLLMTranslator:
             model=model,
             custom_prompt="",
             is_reflect=False,
-            cache_ttl=3600,
             update_callback=None,
         )
 
@@ -163,7 +162,6 @@ class TestLLMTranslator:
             model=model,
             custom_prompt="",
             is_reflect=True,
-            cache_ttl=3600,
             update_callback=None,
         )
 
