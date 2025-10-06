@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import json_repair
 import openai
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from app.core.llm import call_llm
 from app.core.prompts import get_prompt
@@ -93,7 +92,9 @@ class LLMTranslator(BaseTranslator):
             logger.exception(f"Error: {str(e)}")
             return self._translate_chunk_single(subtitle_chunk)
 
-    def _agent_loop(self, system_prompt: str, subtitle_dict: Dict[str, str]) -> str:
+    def _agent_loop(
+        self, system_prompt: str, subtitle_dict: Dict[str, str]
+    ) -> Dict[str, str]:
         """Agent loop翻译字幕块"""
         messages = [
             {"role": "system", "content": system_prompt},
@@ -209,8 +210,10 @@ class LLMTranslator(BaseTranslator):
 
     def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
         """生成缓存键"""
+        from app.core.utils.cache import generate_cache_key
+
         class_name = self.__class__.__name__
-        chunk_key = self._cache.generate_key(chunk)
+        chunk_key = generate_cache_key(chunk)
         lang = self.target_language.value
         model = self.model
         return f"{class_name}:{chunk_key}:{lang}:{model}"
