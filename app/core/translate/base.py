@@ -7,7 +7,7 @@ from typing import Callable, List, Optional
 from app.core.asr.asr_data import ASRData, ASRDataSeg
 from app.core.entities import SubtitleProcessData
 from app.core.translate.types import TargetLanguage
-from app.core.utils.cache import get_translate_cache
+from app.core.utils.cache import get_translate_cache, generate_cache_key
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("subtitle_translator")
@@ -102,7 +102,7 @@ class BaseTranslator(ABC):
     def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
         """生成缓存键"""
         class_name = self.__class__.__name__
-        chunk_key = self._cache.generate_key(chunk)
+        chunk_key = generate_cache_key(chunk)
         lang = self.target_language.value
         return f"{class_name}:{chunk_key}:{lang}"
 
@@ -112,8 +112,8 @@ class BaseTranslator(ABC):
         """安全的翻译块"""
         try:
             cache_key = self._get_cache_key(chunk)
-            cached_result = self._cache.get(cache_key)
-            if cached_result is not self._cache._MISSING:
+            cached_result = self._cache.get(cache_key, default=None)
+            if cached_result is not None:
                 return cached_result
 
             result = self._translate_chunk(chunk)

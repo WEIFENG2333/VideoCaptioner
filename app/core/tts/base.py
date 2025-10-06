@@ -3,7 +3,7 @@
 import hashlib
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, cast
 
 from app.core.tts.status import TTSStatus
 from app.core.tts.tts_data import TTSConfig, TTSData, TTSDataSeg
@@ -100,7 +100,7 @@ class BaseTTS(ABC):
 
         # 检查缓存
         if self.config.use_cache and is_cache_enabled():
-            cached_audio_data = self.cache.get(cache_key)
+            cached_audio_data = cast(Optional[bytes], self.cache.get(cache_key))
 
             if cached_audio_data:
                 logger.info(f"使用缓存: {segment.text[:50]}...")

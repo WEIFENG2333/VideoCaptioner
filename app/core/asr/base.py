@@ -1,7 +1,7 @@
 import os
 import threading
 import zlib
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, cast
 
 from app.core.utils.cache import get_asr_cache, is_cache_enabled
 
@@ -73,8 +73,10 @@ class BaseASR:
 
         # Try cache first
         if self.use_cache and is_cache_enabled():
-            cached_result = self._cache.get(cache_key)
-            if cached_result is not self._cache._MISSING:
+            cached_result = cast(
+                Optional[dict], self._cache.get(cache_key, default=None)
+            )
+            if cached_result is not None:
                 segments = self._make_segments(cached_result)
                 return ASRData(segments)
 

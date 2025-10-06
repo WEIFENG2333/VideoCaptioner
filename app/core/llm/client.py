@@ -12,7 +12,7 @@ from tenacity import (
     wait_random_exponential,
     retry_if_exception_type,
 )
-from app.core.utils.cache import cached, get_llm_cache, validate_openai_response
+from app.core.utils.cache import memoize, get_llm_cache
 from app.core.utils.logger import setup_logger
 
 _global_client: Optional[OpenAI] = None
@@ -55,7 +55,7 @@ def before_sleep_log():
     )
 
 
-@cached(cache_instance=get_llm_cache(), validate=validate_openai_response)
+@memoize(get_llm_cache(), expire=3600, typed=True)
 @retry(
     stop=stop_after_attempt(10),
     wait=wait_random_exponential(multiplier=1, min=5, max=60),
@@ -80,6 +80,9 @@ def call_llm(
 
     Returns:
         API response object
+
+    Raises:
+        ValueError: If response is invalid (empty choices or content)
     """
     client = get_llm_client()
 
@@ -89,4 +92,16 @@ def call_llm(
         temperature=temperature,
         **kwargs,
     )
+
+    # Validate response (exceptions are not cached by diskcache)
+    if not (
+        response
+        and hasattr(response, "choices")
+        and response.choices
+        and len(response.choices) > 0
+        and hasattr(response.choices[0], "message")
+        and response.choices[0].message.content
+    ):
+        raise ValueError("Invalid OpenAI API response: empty choices or content")
+
     return response
