@@ -30,7 +30,6 @@ class TestBcutASR:
         """
         return BcutASR(
             audio_path=str(test_audio_path),
-            use_cache=False,
             need_word_time_stamp=False,
         )
 
@@ -46,7 +45,6 @@ class TestBcutASR:
         """
         return BcutASR(
             audio_path=str(test_audio_path),
-            use_cache=False,
             need_word_time_stamp=True,
         )
 
@@ -119,7 +117,6 @@ class TestBcutASR:
 
         asr = BcutASR(
             audio_path=str(audio_path),
-            use_cache=False,
             need_word_time_stamp=need_word_ts,
         )
 
