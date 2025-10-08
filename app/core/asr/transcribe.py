@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 from app.core.asr.asr_data import ASRData
 from app.core.asr.base import BaseASR
 from app.core.asr.bcut import BcutASR
+from app.core.asr.chunked_asr import ChunkedASR
 from app.core.asr.faster_whisper import FasterWhisperASR
 from app.core.asr.jianying import JianYingASR
 from app.core.asr.whisper_api import WhisperAPI
@@ -45,7 +46,7 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
 
     # Build ASR arguments
     asr_args: Dict[str, Any] = {
-        "use_cache": config.use_asr_cache,
+        "use_cache": False,  # 缓存已从 ASR 模块移除
         "need_word_time_stamp": config.need_word_time_stamp,
     }
 
@@ -80,8 +81,18 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
         asr_args["one_word"] = config.faster_whisper_one_word
         asr_args["prompt"] = config.faster_whisper_prompt
 
-    # Create ASR instance and run
-    asr = asr_class(audio_path, **asr_args)
+    # Wrap with ChunkedASR for APIs that may timeout on long audio
+    if config.transcribe_model in [
+        TranscribeModelEnum.BIJIAN,
+        TranscribeModelEnum.JIANYING,
+    ]:
+        # 公益 API 使用分块避免超时（默认 8 分钟/块）
+        asr = ChunkedASR(
+            asr_class=asr_class, audio_path=audio_path, asr_kwargs=asr_args
+        )
+    else:
+        # 其他 ASR 直接创建实例
+        asr = asr_class(audio_path, **asr_args)
 
     asr_data = asr.run(callback=callback)
 
@@ -101,7 +112,6 @@ if __name__ == "__main__":
         transcribe_model=TranscribeModelEnum.WHISPER_CPP,
         transcribe_language="zh",
         whisper_model=WhisperModelEnum.MEDIUM,
-        use_asr_cache=True,
     )
 
     # 转录音频

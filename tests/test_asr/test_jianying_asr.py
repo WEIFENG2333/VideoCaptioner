@@ -30,7 +30,6 @@ class TestJianYingASR:
     #     """
     #     return JianYingASR(
     #         audio_path=str(test_audio_path),
-    #         use_cache=False,
     #         need_word_time_stamp=False,
     #     )
 
@@ -46,7 +45,6 @@ class TestJianYingASR:
     #     """
     #     return JianYingASR(
     #         audio_path=str(test_audio_path),
-    #         use_cache=False,
     #         need_word_time_stamp=True,
     #     )
 
@@ -121,7 +119,6 @@ class TestJianYingASR:
 
         asr = JianYingASR(
             audio_path=str(audio_path),
-            use_cache=False,
             need_word_time_stamp=need_word_ts,
         )
 
