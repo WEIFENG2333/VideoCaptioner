@@ -127,7 +127,6 @@ class Config(QConfig):
         OptionsValidator(TranscribeModelEnum),
         EnumSerializer(TranscribeModelEnum),
     )
-    use_asr_cache = ConfigItem("Transcribe", "UseASRCache", True, BoolValidator())
     transcribe_language = OptionsConfigItem(
         "Transcribe",
         "TranscribeLanguage",

@@ -409,7 +409,6 @@ class TranscribeConfig:
 
     transcribe_model: Optional[TranscribeModelEnum] = None
     transcribe_language: str = ""
-    use_asr_cache: bool = True
     need_word_time_stamp: bool = True
     # Whisper Cpp 配置
     whisper_model: Optional[WhisperModelEnum] = None

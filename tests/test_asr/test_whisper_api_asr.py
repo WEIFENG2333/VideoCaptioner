@@ -36,7 +36,6 @@ class TestWhisperAPI:
             prompt="",
             base_url=os.getenv("WHISPER_BASE_URL"),
             api_key=os.getenv("WHISPER_API_KEY"),
-            use_cache=False,
             need_word_time_stamp=True,
         )
 
@@ -85,7 +84,6 @@ class TestWhisperAPI:
             prompt="",
             base_url=os.getenv("WHISPER_BASE_URL"),
             api_key=os.getenv("WHISPER_API_KEY"),
-            use_cache=False,
             need_word_time_stamp=need_word_ts,
         )
 
