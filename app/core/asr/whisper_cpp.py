@@ -32,7 +32,7 @@ class WhisperCppASR(BaseASR):
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
     ):
-        super().__init__(audio_path, False)
+        super().__init__(audio_path, use_cache)
         assert os.path.exists(audio_path), f"Audio file not found: {audio_path}"
         assert audio_path.endswith(".wav"), f"Audio must be WAV format: {audio_path}"
 

@@ -4,8 +4,11 @@ import zlib
 from typing import Callable, Optional, Union, cast
 
 from app.core.utils.cache import get_asr_cache, is_cache_enabled
+from app.core.utils.logger import setup_logger
 
 from .asr_data import ASRData, ASRDataSeg
+
+logger = setup_logger("asr")
 
 
 class BaseASR:
@@ -77,6 +80,7 @@ class BaseASR:
                 Optional[dict], self._cache.get(cache_key, default=None)
             )
             if cached_result is not None:
+                logger.info("找到缓存，直接返回")
                 segments = self._make_segments(cached_result)
                 return ASRData(segments)
 
