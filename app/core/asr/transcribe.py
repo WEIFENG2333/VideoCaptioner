@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Union
 
 from app.core.asr.asr_data import ASRData
 from app.core.asr.base import BaseASR
@@ -29,71 +29,13 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
     if callback is None:
         callback = _default_callback
 
-    # Get ASR model class
-    ASR_MODELS = {
-        TranscribeModelEnum.JIANYING: JianYingASR,
-        TranscribeModelEnum.BIJIAN: BcutASR,
-        TranscribeModelEnum.WHISPER_CPP: WhisperCppASR,
-        TranscribeModelEnum.WHISPER_API: WhisperAPI,
-        TranscribeModelEnum.FASTER_WHISPER: FasterWhisperASR,
-    }
-
     if config.transcribe_model is None:
         raise ValueError("Transcription model not set")
-    asr_class = ASR_MODELS.get(config.transcribe_model)
-    if not asr_class:
-        raise ValueError(f"Invalid transcription model: {config.transcribe_model}")
 
-    # Build ASR arguments
-    asr_args: Dict[str, Any] = {
-        "use_cache": False,  # 缓存已从 ASR 模块移除
-        "need_word_time_stamp": config.need_word_time_stamp,
-    }
+    # Create ASR instance based on model type
+    asr = _create_asr_instance(audio_path, config)
 
-    # Add model-specific parameters
-    if config.transcribe_model == TranscribeModelEnum.WHISPER_CPP:
-        asr_args["language"] = config.transcribe_language
-        asr_args["whisper_model"] = (
-            config.whisper_model.value if config.whisper_model else None
-        )
-    elif config.transcribe_model == TranscribeModelEnum.WHISPER_API:
-        asr_args["language"] = config.transcribe_language
-        asr_args["whisper_model"] = config.whisper_api_model
-        asr_args["api_key"] = config.whisper_api_key
-        asr_args["base_url"] = config.whisper_api_base
-        asr_args["prompt"] = config.whisper_api_prompt
-    elif config.transcribe_model == TranscribeModelEnum.FASTER_WHISPER:
-        asr_args["faster_whisper_program"] = config.faster_whisper_program
-        asr_args["language"] = config.transcribe_language
-        asr_args["whisper_model"] = (
-            config.faster_whisper_model.value if config.faster_whisper_model else None
-        )
-        asr_args["model_dir"] = config.faster_whisper_model_dir
-        asr_args["device"] = config.faster_whisper_device
-        asr_args["vad_filter"] = config.faster_whisper_vad_filter
-        asr_args["vad_threshold"] = config.faster_whisper_vad_threshold
-        asr_args["vad_method"] = (
-            config.faster_whisper_vad_method.value
-            if config.faster_whisper_vad_method
-            else None
-        )
-        asr_args["ff_mdx_kim2"] = config.faster_whisper_ff_mdx_kim2
-        asr_args["one_word"] = config.faster_whisper_one_word
-        asr_args["prompt"] = config.faster_whisper_prompt
-
-    # Wrap with ChunkedASR for APIs that may timeout on long audio
-    if config.transcribe_model in [
-        TranscribeModelEnum.BIJIAN,
-        TranscribeModelEnum.JIANYING,
-    ]:
-        # 公益 API 使用分块避免超时（默认 8 分钟/块）
-        asr = ChunkedASR(
-            asr_class=asr_class, audio_path=audio_path, asr_kwargs=asr_args
-        )
-    else:
-        # 其他 ASR 直接创建实例
-        asr = asr_class(audio_path, **asr_args)
-
+    # Run transcription
     asr_data = asr.run(callback=callback)
 
     # Optimize subtitle timing if not using word timestamps
@@ -101,6 +43,114 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
         asr_data.optimize_timing()
 
     return asr_data
+
+
+def _create_asr_instance(
+    audio_path: str, config: TranscribeConfig
+) -> Union[BaseASR, ChunkedASR]:
+    """Create appropriate ASR instance based on configuration.
+
+    Args:
+        audio_path: Path to audio file
+        config: Transcription configuration
+
+    Returns:
+        BaseASR: ASR instance ready to run
+    """
+    model_type = config.transcribe_model
+
+    if model_type == TranscribeModelEnum.JIANYING:
+        return _create_jianying_asr(audio_path, config)
+
+    elif model_type == TranscribeModelEnum.BIJIAN:
+        return _create_bijian_asr(audio_path, config)
+
+    elif model_type == TranscribeModelEnum.WHISPER_CPP:
+        return _create_whisper_cpp_asr(audio_path, config)
+
+    elif model_type == TranscribeModelEnum.WHISPER_API:
+        return _create_whisper_api_asr(audio_path, config)
+
+    elif model_type == TranscribeModelEnum.FASTER_WHISPER:
+        return _create_faster_whisper_asr(audio_path, config)
+
+    else:
+        raise ValueError(f"Invalid transcription model: {model_type}")
+
+
+def _create_jianying_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create JianYing ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+    }
+    return ChunkedASR(
+        asr_class=JianYingASR, audio_path=audio_path, asr_kwargs=asr_kwargs
+    )
+
+
+def _create_bijian_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create Bijian ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+    }
+    return ChunkedASR(asr_class=BcutASR, audio_path=audio_path, asr_kwargs=asr_kwargs)
+
+
+def _create_whisper_cpp_asr(audio_path: str, config: TranscribeConfig) -> WhisperCppASR:
+    """Create WhisperCpp ASR instance."""
+    return WhisperCppASR(
+        audio_path=audio_path,
+        use_cache=True,
+        need_word_time_stamp=config.need_word_time_stamp,
+        language=config.transcribe_language,
+        whisper_model=config.whisper_model.value if config.whisper_model else None,
+    )
+
+
+def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create Whisper API ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "language": config.transcribe_language,
+        "whisper_model": config.whisper_api_model or "whisper-1",
+        "api_key": config.whisper_api_key,
+        "base_url": config.whisper_api_base,
+        "prompt": config.whisper_api_prompt or "",
+    }
+    return ChunkedASR(
+        asr_class=WhisperAPI, audio_path=audio_path, asr_kwargs=asr_kwargs
+    )
+
+
+def _create_faster_whisper_asr(
+    audio_path: str, config: TranscribeConfig
+) -> FasterWhisperASR:
+    """Create FasterWhisper ASR instance."""
+    return FasterWhisperASR(
+        audio_path=audio_path,
+        use_cache=True,
+        need_word_time_stamp=config.need_word_time_stamp,
+        faster_whisper_program=config.faster_whisper_program or "",
+        language=config.transcribe_language,
+        whisper_model=(
+            config.faster_whisper_model.value if config.faster_whisper_model else "base"
+        ),
+        model_dir=config.faster_whisper_model_dir or "",
+        device=config.faster_whisper_device,
+        vad_filter=config.faster_whisper_vad_filter,
+        vad_threshold=config.faster_whisper_vad_threshold,
+        vad_method=(
+            config.faster_whisper_vad_method.value
+            if config.faster_whisper_vad_method
+            else ""
+        ),
+        ff_mdx_kim2=config.faster_whisper_ff_mdx_kim2,
+        one_word=config.faster_whisper_one_word,
+        prompt=config.faster_whisper_prompt,
+    )
 
 
 if __name__ == "__main__":
