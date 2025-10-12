@@ -3,6 +3,7 @@
 import os
 import threading
 from typing import Any, List, Optional
+from urllib.parse import urlparse, urlunparse
 
 import openai
 from openai import OpenAI
@@ -11,6 +12,7 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
     retry_if_exception_type,
+    RetryCallState,
 )
 from app.core.utils.cache import memoize, get_llm_cache
 from app.core.utils.logger import setup_logger
@@ -19,6 +21,52 @@ _global_client: Optional[OpenAI] = None
 _client_lock = threading.Lock()
 
 logger = setup_logger("llm_client")
+
+
+def normalize_base_url(base_url: str) -> str:
+    """Normalize API base URL by ensuring /v1 suffix when needed.
+
+    Handles various edge cases:
+    - Removes leading/trailing whitespace
+    - Only adds /v1 if domain has no path, or path is empty/root
+    - Removes trailing slashes from /v1 (e.g., /v1/ -> /v1)
+    - Preserves custom paths (e.g., /custom stays as /custom)
+
+    Args:
+        base_url: Raw base URL string
+
+    Returns:
+        Normalized base URL
+
+    Examples:
+        >>> normalize_base_url("https://api.openai.com")
+        'https://api.openai.com/v1'
+        >>> normalize_base_url("https://api.openai.com/v1/")
+        'https://api.openai.com/v1'
+        >>> normalize_base_url("https://api.openai.com/custom")
+        'https://api.openai.com/custom'
+        >>> normalize_base_url("  https://api.openai.com  ")
+        'https://api.openai.com/v1'
+    """
+    url = base_url.strip()
+    parsed = urlparse(url)
+    path = parsed.path.rstrip("/")
+
+    if not path:
+        path = "/v1"
+
+    normalized = urlunparse(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment,
+        )
+    )
+
+    return normalized
 
 
 def get_llm_client() -> OpenAI:
@@ -36,8 +84,9 @@ def get_llm_client() -> OpenAI:
         with _client_lock:
             # Double-check locking pattern
             if _global_client is None:
-                base_url = os.getenv("OPENAI_BASE_URL")
-                api_key = os.getenv("OPENAI_API_KEY")
+                base_url = os.getenv("OPENAI_BASE_URL", "")
+                base_url = normalize_base_url(base_url)
+                api_key = os.getenv("OPENAI_API_KEY", "")
 
                 if not base_url or not api_key:
                     raise ValueError(
@@ -49,7 +98,7 @@ def get_llm_client() -> OpenAI:
     return _global_client
 
 
-def before_sleep_log():
+def before_sleep_log(retry_state: RetryCallState) -> None:
     logger.warning(
         "Rate Limit Error, sleeping and retrying... Please lower your thread concurrency or use better OpenAI API."
     )
@@ -86,7 +135,7 @@ def call_llm(
     """
     client = get_llm_client()
 
-    response = client.chat.completions.create(
+    response = client.chat.completions.create(  # pyright: ignore[reportCallIssue]
         model=model,
         messages=messages,
         temperature=temperature,

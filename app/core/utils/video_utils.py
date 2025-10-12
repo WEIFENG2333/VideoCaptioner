@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Dict, Literal, Optional
 
@@ -10,6 +11,33 @@ from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
 
 logger = setup_logger("video_utils")
+
+
+@contextmanager
+def temporary_subtitle_file(subtitle_path: str):
+    """临时字幕文件上下文管理器
+
+    自动复制字幕文件到临时位置，使用后自动清理
+
+    Args:
+        subtitle_path: 原始字幕文件路径
+
+    Yields:
+        临时字幕文件路径
+    """
+    suffix = Path(subtitle_path).suffix.lower()
+    temp_fd, temp_path = tempfile.mkstemp(
+        suffix=suffix, prefix="VideoCaptioner_subtitle_"
+    )
+    os.close(temp_fd)
+
+    try:
+        # 复制字幕到临时位置
+        shutil.copy2(subtitle_path, temp_path)
+        yield temp_path
+    finally:
+        # 自动清理临时文件
+        Path(temp_path).unlink(missing_ok=True)
 
 
 def get_audio_stream_count(video_path: str) -> int:
@@ -178,100 +206,40 @@ def add_subtitles(
     assert Path(input_file).is_file(), "输入文件不存在"
     assert Path(subtitle_file).is_file(), "字幕文件不存在"
 
-    # 移动到临时文件  Fix: 路径错误
-    suffix = Path(subtitle_file).suffix.lower()
-    temp_dir = Path(tempfile.gettempdir()) / "VideoCaptioner"
-    temp_dir.mkdir(exist_ok=True)
-    temp_subtitle = temp_dir / f"temp_subtitle.{suffix}"
-    shutil.copy2(subtitle_file, temp_subtitle)
-    subtitle_file = str(temp_subtitle)
+    # 使用临时文件上下文管理器处理字幕（自动清理）
+    with temporary_subtitle_file(subtitle_file) as temp_subtitle_path:
+        # 如果是 ASS 字幕，进行自动换行处理
+        suffix = Path(subtitle_file).suffix.lower()
+        processed_subtitle = temp_subtitle_path
+        if suffix == ".ass":
+            processed_subtitle = auto_wrap_ass_file(temp_subtitle_path)
 
-    # video_info = get_video_info(input_file)
-    if suffix == ".ass":
-        subtitle_file = auto_wrap_ass_file(
-            subtitle_file,
-            # video_width=video_info["width"],
-            # video_height=video_info["height"],
-        )
-
-    # 如果是WebM格式，强制使用硬字幕
-    if Path(output).suffix.lower() == ".webm":
-        soft_subtitle = False
-        logger.info("WebM格式视频，强制使用硬字幕")
-
-    if soft_subtitle:
-        # 添加软字幕
-        cmd = [
-            "ffmpeg",
-            "-i",
-            input_file,
-            "-i",
-            subtitle_file,
-            "-c:v",
-            "copy",
-            "-c:a",
-            "copy",
-            "-c:s",
-            "mov_text",
-            output,
-            "-y",
-        ]
-        logger.info(f"添加软字幕执行命令: {' '.join(cmd)}")
-        subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
-        )
-    else:
-        logger.info("使用硬字幕")
-        subtitle_file = Path(subtitle_file).as_posix().replace(":", r"\:")
-        # 根据输出文件后缀决定vf参数
-        if Path(output).suffix.lower() == ".ass":
-            vf = f"ass='{subtitle_file}'"
-        else:
-            # 其他格式使用默认的vf参数
-            vf = f"subtitles='{subtitle_file}'"
-
+        # 如果是WebM格式，强制使用硬字幕
         if Path(output).suffix.lower() == ".webm":
-            vcodec = "libvpx-vp9"
-            logger.info("WebM格式视频，使用libvpx-vp9编码器")
+            soft_subtitle = False
+            logger.info("WebM格式视频，强制使用硬字幕")
 
-        # 检查CUDA是否可用
-        use_cuda = check_cuda_available()
-        cmd = ["ffmpeg"]
-        if use_cuda:
-            logger.info("使用CUDA加速")
-            cmd.extend(["-hwaccel", "cuda"])
-        cmd.extend(
-            [
+        if soft_subtitle:
+            # 添加软字幕
+            cmd = [
+                "ffmpeg",
                 "-i",
                 input_file,
-                "-acodec",
+                "-i",
+                processed_subtitle,
+                "-c:v",
                 "copy",
-                "-vcodec",
-                vcodec,
-                "-preset",
-                quality,
-                "-vf",
-                vf,
-                "-y",  # 覆盖输出文件
+                "-c:a",
+                "copy",
+                "-c:s",
+                "mov_text",
+                "-y",
                 output,
             ]
-        )
-
-        cmd_str = subprocess.list2cmdline(cmd)
-        logger.info(f"添加硬字幕执行命令: {cmd_str}")
-
-        try:
-            process = subprocess.Popen(
+            logger.info(f"添加软字幕执行命令: {' '.join(cmd)}")
+            subprocess.run(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
@@ -279,59 +247,114 @@ def add_subtitles(
                     getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
                 ),
             )
+        else:
+            # 使用硬字幕
+            logger.info("使用硬字幕")
+            subtitle_path_escaped = (
+                Path(processed_subtitle).as_posix().replace(":", r"\:")
+            )
 
-            # 实时读取输出并调用回调函数
-            total_duration = None
-            current_time = 0
+            # 根据输出文件后缀决定vf参数
+            if Path(output).suffix.lower() == ".ass":
+                vf = f"ass='{subtitle_path_escaped}'"
+            else:
+                vf = f"subtitles='{subtitle_path_escaped}'"
 
-            while True:
-                output_line = process.stderr.readline()
-                if not output_line or (process.poll() is not None):
-                    break
-                if not progress_callback:
-                    continue
+            if Path(output).suffix.lower() == ".webm":
+                vcodec = "libvpx-vp9"
+                logger.info("WebM格式视频，使用libvpx-vp9编码器")
 
-                if total_duration is None:
-                    duration_match = re.search(
-                        r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                    )
-                    if duration_match:
-                        h, m, s = map(float, duration_match.groups())
-                        total_duration = h * 3600 + m * 60 + s
-                        logger.info(f"视频总时长: {total_duration}秒")
+            # 检查CUDA是否可用
+            use_cuda = check_cuda_available()
+            cmd = ["ffmpeg"]
+            if use_cuda:
+                logger.info("使用CUDA加速")
+                cmd.extend(["-hwaccel", "cuda"])
+            cmd.extend(
+                [
+                    "-i",
+                    input_file,
+                    "-acodec",
+                    "copy",
+                    "-vcodec",
+                    vcodec,
+                    "-preset",
+                    quality,
+                    "-vf",
+                    vf,
+                    "-y",
+                    output,
+                ]
+            )
 
-                # 解析当前处理时间
-                time_match = re.search(
-                    r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
+            cmd_str = subprocess.list2cmdline(cmd)
+            logger.info(f"添加硬字幕执行命令: {cmd_str}")
+
+            process = None
+            try:
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    creationflags=(
+                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                        if os.name == "nt"
+                        else 0
+                    ),
                 )
-                if time_match:
-                    h, m, s = map(float, time_match.groups())
-                    current_time = h * 3600 + m * 60 + s
 
-                # 计算进度百分比
-                if total_duration:
-                    progress = (current_time / total_duration) * 100
-                    progress_callback(f"{round(progress)}", "正在合成")
+                # 实时读取输出并调用回调函数
+                total_duration = None
+                current_time = 0
 
-            if progress_callback:
-                progress_callback("100", "合成完成")
-            # 检查进程的返回码
-            return_code = process.wait()
-            if return_code != 0:
-                error_info = process.stderr.read()
-                logger.error(f"视频合成失败， {error_info}")
-                raise Exception(return_code)
-            logger.info("视频合成完成")
+                while True:
+                    output_line = process.stderr.readline()
+                    if not output_line or (process.poll() is not None):
+                        break
+                    if not progress_callback:
+                        continue
 
-        except Exception as e:
-            logger.exception(f"关闭 FFmpeg: {str(e)}")
-            if process and process.poll() is None:  # 如果进程还在运行
-                process.kill()  # 如果进程没有及时终止，强制结束它
-            raise
-        finally:
-            # 删除临时文件
-            if temp_subtitle.exists():
-                temp_subtitle.unlink()
+                    if total_duration is None:
+                        duration_match = re.search(
+                            r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
+                        )
+                        if duration_match:
+                            h, m, s = map(float, duration_match.groups())
+                            total_duration = h * 3600 + m * 60 + s
+                            logger.info(f"视频总时长: {total_duration}秒")
+
+                    # 解析当前处理时间
+                    time_match = re.search(
+                        r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
+                    )
+                    if time_match:
+                        h, m, s = map(float, time_match.groups())
+                        current_time = h * 3600 + m * 60 + s
+
+                    # 计算进度百分比
+                    if total_duration:
+                        progress = (current_time / total_duration) * 100
+                        progress_callback(f"{round(progress)}", "正在合成")
+
+                if progress_callback:
+                    progress_callback("100", "合成完成")
+
+                # 检查进程的返回码
+                return_code = process.wait()
+                if return_code != 0:
+                    error_info = process.stderr.read()
+                    logger.error(f"视频合成失败: {error_info}")
+                    raise Exception(f"FFmpeg 返回码: {return_code}")
+                logger.info("视频合成完成")
+
+            except Exception as e:
+                logger.exception(f"FFmpeg 执行出错: {str(e)}")
+                if process and process.poll() is None:
+                    process.kill()
+                raise
 
 
 def get_video_info(file_path: str) -> Optional[Dict]:
