@@ -34,6 +34,7 @@ from qfluentwidgets import FluentTranslator  # noqa: E402
 from app.common.config import cfg  # noqa: E402
 from app.config import RESOURCE_PATH  # noqa: E402
 from app.core.utils.logger import setup_logger  # noqa: E402
+from app.core.utils.cache import enable_cache, disable_cache  # noqa: E402
 from app.view.main_window import MainWindow  # noqa: E402
 
 logger_instance = setup_logger("VideoCaptioner")
@@ -45,6 +46,12 @@ def exception_hook(exctype, value, tb):
 
 
 sys.excepthook = exception_hook
+
+# 应用缓存配置
+if cfg.get(cfg.cache_enabled):
+    enable_cache()
+else:
+    disable_cache()
 
 
 # Enable DPI Scale
