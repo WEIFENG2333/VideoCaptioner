@@ -3,6 +3,7 @@
 from typing import Literal, Optional
 
 import openai
+from app.core.llm.client import normalize_base_url
 
 
 def check_llm_connection(
@@ -22,6 +23,8 @@ def check_llm_connection(
     """
     try:
         # 创建OpenAI客户端并发送请求到API
+        base_url = normalize_base_url(base_url)
+        api_key = api_key.strip()
         response = openai.OpenAI(
             base_url=base_url, api_key=api_key, timeout=60
         ).chat.completions.create(
@@ -58,6 +61,7 @@ def get_available_models(base_url: str, api_key: str) -> list[str]:
         模型ID列表，按优先级排序
     """
     try:
+        base_url = normalize_base_url(base_url)
         # 创建OpenAI客户端并获取模型列表
         models = openai.OpenAI(
             base_url=base_url, api_key=api_key, timeout=5

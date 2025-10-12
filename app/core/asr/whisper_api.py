@@ -42,7 +42,7 @@ class WhisperAPI(BaseASR):
         super().__init__(audio_path, use_cache)
 
         self.base_url = normalize_base_url(base_url)
-        self.api_key = api_key
+        self.api_key = api_key.strip()
 
         if not self.base_url or not self.api_key:
             raise ValueError("Whisper BASE_URL and API_KEY must be set")

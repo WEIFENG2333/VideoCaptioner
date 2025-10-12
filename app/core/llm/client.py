@@ -84,9 +84,9 @@ def get_llm_client() -> OpenAI:
         with _client_lock:
             # Double-check locking pattern
             if _global_client is None:
-                base_url = os.getenv("OPENAI_BASE_URL", "")
+                base_url = os.getenv("OPENAI_BASE_URL", "").strip()
                 base_url = normalize_base_url(base_url)
-                api_key = os.getenv("OPENAI_API_KEY", "")
+                api_key = os.getenv("OPENAI_API_KEY", "").strip()
 
                 if not base_url or not api_key:
                     raise ValueError(
