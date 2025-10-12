@@ -283,7 +283,6 @@ class SubtitleSplitter:
         txt = "".join([seg.text for seg in segments])
         logger.info(f"开始调用API进行分段,文本长度: {count_words(txt)}")
 
-        # 使用 split_by_llm (自动缓存,统一使用semantic分段)
         sentences = split_by_llm(
             text=txt,
             model=self.model,
