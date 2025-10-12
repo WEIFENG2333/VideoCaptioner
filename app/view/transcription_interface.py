@@ -38,6 +38,11 @@ from app.common.signal_bus import signalBus
 from app.components.LanguageSettingDialog import LanguageSettingDialog
 from app.components.transcription_setting_card import TranscriptionSettingCard
 from app.config import RESOURCE_PATH
+from app.core.constant import (
+    INFOBAR_DURATION_ERROR,
+    INFOBAR_DURATION_WARNING,
+    INFOBAR_DURATION_SUCCESS,
+)
 from app.core.entities import (
     SupportedAudioFormats,
     SupportedVideoFormats,
@@ -212,7 +217,7 @@ class VideoInfoCard(CardWidget):
             InfoBar.warning(
                 self.tr("警告"),
                 self.tr("没有可用的字幕文件夹"),
-                duration=2000,
+                duration=INFOBAR_DURATION_WARNING,
                 parent=self,
             )
 
@@ -245,7 +250,7 @@ class VideoInfoCard(CardWidget):
         InfoBar.error(
             self.tr("转录失败"),
             self.tr(error),
-            duration=3000,
+            duration=INFOBAR_DURATION_ERROR,
             parent=self.parent().parent(),
         )
 
@@ -383,7 +388,7 @@ class TranscriptionInterface(QWidget):
             InfoBar.success(
                 self.tr("转录完成"),
                 self.tr("开始字幕优化..."),
-                duration=3000,
+                duration=INFOBAR_DURATION_SUCCESS,
                 position=InfoBarPosition.BOTTOM,
                 parent=self.parent(),
             )
@@ -413,7 +418,12 @@ class TranscriptionInterface(QWidget):
     def _on_video_info_error(self, error_msg):
         """处理视频信息提取错误"""
         self.is_processing = False
-        InfoBar.error(self.tr("错误"), self.tr(error_msg), duration=3000, parent=self)
+        InfoBar.error(
+            self.tr("错误"),
+            self.tr(error_msg),
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self,
+        )
 
     def set_task(self, task: TranscribeTask) -> None:
         """设置任务并更新UI"""
@@ -436,7 +446,7 @@ class TranscriptionInterface(QWidget):
             InfoBar.warning(
                 self.tr("警告"),
                 self.tr("正在处理中，请等待当前任务完成"),
-                duration=3000,
+                duration=INFOBAR_DURATION_WARNING,
                 parent=self,
             )
             return
@@ -459,7 +469,7 @@ class TranscriptionInterface(QWidget):
                 InfoBar.success(
                     self.tr("导入成功"),
                     self.tr("开始语音转文字"),
-                    duration=3000,
+                    duration=INFOBAR_DURATION_SUCCESS,
                     parent=self,
                 )
                 break
@@ -467,7 +477,7 @@ class TranscriptionInterface(QWidget):
                 InfoBar.error(
                     self.tr("格式错误") + file_ext,
                     self.tr("请拖入音频或视频文件"),
-                    duration=3000,
+                    duration=INFOBAR_DURATION_ERROR,
                     parent=self,
                 )
 
