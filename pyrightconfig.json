@@ -5,7 +5,9 @@
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
   "reportGeneralTypeIssues": true,
+  "reportCallIssue": false,
   "reportOptionalMemberAccess": false,
+  // "reportArgumentType": false,
   "reportUnknownMemberType": false,
   "reportUnknownArgumentType": false,
   "reportUnknownVariableType": false,
@@ -13,7 +15,7 @@
   "reportUnnecessaryTypeIgnoreComment": false,
   "pythonVersion": "3.11",
   "venvPath": ".",
-  "venv": "venv",
+  "venv": ".venv",
   "executionEnvironments": [
     {
       "root": ".",

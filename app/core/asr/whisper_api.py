@@ -2,6 +2,7 @@ from typing import Any, Callable, List, Optional
 
 from openai import OpenAI
 
+from app.core.llm.client import normalize_base_url
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg
 from .base import BaseASR
@@ -22,8 +23,8 @@ class WhisperAPI(BaseASR):
         need_word_time_stamp: bool = False,
         language: str = "zh",
         prompt: str = "",
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
+        base_url: str = "",
+        api_key: str = "",
         use_cache: bool = False,
     ):
         """Initialize Whisper API.
@@ -40,7 +41,7 @@ class WhisperAPI(BaseASR):
         """
         super().__init__(audio_path, use_cache)
 
-        self.base_url = base_url
+        self.base_url = normalize_base_url(base_url)
         self.api_key = api_key
 
         if not self.base_url or not self.api_key:
@@ -101,6 +102,10 @@ class WhisperAPI(BaseASR):
                 language=self.language,
                 timestamp_granularities=["word", "segment"],
             )
+            if isinstance(completion, str):
+                raise ValueError(
+                    "WhisperAPI returned type error, please check your base URL."
+                )
             return completion.to_dict()
         except Exception as e:
             logger.exception(f"WhisperAPI failed: {str(e)}")

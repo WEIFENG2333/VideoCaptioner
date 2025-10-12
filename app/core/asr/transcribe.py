@@ -1,7 +1,4 @@
-from typing import Union
-
 from app.core.asr.asr_data import ASRData
-from app.core.asr.base import BaseASR
 from app.core.asr.bcut import BcutASR
 from app.core.asr.chunked_asr import ChunkedASR
 from app.core.asr.faster_whisper import FasterWhisperASR
@@ -45,9 +42,7 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
     return asr_data
 
 
-def _create_asr_instance(
-    audio_path: str, config: TranscribeConfig
-) -> Union[BaseASR, ChunkedASR]:
+def _create_asr_instance(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
     """Create appropriate ASR instance based on configuration.
 
     Args:
@@ -55,7 +50,7 @@ def _create_asr_instance(
         config: Transcription configuration
 
     Returns:
-        BaseASR: ASR instance ready to run
+        ChunkedASR: Chunked ASR instance ready to run
     """
     model_type = config.transcribe_model
 
@@ -98,14 +93,20 @@ def _create_bijian_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
     return ChunkedASR(asr_class=BcutASR, audio_path=audio_path, asr_kwargs=asr_kwargs)
 
 
-def _create_whisper_cpp_asr(audio_path: str, config: TranscribeConfig) -> WhisperCppASR:
-    """Create WhisperCpp ASR instance."""
-    return WhisperCppASR(
+def _create_whisper_cpp_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create WhisperCpp ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "language": config.transcribe_language,
+        "whisper_model": config.whisper_model.value if config.whisper_model else None,
+    }
+    return ChunkedASR(
+        asr_class=WhisperCppASR,
         audio_path=audio_path,
-        use_cache=True,
-        need_word_time_stamp=config.need_word_time_stamp,
-        language=config.transcribe_language,
-        whisper_model=config.whisper_model.value if config.whisper_model else None,
+        asr_kwargs=asr_kwargs,
+        chunk_concurrency=1,  # 本地转录使用单线程
+        chunk_length=60 * 20,  # 每块20分钟
     )
 
 
@@ -116,8 +117,8 @@ def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> Chunke
         "need_word_time_stamp": config.need_word_time_stamp,
         "language": config.transcribe_language,
         "whisper_model": config.whisper_api_model or "whisper-1",
-        "api_key": config.whisper_api_key,
-        "base_url": config.whisper_api_base,
+        "api_key": config.whisper_api_key or "",
+        "base_url": config.whisper_api_base or "",
         "prompt": config.whisper_api_prompt or "",
     }
     return ChunkedASR(
@@ -125,31 +126,35 @@ def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> Chunke
     )
 
 
-def _create_faster_whisper_asr(
-    audio_path: str, config: TranscribeConfig
-) -> FasterWhisperASR:
-    """Create FasterWhisper ASR instance."""
-    return FasterWhisperASR(
-        audio_path=audio_path,
-        use_cache=True,
-        need_word_time_stamp=config.need_word_time_stamp,
-        faster_whisper_program=config.faster_whisper_program or "",
-        language=config.transcribe_language,
-        whisper_model=(
+def _create_faster_whisper_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create FasterWhisper ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "faster_whisper_program": config.faster_whisper_program or "",
+        "language": config.transcribe_language,
+        "whisper_model": (
             config.faster_whisper_model.value if config.faster_whisper_model else "base"
         ),
-        model_dir=config.faster_whisper_model_dir or "",
-        device=config.faster_whisper_device,
-        vad_filter=config.faster_whisper_vad_filter,
-        vad_threshold=config.faster_whisper_vad_threshold,
-        vad_method=(
+        "model_dir": config.faster_whisper_model_dir or "",
+        "device": config.faster_whisper_device,
+        "vad_filter": config.faster_whisper_vad_filter,
+        "vad_threshold": config.faster_whisper_vad_threshold,
+        "vad_method": (
             config.faster_whisper_vad_method.value
             if config.faster_whisper_vad_method
             else ""
         ),
-        ff_mdx_kim2=config.faster_whisper_ff_mdx_kim2,
-        one_word=config.faster_whisper_one_word,
-        prompt=config.faster_whisper_prompt,
+        "ff_mdx_kim2": config.faster_whisper_ff_mdx_kim2,
+        "one_word": config.faster_whisper_one_word,
+        "prompt": config.faster_whisper_prompt,
+    }
+    return ChunkedASR(
+        asr_class=FasterWhisperASR,
+        audio_path=audio_path,
+        asr_kwargs=asr_kwargs,
+        chunk_concurrency=1,  # 本地转录使用单线程
+        chunk_length=60 * 20,  # 每块20分钟
     )
 
 
