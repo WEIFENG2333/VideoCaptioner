@@ -18,7 +18,6 @@ $ uv run pytest tests/test_subtitle/test_subtitle_thread.py::TestSubtitleThreadE
 以下测试需要有效的 `OPENAI_API_KEY` 才能运行：
 
 - `TestSubtitleThreadSplit::test_split_sentence` - 句子分割
-- `TestSubtitleThreadSplit::test_split_semantic` - 语义分割
 - `TestSubtitleThreadOptimize::test_optimize_with_llm` - LLM优化
 - `TestSubtitleThreadTranslate::test_translate_llm` - LLM翻译
 - `TestSubtitleThreadFullPipeline::test_split_and_translate` - 分割+翻译
