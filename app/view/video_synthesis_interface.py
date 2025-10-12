@@ -25,6 +25,11 @@ from qfluentwidgets import FluentIcon as FIF
 
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
+from app.core.constant import (
+    INFOBAR_DURATION_ERROR,
+    INFOBAR_DURATION_WARNING,
+    INFOBAR_DURATION_SUCCESS,
+)
 from app.core.entities import (
     SupportedSubtitleFormats,
     SupportedVideoFormats,
@@ -264,7 +269,7 @@ class VideoSynthesisInterface(QWidget):
             InfoBar.error(
                 self.tr("错误"),
                 self.tr("请选择字幕文件和视频文件"),
-                duration=3000,
+                duration=INFOBAR_DURATION_ERROR,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
@@ -308,7 +313,7 @@ class VideoSynthesisInterface(QWidget):
         InfoBar.success(
             self.tr("成功"),
             self.tr("视频合成已完成"),
-            duration=3000,
+            duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.TOP,
             parent=self,
         )
@@ -323,7 +328,7 @@ class VideoSynthesisInterface(QWidget):
         InfoBar.error(
             self.tr("错误"),
             str(error),
-            duration=3000,
+            duration=INFOBAR_DURATION_ERROR,
             position=InfoBarPosition.TOP,
             parent=self,
         )
@@ -346,7 +351,7 @@ class VideoSynthesisInterface(QWidget):
             InfoBar.warning(
                 self.tr("警告"),
                 self.tr("没有可用的视频文件夹"),
-                duration=2000,
+                duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
@@ -370,7 +375,7 @@ class VideoSynthesisInterface(QWidget):
                 InfoBar.success(
                     self.tr("导入成功"),
                     self.tr("字幕文件已放入输入框"),
-                    duration=2000,
+                    duration=INFOBAR_DURATION_SUCCESS,
                     parent=self,
                 )
                 break
@@ -379,7 +384,7 @@ class VideoSynthesisInterface(QWidget):
                 InfoBar.success(
                     self.tr("导入成功"),
                     self.tr("视频文件已输入框"),
-                    duration=2000,
+                    duration=INFOBAR_DURATION_SUCCESS,
                     parent=self,
                 )
                 break
@@ -387,7 +392,7 @@ class VideoSynthesisInterface(QWidget):
                 InfoBar.error(
                     self.tr("格式错误") + file_ext,
                     self.tr("请拖入视频或者字幕文件"),
-                    duration=3000,
+                    duration=INFOBAR_DURATION_ERROR,
                     parent=self,
                 )
 

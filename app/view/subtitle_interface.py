@@ -38,6 +38,12 @@ from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.SubtitleSettingDialog import SubtitleSettingDialog
 from app.config import SUBTITLE_STYLE_PATH
+from app.core.constant import (
+    INFOBAR_DURATION_ERROR,
+    INFOBAR_DURATION_WARNING,
+    INFOBAR_DURATION_INFO,
+    INFOBAR_DURATION_SUCCESS,
+)
 from app.core.asr.asr_data import ASRData
 from app.core.entities import (
     OutputSubtitleFormatEnum,
@@ -444,7 +450,10 @@ class SubtitleInterface(QWidget):
         # 检查是否有任务
         if not self.subtitle_path:
             InfoBar.warning(
-                self.tr("警告"), self.tr("请先加载字幕文件"), duration=3000, parent=self
+                self.tr("警告"),
+                self.tr("请先加载字幕文件"),
+                duration=INFOBAR_DURATION_WARNING,
+                parent=self,
             )
             return
         self.start_button.setEnabled(False)
@@ -471,7 +480,10 @@ class SubtitleInterface(QWidget):
         )
         self.subtitle_optimization_thread.start()
         InfoBar.info(
-            self.tr("开始优化"), self.tr("开始优化字幕"), duration=3000, parent=self
+            self.tr("开始优化"),
+            self.tr("开始优化字幕"),
+            duration=INFOBAR_DURATION_INFO,
+            parent=self,
         )
 
     def process(self) -> None:
@@ -489,7 +501,7 @@ class SubtitleInterface(QWidget):
         InfoBar.success(
             self.tr("优化完成"),
             self.tr("优化完成字幕..."),
-            duration=3000,
+            duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.BOTTOM,
             parent=self.parent(),
         )
@@ -498,7 +510,12 @@ class SubtitleInterface(QWidget):
         self.start_button.setEnabled(True)
         self.cancel_button.hide()  # 隐藏取消按钮
         self.progress_bar.error()
-        InfoBar.error(self.tr("优化失败"), self.tr(error), duration=20000, parent=self)
+        InfoBar.error(
+            self.tr("优化失败"),
+            self.tr(error),
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self,
+        )
 
     def on_subtitle_optimization_progress(self, value: int, status: str) -> None:
         self.progress_bar.setValue(value)
@@ -538,7 +555,10 @@ class SubtitleInterface(QWidget):
         """处理保存格式的选择"""
         if not self.subtitle_path:
             InfoBar.warning(
-                self.tr("警告"), self.tr("请先加载字幕文件"), duration=3000, parent=self
+                self.tr("警告"),
+                self.tr("请先加载字幕文件"),
+                duration=INFOBAR_DURATION_WARNING,
+                parent=self,
             )
             return
 
@@ -566,14 +586,14 @@ class SubtitleInterface(QWidget):
             InfoBar.success(
                 self.tr("保存成功"),
                 self.tr("字幕已保存至:") + file_path,
-                duration=3000,
+                duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
         except Exception as e:
             InfoBar.error(
                 self.tr("保存失败"),
                 self.tr("保存字幕文件失败: ") + str(e),
-                duration=5000,
+                duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )
 
@@ -581,7 +601,10 @@ class SubtitleInterface(QWidget):
         """打开文件夹按钮点击事件"""
         if not self.task:
             InfoBar.warning(
-                self.tr("警告"), self.tr("请先加载字幕文件"), duration=3000, parent=self
+                self.tr("警告"),
+                self.tr("请先加载字幕文件"),
+                duration=INFOBAR_DURATION_WARNING,
+                parent=self,
             )
             return
         if not self.task:
@@ -624,7 +647,7 @@ class SubtitleInterface(QWidget):
                 InfoBar.success(
                     self.tr("导入成功"),
                     self.tr("成功导入") + os.path.basename(file_path),
-                    duration=3000,
+                    duration=INFOBAR_DURATION_SUCCESS,
                     position=InfoBarPosition.BOTTOM,
                     parent=self,
                 )
@@ -633,7 +656,7 @@ class SubtitleInterface(QWidget):
                 InfoBar.error(
                     self.tr("格式错误") + file_ext,
                     self.tr("支持的字幕格式:") + str(supported_formats),
-                    duration=3000,
+                    duration=INFOBAR_DURATION_ERROR,
                     parent=self,
                 )
         event.accept()
@@ -791,7 +814,7 @@ class SubtitleInterface(QWidget):
         InfoBar.success(
             self.tr("合并成功"),
             self.tr("已成功合并选中的字幕行"),
-            duration=1000,
+            duration=INFOBAR_DURATION_SUCCESS,
             parent=self,
         )
 
@@ -817,7 +840,10 @@ class SubtitleInterface(QWidget):
             self.progress_bar.setValue(0)
             self.status_label.setText(self.tr("已取消校正"))
             InfoBar.warning(
-                self.tr("已取消"), self.tr("字幕校正已取消"), duration=3000, parent=self
+                self.tr("已取消"),
+                self.tr("字幕校正已取消"),
+                duration=INFOBAR_DURATION_WARNING,
+                parent=self,
             )
 
     def on_target_language_changed(self, language: str) -> None:
