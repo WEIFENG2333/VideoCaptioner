@@ -26,6 +26,10 @@ from qfluentwidgets import (
     FluentIcon as FIF,
 )
 
+from app.core.constant import (
+    INFOBAR_DURATION_WARNING,
+    INFOBAR_DURATION_SUCCESS,
+)
 from app.core.entities import (
     BatchTaskStatus,
     BatchTaskType,
@@ -176,7 +180,7 @@ class BatchProcessInterface(QWidget):
             InfoBar.warning(
                 title="文件不存在",
                 content=f"以下文件不存在：\n{', '.join(non_existent_files)}",
-                duration=3000,
+                duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
@@ -208,7 +212,7 @@ class BatchProcessInterface(QWidget):
             InfoBar.warning(
                 title="无效文件",
                 content="请选择正确的文件类型",
-                duration=3000,
+                duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
@@ -223,7 +227,7 @@ class BatchProcessInterface(QWidget):
                     InfoBar.warning(
                         title="任务已存在",
                         content="任务已存在",
-                        duration=2000,
+                        duration=INFOBAR_DURATION_WARNING,
                         position=InfoBarPosition.TOP_RIGHT,
                         parent=self,
                     )
@@ -351,7 +355,7 @@ class BatchProcessInterface(QWidget):
             InfoBar.warning(
                 title="无任务",
                 content="请先添加需要处理的文件",
-                duration=2000,
+                duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
@@ -367,7 +371,7 @@ class BatchProcessInterface(QWidget):
             InfoBar.warning(
                 title="无待处理任务",
                 content="所有任务已经在处理或已完成",
-                duration=2000,
+                duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
@@ -377,7 +381,7 @@ class BatchProcessInterface(QWidget):
         InfoBar.success(
             title="开始处理",
             content=f"开始处理 {waiting_tasks} 个任务",
-            duration=2000,
+            duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.TOP,
             parent=self,
         )
@@ -396,7 +400,7 @@ class BatchProcessInterface(QWidget):
         InfoBar.success(
             title="开始处理",
             content=f"开始处理文件：{file_name}",
-            duration=2000,
+            duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.TOP,
             parent=self,
         )

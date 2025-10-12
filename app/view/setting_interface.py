@@ -26,6 +26,11 @@ from app.common.signal_bus import signalBus
 from app.components.EditComboBoxSettingCard import EditComboBoxSettingCard
 from app.components.LineEditSettingCard import LineEditSettingCard
 from app.config import AUTHOR, FEEDBACK_URL, HELP_URL, RELEASE_URL, VERSION, YEAR
+from app.core.constant import (
+    INFOBAR_DURATION_ERROR,
+    INFOBAR_DURATION_SUCCESS,
+    INFOBAR_DURATION_WARNING,
+)
 from app.core.entities import LLMServiceEnum, TranslatorServiceEnum
 from app.core.llm.check_llm import check_llm_connection, get_available_models
 
@@ -588,7 +593,7 @@ class SettingInterface(ScrollArea):
         InfoBar.success(
             self.tr("更新成功"),
             self.tr("配置将在重启后生效"),
-            duration=1500,
+            duration=INFOBAR_DURATION_SUCCESS,
             parent=self,
         )
 
@@ -609,7 +614,7 @@ class SettingInterface(ScrollArea):
             InfoBar.success(
                 self.tr("缓存已启用"),
                 self.tr("ASR、翻译等操作将优先使用缓存"),
-                duration=2000,
+                duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
         else:
@@ -617,7 +622,7 @@ class SettingInterface(ScrollArea):
             InfoBar.warning(
                 self.tr("缓存已禁用"),
                 self.tr("所有操作将重新生成，不使用缓存（建议开启缓存）"),
-                duration=2000,
+                duration=INFOBAR_DURATION_WARNING,
                 parent=self,
             )
 
@@ -652,7 +657,7 @@ class SettingInterface(ScrollArea):
             InfoBar.error(
                 self.tr("错误"),
                 self.tr("请输入正确的 API Base, 含有 /v1"),
-                duration=3000,
+                duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )
             return
@@ -671,7 +676,12 @@ class SettingInterface(ScrollArea):
         """处理连接检查错误事件"""
         self.checkLLMConnectionCard.button.setEnabled(True)
         self.checkLLMConnectionCard.button.setText(self.tr("检查连接"))
-        InfoBar.error(self.tr("LLM 连接测试错误"), message, duration=3000, parent=self)
+        InfoBar.error(
+            self.tr("LLM 连接测试错误"),
+            message,
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self,
+        )
 
     def onConnectionCheckFinished(self, is_success, message, models):
         """处理连接检查完成事件"""
@@ -692,16 +702,22 @@ class SettingInterface(ScrollArea):
             InfoBar.success(
                 self.tr("获取模型列表成功:"),
                 self.tr("一共") + str(len(models)) + self.tr("个模型"),
-                duration=3000,
+                duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
         if not is_success:
             InfoBar.error(
-                self.tr("LLM 连接测试错误"), message, duration=3000, parent=self
+                self.tr("LLM 连接测试错误"),
+                message,
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
             )
         else:
             InfoBar.success(
-                self.tr("LLM 连接测试成功"), message, duration=3000, parent=self
+                self.tr("LLM 连接测试成功"),
+                message,
+                duration=INFOBAR_DURATION_SUCCESS,
+                parent=self,
             )
 
     def checkUpdate(self):

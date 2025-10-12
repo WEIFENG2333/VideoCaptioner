@@ -27,6 +27,7 @@ from app.components.MySettingCard import (
     SpinBoxSettingCard,
 )
 from app.config import ASSETS_PATH, SUBTITLE_STYLE_PATH
+from app.core.constant import INFOBAR_DURATION_SUCCESS, INFOBAR_DURATION_WARNING
 from app.core.entities import SubtitleLayoutEnum
 from app.core.utils.platform_utils import open_folder
 from app.core.utils.subtitle_preview import generate_preview
@@ -697,7 +698,7 @@ class SubtitleStyleInterface(QWidget):
             orient=Qt.Horizontal,  # type: ignore
             isClosable=True,
             position=InfoBarPosition.TOP,
-            duration=1500,
+            duration=INFOBAR_DURATION_SUCCESS,
             parent=self,
         )
 
@@ -717,7 +718,7 @@ class SubtitleStyleInterface(QWidget):
                     orient=Qt.Horizontal,  # type: ignore
                     isClosable=True,
                     position=InfoBarPosition.TOP,
-                    duration=2000,
+                    duration=INFOBAR_DURATION_WARNING,
                     parent=self,
                 )
                 return
@@ -736,7 +737,7 @@ class SubtitleStyleInterface(QWidget):
                 orient=Qt.Horizontal,  # type: ignore
                 isClosable=True,
                 position=InfoBarPosition.TOP,
-                duration=2000,
+                duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
 

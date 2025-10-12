@@ -28,8 +28,13 @@ from app.common.config import cfg
 from app.components.DonateDialog import DonateDialog
 from app.components.LanguageSettingDialog import LanguageSettingDialog
 from app.config import APPDATA_PATH, ASSETS_PATH, VERSION
+from app.core.constant import (
+    INFOBAR_DURATION_ERROR,
+    INFOBAR_DURATION_WARNING,
+    INFOBAR_DURATION_INFO,
+    INFOBAR_DURATION_SUCCESS,
+)
 from app.core.entities import (
-    LLMServiceEnum,
     SupportedAudioFormats,
     SupportedVideoFormats,
     TranscribeModelEnum,
@@ -260,7 +265,7 @@ class TaskCreationInterface(QWidget):
                 InfoBar.success(
                     self.tr("导入成功"),
                     self.tr("导入媒体文件成功"),
-                    duration=1500,
+                    duration=INFOBAR_DURATION_SUCCESS,
                     parent=self,
                 )
                 break
@@ -268,7 +273,7 @@ class TaskCreationInterface(QWidget):
                 InfoBar.error(
                     self.tr("格式错误") + file_ext,
                     self.tr("不支持该文件格式"),
-                    duration=3000,
+                    duration=INFOBAR_DURATION_ERROR,
                     parent=self,
                 )
 
@@ -282,7 +287,7 @@ class TaskCreationInterface(QWidget):
             InfoBar.error(
                 self.tr("错误"),
                 self.tr("请输入有效的文件路径或视频URL"),
-                duration=3000,
+                duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )
 
@@ -303,7 +308,7 @@ class TaskCreationInterface(QWidget):
             InfoBar.warning(
                 self.tr("警告"),
                 self.tr("建议根据文档配置cookies.txt文件，以可以下载高清视频"),
-                duration=5000,
+                duration=INFOBAR_DURATION_WARNING,
                 parent=self,
             )
 
@@ -315,7 +320,10 @@ class TaskCreationInterface(QWidget):
         self.video_download_thread.start()
 
         InfoBar.info(
-            self.tr("开始下载"), self.tr("开始下载视频..."), duration=3000, parent=self
+            self.tr("开始下载"),
+            self.tr("开始下载视频..."),
+            duration=INFOBAR_DURATION_INFO,
+            parent=self,
         )
 
     def on_video_download_finished(self, video_file_path):
@@ -325,13 +333,16 @@ class TaskCreationInterface(QWidget):
             InfoBar.success(
                 self.tr("下载成功"),
                 self.tr("视频下载完成，开始自动处理..."),
-                duration=2000,
+                duration=INFOBAR_DURATION_SUCCESS,
                 position=InfoBarPosition.BOTTOM,
                 parent=self.parent(),
             )
         else:
             InfoBar.error(
-                self.tr("错误"), self.tr("视频下载失败"), duration=3000, parent=self
+                self.tr("错误"),
+                self.tr("视频下载失败"),
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
             )
 
     def on_create_task_progress(self, value, status):
@@ -341,7 +352,12 @@ class TaskCreationInterface(QWidget):
         self.status_label.setText(status)
 
     def on_create_task_error(self, error):
-        InfoBar.error(self.tr("错误"), self.tr(error), duration=5000, parent=self)
+        InfoBar.error(
+            self.tr("错误"),
+            self.tr(error),
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self,
+        )
 
     def set_task(self, task):
         self.task = task
@@ -371,7 +387,7 @@ class TaskCreationInterface(QWidget):
             InfoBar.error(
                 self.tr("错误"),
                 self.tr("请输入音视频文件路径或URL"),
-                duration=3000,
+                duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )
 
