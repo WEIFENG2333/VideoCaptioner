@@ -158,6 +158,13 @@ class SettingInterface(ScrollArea):
         )
 
         # 个性化配置卡片
+        self.cacheEnabledCard = SwitchSettingCard(
+            FIF.HISTORY,
+            self.tr("启用缓存"),
+            self.tr("相同配置下会复用之前的 ASR 和 LLM 结果；关闭缓存后每次重新生成"),
+            cfg.cache_enabled,
+            self.personalGroup,
+        )
         self.themeCard = OptionsSettingCard(
             cfg.themeMode,
             FIF.BRUSH,
@@ -230,6 +237,7 @@ class SettingInterface(ScrollArea):
         self.subtitleGroup.addSettingCard(self.softSubtitleCard)
 
         self.saveGroup.addSettingCard(self.savePathCard)
+        self.saveGroup.addSettingCard(self.cacheEnabledCard)
 
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.themeColorCard)
@@ -547,6 +555,7 @@ class SettingInterface(ScrollArea):
         )
 
         # 个性化
+        self.cacheEnabledCard.checkedChanged.connect(self.__onCacheEnabledChanged)
         self.themeCard.optionChanged.connect(lambda ci: setTheme(cfg.get(ci)))
         self.themeColorCard.colorChanged.connect(setThemeColor)
 
@@ -590,6 +599,27 @@ class SettingInterface(ScrollArea):
             return
         cfg.set(cfg.work_dir, folder)
         self.savePathCard.setContent(folder)
+
+    def __onCacheEnabledChanged(self, is_enabled: bool):
+        """处理缓存开关变化"""
+        from app.core.utils.cache import enable_cache, disable_cache
+
+        if is_enabled:
+            enable_cache()
+            InfoBar.success(
+                self.tr("缓存已启用"),
+                self.tr("ASR、翻译等操作将优先使用缓存"),
+                duration=2000,
+                parent=self,
+            )
+        else:
+            disable_cache()
+            InfoBar.warning(
+                self.tr("缓存已禁用"),
+                self.tr("所有操作将重新生成，不使用缓存（建议开启缓存）"),
+                duration=2000,
+                parent=self,
+            )
 
     def checkLLMConnection(self):
         """检查 LLM 连接"""

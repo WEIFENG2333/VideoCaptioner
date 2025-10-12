@@ -255,6 +255,9 @@ class Config(QConfig):
         "Update", "CheckUpdateAtStartUp", True, BoolValidator()
     )
 
+    # ------------------- 缓存配置 -------------------
+    cache_enabled = ConfigItem("Cache", "CacheEnabled", True, BoolValidator())
+
 
 cfg = Config()
 cfg.themeMode.value = Theme.DARK

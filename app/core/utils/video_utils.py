@@ -95,8 +95,6 @@ def video2audio(input_file: str, output: str = "") -> bool:
             "amerge,pan=mono|c0=FC",  # 混合所有音轨并转为单声道
             "-ar",
             "16000",
-            "-c:a",
-            "flac",
             "-y",
             output,
         ]
@@ -111,8 +109,6 @@ def video2audio(input_file: str, output: str = "") -> bool:
             "1",  # 单声道
             "-ar",
             "16000",  # 采样率16kHz
-            "-c:a",
-            "flac",
             "-y",
             output,
         ]
