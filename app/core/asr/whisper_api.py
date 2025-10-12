@@ -51,9 +51,6 @@ class WhisperAPI(BaseASR):
         self.prompt = prompt
         self.need_word_time_stamp = need_word_time_stamp
 
-        logger.info(
-            f"WhisperAPI initialized: model={whisper_model}, language={language}"
-        )
         self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
 
     def _run(
@@ -101,10 +98,10 @@ class WhisperAPI(BaseASR):
                 response_format="verbose_json",
                 file=("audio.mp3", self.file_binary or b"", "audio/mp3"),
                 prompt=self.prompt,
-                language=self.language if self.language else None,
+                language=self.language,
                 timestamp_granularities=["word", "segment"],
             )
             return completion.to_dict()
         except Exception as e:
-            logger.exception(f"ASR failed: {str(e)}")
+            logger.exception(f"WhisperAPI failed: {str(e)}")
             raise e
