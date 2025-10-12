@@ -12,27 +12,83 @@ from ..utils.logger import setup_logger
 logger = setup_logger("video_utils")
 
 
+def get_audio_stream_count(video_path: str) -> int:
+    """获取视频文件的音频轨道数量
+
+    Args:
+        video_path: 视频文件路径
+
+    Returns:
+        音频轨道数量，如果检测失败返回 1（默认假设单音轨）
+    """
+    try:
+        cmd = ["ffmpeg", "-i", video_path]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            creationflags=(
+                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+            ),
+        )
+        # ffmpeg 的流信息在 stderr 中
+        # 搜索 "Stream #0:X(XXX): Audio" 这样的行
+        audio_count = len(re.findall(r"Stream #\d+:\d+.*?: Audio", result.stderr))
+        logger.info(f"检测到 {audio_count} 个音频轨道")
+        return audio_count if audio_count > 0 else 1
+    except Exception as e:
+        logger.warning(f"检测音频轨道数量失败: {e}，默认假设为单音轨")
+        return 1
+
+
 def video2audio(input_file: str, output: str = "") -> bool:
-    """使用ffmpeg将视频转换为音频"""
+    """使用 ffmpeg 将视频转换为音频
+
+    支持单音轨和多音轨视频，根据音轨数量自动选择合适的转换方式
+    """
     # 创建output目录
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output = str(output_path)
-    cmd = [
-        "ffmpeg",
-        "-i",
-        input_file,
-        "-map",
-        "0:a",
-        "-ac",
-        "1",
-        "-ar",
-        "16000",
-        "-af",
-        "aresample=async=1",  # 处理音频同步问题
-        "-y",
-        output,
-    ]
+
+    # 检测音轨数量
+    audio_count = get_audio_stream_count(input_file)
+
+    # 根据音轨数量选择转换策略
+    if audio_count > 1:
+        logger.info(f"检测到 {audio_count} 个音轨，使用 amerge 滤镜混合")
+        cmd = [
+            "ffmpeg",
+            "-i",
+            input_file,
+            "-filter_complex",
+            "amerge,pan=mono|c0=FC",  # 混合所有音轨并转为单声道
+            "-ar",
+            "16000",
+            "-c:a",
+            "flac",
+            "-y",
+            output,
+        ]
+    else:
+        logger.info("检测到单音轨，使用简单转换")
+        cmd = [
+            "ffmpeg",
+            "-i",
+            input_file,
+            "-vn",
+            "-ac",
+            "1",  # 单声道
+            "-ar",
+            "16000",  # 采样率16kHz
+            "-c:a",
+            "flac",
+            "-y",
+            output,
+        ]
+
     logger.info(f"转换为音频执行命令: {' '.join(cmd)}")
 
     try:
@@ -47,6 +103,7 @@ def video2audio(input_file: str, output: str = "") -> bool:
             ),
         )
         if result.returncode == 0 and Path(output).is_file():
+            logger.info("音频转换成功")
             return True
         else:
             logger.error("音频转换失败")

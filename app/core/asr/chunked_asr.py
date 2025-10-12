@@ -17,7 +17,7 @@ logger = setup_logger("chunked_asr")
 
 # 常量定义
 MS_PER_SECOND = 1000
-DEFAULT_CHUNK_LENGTH_SEC = 60 * 2  # 10分钟
+DEFAULT_CHUNK_LENGTH_SEC = 60 * 10  # 20分钟
 DEFAULT_CHUNK_OVERLAP_SEC = 10  # 10秒重叠
 DEFAULT_CHUNK_CONCURRENCY = 3  # 3个并发
 
