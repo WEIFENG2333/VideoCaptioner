@@ -9,9 +9,9 @@ class TTSConfig:
     """TTS 配置"""
 
     # 基础配置
-    model: str = "FunAudioLLM/CosyVoice2-0.5B"
-    api_key: str = ""
-    base_url: str = "https://api.siliconflow.cn/v1"
+    model: str
+    api_key: str
+    base_url: str
 
     # 音频参数
     voice: Optional[str] = None  # 默认音色选择
@@ -44,20 +44,6 @@ class TTSDataSeg:
     clone_audio_text: Optional[str] = None  # 参考音频对应的文本
     clone_voice_uri: Optional[str] = None  # 上传后获得的 URI
 
-    def to_dict(self) -> dict:
-        """转换为字典"""
-        return {
-            "text": self.text,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
-            "audio_path": self.audio_path,
-            "audio_duration": self.audio_duration,
-            "voice": self.voice,
-            "clone_audio_path": self.clone_audio_path,
-            "clone_audio_text": self.clone_audio_text,
-            "clone_voice_uri": self.clone_voice_uri,
-        }
-
     def __str__(self) -> str:
         return f"TTSDataSeg(text={self.text[:20]}..., audio_path={self.audio_path})"
 
@@ -85,14 +71,6 @@ class TTSData:
     def __len__(self) -> int:
         """返回段落数量"""
         return len(self.segments)
-
-    def has_data(self) -> bool:
-        """检查是否有数据"""
-        return len(self.segments) > 0
-
-    def to_dict(self) -> dict:
-        """转换为字典"""
-        return {"segments": [seg.to_dict() for seg in self.segments]}
 
     @classmethod
     def from_texts(
