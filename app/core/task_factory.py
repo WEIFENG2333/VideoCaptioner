@@ -41,9 +41,6 @@ class TaskFactory:
         file_path: str, need_next_task: bool = False
     ) -> TranscribeTask:
         """创建转录任务"""
-
-        # 根据是否需要分段来决定是否需要词级时间戳
-
         # 获取文件名
         file_name = Path(file_path).stem
 
