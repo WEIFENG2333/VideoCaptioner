@@ -245,7 +245,6 @@ def add_subtitles(
             )
         else:
             # 使用硬字幕
-            logger.info("使用硬字幕")
             subtitle_path_escaped = (
                 Path(processed_subtitle).as_posix().replace(":", r"\:")
             )

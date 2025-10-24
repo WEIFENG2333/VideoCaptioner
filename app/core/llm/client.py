@@ -135,9 +135,9 @@ def call_llm(
     """
     client = get_llm_client()
 
-    response = client.chat.completions.create(  # pyright: ignore[reportCallIssue]
+    response = client.chat.completions.create(
         model=model,
-        messages=messages,
+        messages=messages,  # pyright: ignore[reportArgumentType]
         temperature=temperature,
         **kwargs,
     )
