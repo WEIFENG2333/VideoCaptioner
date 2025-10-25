@@ -37,7 +37,7 @@ def is_cache_enabled() -> bool:
 
 # Predefined cache instances for common use cases
 _llm_cache = Cache(str(CACHE_PATH / "llm_translation"))
-_asr_cache = Cache(str(CACHE_PATH / "asr_results"))
+_asr_cache = Cache(str(CACHE_PATH / "asr_results"), tag_index=True)
 _tts_cache = Cache(str(CACHE_PATH / "tts_audio"))
 _translate_cache = Cache(str(CACHE_PATH / "translate_results"))
 

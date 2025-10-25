@@ -147,6 +147,8 @@ class BcutASR(BaseASR):
     ) -> dict:
         """Execute ASR workflow: upload -> create task -> poll result."""
 
+        self._check_rate_limit()
+
         def _default_callback(x, y):
             pass
 
