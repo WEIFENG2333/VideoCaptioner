@@ -1,0 +1,3 @@
+# Configuration
+
+English documentation coming soon...

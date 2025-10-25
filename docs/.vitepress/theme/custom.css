@@ -1,0 +1,412 @@
+/**
+ * VideoCaptioner Custom Theme
+ * Inspired by Anthropic's modern, elegant design
+ */
+
+/* ===== Color Variables ===== */
+:root {
+  /* Primary Brand Colors - Purple Gradient */
+  --vc-c-brand-1: #667eea;
+  --vc-c-brand-2: #764ba2;
+  --vc-c-brand-3: #5a67d8;
+
+  /* Accent Colors */
+  --vc-c-accent: #d97757;
+  --vc-c-success: #43e97b;
+  --vc-c-info: #4facfe;
+
+  /* Light Theme */
+  --vp-c-brand-1: var(--vc-c-brand-1);
+  --vp-c-brand-2: var(--vc-c-brand-2);
+  --vp-c-brand-3: var(--vc-c-brand-3);
+
+  /* Refined spacing */
+  --vc-spacing-xs: 0.5rem;
+  --vc-spacing-sm: 1rem;
+  --vc-spacing-md: 2rem;
+  --vc-spacing-lg: 4rem;
+  --vc-spacing-xl: 6rem;
+
+  /* Smooth transitions */
+  --vc-transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  --vc-transition-base: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --vc-transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shadows */
+  --vc-shadow-sm: 0 2px 8px rgba(102, 126, 234, 0.08);
+  --vc-shadow-md: 0 8px 24px rgba(102, 126, 234, 0.12);
+  --vc-shadow-lg: 0 16px 48px rgba(102, 126, 234, 0.16);
+  --vc-shadow-xl: 0 24px 64px rgba(102, 126, 234, 0.2);
+}
+
+.dark {
+  --vc-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --vc-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --vc-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --vc-shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== Hero Section - Anthropic Style ===== */
+.VPHero {
+  padding-top: var(--vc-spacing-xl) !important;
+  padding-bottom: var(--vc-spacing-xl) !important;
+}
+
+.VPHero .container {
+  max-width: 1280px;
+}
+
+.VPHero .name {
+  font-size: clamp(2.5rem, 5vw, 4rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.1 !important;
+  background: linear-gradient(
+    135deg,
+    var(--vc-c-brand-1) 0%,
+    var(--vc-c-brand-2) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInUp 0.8s var(--vc-transition-base) backwards;
+}
+
+.VPHero .text {
+  font-size: clamp(1.5rem, 3vw, 2.5rem) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.3 !important;
+  margin-top: var(--vc-spacing-sm) !important;
+  animation: fadeInUp 0.8s 0.1s var(--vc-transition-base) backwards;
+}
+
+.VPHero .tagline {
+  font-size: clamp(1rem, 2vw, 1.25rem) !important;
+  line-height: 1.6 !important;
+  margin-top: var(--vc-spacing-md) !important;
+  opacity: 0.8;
+  max-width: 800px;
+  animation: fadeInUp 0.8s 0.2s var(--vc-transition-base) backwards;
+}
+
+.VPHero .actions {
+  margin-top: var(--vc-spacing-md) !important;
+  animation: fadeInUp 0.8s 0.3s var(--vc-transition-base) backwards;
+}
+
+/* Hero Image Animation */
+.VPHero .VPImage {
+  animation:
+    float 6s ease-in-out infinite,
+    fadeIn 1s var(--vc-transition-base);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===== Buttons - Modern Style ===== */
+.VPButton {
+  font-weight: 600 !important;
+  padding: 0.875rem 2rem !important;
+  font-size: 1.0625rem !important;
+  border-radius: 12px !important;
+  transition: all var(--vc-transition-base) !important;
+  border: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.VPButton.brand {
+  background: linear-gradient(
+    135deg,
+    var(--vc-c-brand-1) 0%,
+    var(--vc-c-brand-2) 100%
+  ) !important;
+  box-shadow: var(--vc-shadow-sm);
+}
+
+.VPButton.brand:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--vc-shadow-md);
+}
+
+.VPButton.brand:active {
+  transform: translateY(0);
+}
+
+.VPButton.alt {
+  background: transparent !important;
+  border: 2px solid var(--vc-c-brand-1) !important;
+  color: var(--vc-c-brand-1) !important;
+}
+
+.VPButton.alt:hover {
+  background: rgba(102, 126, 234, 0.08) !important;
+  transform: translateY(-2px);
+}
+
+/* ===== Features - Card Grid ===== */
+.VPFeatures {
+  padding: var(--vc-spacing-xl) 0 !important;
+}
+
+.VPFeature {
+  border-radius: 16px !important;
+  border: 1px solid transparent !important;
+  padding: var(--vc-spacing-md) !important;
+  transition: all var(--vc-transition-base) !important;
+  background: var(--vp-c-bg-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.VPFeature::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--vc-c-brand-1), var(--vc-c-brand-2));
+  opacity: 0;
+  transition: opacity var(--vc-transition-base);
+}
+
+.VPFeature:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--vc-shadow-lg);
+  border-color: rgba(102, 126, 234, 0.2) !important;
+}
+
+.VPFeature:hover::before {
+  opacity: 1;
+}
+
+.VPFeature .icon {
+  font-size: 2.5rem !important;
+  line-height: 1 !important;
+  margin-bottom: var(--vc-spacing-sm) !important;
+  display: inline-block;
+  transition: transform var(--vc-transition-base);
+}
+
+.VPFeature:hover .icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.VPFeature .title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  margin-bottom: var(--vc-spacing-xs) !important;
+}
+
+.VPFeature .details {
+  font-size: 0.9375rem !important;
+  line-height: 1.7 !important;
+  opacity: 0.85;
+}
+
+/* ===== Content Area ===== */
+.vp-doc {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  position: relative;
+}
+
+.vp-doc h2 {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  margin-top: var(--vc-spacing-lg);
+  padding-top: var(--vc-spacing-md);
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc h3 {
+  font-size: clamp(1.375rem, 2.5vw, 1.75rem);
+  margin-top: var(--vc-spacing-md);
+}
+
+/* ===== Links ===== */
+.vp-doc a {
+  color: var(--vc-c-brand-1);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all var(--vc-transition-fast);
+  font-weight: 500;
+}
+
+.vp-doc a:hover {
+  border-bottom-color: var(--vc-c-brand-1);
+  opacity: 0.85;
+}
+
+/* ===== Tables - Elegant Style ===== */
+.vp-doc table {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--vc-shadow-sm);
+  border: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc thead {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.08),
+    rgba(118, 75, 162, 0.08)
+  );
+}
+
+.vp-doc th {
+  font-weight: 700;
+  text-align: left;
+  padding: 1rem 1.5rem !important;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+}
+
+.vp-doc td {
+  padding: 1rem 1.5rem !important;
+}
+
+.vp-doc tbody tr {
+  transition: background-color var(--vc-transition-fast);
+}
+
+.vp-doc tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.03);
+}
+
+/* ===== Code Blocks ===== */
+.vp-doc div[class*="language-"] {
+  border-radius: 12px;
+  box-shadow: var(--vc-shadow-sm);
+  margin: var(--vc-spacing-md) 0;
+  overflow: hidden;
+}
+
+.vp-doc div[class*="language-"]:hover {
+  box-shadow: var(--vc-shadow-md);
+}
+
+/* ===== Images ===== */
+.vp-doc img {
+  border-radius: 12px;
+  transition: all var(--vc-transition-base);
+}
+
+.vp-doc img:hover {
+  transform: scale(1.01);
+  box-shadow: var(--vc-shadow-lg) !important;
+}
+
+/* ===== Mermaid Diagrams ===== */
+.vp-doc .mermaid {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.03),
+    rgba(118, 75, 162, 0.03)
+  );
+  border-radius: 16px;
+  padding: var(--vc-spacing-md);
+  margin: var(--vc-spacing-md) 0;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--vp-c-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--vc-c-brand-1), var(--vc-c-brand-2));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* ===== Responsive Optimizations ===== */
+@media (max-width: 768px) {
+  .VPHero {
+    padding-top: var(--vc-spacing-lg) !important;
+    padding-bottom: var(--vc-spacing-lg) !important;
+  }
+
+  .VPFeature {
+    padding: var(--vc-spacing-sm) !important;
+  }
+
+  .vp-doc h2 {
+    margin-top: var(--vc-spacing-md);
+    padding-top: var(--vc-spacing-sm);
+  }
+}
+
+/* ===== Accessibility ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .VPHero .VPImage {
+    animation: none !important;
+  }
+}
+
+/* ===== Focus States ===== */
+.VPButton:focus-visible {
+  outline: 3px solid var(--vc-c-brand-1);
+  outline-offset: 3px;
+}
+
+.vp-doc a:focus-visible {
+  outline: 2px solid var(--vc-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

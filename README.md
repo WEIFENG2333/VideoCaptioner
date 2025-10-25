@@ -1,20 +1,22 @@
 <div align="center">
-  <img src="./docs/images/logo.png"alt="VideoCaptioner Logo" width="100">
+  <img src="./legacy-docs/images/logo.png"alt="VideoCaptioner Logo" width="100">
   <p>卡卡字幕助手</p>
   <h1>VideoCaptioner</h1>
   <p>一款基于大语言模型(LLM)的视频字幕处理助手，支持语音识别、字幕断句、优化、翻译全流程处理</p>
 
-简体中文 / [正體中文](./docs/README_TW.md) / [English](./docs/README_EN.md) / [日本語](./docs/README_JA.md)
+简体中文 / [正體中文](./legacy-docs/README_TW.md) / [English](./legacy-docs/README_EN.md) / [日本語](./legacy-docs/README_JA.md)
+
+📚 **[在线文档](https://weifeng2333.github.io/VideoCaptioner/)** | 🚀 **[快速开始](https://weifeng2333.github.io/VideoCaptioner/guide/getting-started)** | ⚙️ **[配置指南](https://weifeng2333.github.io/VideoCaptioner/config/llm)**
 
 </div>
 
 ## 项目介绍
 
 新版本：
+
 - 优化 Whisper API 的处理
 - 支持分段进行并发转录， 以及算法自能合并转录块
 - 优化字幕翻译、优化、断句的处理方式， 利用 LLM 反馈循环 极大降低出错率
-
 
 卡卡字幕助手（VideoCaptioner）操作简单且无需高配置，支持网络调用和本地离线（支持调用GPU）两种方式进行语音识别，利用大语言模型进行字幕智能断句、校正、翻译，字幕视频全流程一键处理。为视频配上效果惊艳的字幕。
 
@@ -93,7 +95,7 @@ chmod +x run.sh
 
 <details>
 <summary>手动安装步骤</summary>
- 
+
 
 1. 安装 ffmpeg 和 Aria2 下载工具
 
@@ -126,8 +128,6 @@ python main.py
 
 </details>
 
-
-
 ## 基本配置
 
 ### 1. LLM API 配置说明
@@ -138,7 +138,7 @@ LLM 大模型是用来字幕段句、字幕优化、以及字幕翻译（如果�
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | SiliconCloud   | [SiliconCloud 官网](https://cloud.siliconflow.cn/i/onCHcaDx)配置方法请参考[配置文档](./docs/llm_config.md)<br>该并发较低，建议把线程设置为5以下。 |
 | DeepSeek       | [DeepSeek 官网](https://platform.deepseek.com)，建议使用 `deepseek-v3` 模型，<br>官方网站最近服务好像并不太稳定。                                 |
-| OpenAI兼容接口 | 如果有其他服务商的API，可直接在软件中填写。base_url 和api_key [VideoCaptioner API](https://api.videocaptioner.cn) 
+| OpenAI兼容接口 | 如果有其他服务商的API，可直接在软件中填写。base_url 和api_key [VideoCaptioner API](https://api.videocaptioner.cn)                                 |
 
 注：如果用的 API 服务商不支持高并发，请在软件设置中将“线程数”调低，避免请求错误。
 
