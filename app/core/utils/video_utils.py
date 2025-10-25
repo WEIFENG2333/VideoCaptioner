@@ -86,7 +86,7 @@ def video2audio(input_file: str, output: str = "") -> bool:
 
     # 根据音轨数量选择转换策略
     if audio_count > 1:
-        logger.info(f"检测到 {audio_count} 个音轨，使用 amerge 滤镜混合")
+        logger.info(f"检测到 {audio_count} 个音轨，使用 amerge 滤镜混合多音轨音频")
         cmd = [
             "ffmpeg",
             "-i",
@@ -99,7 +99,6 @@ def video2audio(input_file: str, output: str = "") -> bool:
             output,
         ]
     else:
-        logger.info("检测到单音轨，使用简单转换")
         cmd = [
             "ffmpeg",
             "-i",

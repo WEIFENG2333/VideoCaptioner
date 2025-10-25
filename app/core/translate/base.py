@@ -121,7 +121,7 @@ class BaseTranslator(ABC):
             if self.update_callback:
                 self.update_callback(result)
 
-            self._cache.set(cache_key, result)
+            self._cache.set(cache_key, result, expire=86400 * 7)
             return result
 
         except Exception as e:

@@ -90,7 +90,7 @@ class VoiceCloneManager:
         logger.info(f"获得声音克隆 URI: {voice_uri}")
 
         # 缓存 URI
-        self.cache.set(cache_key, voice_uri, expire=86400 * 10)
+        self.cache.set(cache_key, voice_uri, expire=86400 * 2)
 
         return voice_uri
 
