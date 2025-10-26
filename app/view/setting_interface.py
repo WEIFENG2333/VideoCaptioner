@@ -150,7 +150,7 @@ class SettingInterface(ScrollArea):
             cfg.video_quality,
             FIF.SPEED_HIGH,
             self.tr("视频合成质量"),
-            self.tr("硬字幕视频合成时的质量等级"),
+            self.tr("硬字幕视频合成时的质量等级（质量越高文件越大，编码时间越长）"),
             texts=[quality.value for quality in cfg.video_quality.validator.options],  # type: ignore
             parent=self.subtitleGroup,
         )

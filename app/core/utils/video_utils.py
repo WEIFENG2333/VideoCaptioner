@@ -183,7 +183,8 @@ def add_subtitles(
     input_file: str,
     subtitle_file: str,
     output: str,
-    quality: Literal[
+    crf: int = 23,
+    preset: Literal[
         "ultrafast",
         "superfast",
         "veryfast",
@@ -272,8 +273,10 @@ def add_subtitles(
                     "copy",
                     "-vcodec",
                     vcodec,
+                    "-crf",
+                    str(crf),
                     "-preset",
-                    quality,
+                    preset,
                     "-vf",
                     vf,
                     "-y",

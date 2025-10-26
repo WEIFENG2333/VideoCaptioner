@@ -1,7 +1,7 @@
 import datetime
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 if TYPE_CHECKING:
     from app.core.translate.types import TargetLanguage
@@ -153,11 +153,46 @@ class VideoQualityEnum(Enum):
     MEDIUM = "中等质量"
     LOW = "低质量"
 
-    def get_ffmpeg_preset(self) -> str:
-        """获取对应的 FFmpeg preset 值"""
-        preset_map = {
-            VideoQualityEnum.ULTRA_HIGH: "veryslow",
-            VideoQualityEnum.HIGH: "slow",
+    def get_crf(self) -> int:
+        """获取对应的 CRF 值（越小质量越高，文件越大）"""
+        crf_map = {
+            VideoQualityEnum.ULTRA_HIGH: 18,
+            VideoQualityEnum.HIGH: 23,
+            VideoQualityEnum.MEDIUM: 28,
+            VideoQualityEnum.LOW: 32,
+        }
+        return crf_map[self]
+
+    def get_preset(
+        self,
+    ) -> Literal[
+        "ultrafast",
+        "superfast",
+        "veryfast",
+        "faster",
+        "fast",
+        "medium",
+        "slow",
+        "slower",
+        "veryslow",
+    ]:
+        """获取对应的 FFmpeg preset 值（影响编码速度）"""
+        preset_map: dict[
+            VideoQualityEnum,
+            Literal[
+                "ultrafast",
+                "superfast",
+                "veryfast",
+                "faster",
+                "fast",
+                "medium",
+                "slow",
+                "slower",
+                "veryslow",
+            ],
+        ] = {
+            VideoQualityEnum.ULTRA_HIGH: "slow",
+            VideoQualityEnum.HIGH: "medium",
             VideoQualityEnum.MEDIUM: "medium",
             VideoQualityEnum.LOW: "fast",
         }
