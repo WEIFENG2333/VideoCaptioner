@@ -16,6 +16,8 @@ class SignalBus(QObject):
     soft_subtitle_changed = pyqtSignal(bool)
     # 视频合成信号
     need_video_changed = pyqtSignal(bool)
+    # 视频质量信号
+    video_quality_changed = pyqtSignal(str)
 
     # 新增视频控制相关信号
     video_play = pyqtSignal()  # 播放信号

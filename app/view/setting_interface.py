@@ -146,6 +146,14 @@ class SettingInterface(ScrollArea):
             cfg.soft_subtitle,
             self.subtitleGroup,
         )
+        self.videoQualityCard = ComboBoxSettingCard(
+            cfg.video_quality,
+            FIF.SPEED_HIGH,
+            self.tr("视频合成质量"),
+            self.tr("硬字幕视频合成时的质量等级"),
+            texts=[quality.value for quality in cfg.video_quality.validator.options],  # type: ignore
+            parent=self.subtitleGroup,
+        )
 
         # 保存配置卡片
         self.savePathCard = PushSettingCard(
@@ -234,6 +242,7 @@ class SettingInterface(ScrollArea):
         self.subtitleGroup.addSettingCard(self.subtitleLayoutCard)
         self.subtitleGroup.addSettingCard(self.needVideoCard)
         self.subtitleGroup.addSettingCard(self.softSubtitleCard)
+        self.subtitleGroup.addSettingCard(self.videoQualityCard)
 
         self.saveGroup.addSettingCard(self.savePathCard)
         self.saveGroup.addSettingCard(self.cacheEnabledCard)
@@ -677,6 +686,9 @@ class SettingInterface(ScrollArea):
         )
         self.softSubtitleCard.checkedChanged.connect(signalBus.soft_subtitle_changed)
         self.needVideoCard.checkedChanged.connect(signalBus.need_video_changed)
+        self.videoQualityCard.comboBox.currentTextChanged.connect(
+            signalBus.video_quality_changed
+        )
 
     def __showRestartTooltip(self):
         """显示重启提示"""

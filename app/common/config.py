@@ -28,6 +28,7 @@ from ..core.entities import (
     TranscribeLanguageEnum,
     TranscribeModelEnum,
     TranslatorServiceEnum,
+    VideoQualityEnum,
     VadMethodEnum,
     WhisperModelEnum,
 )
@@ -236,6 +237,13 @@ class Config(QConfig):
     # ------------------- 字幕合成配置 -------------------
     soft_subtitle = ConfigItem("Video", "SoftSubtitle", False, BoolValidator())
     need_video = ConfigItem("Video", "NeedVideo", True, BoolValidator())
+    video_quality = OptionsConfigItem(
+        "Video",
+        "VideoQuality",
+        VideoQualityEnum.MEDIUM,
+        OptionsValidator(VideoQualityEnum),
+        EnumSerializer(VideoQualityEnum),
+    )
 
     # ------------------- 字幕样式配置 -------------------
     subtitle_style_name = ConfigItem("SubtitleStyle", "StyleName", "default")

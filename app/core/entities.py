@@ -145,6 +145,25 @@ class SubtitleLayoutEnum(Enum):
     ONLY_TRANSLATE = "仅译文"
 
 
+class VideoQualityEnum(Enum):
+    """视频合成质量"""
+
+    ULTRA_HIGH = "极高质量"
+    HIGH = "高质量"
+    MEDIUM = "中等质量"
+    LOW = "低质量"
+
+    def get_ffmpeg_preset(self) -> str:
+        """获取对应的 FFmpeg preset 值"""
+        preset_map = {
+            VideoQualityEnum.ULTRA_HIGH: "veryslow",
+            VideoQualityEnum.HIGH: "slow",
+            VideoQualityEnum.MEDIUM: "medium",
+            VideoQualityEnum.LOW: "fast",
+        }
+        return preset_map[self]
+
+
 class TranscribeLanguageEnum(Enum):
     """转录语言"""
 
@@ -463,6 +482,7 @@ class SynthesisConfig:
 
     need_video: bool = True
     soft_subtitle: bool = True
+    video_quality: VideoQualityEnum = VideoQualityEnum.MEDIUM
 
 
 @dataclass
