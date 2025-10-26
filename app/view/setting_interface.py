@@ -81,15 +81,9 @@ class SettingInterface(ScrollArea):
 
     def __initCards(self):
         """初始化所有配置卡片"""
-        # 转录配置卡片
-        self.transcribeModelCard = ComboBoxSettingCard(
-            cfg.transcribe_model,
-            FIF.MICROPHONE,
-            self.tr("转录模型"),
-            self.tr("语音转换文字要使用的语音识别模型"),
-            texts=[model.value for model in cfg.transcribe_model.validator.options],  # type: ignore
-            parent=self.transcribeGroup,
-        )
+
+        # ASR 服务配置卡片
+        self.__createASRServiceCards()
 
         # LLM配置卡片
         self.__createLLMServiceCards()
@@ -101,7 +95,7 @@ class SettingInterface(ScrollArea):
         self.subtitleCorrectCard = SwitchSettingCard(
             FIF.EDIT,
             self.tr("字幕校正"),
-            self.tr("字幕处理过程是否对生成的字幕进行校正"),
+            self.tr("字幕处理过程是否对生成的字幕错别字、名词等进行校正"),
             cfg.need_optimize,
             self.translateGroup,
         )
@@ -260,10 +254,11 @@ class SettingInterface(ScrollArea):
             cfg.llm_service,
             FIF.ROBOT,
             self.tr("LLM服务"),
-            self.tr("选择大服务，用于字幕断句、字幕优化、字幕翻译（如果选择"),
+            self.tr("选择大模型服务，用于字幕断句、字幕优化、字幕翻译"),
             texts=[service.value for service in cfg.llm_service.validator.options],  # type: ignore
             parent=self.llmGroup,
         )
+        self.llmServiceCard.comboBox.setMinimumWidth(150)
 
         # 创建OPENAI官方API链接卡片
         self.openaiOfficialApiCard = HyperlinkCard(
@@ -286,9 +281,11 @@ class SettingInterface(ScrollArea):
                 "model_cfg": cfg.openai_model,
                 "default_base": "https://api.openai.com/v1",
                 "default_models": [
-                    "gpt-4o-mini",
-                    "gpt-4o",
-                    "claude-3-5-sonnet-20241022",
+                    "gemini-2.5-pro",
+                    "gpt-5",
+                    "claude-sonnet-4-5-20250929",
+                    "gemini-2.5-flash",
+                    "claude-haiku-4-5-20251001",
                 ],
             },
             LLMServiceEnum.SILICON_CLOUD: {
@@ -297,7 +294,10 @@ class SettingInterface(ScrollArea):
                 "api_base_cfg": cfg.silicon_cloud_api_base,
                 "model_cfg": cfg.silicon_cloud_model,
                 "default_base": "https://api.siliconflow.cn/v1",
-                "default_models": ["deepseek-ai/DeepSeek-V3"],
+                "default_models": [
+                    "moonshotai/Kimi-K2-Instruct-0905",
+                    "deepseek-ai/DeepSeek-V3",
+                ],
             },
             LLMServiceEnum.DEEPSEEK: {
                 "prefix": "deepseek",
@@ -305,7 +305,7 @@ class SettingInterface(ScrollArea):
                 "api_base_cfg": cfg.deepseek_api_base,
                 "model_cfg": cfg.deepseek_model,
                 "default_base": "https://api.deepseek.com/v1",
-                "default_models": ["deepseek-chat"],
+                "default_models": ["deepseek-chat", "deepseek-reasoner"],
             },
             LLMServiceEnum.OLLAMA: {
                 "prefix": "ollama",
@@ -313,7 +313,7 @@ class SettingInterface(ScrollArea):
                 "api_base_cfg": cfg.ollama_api_base,
                 "model_cfg": cfg.ollama_model,
                 "default_base": "http://localhost:11434/v1",
-                "default_models": ["qwen2.5:7b"],
+                "default_models": ["qwen3:8b"],
             },
             LLMServiceEnum.LM_STUDIO: {
                 "prefix": "LM Studio",
@@ -321,7 +321,7 @@ class SettingInterface(ScrollArea):
                 "api_base_cfg": cfg.lm_studio_api_base,
                 "model_cfg": cfg.lm_studio_model,
                 "default_base": "http://localhost:1234/v1",
-                "default_models": ["qwen2.5:7b"],
+                "default_models": ["qwen3:8b"],
             },
             LLMServiceEnum.GEMINI: {
                 "prefix": "gemini",
@@ -329,7 +329,11 @@ class SettingInterface(ScrollArea):
                 "api_base_cfg": cfg.gemini_api_base,
                 "model_cfg": cfg.gemini_model,
                 "default_base": "https://generativelanguage.googleapis.com/v1beta/openai/",
-                "default_models": ["gemini-2.0-flash-exp"],
+                "default_models": [
+                    "gemini-2.5-pro",
+                    "gemini-2.5-flash",
+                    "gemini-2.0-flash-lite",
+                ],
             },
             LLMServiceEnum.CHATGLM: {
                 "prefix": "chatglm",
@@ -337,7 +341,7 @@ class SettingInterface(ScrollArea):
                 "api_base_cfg": cfg.chatglm_api_base,
                 "model_cfg": cfg.chatglm_model,
                 "default_base": "https://open.bigmodel.cn/api/paas/v4",
-                "default_models": ["glm-4-flash"],
+                "default_models": ["glm-4-plus", "glm-4-air-250414", "glm-4-flash"],
             },
         }
 
@@ -364,11 +368,19 @@ class SettingInterface(ScrollArea):
                 config["api_base_cfg"],
                 FIF.LINK,
                 self.tr("Base URL"),
-                self.tr(f"输入 {service.value} Base URL, 需要包含 /v1"),
+                self.tr(f"输入 {service.value} Base URL"),
                 config["default_base"],
                 self.llmGroup,
             )
             setattr(self, f"{prefix}_api_base_card", api_base_card)
+
+            # 设置只读状态：只有 OpenAI、Ollama、LM Studio 可以编辑 Base URL
+            if service not in [
+                LLMServiceEnum.OPENAI,
+                LLMServiceEnum.OLLAMA,
+                LLMServiceEnum.LM_STUDIO,
+            ]:
+                api_base_card.lineEdit.setReadOnly(True)
 
             # 创建模型选择卡片
             model_card = EditComboBoxSettingCard(
@@ -403,6 +415,67 @@ class SettingInterface(ScrollArea):
         # 初始化显示状态
         self.__onLLMServiceChanged(self.llmServiceCard.comboBox.currentText())
 
+    def __createASRServiceCards(self):
+        """创建 Whisper API 配置卡片"""
+        # 转录配置卡片
+        self.transcribeModelCard = ComboBoxSettingCard(
+            cfg.transcribe_model,
+            FIF.MICROPHONE,
+            self.tr("转录模型"),
+            self.tr("语音转换文字要使用的语音识别服务"),
+            texts=[model.value for model in cfg.transcribe_model.validator.options],  # type: ignore
+            parent=self.transcribeGroup,
+        )
+        self.transcribeModelCard.comboBox.setMinimumWidth(150)
+
+        # API Base URL
+        self.whisperApiBaseCard = LineEditSettingCard(
+            cfg.whisper_api_base,
+            FIF.LINK,
+            self.tr("Whisper API Base URL"),
+            self.tr("输入 Whisper API Base URL"),
+            "https://api.openai.com/v1",
+            self.transcribeGroup,
+        )
+
+        # API Key
+        self.whisperApiKeyCard = LineEditSettingCard(
+            cfg.whisper_api_key,
+            FIF.FINGERPRINT,
+            self.tr("Whisper API Key"),
+            self.tr("输入 Whisper API Key"),
+            "sk-",
+            self.transcribeGroup,
+        )
+
+        # 模型选择
+        self.whisperApiModelCard = EditComboBoxSettingCard(
+            cfg.whisper_api_model,
+            FIF.ROBOT,  # type: ignore
+            self.tr("Whisper 模型"),
+            self.tr("选择 Whisper 模型"),
+            [
+                "whisper-1",
+                "whisper-large-v3-turbo",
+            ],
+            self.transcribeGroup,
+        )
+
+        # 测试连接按钮
+        self.checkWhisperConnectionCard = PushSettingCard(
+            self.tr("测试 Whisper 连接"),
+            FIF.CONNECT,
+            self.tr("测试 Whisper API 连接"),
+            self.tr("点击测试 API 连接是否正常"),
+            self.transcribeGroup,
+        )
+
+        # 默认隐藏 Whisper API 配置卡片（仅在选择 Whisper API 时显示）
+        self.whisperApiBaseCard.setVisible(False)
+        self.whisperApiKeyCard.setVisible(False)
+        self.whisperApiModelCard.setVisible(False)
+        self.checkWhisperConnectionCard.setVisible(False)
+
     def __createTranslateServiceCards(self):
         """创建翻译服务相关的配置卡片"""
         # 翻译服务选择卡片
@@ -417,6 +490,7 @@ class SettingInterface(ScrollArea):
             ],
             parent=self.translate_serviceGroup,
         )
+        self.translatorServiceCard.comboBox.setMinimumWidth(150)
 
         # 反思翻译开关
         self.needReflectTranslateCard = SwitchSettingCard(
@@ -481,6 +555,9 @@ class SettingInterface(ScrollArea):
         self.scrollWidget.setObjectName("scrollWidget")
         self.settingLabel.setObjectName("settingLabel")
 
+        # 初始化转录模型配置卡片的显示状态
+        self.__onTranscribeModelChanged(self.transcribeModelCard.comboBox.currentText())
+
         # 初始化翻译服务配置卡片的显示状态
         self.__onTranslatorServiceChanged(
             self.translatorServiceCard.comboBox.currentText()
@@ -509,6 +586,11 @@ class SettingInterface(ScrollArea):
 
         # 添加转录配置卡片
         self.transcribeGroup.addSettingCard(self.transcribeModelCard)
+        # 添加 Whisper API 配置卡片
+        self.transcribeGroup.addSettingCard(self.whisperApiBaseCard)
+        self.transcribeGroup.addSettingCard(self.whisperApiKeyCard)
+        self.transcribeGroup.addSettingCard(self.whisperApiModelCard)
+        self.transcribeGroup.addSettingCard(self.checkWhisperConnectionCard)
 
         # 添加LLM配置卡片
         self.llmGroup.addSettingCard(self.llmServiceCard)
@@ -545,8 +627,16 @@ class SettingInterface(ScrollArea):
             self.__onTranslatorServiceChanged
         )
 
+        # 转录模型切换
+        self.transcribeModelCard.comboBox.currentTextChanged.connect(
+            self.__onTranscribeModelChanged
+        )
+
         # 检查 LLM 连接
         self.checkLLMConnectionCard.clicked.connect(self.checkLLMConnection)
+
+        # 检查 Whisper 连接
+        self.checkWhisperConnectionCard.clicked.connect(self.checkWhisperConnection)
 
         # 保存路径
         self.savePathCard.clicked.connect(self.__onsavePathCardClicked)
@@ -651,16 +741,6 @@ class SettingInterface(ScrollArea):
             if service_config["model"]
             else ""
         )
-
-        # 检查 API Base 是否属于网址
-        if not api_base.startswith("http"):
-            InfoBar.error(
-                self.tr("错误"),
-                self.tr("请输入正确的 API Base, 含有 /v1"),
-                duration=INFOBAR_DURATION_ERROR,
-                parent=self,
-            )
-            return
 
         # 禁用检查按钮，显示加载状态
         self.checkLLMConnectionCard.button.setEnabled(False)
@@ -784,6 +864,135 @@ class SettingInterface(ScrollArea):
         # 更新布局
         self.translate_serviceGroup.adjustSize()
         self.expandLayout.update()
+
+    def __onTranscribeModelChanged(self, model_name):
+        """处理转录模型切换事件"""
+        from app.core.entities import TranscribeModelEnum
+
+        # Whisper API 配置卡片
+        whisper_api_cards = [
+            self.whisperApiBaseCard,
+            self.whisperApiKeyCard,
+            self.whisperApiModelCard,
+            self.checkWhisperConnectionCard,
+        ]
+
+        # 根据选择的模型显示/隐藏 Whisper API 配置
+        is_whisper_api = model_name == TranscribeModelEnum.WHISPER_API.value
+        for card in whisper_api_cards:
+            card.setVisible(is_whisper_api)
+
+        # 更新布局
+        self.transcribeGroup.adjustSize()
+        self.expandLayout.update()
+
+    def checkWhisperConnection(self):
+        """检查 Whisper API 连接"""
+        # 获取配置
+        base_url = self.whisperApiBaseCard.lineEdit.text().strip()
+        api_key = self.whisperApiKeyCard.lineEdit.text().strip()
+        model = self.whisperApiModelCard.comboBox.currentText().strip()
+
+        # 验证必填字段
+        if not base_url:
+            InfoBar.warning(
+                self.tr("配置不完整"),
+                self.tr("请输入 Whisper API Base URL"),
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
+            )
+            return
+
+        if not api_key:
+            InfoBar.warning(
+                self.tr("配置不完整"),
+                self.tr("请输入 Whisper API Key"),
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
+            )
+            return
+
+        if not model:
+            InfoBar.warning(
+                self.tr("配置不完整"),
+                self.tr("请输入 Whisper 模型名称"),
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
+            )
+            return
+
+        # 禁用按钮，显示加载状态
+        self.checkWhisperConnectionCard.button.setEnabled(False)
+        self.checkWhisperConnectionCard.button.setText(self.tr("正在测试..."))
+
+        # 创建并启动测试线程
+        self.whisper_connection_thread = WhisperConnectionThread(
+            base_url, api_key, model
+        )
+        self.whisper_connection_thread.finished.connect(
+            self.onWhisperConnectionCheckFinished
+        )
+        self.whisper_connection_thread.error.connect(self.onWhisperConnectionCheckError)
+        self.whisper_connection_thread.start()
+
+    def onWhisperConnectionCheckFinished(self, success, result):
+        """处理 Whisper 连接检查完成事件"""
+        # 恢复按钮状态
+        self.checkWhisperConnectionCard.button.setEnabled(True)
+        self.checkWhisperConnectionCard.button.setText(self.tr("测试 Whisper 连接"))
+
+        if success:
+            InfoBar.success(
+                self.tr("连接成功"),
+                self.tr("Whisper API 连接成功！\n转录结果:") + result,
+                duration=INFOBAR_DURATION_SUCCESS,
+                parent=self,
+            )
+        else:
+            InfoBar.error(
+                self.tr("连接失败"),
+                self.tr(f"Whisper API 连接失败！\n{result}"),
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
+            )
+
+    def onWhisperConnectionCheckError(self, message):
+        """处理 Whisper 连接检查错误事件"""
+        # 恢复按钮状态
+        self.checkWhisperConnectionCard.button.setEnabled(True)
+        self.checkWhisperConnectionCard.button.setText(self.tr("测试 Whisper 连接"))
+
+        InfoBar.error(
+            self.tr("测试错误"),
+            message,
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self,
+        )
+
+
+class WhisperConnectionThread(QThread):
+    """Whisper API 连接测试线程"""
+
+    finished = pyqtSignal(bool, str)
+    error = pyqtSignal(str)
+
+    def __init__(self, base_url, api_key, model):
+        super().__init__()
+        self.base_url = base_url
+        self.api_key = api_key
+        self.model = model
+
+    def run(self):
+        """执行连接测试"""
+        try:
+            from app.core.llm import check_whisper_connection
+
+            success, result = check_whisper_connection(
+                self.base_url, self.api_key, self.model
+            )
+            self.finished.emit(success, result)
+        except Exception as e:
+            self.error.emit(str(e))
 
 
 class LLMConnectionThread(QThread):

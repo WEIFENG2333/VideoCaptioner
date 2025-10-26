@@ -19,6 +19,7 @@ from qfluentwidgets import (
 )
 
 from app.config import SETTINGS_PATH, WORK_PATH
+from app.core.utils.platform_utils import get_available_transcribe_models
 
 from ..core.entities import (
     FasterWhisperModelEnum,
@@ -50,6 +51,24 @@ class LanguageSerializer(ConfigSerializer):
 
     def deserialize(self, value: str):
         return Language(QLocale(value)) if value != "Auto" else Language.AUTO
+
+
+class PlatformAwareTranscribeModelValidator(OptionsValidator):
+    """平台相关的转录模型验证器，在 macOS 上自动过滤掉 FasterWhisper"""
+
+    def __init__(self):
+        # 不调用父类的 __init__，因为我们要自定义 options
+        self._options = get_available_transcribe_models()
+
+    @property
+    def options(self):
+        return self._options
+
+    def validate(self, value):
+        return value in self._options
+
+    def correct(self, value):
+        return value if self.validate(value) else self._options[0]
 
 
 class Config(QConfig):
@@ -116,15 +135,15 @@ class Config(QConfig):
         "Translate", "NeedReflectTranslate", False, BoolValidator()
     )
     deeplx_endpoint = ConfigItem("Translate", "DeeplxEndpoint", "")
-    batch_size = RangeConfigItem("Translate", "BatchSize", 10, RangeValidator(5, 30))
-    thread_num = RangeConfigItem("Translate", "ThreadNum", 10, RangeValidator(1, 100))
+    batch_size = RangeConfigItem("Translate", "BatchSize", 5, RangeValidator(5, 50))
+    thread_num = RangeConfigItem("Translate", "ThreadNum", 8, RangeValidator(1, 100))
 
     # ------------------- 转录配置 -------------------
     transcribe_model = OptionsConfigItem(
         "Transcribe",
         "TranscribeModel",
         TranscribeModelEnum.BIJIAN,
-        OptionsValidator(TranscribeModelEnum),
+        PlatformAwareTranscribeModelValidator(),
         EnumSerializer(TranscribeModelEnum),
     )
     transcribe_language = OptionsConfigItem(
