@@ -9,3 +9,4 @@ modelscope>=1.28.1
 psutil>=7.0.0
 sqlalchemy>=2.0.41
 json-repair>=0.49.0
+langdetect>=1.0.9

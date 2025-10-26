@@ -45,7 +45,7 @@ def _split_with_agent_loop(
     max_word_count_cjk: int,
     max_word_count_english: int,
 ) -> List[str]:
-    """使用agent loop进行文本断句，自动验证和修正（固定使用句子分段）"""
+    """使用agent loop 建立反馈循环进行文本断句，自动验证和修正"""
     prompt_path = "split/sentence"
     system_prompt = get_prompt(
         prompt_path,
