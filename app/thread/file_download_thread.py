@@ -35,15 +35,16 @@ class FileDownloadThread(QThread):
             self.progress.emit(0, self.tr("正在连接..."))
             cmd = [
                 "aria2c",
+                "--no-conf",
                 "--show-console-readout=false",
                 "--summary-interval=1",
-                "-x2",
-                "-s2",
-                "--connect-timeout=10",  # 连接超时时间10秒
-                "--timeout=10",  # 数据传输超时时间10秒
-                "--max-tries=2",  # 最大重试次数2次
-                "--retry-wait=1",  # 重试等待时间1秒
-                "--continue=true",  # 开启断点续传
+                "--max-connection-per-server=2",
+                "--split=2",
+                "--connect-timeout=10",
+                "--timeout=10",
+                "--max-tries=2",
+                "--retry-wait=1",
+                "--continue=true",
                 "--auto-file-renaming=false",
                 "--allow-overwrite=true",
                 "--check-certificate=false",
