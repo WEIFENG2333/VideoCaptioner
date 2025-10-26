@@ -68,6 +68,7 @@ class VideoInfoCard(CardWidget):
         self.task: Optional[TranscribeTask] = None
         self.video_info: Optional[VideoInfo] = None
         self.transcription_interface = parent
+        self.selected_audio_track_index = 0  # 默认选择第一条音轨
 
     def setup_ui(self) -> None:
         self.setFixedHeight(150)
@@ -110,6 +111,8 @@ class VideoInfoCard(CardWidget):
         self.resolution_info = self.create_pill_button(self.tr("画质"), 110)
         self.file_size_info = self.create_pill_button(self.tr("文件大小"), 110)
         self.duration_info = self.create_pill_button(self.tr("时长"), 100)
+        self.audio_track_button = self.create_pill_button(self.tr("音轨"), 100)
+        self.audio_track_button.hide()  # 默认隐藏，只在多音轨时显示
 
         self.progress_ring = ProgressRing(self)
         self.progress_ring.setFixedSize(20, 20)
@@ -119,6 +122,7 @@ class VideoInfoCard(CardWidget):
         self.details_layout.addWidget(self.resolution_info)
         self.details_layout.addWidget(self.file_size_info)
         self.details_layout.addWidget(self.duration_info)
+        self.details_layout.addWidget(self.audio_track_button)
         self.details_layout.addWidget(self.progress_ring)
         self.details_layout.addStretch(1)
         self.info_layout.addLayout(self.details_layout)
@@ -159,11 +163,82 @@ class VideoInfoCard(CardWidget):
         self.file_size_info.setText(self.tr("大小: ") + f"{file_size_mb:.1f} MB")
         duration = datetime.timedelta(seconds=int(video_info.duration_seconds))
         self.duration_info.setText(self.tr("时长: ") + f"{duration}")
+
+        # 更新音轨选择按钮
+        self.update_audio_tracks(video_info)
+
         if self.transcription_interface and self.transcription_interface.is_processing:  # type: ignore
             self.start_button.setEnabled(False)
         else:
             self.start_button.setEnabled(True)
         self.update_thumbnail(video_info.thumbnail_path)
+
+    def update_audio_tracks(self, video_info: VideoInfo) -> None:
+        """更新音轨选择按钮"""
+        audio_streams = video_info.audio_streams
+
+        if len(audio_streams) > 1:
+            # 多音轨，显示选择按钮，默认选择第一条音轨（数组索引0）
+            self.selected_audio_track_index = 0
+            self.update_audio_track_button_text(audio_streams, 0)
+
+            # 创建下拉菜单
+            menu = RoundMenu(parent=self)
+            for i, stream in enumerate(audio_streams):
+                lang = stream.language
+
+                # 构建菜单项文本（使用序号 i+1）
+                text = self.tr("音轨") + str(i + 1)
+                if lang:
+                    text += f" ({lang})"
+
+                action = Action(text)
+                action.triggered.connect(
+                    lambda checked, array_idx=i, streams=audio_streams: self.on_audio_track_selected(
+                        array_idx, streams
+                    )
+                )
+                menu.addAction(action)
+
+            # 绑定菜单到按钮
+            self.audio_track_button.clicked.connect(
+                lambda: menu.exec(
+                    self.audio_track_button.mapToGlobal(
+                        self.audio_track_button.rect().bottomLeft()
+                    )
+                )
+            )
+            self.audio_track_button.show()
+        else:
+            self.audio_track_button.hide()
+            self.selected_audio_track_index = 0
+
+    def update_audio_track_button_text(
+        self, audio_streams: list, array_index: int
+    ) -> None:
+        """更新音轨按钮显示文本
+
+        Args:
+            audio_streams: 音轨列表
+            array_index: 数组索引（0, 1, 2...）
+        """
+        if array_index < len(audio_streams):
+            stream = audio_streams[array_index]
+            lang = stream.language
+            text = f"{self.tr('音轨')} {array_index + 1}"
+            if lang:
+                text += f" ({lang})"
+            self.audio_track_button.setText(text)
+
+    def on_audio_track_selected(self, array_index: int, audio_streams: list) -> None:
+        """音轨选择事件处理
+
+        Args:
+            array_index: 数组索引（0, 1, 2...），用于 UI 显示和 ffmpeg -map 0:a:N
+            audio_streams: 音轨列表
+        """
+        self.selected_audio_track_index = array_index  # 保存数组索引，传给 ffmpeg
+        self.update_audio_track_button_text(audio_streams, array_index)
 
     def update_thumbnail(self, thumbnail_path):
         """更新视频缩略图"""
@@ -231,6 +306,10 @@ class VideoInfoCard(CardWidget):
 
         if not self.task:
             return
+
+        # 将选中的音轨索引作为临时属性传递给 task
+        self.task.selected_audio_track_index = self.selected_audio_track_index  # type: ignore
+
         self.transcript_thread = TranscriptThread(self.task)
         self.transcript_thread.finished.connect(self.on_transcript_finished)
         self.transcript_thread.progress.connect(self.on_transcript_progress)

@@ -12,7 +12,7 @@ You will receive:
    - Content context
    - Important terminology
    - Specific correction requirements
-     </input_format>
+</input_format>
 
 <instructions>
 1. Fix errors while preserving original sentence structure (no paraphrasing or synonyms)

@@ -1,5 +1,5 @@
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional
 
@@ -441,6 +441,16 @@ LANGUAGES = {
 
 
 @dataclass
+class AudioStreamInfo:
+    """音频流信息"""
+
+    index: int  # 音轨在视频中的实际索引（如 0, 1, 2 或 2, 3, 4）
+    codec: str  # 音频编解码器（如 aac, mp3, opus）
+    language: str = ""  # 语言标签（如 eng, chi, deu）
+    title: str = ""  # 音轨标题（可选）
+
+
+@dataclass
 class VideoInfo:
     """视频信息类"""
 
@@ -455,6 +465,7 @@ class VideoInfo:
     audio_codec: str
     audio_sampling_rate: int
     thumbnail_path: str
+    audio_streams: list[AudioStreamInfo] = field(default_factory=list)  # 音频流列表
 
 
 @dataclass
@@ -536,6 +547,9 @@ class TranscribeTask:
 
     # 是否需要执行下一个任务（字幕处理）
     need_next_task: bool = False
+
+    # 选中的音轨索引
+    selected_audio_track_index: int = 0
 
     transcribe_config: Optional[TranscribeConfig] = None
 

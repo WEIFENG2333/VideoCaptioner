@@ -5,10 +5,11 @@ import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Dict, Literal, Optional
+from typing import Callable, Literal, Optional
 
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
+from ..entities import VideoInfo
 
 logger = setup_logger("video_utils")
 
@@ -40,77 +41,38 @@ def temporary_subtitle_file(subtitle_path: str):
         Path(temp_path).unlink(missing_ok=True)
 
 
-def get_audio_stream_count(video_path: str) -> int:
-    """获取视频文件的音频轨道数量
-
-    Args:
-        video_path: 视频文件路径
-
-    Returns:
-        音频轨道数量，如果检测失败返回 1（默认假设单音轨）
-    """
-    try:
-        cmd = ["ffmpeg", "-i", video_path]
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
-        )
-        # ffmpeg 的流信息在 stderr 中
-        # 搜索 "Stream #0:X(XXX): Audio" 这样的行
-        audio_count = len(re.findall(r"Stream #\d+:\d+.*?: Audio", result.stderr))
-        logger.info(f"检测到 {audio_count} 个音频轨道")
-        return audio_count if audio_count > 0 else 1
-    except Exception as e:
-        logger.warning(f"检测音频轨道数量失败: {e}，默认假设为单音轨")
-        return 1
-
-
-def video2audio(input_file: str, output: str = "") -> bool:
+def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -> bool:
     """使用 ffmpeg 将视频转换为音频
 
-    支持单音轨和多音轨视频，根据音轨数量自动选择合适的转换方式
+    Args:
+        input_file: 输入视频文件路径
+        output: 输出音频文件路径
+        audio_track_index: 要提取的音轨索引，默认为 0（第一条音轨）
+
+    Returns:
+        转换是否成功
     """
     # 创建output目录
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output = str(output_path)
 
-    # 检测音轨数量
-    audio_count = get_audio_stream_count(input_file)
-
-    # 根据音轨数量选择转换策略
-    if audio_count > 1:
-        logger.info(f"检测到 {audio_count} 个音轨，使用 amerge 滤镜混合多音轨音频")
-        cmd = [
-            "ffmpeg",
-            "-i",
-            input_file,
-            "-filter_complex",
-            "amerge,pan=mono|c0=FC",  # 混合所有音轨并转为单声道
-            "-ar",
-            "16000",
-            "-y",
-            output,
-        ]
-    else:
-        cmd = [
-            "ffmpeg",
-            "-i",
-            input_file,
-            "-vn",
-            "-ac",
-            "1",  # 单声道
-            "-ar",
-            "16000",  # 采样率16kHz
-            "-y",
-            output,
-        ]
+    # 构建命令
+    logger.info(f"提取音轨索引 {audio_track_index}")
+    cmd = [
+        "ffmpeg",
+        "-i",
+        input_file,
+        "-map",
+        f"0:a:{audio_track_index}",
+        "-vn",
+        "-ac",
+        "1",  # 单声道
+        "-ar",
+        "16000",  # 采样率16kHz
+        "-y",
+        output,
+    ]
 
     logger.info(f"转换为音频执行命令: {' '.join(cmd)}")
 
@@ -354,14 +316,24 @@ def add_subtitles(
                 raise
 
 
-def get_video_info(file_path: str) -> Optional[Dict]:
-    """获取视频信息"""
-    try:
-        cmd = ["ffmpeg", "-i", file_path]
+def get_video_info(
+    file_path: str, thumbnail_path: Optional[str] = None
+) -> Optional["VideoInfo"]:
+    """获取视频信息（优雅重构版）
 
-        # logger.info(f"获取视频信息执行命令: {' '.join(cmd)}")
+    Args:
+        file_path: 视频文件路径
+        thumbnail_path: 缩略图保存路径（可选）
+
+    Returns:
+        VideoInfo 对象，失败返回 None
+    """
+    try:
+        from ..entities import AudioStreamInfo, VideoInfo
+
+        # 执行 ffmpeg 获取视频信息
         result = subprocess.run(
-            cmd,
+            ["ffmpeg", "-i", file_path],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -372,47 +344,125 @@ def get_video_info(file_path: str) -> Optional[Dict]:
         )
         info = result.stderr
 
-        video_info_dict = {
-            "file_name": Path(file_path).stem,
-            "file_path": file_path,
-            "duration_seconds": 0,
-            "bitrate_kbps": 0,
-            "video_codec": "",
-            "width": 0,
-            "height": 0,
-            "fps": 0,
-            "audio_codec": "",
-            "audio_sampling_rate": 0,
-            "thumbnail_path": "",
-        }
-
         # 提取时长
+        duration_seconds = 0.0
         if duration_match := re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info):
             hours, minutes, seconds = map(float, duration_match.groups())
-            video_info_dict["duration_seconds"] = hours * 3600 + minutes * 60 + seconds
+            duration_seconds = hours * 3600 + minutes * 60 + seconds
 
         # 提取比特率
+        bitrate_kbps = 0
         if bitrate_match := re.search(r"bitrate: (\d+) kb/s", info):
-            video_info_dict["bitrate_kbps"] = int(bitrate_match.group(1))
+            bitrate_kbps = int(bitrate_match.group(1))
 
         # 提取视频流信息
+        width, height, fps, video_codec = 0, 0, 0.0, ""
         if video_stream_match := re.search(
             r"Stream #.*?Video: (\w+)(?:\s*\([^)]*\))?.* (\d+)x(\d+).*?(?:(\d+(?:\.\d+)?)\s*(?:fps|tb[rn]))",
             info,
             re.DOTALL,
         ):
-            video_info_dict.update(
-                {
-                    "video_codec": video_stream_match.group(1),
-                    "width": int(video_stream_match.group(2)),
-                    "height": int(video_stream_match.group(3)),
-                    "fps": float(video_stream_match.group(4)),
-                }
-            )
+            video_codec = video_stream_match.group(1)
+            width = int(video_stream_match.group(2))
+            height = int(video_stream_match.group(3))
+            fps = float(video_stream_match.group(4))
         else:
             logger.warning("未找到视频流信息")
 
-        return video_info_dict
+        # 提取第一条音频流信息（用于兼容性）
+        audio_codec, audio_sampling_rate = "", 0
+        if audio_stream_match := re.search(
+            r"Stream #\d+:\d+.*Audio: (\w+).* (\d+) Hz", info
+        ):
+            audio_codec = audio_stream_match.group(1)
+            audio_sampling_rate = int(audio_stream_match.group(2))
+
+        # 提取所有音频流信息（用于多音轨选择）
+        audio_streams: list[AudioStreamInfo] = []
+        for match in re.finditer(
+            r"Stream #\d+:(\d+)(?:\[0x[0-9a-fA-F]+\])?(?:\(([a-z]{3})\))?: Audio: (\w+)",
+            info,
+        ):
+            audio_streams.append(
+                AudioStreamInfo(
+                    index=int(match.group(1)),
+                    codec=match.group(3),
+                    language=match.group(2) or "",
+                )
+            )
+
+        if audio_streams:
+            logger.info(f"检测到 {len(audio_streams)} 条音轨")
+
+        # 提取缩略图（如果指定了路径）
+        final_thumbnail_path = ""
+        if thumbnail_path and duration_seconds > 0:
+            if _extract_thumbnail(file_path, duration_seconds * 0.3, thumbnail_path):
+                final_thumbnail_path = thumbnail_path
+
+        # 构造并返回 VideoInfo 对象
+        return VideoInfo(
+            file_name=Path(file_path).stem,
+            file_path=file_path,
+            width=width,
+            height=height,
+            fps=fps,
+            duration_seconds=duration_seconds,
+            bitrate_kbps=bitrate_kbps,
+            video_codec=video_codec,
+            audio_codec=audio_codec,
+            audio_sampling_rate=audio_sampling_rate,
+            thumbnail_path=final_thumbnail_path,
+            audio_streams=audio_streams,
+        )
     except Exception as e:
         logger.exception(f"获取视频信息时出错: {str(e)}")
         return None
+
+
+def _extract_thumbnail(video_path: str, seek_time: float, thumbnail_path: str) -> bool:
+    """提取视频缩略图
+
+    Args:
+        video_path: 视频文件路径
+        seek_time: 截取时间点（秒）
+        thumbnail_path: 缩略图保存路径
+
+    Returns:
+        是否成功
+    """
+    if not Path(video_path).is_file():
+        logger.error(f"视频文件不存在: {video_path}")
+        return False
+
+    try:
+        timestamp = f"{int(seek_time // 3600):02}:{int((seek_time % 3600) // 60):02}:{seek_time % 60:06.3f}"
+        Path(thumbnail_path).parent.mkdir(parents=True, exist_ok=True)
+
+        result = subprocess.run(
+            [
+                "ffmpeg",
+                "-ss",
+                timestamp,
+                "-i",
+                Path(video_path).as_posix(),
+                "-vframes",
+                "1",
+                "-q:v",
+                "2",
+                "-y",
+                Path(thumbnail_path).as_posix(),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            creationflags=(
+                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+            ),
+        )
+        return result.returncode == 0
+
+    except Exception as e:
+        logger.exception(f"提取缩略图时出错: {str(e)}")
+        return False

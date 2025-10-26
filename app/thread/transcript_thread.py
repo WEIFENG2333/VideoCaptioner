@@ -91,7 +91,13 @@ class TranscriptThread(QThread):
             temp_audio_path = temp_audio_file.name
 
             # 转换音频文件
-            is_success = video2audio(str(video_path), output=temp_audio_path)
+            # 获取选中的音轨索引（如果有）
+            audio_track_index = self.task.selected_audio_track_index
+            is_success = video2audio(
+                str(video_path),
+                output=temp_audio_path,
+                audio_track_index=audio_track_index,
+            )
             if not is_success:
                 logger.error("音频转换失败")
                 raise RuntimeError(self.tr("音频转换失败"))
