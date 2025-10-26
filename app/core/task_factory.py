@@ -203,6 +203,7 @@ class TaskFactory:
         config = SynthesisConfig(
             need_video=cfg.need_video.value,
             soft_subtitle=cfg.soft_subtitle.value,
+            video_quality=cfg.video_quality.value,
         )
 
         return SynthesisTask(

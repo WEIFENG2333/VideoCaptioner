@@ -18,8 +18,10 @@ from qfluentwidgets import (
     PrimaryPushButton,
     ProgressBar,
     PushButton,
+    RoundMenu,
     ToolTipFilter,
     ToolTipPosition,
+    TransparentDropDownPushButton,
 )
 from qfluentwidgets import FluentIcon as FIF
 
@@ -34,6 +36,7 @@ from app.core.entities import (
     SupportedSubtitleFormats,
     SupportedVideoFormats,
     SynthesisTask,
+    VideoQualityEnum,
 )
 from app.core.task_factory import TaskFactory
 from app.core.utils.platform_utils import open_folder
@@ -144,6 +147,25 @@ class VideoSynthesisInterface(QWidget):
         # 添加分隔符
         self.command_bar.addSeparator()
 
+        # 添加视频质量选择下拉按钮
+        self.video_quality_button = TransparentDropDownPushButton(
+            self.tr("视频质量"), self, FIF.SPEED_HIGH
+        )
+        self.video_quality_button.setFixedHeight(34)
+        self.video_quality_button.setMinimumWidth(125)
+        self.video_quality_menu = RoundMenu(parent=self)
+        for quality in VideoQualityEnum:
+            action = Action(text=quality.value)
+            action.triggered.connect(
+                lambda checked, q=quality.value: self.on_video_quality_action_changed(q)
+            )
+            self.video_quality_menu.addAction(action)
+        self.video_quality_button.setMenu(self.video_quality_menu)
+        self.command_bar.addWidget(self.video_quality_button)
+
+        # 添加分隔符
+        self.command_bar.addSeparator()
+
         # 添加是否合成视频选项
         self.need_video_action = Action(
             FIF.VIDEO,
@@ -222,11 +244,13 @@ class VideoSynthesisInterface(QWidget):
         # 全局 signalBus
         signalBus.soft_subtitle_changed.connect(self.on_soft_subtitle_changed)
         signalBus.need_video_changed.connect(self.on_need_video_changed)
+        signalBus.video_quality_changed.connect(self.on_video_quality_changed)
 
     def set_value(self):
         """设置初始值"""
         self.soft_subtitle_action.setChecked(cfg.soft_subtitle.value)
         self.need_video_action.setChecked(cfg.need_video.value)
+        self.video_quality_button.setText(cfg.video_quality.value.value)
 
     def on_soft_subtitle_action_triggered(self, checked: bool):
         """处理软字幕按钮点击（更新配置+显示InfoBar）"""
@@ -279,6 +303,25 @@ class VideoSynthesisInterface(QWidget):
     def on_need_video_changed(self, checked: bool):
         """处理外部视频合成配置变更（仅更新UI状态）"""
         self.need_video_action.setChecked(checked)
+
+    def on_video_quality_action_changed(self, quality_text: str):
+        """处理质量选择"""
+        # 根据文本找到对应的枚举
+        quality_enum = None
+        for e in VideoQualityEnum:
+            if e.value == quality_text:
+                quality_enum = e
+                break
+
+        if quality_enum is None:
+            return
+
+        cfg.set(cfg.video_quality, quality_enum)
+        self.video_quality_button.setText(quality_text)
+
+    def on_video_quality_changed(self, quality_text: str):
+        """处理外部质量配置变更（仅更新UI状态）"""
+        self.video_quality_button.setText(quality_text)
 
     def choose_subtitle_file(self):
         # 构建文件过滤器
