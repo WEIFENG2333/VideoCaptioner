@@ -1,21 +1,22 @@
 """Whisper API 连接测试工具"""
 
-from pathlib import Path
 from typing import Literal, Optional
 
 import openai
+from app.config import ASSETS_PATH
 from app.core.llm.client import normalize_base_url
 
 # 测试音频文件路径
-TEST_AUDIO_PATH = Path(__file__).parent / "en.mp3"
+TEST_AUDIO_PATH = ASSETS_PATH / "en.mp3"
 
 
 def check_whisper_connection(
     base_url: str, api_key: str, model: str
 ) -> tuple[Literal[True], Optional[str]] | tuple[Literal[False], Optional[str]]:
-    """测试 Whisper API 连接
+    """
+    测试 Whisper API 连接
 
-    使用测试音频文件进行转录测试。
+    使用测试音频文件进行转录测试，并返回转录结果文本。
 
     参数:
         base_url: API 基础 URL
@@ -23,7 +24,7 @@ def check_whisper_connection(
         model: 模型名称
 
     返回:
-        (是否成功, 错误信息或转录结果文本)
+        (是否成功, 转录结果文本或错误信息)
     """
     try:
         # 检查测试音频文件是否存在
@@ -52,7 +53,7 @@ def check_whisper_connection(
                 "WhisperAPI returned type error, please check your base URL."
             )
         else:
-            resp = f"Transcription: {response.text}"
+            resp = f"{response.text}"
             return True, resp
 
     except openai.APIConnectionError:

@@ -51,7 +51,7 @@ from app.core.entities import (
     VideoInfo,
 )
 from app.core.task_factory import TaskFactory
-from app.core.utils.platform_utils import open_folder
+from app.core.utils.platform_utils import get_available_transcribe_models, open_folder
 from app.thread.transcript_thread import TranscriptThread
 from app.thread.video_info_thread import VideoInfoThread
 
@@ -329,8 +329,14 @@ class TranscriptionInterface(QWidget):
         self.model_button.setMinimumWidth(180)
 
         self.model_menu = RoundMenu(parent=self)
-        for model in TranscribeModelEnum:
-            if "接口" in model.value or "api" in model.value.lower():
+        # 只显示当前平台可用的模型（macOS 上不显示 FasterWhisper）
+        available_models = get_available_transcribe_models()
+        for model in available_models:
+            if (
+                model == TranscribeModelEnum.WHISPER_API
+                or model == TranscribeModelEnum.BIJIAN
+                or model == TranscribeModelEnum.JIANYING
+            ):
                 self.model_menu.addActions(
                     [
                         Action(FluentIcon.GLOBE, model.value),

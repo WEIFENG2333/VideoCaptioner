@@ -447,7 +447,7 @@ class SubtitleConfig:
     thread_num: int = 10
     batch_size: int = 10
     # 字幕布局和分割
-    subtitle_layout: Optional[SubtitleLayoutEnum] = None
+    subtitle_layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP
     max_word_count_cjk: int = 12
     max_word_count_english: int = 18
     need_split: bool = True
