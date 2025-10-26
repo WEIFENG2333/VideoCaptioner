@@ -45,16 +45,17 @@ class VideoSynthesisThread(QThread):
             if not output_path:
                 raise ValueError(self.tr("输出路径为空"))
 
-            # 获取视频质量预设
-            quality_preset = (
-                self.task.synthesis_config.video_quality.get_ffmpeg_preset()
-            )
+            # 获取视频质量参数
+            video_quality = self.task.synthesis_config.video_quality
+            crf = video_quality.get_crf()
+            preset = video_quality.get_preset()
 
             add_subtitles(
                 video_file,
                 subtitle_file,
                 output_path,
-                quality=quality_preset,
+                crf=crf,
+                preset=preset,
                 soft_subtitle=soft_subtitle,
                 progress_callback=self.progress_callback,
             )
