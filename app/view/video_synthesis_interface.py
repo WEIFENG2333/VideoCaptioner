@@ -135,7 +135,7 @@ class VideoSynthesisInterface(QWidget):
         self.soft_subtitle_action = Action(
             FIF.FONT,
             self.tr("软字幕"),
-            triggered=self.on_soft_subtitle_changed,
+            triggered=self.on_soft_subtitle_action_triggered,
             checkable=True,
         )
         self.soft_subtitle_action.setToolTip(self.tr("使用软字幕嵌入视频"))
@@ -148,7 +148,7 @@ class VideoSynthesisInterface(QWidget):
         self.need_video_action = Action(
             FIF.VIDEO,
             self.tr("合成视频"),
-            triggered=self.on_need_video_changed,
+            triggered=self.on_need_video_action_triggered,
             checkable=True,
         )
         self.need_video_action.setToolTip(self.tr("是否生成新的视频文件"))
@@ -228,14 +228,56 @@ class VideoSynthesisInterface(QWidget):
         self.soft_subtitle_action.setChecked(cfg.soft_subtitle.value)
         self.need_video_action.setChecked(cfg.need_video.value)
 
-    def on_soft_subtitle_changed(self, checked: bool):
-        """处理软字幕选项变更"""
+    def on_soft_subtitle_action_triggered(self, checked: bool):
+        """处理软字幕按钮点击（更新配置+显示InfoBar）"""
         cfg.set(cfg.soft_subtitle, checked)
+
+        # 显示说明信息
+        if checked:
+            InfoBar.info(
+                self.tr("开启软字幕"),
+                self.tr("字幕作为独立轨道嵌入视频，播放器中可关闭或调整"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
+        else:
+            InfoBar.info(
+                self.tr("开启硬烧录字幕"),
+                self.tr("字幕直接烧录到视频画面中，带有设置的样式"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
+
+    def on_soft_subtitle_changed(self, checked: bool):
+        """处理外部软字幕配置变更（仅更新UI状态）"""
         self.soft_subtitle_action.setChecked(checked)
 
-    def on_need_video_changed(self, checked: bool):
-        """处理视频合成选项变更"""
+    def on_need_video_action_triggered(self, checked: bool):
+        """处理视频合成按钮点击（更新配置+显示InfoBar）"""
         cfg.set(cfg.need_video, checked)
+
+        # 显示说明信息
+        if checked:
+            InfoBar.info(
+                self.tr("开启视频合成"),
+                self.tr("将进行视频与字幕的合成操作"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
+        else:
+            InfoBar.info(
+                self.tr("关闭视频合成"),
+                self.tr("仅生成字幕文件，不生成新的视频文件"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
+
+    def on_need_video_changed(self, checked: bool):
+        """处理外部视频合成配置变更（仅更新UI状态）"""
         self.need_video_action.setChecked(checked)
 
     def choose_subtitle_file(self):
