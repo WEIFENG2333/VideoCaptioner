@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from langdetect import LangDetectException, detect
+
 from ..entities import SubtitleLayoutEnum
 from ..utils.text_utils import is_mainly_cjk
 
@@ -549,6 +551,9 @@ class ASRData:
     def from_srt(srt_str: str) -> "ASRData":
         """Create ASRData from SRT format string.
 
+        Uses language detection to distinguish between bilingual subtitles
+        (original + translation) and multiline single-language subtitles.
+
         Args:
             srt_str: SRT format subtitle string
 
@@ -561,16 +566,22 @@ class ASRData:
         )
         blocks = re.split(r"\n\s*\n", srt_str.strip())
 
-        # Detect if SRT has translations (98%+ blocks have 4 lines)
-        blocks_lines_count = [len(block.splitlines()) for block in blocks]
-        has_translated_subtitle = (
-            len(blocks_lines_count) > 0
-            and all(count <= 4 for count in blocks_lines_count)
-            and sum(count == 4 for count in blocks_lines_count)
-            / len(blocks_lines_count)
-            >= 0.98
+        # Detect bilingual mode: all 4-line + 70% different languages
+        def is_different_lang(block: str) -> bool:
+            lines = block.splitlines()
+            if len(lines) != 4:
+                return False
+            try:
+                return detect(lines[2]) != detect(lines[3])
+            except LangDetectException:
+                return False
+
+        all_four_lines = all(len(b.splitlines()) == 4 for b in blocks)
+        is_bilingual = (
+            all_four_lines and sum(map(is_different_lang, blocks[:50])) / 50 >= 0.7
         )
 
+        # Process all blocks based on detected mode
         for block in blocks:
             lines = block.splitlines()
             if len(lines) < 3:
@@ -598,17 +609,10 @@ class ASRData:
                 ]
             )
 
-            if has_translated_subtitle and len(lines) >= 4:
-                text = lines[2]
-                translated_text = lines[3]
-                segments.append(
-                    ASRDataSeg(
-                        text, start_time, end_time, translated_text=translated_text
-                    )
-                )
+            if is_bilingual and len(lines) == 4:
+                segments.append(ASRDataSeg(lines[2], start_time, end_time, lines[3]))
             else:
-                text = lines[2]
-                segments.append(ASRDataSeg(text, start_time, end_time))
+                segments.append(ASRDataSeg(" ".join(lines[2:]), start_time, end_time))
 
         return ASRData(segments)
 
