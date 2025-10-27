@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Optional, Callable
 from typing import Dict, Literal
 
+from ..entities import WatermarkConfig
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
+from ..utils.watermark_utils import get_watermark_filter
 
 logger = setup_logger("video_utils")
 
@@ -117,6 +119,7 @@ def add_subtitles(
     ] = "medium",
     vcodec: str = "libx264",
     soft_subtitle: bool = False,
+    watermark_config: Optional[WatermarkConfig] = None,
     progress_callback: Optional[Callable] = None,
 ) -> None:
     assert Path(input_file).is_file(), "输入文件不存在"
@@ -181,6 +184,27 @@ def add_subtitles(
             # 其他格式使用默认的vf参数
             vf = f"subtitles='{subtitle_file}'"
 
+        # 添加水印过滤器
+        use_filter_complex = False
+        video_info = get_video_info(input_file)
+        if video_info:
+            watermark_result = get_watermark_filter(
+                watermark_config,
+                video_width=video_info["width"],
+                video_height=video_info["height"],
+            )
+            if watermark_result:
+                watermark_filter, needs_complex = watermark_result
+                logger.info("添加水印过滤器")
+                if needs_complex:
+                    # 图片水印需要使用filter_complex
+                    use_filter_complex = True
+                    # 将字幕filter添加到复杂filter链中
+                    vf = f"[0:v]{vf}[sub];{watermark_filter.replace('[0:v]', '[sub]')}"
+                else:
+                    # 文字水印可以简单串联
+                    vf = f"{vf},{watermark_filter}"
+
         if Path(output).suffix.lower() == ".webm":
             vcodec = "libvpx-vp9"
             logger.info("WebM格式视频，使用libvpx-vp9编码器")
@@ -191,22 +215,16 @@ def add_subtitles(
         if use_cuda:
             logger.info("使用CUDA加速")
             cmd.extend(["-hwaccel", "cuda"])
-        cmd.extend(
-            [
-                "-i",
-                input_file,
-                "-acodec",
-                "copy",
-                "-vcodec",
-                vcodec,
-                "-preset",
-                quality,
-                "-vf",
-                vf,
-                "-y",  # 覆盖输出文件
-                output,
-            ]
-        )
+        
+        cmd.extend(["-i", input_file, "-acodec", "copy", "-vcodec", vcodec, "-preset", quality])
+        
+        # 根据是否需要filter_complex选择不同的参数
+        if use_filter_complex:
+            cmd.extend(["-filter_complex", vf])
+        else:
+            cmd.extend(["-vf", vf])
+        
+        cmd.extend(["-y", output])  # 覆盖输出文件
 
         cmd_str = subprocess.list2cmdline(cmd)
         logger.info(f"添加硬字幕执行命令: {cmd_str}")

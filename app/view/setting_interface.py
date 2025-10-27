@@ -148,6 +148,58 @@ class SettingInterface(ScrollArea):
             self.subtitleGroup,
         )
 
+        # 水印配置卡片
+        self.watermarkEnabledCard = SwitchSettingCard(
+            FIF.TAG,
+            self.tr("启用水印"),
+            self.tr("开启时在视频上添加水印"),
+            cfg.watermark_enabled,
+            self.subtitleGroup,
+        )
+        self.watermarkTextCard = LineEditSettingCard(
+            cfg.watermark_text,
+            FIF.EDIT,
+            self.tr("水印文字"),
+            self.tr("水印显示的文字内容（留空则使用图片水印）"),
+            self.subtitleGroup,
+        )
+        self.watermarkImageCard = PushSettingCard(
+            self.tr("选择水印图片"),
+            FIF.PHOTO,
+            self.tr("水印图片"),
+            cfg.get(cfg.watermark_image_path) or self.tr("未选择"),
+            self.subtitleGroup,
+        )
+        self.watermarkPositionCard = ComboBoxSettingCard(
+            cfg.watermark_position,
+            FIF.ALIGNMENT,
+            self.tr("水印位置"),
+            self.tr("选择水印在视频中的位置"),
+            texts=[pos for pos in cfg.watermark_position.validator.options],  # type: ignore
+            parent=self.subtitleGroup,
+        )
+        self.watermarkOpacityCard = RangeSettingCard(
+            cfg.watermark_opacity,
+            FIF.TRANSPARENT,
+            self.tr("水印透明度"),
+            self.tr("调整水印的透明度（0.0-1.0）"),
+            self.subtitleGroup,
+        )
+        self.watermarkSizeCard = RangeSettingCard(
+            cfg.watermark_size,
+            FIF.ZOOM,
+            self.tr("水印大小"),
+            self.tr("调整水印的大小（文字大小或图片缩放百分比）"),
+            self.subtitleGroup,
+        )
+        self.watermarkFontCard = LineEditSettingCard(
+            cfg.watermark_font,
+            FIF.FONT,
+            self.tr("水印字体"),
+            self.tr("水印文字的字体名称（留空使用默认字体）"),
+            self.subtitleGroup,
+        )
+
         # 保存配置卡片
         self.savePathCard = PushSettingCard(
             self.tr("工作文件夹"),
@@ -228,6 +280,13 @@ class SettingInterface(ScrollArea):
         self.subtitleGroup.addSettingCard(self.subtitleLayoutCard)
         self.subtitleGroup.addSettingCard(self.needVideoCard)
         self.subtitleGroup.addSettingCard(self.softSubtitleCard)
+        self.subtitleGroup.addSettingCard(self.watermarkEnabledCard)
+        self.subtitleGroup.addSettingCard(self.watermarkTextCard)
+        self.subtitleGroup.addSettingCard(self.watermarkImageCard)
+        self.subtitleGroup.addSettingCard(self.watermarkPositionCard)
+        self.subtitleGroup.addSettingCard(self.watermarkOpacityCard)
+        self.subtitleGroup.addSettingCard(self.watermarkSizeCard)
+        self.subtitleGroup.addSettingCard(self.watermarkFontCard)
 
         self.saveGroup.addSettingCard(self.savePathCard)
 
@@ -556,6 +615,9 @@ class SettingInterface(ScrollArea):
         # 保存路径
         self.savePathCard.clicked.connect(self.__onsavePathCardClicked)
 
+        # 水印图片选择
+        self.watermarkImageCard.clicked.connect(self.__onWatermarkImageCardClicked)
+
         # 字幕样式修改跳转
         self.subtitleStyleCard.linkButton.clicked.connect(
             lambda: self.window().switchTo(self.window().subtitleStyleInterface)  # type: ignore
@@ -608,6 +670,19 @@ class SettingInterface(ScrollArea):
             return
         cfg.set(cfg.work_dir, folder)
         self.savePathCard.setContent(folder)
+
+    def __onWatermarkImageCardClicked(self):
+        """处理水印图片选择事件"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("选择水印图片"),
+            "./",
+            self.tr("图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)")
+        )
+        if not file_path:
+            return
+        cfg.set(cfg.watermark_image_path, file_path)
+        self.watermarkImageCard.setContent(file_path)
 
     def checkLLMConnection(self):
         """检查 LLM 连接"""

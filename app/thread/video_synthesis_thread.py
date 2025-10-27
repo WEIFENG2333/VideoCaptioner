@@ -50,6 +50,7 @@ class VideoSynthesisThread(QThread):
                 subtitle_file,
                 output_path,
                 soft_subtitle=soft_subtitle,
+                watermark_config=self.task.synthesis_config.watermark_config if self.task.synthesis_config else None,
                 progress_callback=self.progress_callback,
             )
 

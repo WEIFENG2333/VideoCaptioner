@@ -242,6 +242,22 @@ class Config(QConfig):
     soft_subtitle = ConfigItem("Video", "SoftSubtitle", False, BoolValidator())
     need_video = ConfigItem("Video", "NeedVideo", True, BoolValidator())
 
+    # ------------------- 水印配置 -------------------
+    watermark_enabled = ConfigItem("Watermark", "Enabled", False, BoolValidator())
+    watermark_text = ConfigItem("Watermark", "Text", "")
+    watermark_image_path = ConfigItem("Watermark", "ImagePath", "")
+    watermark_position = OptionsConfigItem(
+        "Watermark",
+        "Position",
+        "右下角",
+        OptionsValidator(["右下角", "左下角", "右上角", "左上角", "居中"]),
+    )
+    watermark_opacity = RangeConfigItem(
+        "Watermark", "Opacity", 0.5, RangeValidator(0.0, 1.0)
+    )
+    watermark_size = RangeConfigItem("Watermark", "Size", 24, RangeValidator(8, 100))
+    watermark_font = ConfigItem("Watermark", "Font", "")
+
     # ------------------- 字幕样式配置 -------------------
     subtitle_style_name = ConfigItem("SubtitleStyle", "StyleName", "default")
     subtitle_layout = ConfigItem("SubtitleStyle", "Layout", "译文在上")

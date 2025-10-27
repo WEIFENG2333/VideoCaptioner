@@ -553,11 +553,25 @@ class SubtitleConfig:
 
 
 @dataclass
+class WatermarkConfig:
+    """水印配置类"""
+
+    enabled: bool = False
+    text: str = ""
+    image_path: str = ""
+    position: str = "右下角"  # 右下角, 左下角, 右上角, 左上角, 居中
+    opacity: float = 0.5  # 0.0 - 1.0
+    size: int = 24  # 文字大小或图片缩放百分比
+    font: str = ""  # 字体名称
+
+
+@dataclass
 class SynthesisConfig:
     """视频合成配置类"""
 
     need_video: bool = True
     soft_subtitle: bool = True
+    watermark_config: Optional[WatermarkConfig] = None
 
 
 @dataclass

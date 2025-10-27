@@ -16,6 +16,7 @@ from app.core.entities import (
     TranscribeConfig,
     TranscribeTask,
     TranscriptAndSubtitleTask,
+    WatermarkConfig,
 )
 
 
@@ -222,6 +223,15 @@ class TaskFactory:
         config = SynthesisConfig(
             need_video=cfg.need_video.value,
             soft_subtitle=cfg.soft_subtitle.value,
+            watermark_config=WatermarkConfig(
+                enabled=cfg.watermark_enabled.value,
+                text=cfg.watermark_text.value,
+                image_path=cfg.watermark_image_path.value,
+                position=cfg.watermark_position.value,
+                opacity=cfg.watermark_opacity.value,
+                size=cfg.watermark_size.value,
+                font=cfg.watermark_font.value,
+            ),
         )
 
         return SynthesisTask(
