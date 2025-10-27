@@ -1,12 +1,16 @@
 import difflib
-import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Union
 
 from app.core.asr.asr_data import ASRData, ASRDataSeg
 from app.core.split.split_by_llm import split_by_llm
 from app.core.utils.logger import setup_logger
-from app.core.utils.text_utils import count_words, is_mainly_cjk, is_pure_punctuation
+from app.core.utils.text_utils import (
+    count_words,
+    is_mainly_cjk,
+    is_pure_punctuation,
+    is_space_separated_language,
+)
 
 logger = setup_logger("subtitle_splitter")
 
@@ -18,7 +22,6 @@ MAX_WORD_COUNT_ENGLISH = 18  # 英文文本单行最大单词数
 
 # 分段阈值
 SEGMENT_WORD_THRESHOLD = 500  # 长文本分段阈值(字数)
-SEGMENT_THRESHOLD = 300  # 每个分段的最大字数(旧版,保留兼容)
 
 # 时间间隔
 MAX_GAP = 1500  # 允许的最大时间间隔(毫秒)
@@ -56,11 +59,11 @@ def preprocess_segments(
     """预处理ASR分段
 
     1. 移除纯标点符号的分段
-    2. 纯英文单词转小写并添加空格
+    2. 为需要空格分隔的语言添加空格（英语、俄语、阿拉伯语等，不包括CJK）
 
     Args:
         segments: ASR数据分段列表
-        need_lower: 是否转小写
+        need_lower: 是否转小写（仅对拉丁和西里尔字母有效）
 
     Returns:
         处理后的分段列表
@@ -68,9 +71,12 @@ def preprocess_segments(
     new_segments = []
     for seg in segments:
         if not is_pure_punctuation(seg.text):
-            # 纯英文单词:转小写+空格
-            if re.match(r"^[a-zA-Z0-9\']+$", seg.text.strip()):
-                seg.text = seg.text.lower() + " " if need_lower else seg.text + " "
+            text = seg.text.strip()
+            # 检查是否为需要空格分隔的语言（不包括CJK）
+            if is_space_separated_language(text):
+                if need_lower:
+                    text = text.lower()
+                seg.text = text + " "
             new_segments.append(seg)
     return new_segments
 
