@@ -190,7 +190,7 @@ class FasterWhisperASR(BaseASR):
 
         # 提示词
         if self.prompt:
-            cmd.extend(["--prompt", self.prompt])
+            cmd.extend(["--initial_prompt", self.prompt])
 
         # 完成的提示音
         cmd.extend(["--beep_off"])
