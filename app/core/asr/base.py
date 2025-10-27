@@ -31,8 +31,8 @@ class BaseASR:
     _lock = threading.Lock()
 
     RATE_LIMIT_MAX_CALLS = 100
-    RATE_LIMIT_MAX_DURATION = 360 * 60  # 360 minutes in seconds
-    RATE_LIMIT_TIME_WINDOW = 12 * 3600  # 12 hours
+    RATE_LIMIT_MAX_DURATION = 360 * 60
+    RATE_LIMIT_TIME_WINDOW = 12 * 3600
 
     def __init__(
         self,
