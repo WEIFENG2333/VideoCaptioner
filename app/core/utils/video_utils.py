@@ -199,18 +199,31 @@ def add_subtitles(
                 if needs_complex:
                     # 图片水印需要使用filter_complex
                     use_filter_complex = True
-                    # 构建完整的filter_complex链: 先添加字幕到[0:v]，然后叠加水印
-                    # watermark_filter格式: "movie='path'...[wm];[0:v][wm]overlay=..."
-                    # 需要将其改为: "movie='path'...[wm];[sub][wm]overlay=..."
-                    # 分离movie部分和overlay部分
-                    if ';' in watermark_filter:
-                        movie_part, overlay_part = watermark_filter.split(';', 1)
-                        # overlay_part类似: [0:v][wm]overlay=x:y
-                        # 替换第一个[0:v]为[sub]
-                        overlay_part = overlay_part.replace('[0:v]', '[sub]', 1)
-                        vf = f"[0:v]{vf}[sub];{movie_part};{overlay_part}"
+                    # 构建完整的filter_complex链
+                    # 1. 先应用字幕到视频流 [0:v] -> [sub]
+                    # 2. 然后处理水印图片并叠加
+                    # watermark_filter预期格式: "movie='path'...[wm];[0:v][wm]overlay=..."
+                    
+                    # 验证watermark_filter格式
+                    if ';' in watermark_filter and '[0:v]' in watermark_filter:
+                        # 分离movie部分和overlay部分
+                        parts = watermark_filter.split(';')
+                        if len(parts) >= 2:
+                            # movie部分（可能有多个过滤器）
+                            movie_part = ';'.join(parts[:-1])
+                            # overlay部分（最后一部分，包含[0:v][wm]overlay）
+                            overlay_part = parts[-1]
+                            # 将overlay部分的[0:v]替换为[sub]（只替换第一次出现）
+                            overlay_part_fixed = overlay_part.replace('[0:v]', '[sub]', 1)
+                            # 组合完整的filter chain
+                            vf = f"[0:v]{vf}[sub];{movie_part};{overlay_part_fixed}"
+                            logger.debug(f"构建filter_complex: {vf}")
+                        else:
+                            logger.warning("水印过滤器格式异常，使用简单串联")
+                            vf = f"[0:v]{vf}[sub];{watermark_filter}"
                     else:
-                        # 如果watermark_filter格式不符合预期，直接串联
+                        # 格式不符合预期，记录警告并使用简单方式
+                        logger.warning("水印过滤器格式不符合预期，使用简单串联")
                         vf = f"[0:v]{vf}[sub];{watermark_filter}"
                 else:
                     # 文字水印可以简单串联

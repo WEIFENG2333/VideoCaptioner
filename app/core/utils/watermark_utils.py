@@ -114,13 +114,18 @@ def _create_image_watermark_filter(
         
     Returns:
         元组 (FFmpeg过滤器字符串, True表示需要使用filter_complex)
+        
+    Note:
+        返回的过滤器字符串格式固定为:
+        "movie='path',scale=...,format=...[wm];[0:v][wm]overlay=x:y"
+        这个格式由video_utils.py解析，修改时需要同步更新解析逻辑
     """
     # 转换为POSIX路径并转义冒号
     image_path = Path(image_path).as_posix().replace(":", r"\:")
     
     # 构建过滤器 - 使用movie作为输入源，需要用复杂过滤器语法
     scale_factor = size / 100.0
-    # 使用filter_complex语法
+    # 使用filter_complex语法，格式: "movie处理[标签];[输入][标签]overlay"
     filter_str = (
         f"movie='{image_path}',scale=iw*{scale_factor}:ih*{scale_factor},"
         f"format=rgba,colorchannelmixer=aa={opacity}[wm];"
@@ -175,13 +180,21 @@ def _create_text_watermark_filter(
     
     # 如果指定了字体，添加字体参数
     if font and font.strip():
-        # 在Windows上，如果是文件路径(包含.ttf)使用fontfile，否则使用font参数指定字体名称
-        if font.endswith(".ttf") or "/" in font or "\\" in font:
-            # 文件路径，需要转义
-            font_escaped = font.replace(":", r"\:").replace("\\", "/")
+        # 检测是否为字体文件路径（包含路径分隔符或常见字体扩展名）
+        font_extensions = ('.ttf', '.otf', '.ttc', '.woff', '.woff2')
+        is_font_file = (
+            font.lower().endswith(font_extensions) or 
+            "/" in font or 
+            "\\" in font
+        )
+        
+        if is_font_file:
+            # 字体文件路径，需要转义
+            # FFmpeg在Windows上也接受正斜杠路径，统一使用正斜杠简化处理
+            font_escaped = font.replace("\\", "/").replace(":", r"\:")
             params.append(f"fontfile='{font_escaped}'")
         else:
-            # 字体名称
+            # 字体名称（如 "Arial", "SimSun"）
             params.append(f"font='{font}'")
     
     filter_str = "drawtext=" + ":".join(params)
