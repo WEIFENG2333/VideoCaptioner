@@ -199,8 +199,19 @@ def add_subtitles(
                 if needs_complex:
                     # 图片水印需要使用filter_complex
                     use_filter_complex = True
-                    # 将字幕filter添加到复杂filter链中
-                    vf = f"[0:v]{vf}[sub];{watermark_filter.replace('[0:v]', '[sub]')}"
+                    # 构建完整的filter_complex链: 先添加字幕到[0:v]，然后叠加水印
+                    # watermark_filter格式: "movie='path'...[wm];[0:v][wm]overlay=..."
+                    # 需要将其改为: "movie='path'...[wm];[sub][wm]overlay=..."
+                    # 分离movie部分和overlay部分
+                    if ';' in watermark_filter:
+                        movie_part, overlay_part = watermark_filter.split(';', 1)
+                        # overlay_part类似: [0:v][wm]overlay=x:y
+                        # 替换第一个[0:v]为[sub]
+                        overlay_part = overlay_part.replace('[0:v]', '[sub]', 1)
+                        vf = f"[0:v]{vf}[sub];{movie_part};{overlay_part}"
+                    else:
+                        # 如果watermark_filter格式不符合预期，直接串联
+                        vf = f"[0:v]{vf}[sub];{watermark_filter}"
                 else:
                     # 文字水印可以简单串联
                     vf = f"{vf},{watermark_filter}"

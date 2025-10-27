@@ -1,5 +1,4 @@
 """水印工具模块 - 处理视频水印相关功能"""
-import os
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -59,8 +58,18 @@ def _get_position_coordinates(position: str, video_width: int, video_height: int
     """
     根据位置名称返回坐标
     
+    Args:
+        position: 位置名称
+        video_width: 视频宽度 (保留用于未来扩展，当前使用FFmpeg动态变量)
+        video_height: 视频高度 (保留用于未来扩展，当前使用FFmpeg动态变量)
+        size: 水印大小 (保留用于未来扩展)
+    
     Returns:
         包含 x, y 坐标的字典
+        
+    Note:
+        使用FFmpeg的动态变量 w, h (视频尺寸) 和 overlay_w, overlay_h (水印尺寸)
+        这样可以适应任何视频尺寸，无需预先计算
     """
     # 预留边距
     margin = 10
@@ -139,7 +148,15 @@ def _create_text_watermark_filter(
         元组 (FFmpeg过滤器字符串, False表示可以使用-vf)
     """
     # 转义文字中的特殊字符
-    text = text.replace(":", r"\:").replace("'", r"\'")
+    # FFmpeg drawtext需要转义的字符: \ ' : % \n \r
+    text = (
+        text.replace("\\", "\\\\")
+        .replace("'", r"\'")
+        .replace(":", r"\:")
+        .replace("%", r"\%")
+        .replace("\n", r"\\n")
+        .replace("\r", r"\\r")
+    )
     
     # 计算透明度对应的颜色alpha值 (0-1 转换为 0-255)
     alpha = int(opacity * 255)
@@ -158,12 +175,13 @@ def _create_text_watermark_filter(
     
     # 如果指定了字体，添加字体参数
     if font and font.strip():
-        # 在Windows上，字体文件通常在 C:\Windows\Fonts\
-        # 在Linux上，可以使用字体名称
-        if os.name == "nt" and not font.endswith(".ttf"):
-            # Windows: 尝试使用字体名称
-            params.append(f"fontfile='{font}'")
+        # 在Windows上，如果是文件路径(包含.ttf)使用fontfile，否则使用font参数指定字体名称
+        if font.endswith(".ttf") or "/" in font or "\\" in font:
+            # 文件路径，需要转义
+            font_escaped = font.replace(":", r"\:").replace("\\", "/")
+            params.append(f"fontfile='{font_escaped}'")
         else:
+            # 字体名称
             params.append(f"font='{font}'")
     
     filter_str = "drawtext=" + ":".join(params)
