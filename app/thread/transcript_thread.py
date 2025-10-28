@@ -23,8 +23,8 @@ class TranscriptThread(QThread):
 
     def run(self):
         try:
-            logger.info("\n===========转录任务开始===========")
-            logger.info(f"时间：{datetime.datetime.now()}")
+            self.task.started_at = datetime.datetime.now()
+            logger.info(f"\n{self.task.transcribe_config.print_config()}")
 
             self._validate_task()
 
