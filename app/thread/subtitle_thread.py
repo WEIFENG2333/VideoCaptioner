@@ -58,7 +58,7 @@ class SubtitleThread(QThread):
                 self.task.subtitle_config.llm_model,
             )
             if not success:
-                raise Exception(self.tr("LLM API 测试失败: ") + message)
+                raise Exception(f"{self.tr('LLM API 测试失败: ')}{message or ''}")
             # 设置环境变量
             if self.task.subtitle_config.base_url:
                 os.environ["OPENAI_BASE_URL"] = self.task.subtitle_config.base_url
@@ -70,7 +70,7 @@ class SubtitleThread(QThread):
 
     def run(self):
         try:
-            logger.info("\n===========Subtitle Handling Start===========")
+            logger.info(f"\n{self.task.subtitle_config.print_config()}")
 
             # 字幕文件路径检查、对断句字幕路径进行定义
             subtitle_path = self.task.subtitle_path
@@ -85,6 +85,7 @@ class SubtitleThread(QThread):
             assert subtitle_path is not None, self.tr("字幕文件路径为空")
 
             subtitle_config = self.task.subtitle_config
+            assert subtitle_config is not None, self.tr("字幕配置为空")
 
             asr_data = ASRData.from_subtitle_file(subtitle_path)
 
@@ -120,6 +121,8 @@ class SubtitleThread(QThread):
                 self.progress.emit(0, self.tr("优化字幕..."))
                 logger.info("正在优化字幕...")
                 self.finished_subtitle_length = 0
+                if not subtitle_config.llm_model:
+                    raise Exception(self.tr("LLM 模型未配置"))
                 optimizer = SubtitleOptimizer(
                     thread_num=subtitle_config.thread_num,
                     batch_num=subtitle_config.batch_size,
@@ -137,12 +140,17 @@ class SubtitleThread(QThread):
                 self.finished_subtitle_length = 0
                 translator_service = subtitle_config.translator_service
 
+                if not subtitle_config.target_language:
+                    raise Exception(self.tr("目标语言未配置"))
+
                 if translator_service == TranslatorServiceEnum.OPENAI:
+                    if not subtitle_config.llm_model:
+                        raise Exception(self.tr("LLM 模型未配置"))
                     translator = LLMTranslator(
                         thread_num=subtitle_config.thread_num,
                         batch_num=subtitle_config.batch_size,
                         target_language=subtitle_config.target_language,
-                        model=subtitle_config.llm_model or "",
+                        model=subtitle_config.llm_model,
                         custom_prompt=custom_prompt or "",
                         is_reflect=subtitle_config.need_reflect,
                         update_callback=self.callback,
@@ -281,7 +289,7 @@ class SubtitleThread(QThread):
             self.terminate()
             # 等待最多3秒
             if not self.wait(3000):
-                logger.waring("线程未能在3秒内正常停止")
+                logger.warning("线程未能在3秒内正常停止")
 
             # 发送进度信号
             self.progress.emit(100, self.tr("已终止"))

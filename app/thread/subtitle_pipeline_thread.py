@@ -42,10 +42,11 @@ class SubtitlePipelineThread(QThread):
                 self.error.emit(error_msg)
 
             # 1. 转录生成字幕
-            # self.task.status = Task.Status.TRANSCRIBING
-            logger.info("\n===========任务开始===========")
-            logger.info(f"时间：{datetime.datetime.now()}")
-            logger.info("开始转录")
+            self.task.started_at = datetime.datetime.now()
+            logger.info(f"\n{self.task.transcribe_config.print_config()}")
+            logger.info(f"\n{self.task.subtitle_config.print_config()}")
+            if self.task.synthesis_config:
+                logger.info(f"\n{self.task.synthesis_config.print_config()}")
             self.progress.emit(0, self.tr("开始转录"))
 
             # 创建转录任务
