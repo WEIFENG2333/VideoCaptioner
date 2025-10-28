@@ -21,8 +21,8 @@ class VideoSynthesisThread(QThread):
 
     def run(self):
         try:
-            logger.info("\n===========视频合成任务开始===========")
-            logger.info(f"时间：{datetime.datetime.now()}")
+            self.task.started_at = datetime.datetime.now()
+            logger.info(f"\n{self.task.synthesis_config.print_config()}")
             video_file = self.task.video_path
             subtitle_file = self.task.subtitle_path
             output_path = self.task.output_path
