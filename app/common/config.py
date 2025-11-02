@@ -27,6 +27,7 @@ from ..core.entities import (
     SubtitleLayoutEnum,
     TranscribeLanguageEnum,
     TranscribeModelEnum,
+    TranscribeOutputFormatEnum,
     TranslatorServiceEnum,
     VideoQualityEnum,
     VadMethodEnum,
@@ -146,6 +147,13 @@ class Config(QConfig):
         TranscribeModelEnum.BIJIAN,
         PlatformAwareTranscribeModelValidator(),
         EnumSerializer(TranscribeModelEnum),
+    )
+    transcribe_output_format = OptionsConfigItem(
+        "Transcribe",
+        "OutputFormat",
+        TranscribeOutputFormatEnum.SRT,
+        OptionsValidator(TranscribeOutputFormatEnum),
+        EnumSerializer(TranscribeOutputFormatEnum),
     )
     transcribe_language = OptionsConfigItem(
         "Transcribe",

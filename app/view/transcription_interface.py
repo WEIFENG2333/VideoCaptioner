@@ -36,6 +36,7 @@ from qfluentwidgets import (
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.LanguageSettingDialog import LanguageSettingDialog
+from app.components.TranscriptionOutputDialog import TranscriptionOutputDialog
 from app.components.transcription_setting_card import TranscriptionSettingCard
 from app.config import RESOURCE_PATH
 from app.core.constant import (
@@ -405,7 +406,7 @@ class TranscriptionInterface(QWidget):
 
         # 添加转录模型选择按钮
         self.model_button = TransparentDropDownPushButton(
-            self.tr("转录模型"), self, FluentIcon.SETTING
+            self.tr("转录模型"), self, FluentIcon.MICROPHONE
         )
         self.model_button.setFixedHeight(34)
         self.model_button.setMinimumWidth(180)
@@ -433,6 +434,13 @@ class TranscriptionInterface(QWidget):
         self.model_button.setMenu(self.model_menu)
         self.command_bar.addWidget(self.model_button)
 
+        self.command_bar.addSeparator()
+
+        # 添加输出设置按钮
+        self.command_bar.addAction(
+            Action(FluentIcon.SETTING, "", triggered=self._show_output_settings)
+        )
+
         self.main_layout.addWidget(self.command_bar)
 
     def _setup_signals(self) -> None:
@@ -451,6 +459,11 @@ class TranscriptionInterface(QWidget):
         signalBus.transcription_model_changed.connect(
             self.on_transcription_model_changed
         )
+
+    def _show_output_settings(self):
+        """显示输出格式设置对话框"""
+        dialog = TranscriptionOutputDialog(self.window())
+        dialog.exec_()
 
     def _set_value(self) -> None:
         """设置转录模型"""
