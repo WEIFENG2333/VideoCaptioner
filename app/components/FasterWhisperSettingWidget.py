@@ -683,7 +683,7 @@ class FasterWhisperSettingWidget(QWidget):
         self.containerLayout = QVBoxLayout(self.container)
 
         self.setting_group = SettingCardGroup(
-            self.tr("Faster Whisper 设置（✨推荐✨））"), self
+            self.tr("Faster Whisper 设置"), self
         )
 
         # 模型选择
