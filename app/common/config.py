@@ -229,9 +229,6 @@ class Config(QConfig):
     max_word_count_english = ConfigItem(
         "Subtitle", "MaxWordCountEnglish", 20, RangeValidator(8, 100)
     )
-    needs_remove_punctuation = ConfigItem(
-        "Subtitle", "NeedsRemovePunctuation", True, BoolValidator()
-    )
     custom_prompt_text = ConfigItem("Subtitle", "CustomPromptText", "")
 
     # ------------------- 字幕合成配置 -------------------

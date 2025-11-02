@@ -171,8 +171,6 @@ class TaskFactory:
             need_split=cfg.need_split.value,
             # 字幕翻译
             target_language=cfg.target_language.value,
-            # 字幕优化
-            need_remove_punctuation=cfg.needs_remove_punctuation.value,
             # 字幕提示
             custom_prompt_text=cfg.custom_prompt_text.value,
         )

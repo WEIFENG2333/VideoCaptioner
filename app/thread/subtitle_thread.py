@@ -131,6 +131,7 @@ class SubtitleThread(QThread):
                     update_callback=self.callback,
                 )
                 asr_data = optimizer.optimize_subtitle(asr_data)
+                asr_data.remove_punctuation()
                 self.update_all.emit(asr_data.to_json())
 
             # 4. 翻译字幕
@@ -187,8 +188,7 @@ class SubtitleThread(QThread):
                 asr_data = translator.translate_subtitle(asr_data)
 
                 # 移除末尾标点符号
-                if subtitle_config.need_remove_punctuation:
-                    asr_data.remove_punctuation()
+                asr_data.remove_punctuation()
                 self.update_all.emit(asr_data.to_json())
 
                 # 保存翻译结果(单语、双语)
