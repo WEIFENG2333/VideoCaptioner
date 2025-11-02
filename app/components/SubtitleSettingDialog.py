@@ -1,6 +1,5 @@
 from qfluentwidgets import (
     BodyLabel,
-    ComboBoxSettingCard,
     MessageBoxBase,
     SwitchSettingCard,
 )
@@ -54,8 +53,9 @@ class SubtitleSettingDialog(MessageBoxBase):
         # 设置间距
         self.viewLayout.setSpacing(10)
 
-        # 设置窗口标题
+        # 设置窗口标题和宽度
         self.setWindowTitle(self.tr("字幕设置"))
+        self.widget.setMinimumWidth(380)
 
         # 只显示取消按钮
         self.yesButton.hide()
