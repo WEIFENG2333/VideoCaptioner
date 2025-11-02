@@ -36,7 +36,7 @@ from qfluentwidgets import (
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.LanguageSettingDialog import LanguageSettingDialog
-from app.components.TranscriptionOutputDialog import TranscriptionOutputDialog
+from app.components.TranscriptionSettingDialog import TranscriptionSettingDialog
 from app.components.transcription_setting_card import TranscriptionSettingCard
 from app.config import RESOURCE_PATH
 from app.core.constant import (
@@ -461,8 +461,8 @@ class TranscriptionInterface(QWidget):
         )
 
     def _show_output_settings(self):
-        """显示输出格式设置对话框"""
-        dialog = TranscriptionOutputDialog(self.window())
+        """显示转录设置对话框"""
+        dialog = TranscriptionSettingDialog(self.window())
         dialog.exec_()
 
     def _set_value(self) -> None:
