@@ -205,17 +205,27 @@ class FasterWhisperASR(BaseASR):
 
     def _make_segments(self, resp_data: str) -> List[ASRDataSeg]:
         asr_data = ASRData.from_srt(resp_data)
-        # 过滤掉纯音乐标记
+        
+        # 幻觉文本关键词列表
+        hallucination_keywords = [
+            "请不吝点赞 订阅 转发",
+            "打赏支持明镜",
+        ]
+        # 过滤掉音乐标记和幻觉文本
         filtered_segments = []
         for seg in asr_data.segments:
             text = seg.text.strip()
-            if not (
-                text.startswith("【")
-                or text.startswith("[")
-                or text.startswith("(")
-                or text.startswith("（")
-            ):
-                filtered_segments.append(seg)
+            
+            # 跳过音乐标记
+            if text.startswith(("【", "[", "(", "（")):
+                continue
+            
+            # 跳过包含幻觉关键词的文本
+            if any(keyword in text for keyword in hallucination_keywords):
+                continue
+            
+            filtered_segments.append(seg)
+        
         return filtered_segments
 
     def _run(
