@@ -730,6 +730,9 @@ class SettingInterface(ScrollArea):
 
     def checkLLMConnection(self):
         """检查 LLM 连接"""
+        # 保存当前滚动位置
+        scroll_position = self.verticalScrollBar().value()
+        
         # 获取当前选中的服务
         current_service = LLMServiceEnum(self.llmServiceCard.comboBox.currentText())
 
@@ -757,6 +760,9 @@ class SettingInterface(ScrollArea):
         # 禁用检查按钮，显示加载状态
         self.checkLLMConnectionCard.button.setEnabled(False)
         self.checkLLMConnectionCard.button.setText(self.tr("正在检查..."))
+        
+        # 立即恢复滚动位置（防止按钮状态改变导致的自动滚动）
+        self.verticalScrollBar().setValue(scroll_position)
 
         # 创建并启动线程
         self.connection_thread = LLMConnectionThread(api_base, api_key, model)
@@ -900,6 +906,9 @@ class SettingInterface(ScrollArea):
 
     def checkWhisperConnection(self):
         """检查 Whisper API 连接"""
+        # 保存当前滚动位置
+        scroll_position = self.verticalScrollBar().value()
+        
         # 获取配置
         base_url = self.whisperApiBaseCard.lineEdit.text().strip()
         api_key = self.whisperApiKeyCard.lineEdit.text().strip()
@@ -936,6 +945,9 @@ class SettingInterface(ScrollArea):
         # 禁用按钮，显示加载状态
         self.checkWhisperConnectionCard.button.setEnabled(False)
         self.checkWhisperConnectionCard.button.setText(self.tr("正在测试..."))
+        
+        # 立即恢复滚动位置（防止按钮状态改变导致的自动滚动）
+        self.verticalScrollBar().setValue(scroll_position)
 
         # 创建并启动测试线程
         self.whisper_connection_thread = WhisperConnectionThread(

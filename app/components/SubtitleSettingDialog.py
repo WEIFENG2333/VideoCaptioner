@@ -52,7 +52,6 @@ class SubtitleSettingDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.word_count_cjk_card)
         self.viewLayout.addWidget(self.word_count_english_card)
         # 设置间距
-
         self.viewLayout.setSpacing(10)
 
         # 设置窗口标题

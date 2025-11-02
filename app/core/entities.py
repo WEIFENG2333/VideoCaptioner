@@ -85,6 +85,16 @@ class OutputSubtitleFormatEnum(Enum):
     TXT = "txt"
 
 
+class TranscribeOutputFormatEnum(Enum):
+    """转录输出格式"""
+
+    SRT = "SRT"
+    ASS = "ASS"
+    VTT = "VTT"
+    TXT = "TXT"
+    ALL = "All"
+
+
 class LLMServiceEnum(Enum):
     """LLM服务"""
 
@@ -475,6 +485,7 @@ class TranscribeConfig:
     transcribe_model: Optional[TranscribeModelEnum] = None
     transcribe_language: str = ""
     need_word_time_stamp: bool = True
+    output_format: Optional[TranscribeOutputFormatEnum] = None
     # Whisper Cpp 配置
     whisper_model: Optional[WhisperModelEnum] = None
     # Whisper API 配置
@@ -496,7 +507,7 @@ class TranscribeConfig:
 
     def _mask_key(self, key: Optional[str]) -> str:
         """Mask sensitive key for display"""
-        if not key or len(key) <= 8:
+        if not key or len(key) <= 12:
             return "****"
         return f"{key[:4]}...{key[-4:]}"
 
@@ -508,6 +519,7 @@ class TranscribeConfig:
         )
         lines.append(f"Language: {self.transcribe_language or 'Auto'}")
         lines.append(f"Word Timestamp: {self.need_word_time_stamp}")
+        lines.append(f"Output Format: {self.output_format.value if self.output_format else 'None'}")
 
         if self.transcribe_model == TranscribeModelEnum.WHISPER_API:
             lines.append(f"API Base: {self.whisper_api_base}")

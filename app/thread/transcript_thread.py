@@ -5,7 +5,7 @@ from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.core.asr import transcribe
-from app.core.entities import TranscribeTask
+from app.core.entities import TranscribeOutputFormatEnum, TranscribeTask
 from app.core.utils.logger import setup_logger
 from app.core.utils.video_utils import video2audio
 
@@ -114,11 +114,30 @@ class TranscriptThread(QThread):
                 callback=self.progress_callback,
             )
 
-            # 保存字幕文件
+            # 保存字幕文件（根据配置的输出格式）
             output_path = Path(self.task.output_path)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            asr_data.to_srt(save_path=str(output_path))
-            logger.info("字幕文件已保存到: %s", str(output_path))
+            output_format_enum = self.task.transcribe_config.output_format
+            base_path = output_path.with_suffix("")
+            
+            # 根据选择的格式导出
+            if output_format_enum == TranscribeOutputFormatEnum.ALL:
+                formats_to_export = [
+                    fmt.value.lower() 
+                    for fmt in TranscribeOutputFormatEnum 
+                    if fmt != TranscribeOutputFormatEnum.ALL
+                ]
+            else:
+                formats_to_export = [output_format_enum.value.lower()]
+            
+            if self.task.need_next_task:
+                formats_to_export.append(TranscribeOutputFormatEnum.SRT.value.lower())
+            formats_to_export = list(set(formats_to_export))
+            
+            # 保存字幕文件
+            for fmt in formats_to_export:
+                save_path = str(base_path.with_suffix(f".{fmt}"))
+                asr_data.save(save_path)
+                logger.info("%s 字幕文件已保存到: %s", fmt.upper(), save_path)
 
             self.progress.emit(100, self.tr("转录完成"))
             self.finished.emit(self.task)
