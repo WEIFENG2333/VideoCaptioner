@@ -119,7 +119,7 @@ class VideoDownloadThread(QThread):
         # 初始化 ydl 选项
         initial_ydl_opts = {
             "outtmpl": {
-                "default": "%(title)s.%(ext)s",
+                "default": "%(title).10s.%(ext)s",  # 限制文件名最长200个字符
                 "subtitle": "【下载字幕】.%(ext)s",
                 "thumbnail": "thumbnail",
             },
