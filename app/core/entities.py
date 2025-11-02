@@ -102,9 +102,9 @@ class TranscribeModelEnum(Enum):
 
     BIJIAN = "B 接口"
     JIANYING = "J 接口"
+    WHISPER_API = "Whisper [API] ✨"
     FASTER_WHISPER = "FasterWhisper ✨"
     WHISPER_CPP = "WhisperCpp"
-    WHISPER_API = "Whisper [API]"
 
 
 class TranslatorServiceEnum(Enum):

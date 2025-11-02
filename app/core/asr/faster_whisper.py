@@ -292,7 +292,7 @@ class FasterWhisperASR(BaseASR):
                         if "Subtitles are written to" in line:
                             is_finish = True
                             callback(*ASRStatus.COMPLETED.callback_tuple())
-                        if "error" in line:
+                        if "error" in line or "Error" in line:
                             error_msg += line
                             logger.error(line)
                         else:
