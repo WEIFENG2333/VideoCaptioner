@@ -86,10 +86,12 @@ class TranscriptThread(QThread):
         self.progress.emit(5, self.tr("转换音频中"))
         logger.info("开始转换音频")
 
-        # 使用 tempfile.NamedTemporaryFile 管理临时音频文件
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_audio_file:
-            temp_audio_path = temp_audio_file.name
+        # 创建临时音频文件（delete=False 避免 Windows 权限问题）
+        temp_audio_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        temp_audio_path = temp_audio_file.name
+        temp_audio_file.close()  # 立即关闭文件句柄，让 ffmpeg 可以写入
 
+        try:
             # 转换音频文件
             # 获取选中的音轨索引（如果有）
             audio_track_index = self.task.selected_audio_track_index
@@ -112,14 +114,16 @@ class TranscriptThread(QThread):
                 callback=self.progress_callback,
             )
 
-        # 保存字幕文件
-        output_path = Path(self.task.output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        asr_data.to_srt(save_path=str(output_path))
-        logger.info("字幕文件已保存到: %s", str(output_path))
+            # 保存字幕文件
+            output_path = Path(self.task.output_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            asr_data.to_srt(save_path=str(output_path))
+            logger.info("字幕文件已保存到: %s", str(output_path))
 
-        self.progress.emit(100, self.tr("转录完成"))
-        self.finished.emit(self.task)
+            self.progress.emit(100, self.tr("转录完成"))
+            self.finished.emit(self.task)
+        finally:
+            Path(temp_audio_path).unlink(missing_ok=True)
 
     def progress_callback(self, value, message):
         progress = min(20 + (value * 0.8), 100)

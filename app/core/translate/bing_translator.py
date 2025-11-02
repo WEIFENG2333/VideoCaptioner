@@ -82,7 +82,6 @@ class BingTranslator(BaseTranslator):
                     subtitle_chunk[i].translated_text = translation["translations"][0][
                         "text"
                     ]
-                    print(translation)
 
             except Exception as e:
                 logger.error(f"必应翻译失败: {str(e)}")
