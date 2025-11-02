@@ -315,7 +315,7 @@ class SubtitleInterface(QWidget):
 
         # 添加文稿提示按钮
         self.prompt_button = Action(
-            FIF.DOCUMENT, self.tr("文稿提示"), triggered=self.show_prompt_dialog
+            FIF.DOCUMENT, self.tr("Prompt"), triggered=self.show_prompt_dialog
         )
         self.command_bar.addAction(self.prompt_button)
 
