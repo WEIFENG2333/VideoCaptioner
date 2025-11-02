@@ -298,13 +298,13 @@ class FasterWhisperASR(BaseASR):
                         else:
                             logger.info(line)
 
-            logger.info("Faster Whisper 返回值: %s", self.process.returncode)
             if not is_finish:
                 logger.error("Faster Whisper 错误: %s", error_msg)
                 raise RuntimeError(error_msg)
 
             # 判断是否识别成功
             if not output_path.exists():
+                logger.info("Faster Whisper 返回值: %s", self.process.returncode)
                 raise RuntimeError(f"Faster Whisper 输出文件不存在: {output_path}")
 
             logger.info("Faster Whisper ASR completed")
