@@ -457,6 +457,7 @@ class SubtitleInterface(QWidget):
             )
             return
         self.start_button.setEnabled(False)
+        self.progress_bar.resume()
         self.progress_bar.reset()
         self.cancel_button.show()
 
@@ -495,7 +496,8 @@ class SubtitleInterface(QWidget):
         self, video_path: str, output_path: str
     ) -> None:
         self.start_button.setEnabled(True)
-        self.cancel_button.hide()  # 隐藏取消按钮
+        self.cancel_button.hide()
+        self.progress_bar.setValue(100)
         if self.task and self.task.need_next_task:
             self.finished.emit(video_path, output_path)
         InfoBar.success(
@@ -837,6 +839,7 @@ class SubtitleInterface(QWidget):
             self.subtitle_optimization_thread.stop()  # type: ignore
             self.start_button.setEnabled(True)
             self.cancel_button.hide()
+            self.progress_bar.resume()  # 恢复正常状态
             self.progress_bar.setValue(0)
             self.status_label.setText(self.tr("已取消校正"))
             InfoBar.warning(

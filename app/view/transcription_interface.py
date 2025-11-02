@@ -273,8 +273,8 @@ class VideoInfoCard(CardWidget):
             ]
             if need_language_settings and not self.show_language_settings():
                 return
+        self.progress_ring.setValue(0)
         self.progress_ring.show()
-        self.progress_ring.setValue(100)
         self.start_button.setDisabled(True)
         self.start_transcription()
 
@@ -323,9 +323,10 @@ class VideoInfoCard(CardWidget):
 
     def on_transcript_error(self, error):
         """处理转录错误"""
+        self.transcription_interface.is_processing = False  # type: ignore
         self.start_button.setEnabled(True)
         self.start_button.setText(self.tr("重新转录"))
-        self.start_button.setEnabled(True)
+        self.progress_ring.hide()
         InfoBar.error(
             self.tr("转录失败"),
             self.tr(error),
@@ -337,6 +338,7 @@ class VideoInfoCard(CardWidget):
         """转录完成处理"""
         self.start_button.setEnabled(True)
         self.start_button.setText(self.tr("转录完成"))
+        self.progress_ring.hide()
         self.finished.emit(task)
 
     def reset_ui(self):
@@ -344,6 +346,7 @@ class VideoInfoCard(CardWidget):
         self.start_button.setDisabled(False)
         self.start_button.setText(self.tr("开始转录"))
         self.progress_ring.setValue(0)
+        self.progress_ring.hide()
 
     def set_task(self, task):
         """设置任务并更新UI"""

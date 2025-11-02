@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Literal, Optional
 
+from ..entities import AudioStreamInfo
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
 from ..entities import VideoInfo
@@ -52,12 +53,10 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
     Returns:
         转换是否成功
     """
-    # 创建output目录
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output = str(output_path)
 
-    # 构建命令
     logger.info(f"提取音轨索引 {audio_track_index}")
     cmd = [
         "ffmpeg",
@@ -93,6 +92,15 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
         else:
             logger.error("音频转换失败")
             return False
+    except subprocess.CalledProcessError as e:
+        logger.error("== ffmpeg 执行失败 ==")
+        logger.error(f"返回码: {e.returncode}")
+        logger.error(f"命令: {' '.join(e.cmd)}")
+        if e.stdout:
+            logger.error(f"标准输出: {e.stdout}")
+        if e.stderr:
+            logger.error(f"标准错误: {e.stderr}")
+        return False
     except Exception as e:
         logger.exception(f"音频转换出错: {str(e)}")
         return False
@@ -195,16 +203,28 @@ def add_subtitles(
                 output,
             ]
             logger.info(f"添加软字幕执行命令: {' '.join(cmd)}")
-            subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-                ),
-            )
+            try:
+                subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    check=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    creationflags=(
+                        getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+                    ),
+                )
+                logger.info("软字幕添加成功")
+            except subprocess.CalledProcessError as e:
+                logger.error("== ffmpeg 添加软字幕失败 ==")
+                logger.error(f"返回码: {e.returncode}")
+                logger.error(f"命令: {' '.join(e.cmd)}")
+                if e.stdout:
+                    logger.error(f"标准输出: {e.stdout}")
+                if e.stderr:
+                    logger.error(f"标准错误: {e.stderr}")
+                raise
         else:
             # 使用硬字幕
             subtitle_path_escaped = (
@@ -305,12 +325,22 @@ def add_subtitles(
                 return_code = process.wait()
                 if return_code != 0:
                     error_info = process.stderr.read()
-                    logger.error(f"视频合成失败: {error_info}")
+                    logger.error("== ffmpeg 添加硬字幕失败 ==")
+                    logger.error(f"返回码: {return_code}")
+                    logger.error(f"命令: {cmd_str}")
+                    if error_info:
+                        logger.error(f"错误信息: {error_info}")
                     raise Exception(f"FFmpeg 返回码: {return_code}")
                 logger.info("视频合成完成")
 
+            except subprocess.SubprocessError as e:
+                logger.error("== ffmpeg 进程执行异常 ==")
+                logger.error(f"错误: {str(e)}")
+                if process and process.poll() is None:
+                    process.kill()
+                raise
             except Exception as e:
-                logger.exception(f"FFmpeg 执行出错: {str(e)}")
+                logger.error(f"视频合成过程出错: {str(e)}")
                 if process and process.poll() is None:
                     process.kill()
                 raise
@@ -329,8 +359,6 @@ def get_video_info(
         VideoInfo 对象，失败返回 None
     """
     try:
-        from ..entities import AudioStreamInfo, VideoInfo
-
         # 执行 ffmpeg 获取视频信息
         result = subprocess.run(
             ["ffmpeg", "-i", file_path],
