@@ -61,6 +61,7 @@ class TaskFactory:
             transcribe_model=cfg.transcribe_model.value,
             transcribe_language=LANGUAGES[cfg.transcribe_language.value.value],
             need_word_time_stamp=need_word_time_stamp,
+            output_format=cfg.transcribe_output_format.value,
             # Whisper Cpp 配置
             whisper_model=cfg.whisper_model.value,
             # Whisper API 配置
