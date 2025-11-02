@@ -13,6 +13,9 @@ from .asr_data import ASRData
 from .base import BaseASR
 from .chunk_merger import ChunkMerger
 
+from pydub import AudioSegment
+
+
 logger = setup_logger("chunked_asr")
 
 # 常量定义
@@ -113,8 +116,6 @@ class ChunkedASR:
             List[(chunk_bytes, offset_ms), ...]
             每个元素包含音频块的字节数据和时间偏移（毫秒）
         """
-        from pydub import AudioSegment
-
         # 从字节数据加载音频
         if self.file_binary is None:
             raise ValueError("file_binary is None, cannot split audio")
@@ -135,7 +136,6 @@ class ChunkedASR:
             end_ms = min(start_ms + self.chunk_length_ms, total_duration_ms)
             chunk = audio[start_ms:end_ms]
 
-            # 导出为 mp3 字节（兼容性最好）
             buffer = io.BytesIO()
             chunk.export(buffer, format="mp3")
             chunk_bytes = buffer.getvalue()
@@ -153,7 +153,7 @@ class ChunkedASR:
             if end_ms >= total_duration_ms:
                 break
 
-        logger.info(f"音频切割完成，共 {len(chunks)} 个块")
+        # logger.info(f"音频切割完成，共 {len(chunks)} 个块")
         return chunks
 
     def _transcribe_chunks(

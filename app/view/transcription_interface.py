@@ -152,7 +152,7 @@ class VideoInfoCard(CardWidget):
 
     def update_info(self, video_info: VideoInfo) -> None:
         """更新视频信息显示"""
-        # self.reset_ui()
+        self.reset_ui()
         self.video_info = video_info
 
         self.video_title.setText(video_info.file_name.rsplit(".", 1)[0])
