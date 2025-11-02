@@ -13,6 +13,9 @@ from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
 from .status import ASRStatus
 
+import GPUtil
+
+
 logger = setup_logger("faster_whisper")
 
 
@@ -125,7 +128,6 @@ class FasterWhisperASR(BaseASR):
         if self.model_dir:
             cmd.extend(["--model_dir", str(self.model_dir)])
 
-        # 基本参数
         cmd.extend(
             [
                 str(audio_path),
@@ -194,6 +196,10 @@ class FasterWhisperASR(BaseASR):
 
         # 完成的提示音
         cmd.extend(["--beep_off"])
+
+        # 检测 50 系显卡，添加 compute_type 参数
+        if is_rtx_50_series():
+            cmd.extend(["--compute_type", "float16"])
 
         return cmd
 
@@ -312,3 +318,21 @@ class FasterWhisperASR(BaseASR):
         cmd = self._build_command("")
         cmd_hash = hashlib.md5(str(cmd).encode()).hexdigest()
         return f"{self.crc32_hex}-{cmd_hash}"
+
+
+def is_rtx_50_series() -> bool:
+    """检测是否为 RTX 50 系显卡"""
+    if GPUtil is None:
+        logger.debug("GPUtil 未安装，无法检测 GPU 型号")
+        return False
+    try:
+        gpus = GPUtil.getGPUs()
+        for gpu in gpus:
+            gpu_name = gpu.name.lower()
+            # 检测是否包含 50 系列标识，如 RTX 5090, RTX 5080 等
+            if re.search(r"rtx\s*50\d{2}", gpu_name):
+                logger.info(f"检测到 RTX 50 系显卡: {gpu.name}")
+                return True
+    except Exception as e:
+        logger.debug(f"无法检测 GPU 型号: {e}")
+    return False

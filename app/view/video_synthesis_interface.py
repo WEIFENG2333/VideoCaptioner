@@ -373,6 +373,7 @@ class VideoSynthesisInterface(QWidget):
     def start_video_synthesis(self, need_create_task=True):
         self.synthesize_button.setEnabled(False)
         self.progress_bar.resume()
+        self.progress_bar.reset()
         if need_create_task:
             self.task = self.create_task()
 
@@ -394,6 +395,7 @@ class VideoSynthesisInterface(QWidget):
 
     def on_video_synthesis_finished(self, task):
         self.synthesize_button.setEnabled(True)
+        self.progress_bar.setValue(100)
         self.open_video_folder()
         InfoBar.success(
             self.tr("成功"),

@@ -109,10 +109,12 @@ def create_test_audio_file(duration_sec: int = 60) -> str:
     # 创建静音音频
     audio = AudioSegment.silent(duration=duration_sec * 1000)
 
-    # 保存到临时文件
+    # 保存到临时文件（delete=False 避免 Windows 权限问题）
     temp_file = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
-    audio.export(temp_file.name, format="mp3")
-    return temp_file.name
+    temp_path = temp_file.name
+    temp_file.close()  # 关闭文件句柄，让 pydub 可以写入
+    audio.export(temp_path, format="mp3")
+    return temp_path
 
 
 # ============================================================================
