@@ -561,7 +561,6 @@ class SubtitleConfig:
     need_split: bool = True
     target_language: Optional["TargetLanguage"] = None
     subtitle_style: Optional[str] = None
-    need_remove_punctuation: bool = False
     custom_prompt_text: Optional[str] = None
 
     def _mask_key(self, key: Optional[str]) -> str:
@@ -604,7 +603,6 @@ class SubtitleConfig:
             lines.append(f"  Batch Size: {self.batch_size}")
 
         lines.append(f"Layout: {self.subtitle_layout.value}")
-        lines.append(f"Remove Punctuation: {self.need_remove_punctuation}")
         lines.append("=" * 48)
         return "\n".join(lines)
 

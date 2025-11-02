@@ -46,20 +46,11 @@ class SubtitleSettingDialog(MessageBoxBase):
             parent=self,
         )
 
-        self.remove_punctuation_card = SwitchSettingCard(
-            FIF.ALIGNMENT,
-            self.tr("去除末尾标点符号"),
-            self.tr("是否去除中文字幕中的末尾标点符号"),
-            cfg.needs_remove_punctuation,
-            self,
-        )
-
         # 添加到布局
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.split_card)
         self.viewLayout.addWidget(self.word_count_cjk_card)
         self.viewLayout.addWidget(self.word_count_english_card)
-        self.viewLayout.addWidget(self.remove_punctuation_card)
         # 设置间距
 
         self.viewLayout.setSpacing(10)
