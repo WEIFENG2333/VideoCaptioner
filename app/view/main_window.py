@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     FluentWindow,
+    InfoBar,
+    InfoBarPosition,
     MessageBox,
     NavigationItemPosition,
     SplashScreen,
@@ -15,7 +17,7 @@ from qfluentwidgets import (
 from app.common.config import cfg
 from app.components.DonateDialog import DonateDialog
 from app.config import ASSETS_PATH, GITHUB_REPO_URL
-from app.thread.version_manager_thread import VersionManager
+from app.thread.version_checker_thread import VersionChecker
 from app.view.batch_process_interface import BatchProcessInterface
 from app.view.home_interface import HomeInterface
 from app.view.setting_interface import SettingInterface
@@ -35,15 +37,14 @@ class MainWindow(FluentWindow):
         self.subtitleStyleInterface = SubtitleStyleInterface(self)
         self.batchProcessInterface = BatchProcessInterface(self)
 
-        # 初始化版本管理器
-        self.versionManager = VersionManager()
-        self.versionManager.newVersionAvailable.connect(self.onNewVersion)
-        self.versionManager.announcementAvailable.connect(self.onAnnouncement)
+        # 初始化版本检查器
+        self.versionChecker = VersionChecker()
+        self.versionChecker.newVersionAvailable.connect(self.onNewVersion)
+        self.versionChecker.announcementAvailable.connect(self.onAnnouncement)
 
-        # 创建版本检查线程
         self.versionThread = QThread()
-        self.versionManager.moveToThread(self.versionThread)
-        self.versionThread.started.connect(self.versionManager.performCheck)
+        self.versionChecker.moveToThread(self.versionThread)
+        self.versionThread.started.connect(self.versionChecker.perform_check)
         self.versionThread.start()
 
         # 初始化导航界面
@@ -129,17 +130,33 @@ class MainWindow(FluentWindow):
             donate_dialog = DonateDialog(self)
             donate_dialog.exec_()
 
-    def onNewVersion(self, version, force_update, update_info, download_url):
+    def onNewVersion(self, version, update_required, update_info, download_url):
         """新版本提示"""
-        title = "发现新版本" if not force_update else "当前版本已停用"
-        content = f"发现新版本 {version}\n\n{update_info}"
+        if update_required:
+            title = "发现新版本, 需要更新"
+            content = f"发现新版本 {version}\n\n" f"更新内容：\n{update_info}"
+        else:
+            title = "发现新版本"
+            content = f"发现新版本 {version}\n\n{update_info}"
+
         w = MessageBox(title, content, self)
         w.yesButton.setText("立即更新")
-        w.cancelButton.setText("稍后再说" if not force_update else "退出程序")
-        if w.exec():
+        w.cancelButton.setText("稍后再说")
+
+        if w.exec() or update_required:
             QDesktopServices.openUrl(QUrl(download_url))
-        if force_update:
-            QApplication.quit()
+
+        if update_required:
+            self.homeInterface.setEnabled(False)
+            self.batchProcessInterface.setEnabled(False)
+            InfoBar.error(
+                title="需要更新",
+                content=self.tr("当前版本部分功能已被禁用。请尽快更新。"),
+                isClosable=False,
+                position=InfoBarPosition.BOTTOM,
+                duration=-1,
+                parent=self,
+            )
 
     def onAnnouncement(self, content):
         """显示公告"""
