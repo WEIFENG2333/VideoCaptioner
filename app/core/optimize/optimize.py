@@ -21,7 +21,7 @@ from ..utils.logger import setup_logger
 
 logger = setup_logger("subtitle_optimizer")
 
-MAX_STEPS = 4
+MAX_STEPS = 3
 
 
 class SubtitleOptimizer:
@@ -224,6 +224,7 @@ class SubtitleOptimizer:
                 model=self.model,
                 temperature=0.2,
             )
+            print(messages)
 
             result_text = response.choices[0].message.content
             if not result_text:
@@ -256,9 +257,8 @@ class SubtitleOptimizer:
                 {
                     "role": "user",
                     "content": (
-                        f"Error: {error_message}\n"
-                        f"Please fix the errors and return the COMPLETE optimized dictionary with ALL {len(subtitle_chunk)} keys."
-                        "Output ONLY a valid JSON dictionary, no explanation."
+                        f"Validation failed: {error_message}\n"
+                        f"Please fix the errors and output ONLY a valid JSON dictionary."
                     ),
                 }
             )
@@ -297,12 +297,13 @@ class SubtitleOptimizer:
 
             error_parts = []
             if missing:
-                error_parts.append(f"Missing keys {sorted(missing)}")
+                error_parts.append(f"Missing keys: {sorted(missing)}")
             if extra:
-                error_parts.append(f"Extra keys {sorted(extra)}")
+                error_parts.append(f"Extra keys: {sorted(extra)}")
 
             error_msg = (
-                "; ".join(error_parts) + f". Required keys: {sorted(expected_keys)}"
+                "\n".join(error_parts) + f"\nRequired keys: {sorted(expected_keys)}\n"
+                f"Please return the COMPLETE optimized dictionary with ALL {len(expected_keys)} keys."
             )
             return False, error_msg
 
@@ -331,8 +332,10 @@ class SubtitleOptimizer:
         if excessive_changes:
             error_msg = ";\n".join(excessive_changes)
             error_msg += (
-                "\nSimilarity must be suitable for the limit of the text length. "
-                "Please make less changes: optimize subtitles while keeping the original meaning and structure."
+                "\n\nYour optimizations changed the text too much. "
+                "Keep high similarity (≥70% for normal text) by making MINIMAL changes: "
+                "only fix recognition errors and improve clarity, "
+                "but preserve the original wording, length and structure as much as possible."
             )
             return False, error_msg
 

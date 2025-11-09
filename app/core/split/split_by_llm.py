@@ -10,7 +10,7 @@ from ..utils.text_utils import count_words, is_mainly_cjk
 logger = setup_logger("split_by_llm")
 
 MAX_WORD_COUNT = 20  # 英文单词或中文字符的最大数量
-MAX_STEPS = 4  # Agent loop最大尝试次数
+MAX_STEPS = 3  # Agent loop最大尝试次数
 
 
 def split_by_llm(
@@ -123,18 +123,19 @@ def _validate_split_result(
         return False, "No segments found. Split the text with <br> tags."
 
     # 检查内容是否被修改（使用difflib精确定位差异）
-    merged = "".join(split_result)
     original_cleaned = re.sub(r"\s+", " ", original_text)
+    text_is_cjk = is_mainly_cjk(original_cleaned)
+
+    merged_char = "" if text_is_cjk else " "
+    merged = merged_char.join(split_result)
     merged_cleaned = re.sub(r"\s+", " ", merged)
 
     # 使用SequenceMatcher计算相似度和差异
     matcher = difflib.SequenceMatcher(None, original_cleaned, merged_cleaned)
     similarity_ratio = matcher.ratio()
 
-    text_is_cjk = is_mainly_cjk(original_cleaned)
-
     # 允许98%以上的相似度（容忍少量标点或空格差异）
-    if similarity_ratio < 0.98:
+    if similarity_ratio < 0.96:
         differences = []
         context_size = 5 if text_is_cjk else 20
 
@@ -147,6 +148,9 @@ def _validate_split_result(
 
                 new_part = merged_cleaned[b0:b1]
 
+                if orig_part.isspace() or new_part.isspace():
+                    continue
+
                 differences.append(
                     f"...{before}[{orig_part}]{after}... → changed to [{new_part}]"
                 )
@@ -156,16 +160,22 @@ def _validate_split_result(
                 deleted_part = original_cleaned[a0:a1]
                 after = original_cleaned[a1 : a1 + context_size]
 
+                if deleted_part.isspace():
+                    continue
+
                 differences.append(f"...{before}[{deleted_part}]{after}... → deleted")
 
             elif opcode == "insert":
                 # 对于插入，显示插入位置的上下文
                 before = merged_cleaned[max(0, b0 - context_size) : b0]
                 inserted_part = merged_cleaned[b0:b1]
-                after = merged_cleaned[b0 + len(inserted_part) : b1 + context_size]
+                after = merged_cleaned[b1 : b1 + context_size]
+
+                if inserted_part.isspace():
+                    continue
 
                 differences.append(
-                    f"...{before}→ inserted [{inserted_part}] →{after}..."
+                    f"Wrongly inserted [{inserted_part}] between '...{before}' and '{after}...'"
                 )
 
         if differences:
