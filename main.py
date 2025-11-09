@@ -10,6 +10,8 @@ import platform
 import sys
 import traceback
 
+from app.config import TRANSLATIONS_PATH
+
 # Add project root directory to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(project_root)
@@ -68,13 +70,11 @@ QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore
 app = QApplication(sys.argv)
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings, True)  # type: ignore
 
-# Internationalization (Multi-language)
+# Internationalization
 locale = cfg.get(cfg.language).value
 translator = FluentTranslator(locale)
 myTranslator = QTranslator()
-translations_path = (
-    RESOURCE_PATH / "translations" / f"VideoCaptioner_{locale.name()}.qm"
-)
+translations_path = TRANSLATIONS_PATH / f"VideoCaptioner_{locale.name()}.qm"
 myTranslator.load(str(translations_path))
 app.installTranslator(translator)
 app.installTranslator(myTranslator)

@@ -13,16 +13,17 @@ RELEASE_URL = "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest"
 FEEDBACK_URL = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 
 # 路径
-ROOT_PATH = Path(__file__).parent
+ROOT_PATH = Path(__file__).parent.parent
 
-RESOURCE_PATH = ROOT_PATH.parent / "resource"
-APPDATA_PATH = ROOT_PATH.parent / "AppData"
-WORK_PATH = ROOT_PATH.parent / "work-dir"
+RESOURCE_PATH = ROOT_PATH / "resource"
+APPDATA_PATH = ROOT_PATH / "AppData"
+WORK_PATH = ROOT_PATH / "work-dir"
 
 
 BIN_PATH = RESOURCE_PATH / "bin"
 ASSETS_PATH = RESOURCE_PATH / "assets"
 SUBTITLE_STYLE_PATH = RESOURCE_PATH / "subtitle_style"
+TRANSLATIONS_PATH = RESOURCE_PATH / "translations"
 
 LOG_PATH = APPDATA_PATH / "logs"
 SETTINGS_PATH = APPDATA_PATH / "settings.json"
