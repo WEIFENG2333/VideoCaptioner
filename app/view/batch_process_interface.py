@@ -70,9 +70,9 @@ class BatchProcessInterface(QWidget):
         self.task_type_combo.setCurrentText(str(BatchTaskType.FULL_PROCESS))
 
         # 控制按钮
-        self.add_file_btn = PushButton("添加文件", icon=FIF.ADD)
-        self.start_all_btn = PushButton("开始处理", icon=FIF.PLAY)
-        self.clear_btn = PushButton("清空列表", icon=FIF.DELETE)
+        self.add_file_btn = PushButton(self.tr("添加文件"), icon=FIF.ADD)
+        self.start_all_btn = PushButton(self.tr("开始处理"), icon=FIF.PLAY)
+        self.clear_btn = PushButton(self.tr("清空列表"), icon=FIF.DELETE)
 
         # 添加到顶部布局
         top_layout.addWidget(self.task_type_combo)
@@ -379,7 +379,7 @@ class BatchProcessInterface(QWidget):
 
         # 显示开始处理的提示
         InfoBar.success(
-            title="开始处理",
+            title=self.tr("开始处理"),
             content=f"开始处理 {waiting_tasks} 个任务",
             duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.TOP,
@@ -398,7 +398,7 @@ class BatchProcessInterface(QWidget):
         # 显示开始处理的提示
         file_name = os.path.basename(file_path)
         InfoBar.success(
-            title="开始处理",
+            title=self.tr("开始处理"),
             content=f"开始处理文件：{file_name}",
             duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.TOP,
