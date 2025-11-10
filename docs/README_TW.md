@@ -1,11 +1,10 @@
-```markdown
 <div align="center">
   <img src="./images/logo.png" alt="VideoCaptioner Logo" width="100">
   <p>卡卡字幕助手</p>
   <h1>VideoCaptioner</h1>
   <p>一款基於大語言模型(LLM)的視頻字幕處理助手，支持語音識別、字幕斷句、優化、翻譯全流程處理</p>
 
-  簡體中文 / [正體中文](./docs/README_TW.md) / [English](./docs/README_EN.md) / [日本語](./docs/README_JA.md)
+  [简体中文](../README.md) / 正體中文 / [English](./README_EN.md) / [日本語](./README_JA.md)
   
 </div>
 
@@ -347,4 +346,3 @@ VideoCaptioner/
   <img src="./images/alipay.jpg" alt="支付寶二維碼" width="30%">
   <img src="./images/wechat.jpg" alt="微信二維碼" width="30%">
 </div>
-```
