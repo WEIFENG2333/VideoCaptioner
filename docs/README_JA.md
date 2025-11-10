@@ -4,7 +4,7 @@
   <h1>VideoCaptioner</h1>
   <p>音声認識、字幕のセグメンテーション、最適化、翻訳をサポートするLLM駆動のビデオ字幕処理アシスタント。</p>
 
-  [简体中文](./README.md) / [正體中文](./docs/README_TW.md) / [English](./docs/READNE_EN.md) / 日本語
+  [简体中文](../README.md) / [正體中文](./README_TW.md) / [English](./README_EN.md) / 日本語
 
 </div>
 
