@@ -1,4 +1,3 @@
-```markdown
 <div align="center">
   <img src="./images/logo.png" alt="VideoCaptioner Logo" width="100">
   <p>卡卡字幕助手</p>
@@ -347,4 +346,3 @@ VideoCaptioner/
   <img src="./images/alipay.jpg" alt="支付寶二維碼" width="30%">
   <img src="./images/wechat.jpg" alt="微信二維碼" width="30%">
 </div>
-```
