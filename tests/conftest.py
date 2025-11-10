@@ -5,6 +5,7 @@ Module-specific fixtures should be placed in their respective conftest.py files.
 """
 
 import os
+from pathlib import Path
 from typing import Dict, List
 
 import pytest
@@ -20,8 +21,8 @@ from app.core.asr.asr_data import ASRData, ASRDataSeg
 from app.core.translate import TargetLanguage, SubtitleProcessData
 from app.core.utils import cache
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from tests/.env
+load_dotenv(Path(__file__).parent / ".env")
 
 # Register OpenAI OTel tracing
 # tracer_provider = register(

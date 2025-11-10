@@ -24,7 +24,7 @@ from app.core.translate.types import TargetLanguage
 from app.thread.subtitle_thread import SubtitleThread
 
 # Load environment variables
-load_dotenv()
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 
 def get_test_model():
