@@ -10,7 +10,7 @@ from app.core.entities import TranscribeConfig, TranscribeModelEnum, TranscribeT
 from app.thread.transcript_thread import TranscriptThread
 from tests.test_thread.conftest import run_thread_with_timeout
 
-load_dotenv()
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 
 @pytest.mark.integration

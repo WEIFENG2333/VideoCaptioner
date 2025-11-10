@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 from app.core.tts import OpenAIFmTTS, OpenAITTS, SiliconFlowTTS, TTSConfig
 
 # 加载环境变量
-load_dotenv()
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # SiliconFlow TTS 环境变量配置
 SILICONFLOW_BASE_URL = os.getenv("OPENAI_TTS_BASE_URL", "https://api.siliconflow.cn/v1")
