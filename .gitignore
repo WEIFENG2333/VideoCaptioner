@@ -46,4 +46,5 @@ CLAUDE.md
 node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
-package-lock.json
+/package-lock.json
+!docs/package-lock.json
