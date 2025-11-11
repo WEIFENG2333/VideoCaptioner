@@ -131,6 +131,7 @@ Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackC
 Style: Default,微软雅黑,70,&H00eb7f33,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,2.0,0,1,2.0,0,2,10,10,10,1
 Style: Translate,微软雅黑,40,&H00eff0f3,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0.0,0,1,1.0,0,2,10,10,10,1
 """
-    bg_path = r"C:\Users\weifeng\Pictures\Animated_character_spraying_liquid.jpg"
-    preview_text = ("Hello, world!", "你好，世界！")
-    print(generate_preview(style_str, preview_text, bg_path, 1920, 1080))
+    # bg_path = r"path/to/your/test/background.jpg"  # 请替换为您的测试图片路径
+    # preview_text = ("Hello, world!", "你好，世界！")
+    # print(generate_preview(style_str, preview_text, bg_path, 1920, 1080))
+    pass
