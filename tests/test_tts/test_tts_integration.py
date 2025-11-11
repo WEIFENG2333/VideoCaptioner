@@ -2,12 +2,12 @@
 
 运行前需要设置环境变量（在 .env 文件中）:
     OPENAI_TTS_BASE_URL=https://api.siliconflow.cn/v1
-    OPENAI_TTS_API_KEY=REMOVED_API_KEY
+    OPENAI_TTS_API_KEY=your-api-key-here
     OPENAI_TTS_MODEL=FunAudioLLM/CosyVoice2-0.5B
     OPENAI_TTS_VOICE=FunAudioLLM/CosyVoice2-0.5B:alex
 
     OPENAI_API_BASE_URL=https://api.openai.com/v1
-    OPENAI_API_KEY=sk-xxx
+    OPENAI_API_KEY=your-api-key-here
     OPENAI_TTS_MODEL_NAME=tts-1
 
 运行方式:
