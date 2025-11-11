@@ -663,9 +663,9 @@ class MyVideoWidget(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MyVideoWidget()
-    # 设置视频源
-    video_path = r"C:\Users\weifeng\Videos\【卡卡】N进制演示器.mp4"
-    window.setVideo(QUrl.fromLocalFile(video_path))
+    # 设置视频源 - 请替换为您的测试视频路径
+    # video_path = r"path/to/your/test/video.mp4"
+    # window.setVideo(QUrl.fromLocalFile(video_path))
 
     # 确保窗口显示在屏幕中央
     window.show()
