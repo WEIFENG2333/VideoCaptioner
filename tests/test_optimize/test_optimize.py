@@ -20,15 +20,14 @@ class TestSubtitleOptimizer:
     """Test suite for SubtitleOptimizer with agent loop."""
 
     @pytest.fixture
-    def optimizer(self) -> SubtitleOptimizer:
-        """Create SubtitleOptimizer instance."""
-        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    def optimizer(self, mock_llm_client) -> SubtitleOptimizer:
+        """Create SubtitleOptimizer instance (using mock LLM)."""
+        model = "gpt-4o-mini"
         return SubtitleOptimizer(
             thread_num=2,
             batch_num=5,
             model=model,
             custom_prompt="",
-            temperature=0.7,
         )
 
     @pytest.fixture

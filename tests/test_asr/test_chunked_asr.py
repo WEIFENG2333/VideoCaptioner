@@ -25,7 +25,6 @@ from app.core.asr.asr_data import ASRData, ASRDataSeg
 from app.core.asr.base import BaseASR
 from app.core.asr.chunked_asr import ChunkedASR
 
-
 # ============================================================================
 # Mock ASR 辅助类
 # ============================================================================
@@ -135,7 +134,7 @@ class TestChunkedASRBasics:
 
             assert chunked.asr_class is MockASR
             assert chunked.audio_path == audio_path
-            assert chunked.chunk_length_ms == 480 * 1000  # 8 分钟
+            assert chunked.chunk_length_ms == 600 * 1000  # 10 分钟
             assert chunked.chunk_overlap_ms == 10 * 1000  # 10 秒
             assert chunked.chunk_concurrency == 3
         finally:

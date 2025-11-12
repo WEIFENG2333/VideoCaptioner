@@ -63,7 +63,7 @@ class TestRealWorldScenarios:
         text = "今天我们要讨论的话题是人工智能在现代社会中的应用特别是在医疗健康领域的突破性进展这些技术正在深刻地改变着我们的生活方式从诊断到治疗再到康复每个环节都有AI技术的身影"
         segments = create_whisper_style_segments(text, start_ms=0, char_duration_ms=200)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20)
         asr_data = ASRData(segments)
 
         # 预处理：转换为词级
@@ -102,7 +102,7 @@ class TestRealWorldScenarios:
         )
         segments.extend(followup)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         # 测试时间间隔分组
         groups = splitter._group_by_time_gaps(segments, max_gap=1500)
 
@@ -117,7 +117,7 @@ class TestRealWorldScenarios:
         segments = create_whisper_style_segments(text, char_duration_ms=180)
 
         # 新闻播报：时间间隔相对均匀
-        splitter = SubtitleSplitter(max_word_count_cjk=15)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=15)
         groups = splitter._group_by_time_gaps(segments, max_gap=1000)
 
         # 没有大停顿，应该是一组
@@ -153,7 +153,7 @@ class TestRealWorldScenarios:
         )
         segments.extend(main)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         # 测试合并短片段功能
         splitter.merge_short_segment(segments)
 
@@ -222,7 +222,7 @@ class TestRealWorldScenarios:
         s2 = create_whisper_style_segments("欢迎来到今天的分享", start_ms=current_time)
         segments.extend(s2)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         # 噪音应该在预处理时被识别（如果是纯标点）或合并
         result = preprocess_segments(segments)
 
@@ -238,7 +238,7 @@ class TestEdgeCasesRealistic:
         text = "快速语速测试数据这样的字幕通常出现在快节奏的节目中"
         segments = create_whisper_style_segments(text, char_duration_ms=150)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=15)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=15)
         # 快速语速不应该导致过度分割
         result = splitter._split_long_segment(segments[:15])
         assert len(result) >= 1
@@ -248,7 +248,7 @@ class TestEdgeCasesRealistic:
         text = "慢速语速每个字之间有明显停顿"
         segments = create_whisper_style_segments(text, char_duration_ms=500)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         # 慢速不应该被错误分组
         groups = splitter._group_by_time_gaps(segments, max_gap=1500)
         assert len(groups) >= 1
@@ -320,7 +320,7 @@ class TestEdgeCasesRealistic:
             assert segments[-1].end_time > start_time  # 至少递增
             assert segments[-1].start_time < segments[-1].end_time
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter._split_long_segment(segments)
 
         # 验证时间戳没有溢出或错误
@@ -348,7 +348,7 @@ class TestGroupByTimeGapsRealistic:
         )
         segments.extend(scene2)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps(
             segments, max_gap=2000, check_large_gaps=True
         )
@@ -374,7 +374,7 @@ class TestGroupByTimeGapsRealistic:
             # 句子间自然停顿（300ms）
             current_time = segs[-1].end_time + 300
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         # 用较小的 gap 不应该分组
         groups = splitter._group_by_time_gaps(segments, max_gap=500)
         assert len(groups) == 1
@@ -392,7 +392,7 @@ class TestSplitByCommonWordsRealistic:
         text = "我觉得这个方案很好但是还需要优化一下所以我建议再讨论讨论"
         segments = create_whisper_style_segments(text)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=15)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=15)
         groups = splitter._split_by_common_words(segments)
 
         # 应该在"但是"、"所以"处考虑分割
@@ -403,7 +403,7 @@ class TestSplitByCommonWordsRealistic:
         text = "I think this is a good idea but we need more time and we should discuss it further"
         segments = create_whisper_style_segments(text)
 
-        splitter = SubtitleSplitter(max_word_count_english=12)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_english=12)
         groups = splitter._split_by_common_words(segments)
 
         # 应该在 "but"、"and" 处考虑分割
@@ -428,7 +428,7 @@ class TestMergeShortSegmentRealistic:
             )
             current_time += 250  # 50ms 间隔
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
 
         # 应该合并成更少的片段
@@ -444,7 +444,7 @@ class TestMergeShortSegmentRealistic:
             ASRDataSeg(text="句", start_time=1600, end_time=1800),
         ]
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         original_len = len(segments)
         splitter.merge_short_segment(segments)
 
@@ -474,7 +474,7 @@ class TestMergeShortSegmentRealistic:
             )
             current_time += duration + 50
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
 
         # 语气词应该被合并

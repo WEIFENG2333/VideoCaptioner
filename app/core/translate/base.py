@@ -7,7 +7,7 @@ from typing import Callable, List, Optional
 from app.core.asr.asr_data import ASRData, ASRDataSeg
 from app.core.entities import SubtitleProcessData
 from app.core.translate.types import TargetLanguage
-from app.core.utils.cache import get_translate_cache, generate_cache_key
+from app.core.utils.cache import generate_cache_key, get_translate_cache
 from app.core.utils.logger import setup_logger
 
 logger = setup_logger("subtitle_translator")

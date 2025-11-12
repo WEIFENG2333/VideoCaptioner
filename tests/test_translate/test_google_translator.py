@@ -5,7 +5,7 @@ from typing import Dict, List
 import pytest
 
 from app.core.asr.asr_data import ASRData
-from app.core.translate import TargetLanguage, SubtitleProcessData
+from app.core.translate import SubtitleProcessData, TargetLanguage
 from app.core.translate.google_translator import GoogleTranslator
 from tests.conftest import assert_translation_quality
 

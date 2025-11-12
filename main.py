@@ -35,8 +35,8 @@ from qfluentwidgets import FluentTranslator  # noqa: E402
 
 from app.common.config import cfg  # noqa: E402
 from app.config import RESOURCE_PATH  # noqa: E402
+from app.core.utils.cache import disable_cache, enable_cache  # noqa: E402
 from app.core.utils.logger import setup_logger  # noqa: E402
-from app.core.utils.cache import enable_cache, disable_cache  # noqa: E402
 from app.view.main_window import MainWindow  # noqa: E402
 
 logger_instance = setup_logger("VideoCaptioner")

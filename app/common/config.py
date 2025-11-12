@@ -29,8 +29,8 @@ from ..core.entities import (
     TranscribeModelEnum,
     TranscribeOutputFormatEnum,
     TranslatorServiceEnum,
-    VideoQualityEnum,
     VadMethodEnum,
+    VideoQualityEnum,
     WhisperModelEnum,
 )
 from ..core.translate.types import TargetLanguage

@@ -14,7 +14,6 @@ Examples:
     python scripts/translate_llm.py resource/translations/VideoCaptioner_ja_JP.ts
 """
 import os
-
 import re
 import sys
 import xml.etree.ElementTree as ET

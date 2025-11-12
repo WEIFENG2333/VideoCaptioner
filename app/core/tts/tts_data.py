@@ -1,7 +1,7 @@
 """TTS 数据结构定义"""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 
 @dataclass
@@ -16,7 +16,7 @@ class TTSConfig:
     # 音频参数
     voice: Optional[str] = None  # 默认音色选择
     custom_prompt: Optional[str] = None  # 自定义提示词（用于 OpenAI.fm 等）
-    response_format: str = "mp3"  # mp3, opus, wav, pcm
+    response_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
     sample_rate: int = 32000  # 采样率
     speed: float = 1.0  # 语速 0.25-4.0
     gain: int = 0  # 音量增益 -10 到 10

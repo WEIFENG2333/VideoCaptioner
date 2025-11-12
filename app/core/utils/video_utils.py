@@ -7,10 +7,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Literal, Optional
 
-from ..entities import AudioStreamInfo
+from ..entities import AudioStreamInfo, VideoInfo
 from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
-from ..entities import VideoInfo
 
 logger = setup_logger("video_utils")
 
@@ -212,7 +211,9 @@ def add_subtitles(
                     encoding="utf-8",
                     errors="replace",
                     creationflags=(
-                        getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                        if os.name == "nt"
+                        else 0
                     ),
                 )
                 logger.info("软字幕添加成功")
@@ -396,6 +397,8 @@ def get_video_info(
             fps = float(video_stream_match.group(4))
         else:
             logger.warning("未找到视频流信息")
+            # 如果没有视频流,返回 None
+            return None
 
         # 提取第一条音频流信息（用于兼容性）
         audio_codec, audio_sampling_rate = "", 0

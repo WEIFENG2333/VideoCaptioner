@@ -94,8 +94,8 @@ class TestSubtitleSplitterInit:
 
     def test_default_initialization(self):
         """测试默认初始化"""
-        splitter = SubtitleSplitter()
-        assert splitter.thread_num == 5
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
+        assert splitter.thread_num == 1
         assert splitter.model == "gpt-4o-mini"
         assert splitter.max_word_count_cjk == MAX_WORD_COUNT_CJK
         assert splitter.max_word_count_english == MAX_WORD_COUNT_ENGLISH
@@ -117,7 +117,7 @@ class TestSubtitleSplitterInit:
 
     def test_thread_pool_created(self):
         """测试线程池正确创建"""
-        splitter = SubtitleSplitter(thread_num=3)
+        splitter = SubtitleSplitter(thread_num=3, model="gpt-4o-mini")
         assert splitter.executor is not None
         assert splitter.executor._max_workers == 3
 
@@ -127,31 +127,31 @@ class TestDetermineNumSegments:
 
     def test_small_word_count(self):
         """测试小字数（不需要分段）"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         num_segments = splitter._determine_num_segments(100, threshold=500)
         assert num_segments == 1
 
     def test_exact_threshold(self):
         """测试正好等于阈值"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         num_segments = splitter._determine_num_segments(500, threshold=500)
         assert num_segments == 1
 
     def test_just_above_threshold(self):
         """测试刚超过阈值"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         num_segments = splitter._determine_num_segments(501, threshold=500)
         assert num_segments == 2
 
     def test_multiple_segments(self):
         """测试多个分段"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         num_segments = splitter._determine_num_segments(1500, threshold=500)
         assert num_segments == 3
 
     def test_zero_word_count(self):
         """测试零字数"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         num_segments = splitter._determine_num_segments(0, threshold=500)
         assert num_segments == 1
 
@@ -166,7 +166,7 @@ class TestGroupByTimeGaps:
             ASRDataSeg(text="B", start_time=1000, end_time=2000),
             ASRDataSeg(text="C", start_time=2000, end_time=3000),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps(segments, max_gap=1500)
         assert len(groups) == 1
         assert len(groups[0]) == 3
@@ -178,7 +178,7 @@ class TestGroupByTimeGaps:
             ASRDataSeg(text="B", start_time=3000, end_time=4000),  # 2000ms间隔
             ASRDataSeg(text="C", start_time=4000, end_time=5000),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps(segments, max_gap=1500)
         assert len(groups) == 2
         assert len(groups[0]) == 1
@@ -192,20 +192,20 @@ class TestGroupByTimeGaps:
             ASRDataSeg(text="C", start_time=4000, end_time=5000),
             ASRDataSeg(text="D", start_time=7000, end_time=8000),  # 大间隔
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps(segments, max_gap=1500)
         assert len(groups) == 3
 
     def test_empty_segments(self):
         """测试空列表"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps([])
         assert groups == []
 
     def test_single_segment(self):
         """测试单个分段"""
         segments = [ASRDataSeg(text="A", start_time=0, end_time=1000)]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps(segments)
         assert len(groups) == 1
         assert len(groups[0]) == 1
@@ -221,7 +221,7 @@ class TestGroupByTimeGaps:
         segments.insert(5, ASRDataSeg(text="gap", start_time=500, end_time=5000))
         segments.append(ASRDataSeg(text="after", start_time=5000, end_time=5100))
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._group_by_time_gaps(segments, check_large_gaps=True)
         # 应该检测到异常间隔并分组
         assert len(groups) >= 1
@@ -240,7 +240,9 @@ class TestSplitByCommonWords:
             ASRDataSeg(text="很", start_time=400, end_time=500),
             ASRDataSeg(text="好", start_time=500, end_time=600),
         ]
-        splitter = SubtitleSplitter(max_word_count_cjk=10)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=10
+        )
         groups = splitter._split_by_common_words(segments)
         # 应该至少产生分割
         assert len(groups) >= 1
@@ -255,7 +257,9 @@ class TestSplitByCommonWords:
             ASRDataSeg(text="走", start_time=400, end_time=500),
             ASRDataSeg(text="吧", start_time=500, end_time=600),  # 后缀词
         ]
-        splitter = SubtitleSplitter(max_word_count_cjk=10)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=10
+        )
         groups = splitter._split_by_common_words(segments)
         assert len(groups) >= 1
 
@@ -270,7 +274,9 @@ class TestSplitByCommonWords:
             ASRDataSeg(text="likes", start_time=500, end_time=600),
             ASRDataSeg(text="you", start_time=600, end_time=700),
         ]
-        splitter = SubtitleSplitter(max_word_count_english=10)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_english=10
+        )
         groups = splitter._split_by_common_words(segments)
         assert len(groups) >= 1
 
@@ -280,13 +286,13 @@ class TestSplitByCommonWords:
             ASRDataSeg(text="测", start_time=0, end_time=100),
             ASRDataSeg(text="试", start_time=100, end_time=200),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._split_by_common_words(segments)
         assert len(groups) == 1
 
     def test_empty_segments(self):
         """测试空列表"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         groups = splitter._split_by_common_words([])
         assert groups == []
 
@@ -301,7 +307,9 @@ class TestSplitLongSegment:
             ASRDataSeg(text="文", start_time=100, end_time=200),
             ASRDataSeg(text="本", start_time=200, end_time=300),
         ]
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20
+        )
         result = splitter._split_long_segment(segments)
         assert len(result) == 1
         assert result[0].text == "短文本"
@@ -319,7 +327,9 @@ class TestSplitLongSegment:
         segments[mid].end_time = segments[mid].start_time + 50
         segments[mid + 1].start_time = segments[mid].end_time + 500
 
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20
+        )
         result = splitter._split_long_segment(segments)
         # 应该被拆分成多个
         assert len(result) >= 2
@@ -330,7 +340,7 @@ class TestSplitLongSegment:
             ASRDataSeg(text="A", start_time=0, end_time=100),
             ASRDataSeg(text="B", start_time=100, end_time=200),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter._split_long_segment(segments)
         assert len(result) == 1
 
@@ -340,7 +350,9 @@ class TestSplitLongSegment:
             ASRDataSeg(text=f"字{i}", start_time=i * 100, end_time=(i + 1) * 100)
             for i in range(100)
         ]
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20
+        )
         result = splitter._split_long_segment(segments)
         # 应该被递归拆分
         assert len(result) >= 2
@@ -351,7 +363,9 @@ class TestSplitLongSegment:
             ASRDataSeg(text=f"字{i}", start_time=i * 100, end_time=(i + 1) * 100)
             for i in range(50)
         ]
-        splitter = SubtitleSplitter(max_word_count_cjk=10)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=10
+        )
         result = splitter._split_long_segment(segments)
         # 验证时间戳递增
         for i in range(len(result) - 1):
@@ -368,7 +382,7 @@ class TestMergeShortSegment:
             ASRDataSeg(text="是", start_time=100, end_time=200),
             ASRDataSeg(text="谁", start_time=200, end_time=300),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
         # 应该被合并（3个字 < MERGE_VERY_SHORT_WORDS=3）
         assert len(segments) < 3
@@ -379,7 +393,7 @@ class TestMergeShortSegment:
             ASRDataSeg(text="短", start_time=0, end_time=100),
             ASRDataSeg(text="文本", start_time=150, end_time=300),  # 50ms间隔
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         original_len = len(segments)
         splitter.merge_short_segment(segments)
         # 应该合并（间隔 < MERGE_SHORT_GAP=200）
@@ -391,7 +405,7 @@ class TestMergeShortSegment:
             ASRDataSeg(text="这是一个很长的文本片段", start_time=0, end_time=1000),
             ASRDataSeg(text="这也是一个很长的文本片段", start_time=1100, end_time=2000),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         original_len = len(segments)
         splitter.merge_short_segment(segments)
         # 不应该合并
@@ -403,7 +417,7 @@ class TestMergeShortSegment:
             ASRDataSeg(text="短", start_time=0, end_time=100),
             ASRDataSeg(text="文", start_time=2000, end_time=2100),  # 大间隔
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         original_len = len(segments)
         splitter.merge_short_segment(segments)
         # 不应该合并（间隔太大）
@@ -415,7 +429,9 @@ class TestMergeShortSegment:
             ASRDataSeg(text="这是一个中等长度的文本", start_time=0, end_time=1000),
             ASRDataSeg(text="这也是一个中等长度的文本", start_time=1100, end_time=2000),
         ]
-        splitter = SubtitleSplitter(max_word_count_cjk=10)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=10
+        )
         original_len = len(segments)
         splitter.merge_short_segment(segments)
         # 不应该合并（会超过最大字数）
@@ -427,7 +443,7 @@ class TestMergeShortSegment:
             ASRDataSeg(text="Hi", start_time=0, end_time=100),
             ASRDataSeg(text="there", start_time=150, end_time=300),
         ]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
         if len(segments) == 1:
             # 如果合并了，应该有空格
@@ -436,14 +452,14 @@ class TestMergeShortSegment:
     def test_empty_segments(self):
         """测试空列表"""
         segments = []
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
         assert segments == []
 
     def test_single_segment(self):
         """测试单个分段"""
         segments = [ASRDataSeg(text="单个", start_time=0, end_time=100)]
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
         assert len(segments) == 1
 
@@ -453,28 +469,28 @@ class TestStopMethod:
 
     def test_stop_sets_running_false(self):
         """测试停止设置运行状态"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         assert splitter.is_running is True
         splitter.stop()
         assert splitter.is_running is False
 
     def test_stop_shuts_down_executor(self):
         """测试停止关闭线程池"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.stop()
         # 线程池应该被设置为None
         assert splitter.executor is None
 
     def test_multiple_stops(self):
         """测试多次调用stop"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.stop()
         splitter.stop()  # 不应该抛出异常
         assert splitter.is_running is False
 
     def test_stop_idempotent(self):
         """测试stop的幂等性"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.stop()
         first_state = splitter.is_running
         splitter.stop()
@@ -489,7 +505,7 @@ class TestEdgeCases:
         """测试零线程数（应该使用默认值或处理）"""
         # 根据实际实现，可能会失败或使用默认值
         try:
-            splitter = SubtitleSplitter(thread_num=0)
+            splitter = SubtitleSplitter(thread_num=0, model="gpt-4o-mini")
             # 如果成功创建，验证某些基本功能
             assert splitter.thread_num == 0
         except (ValueError, Exception):
@@ -498,12 +514,14 @@ class TestEdgeCases:
 
     def test_negative_max_word_count(self):
         """测试负数最大字数"""
-        splitter = SubtitleSplitter(max_word_count_cjk=-1)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=-1
+        )
         # 应该能够创建，但可能在使用时出问题
         assert splitter.max_word_count_cjk == -1
 
     def test_very_large_thread_num(self):
         """测试非常大的线程数"""
-        splitter = SubtitleSplitter(thread_num=1000)
+        splitter = SubtitleSplitter(thread_num=1000, model="gpt-4o-mini")
         assert splitter.thread_num == 1000
         assert splitter.executor is not None

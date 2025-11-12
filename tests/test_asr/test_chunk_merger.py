@@ -28,11 +28,26 @@ def create_sentence_segments(sentences, start_time=0):
     return segments
 
 
-def create_word_level_segments(words, start_time=0):
-    """Create word-level segments from text list."""
+def create_word_level_segments(words, start_time=0, is_chinese=True):
+    """Create word-level segments from text.
+
+    Args:
+        words: 文本字符串（会自动分词）
+        start_time: 起始时间（毫秒）
+        is_chinese: 是否为中文（True则按字符分割，False则按空格分词）
+    """
     segments = []
     current_time = start_time
-    for word in words:
+
+    # 根据语言类型分词
+    if is_chinese:
+        # 中文：每个字符作为一个词
+        word_list = list(words)
+    else:
+        # 英文：按空格分词
+        word_list = words.split()
+
+    for word in word_list:
         duration = len(word) * 80  # 简单估算，每个字符80ms
         segments.append(
             ASRDataSeg(

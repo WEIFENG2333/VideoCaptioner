@@ -3,6 +3,7 @@ from typing import Any, Callable, List, Optional
 from openai import OpenAI
 
 from app.core.llm.client import normalize_base_url
+
 from ..utils.logger import setup_logger
 from .asr_data import ASRDataSeg
 from .base import BaseASR

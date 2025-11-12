@@ -30,9 +30,9 @@ from app.components.LanguageSettingDialog import LanguageSettingDialog
 from app.config import APPDATA_PATH, ASSETS_PATH, VERSION
 from app.core.constant import (
     INFOBAR_DURATION_ERROR,
-    INFOBAR_DURATION_WARNING,
     INFOBAR_DURATION_INFO,
     INFOBAR_DURATION_SUCCESS,
+    INFOBAR_DURATION_WARNING,
 )
 from app.core.entities import (
     SupportedAudioFormats,

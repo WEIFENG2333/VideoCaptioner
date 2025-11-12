@@ -38,13 +38,13 @@ from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.SubtitleSettingDialog import SubtitleSettingDialog
 from app.config import SUBTITLE_STYLE_PATH
+from app.core.asr.asr_data import ASRData
 from app.core.constant import (
     INFOBAR_DURATION_ERROR,
-    INFOBAR_DURATION_WARNING,
     INFOBAR_DURATION_INFO,
     INFOBAR_DURATION_SUCCESS,
+    INFOBAR_DURATION_WARNING,
 )
-from app.core.asr.asr_data import ASRData
 from app.core.entities import (
     OutputSubtitleFormatEnum,
     SubtitleLayoutEnum,

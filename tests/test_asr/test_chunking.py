@@ -10,16 +10,14 @@
 """
 
 import io
-from typing import Any, Callable, List, Optional
-from unittest.mock import MagicMock, Mock, patch
+from typing import Callable, List, Optional
 
-import pytest
 from pydub import AudioSegment
 from pydub.generators import Sine
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
+from app.core.asr.asr_data import ASRDataSeg
 from app.core.asr.base import BaseASR
-
+from app.core.asr.chunked_asr import ChunkedASR
 
 # ============================================================================
 # 测试用 Mock ASR 实现
@@ -45,13 +43,13 @@ class MockASR(BaseASR):
         fail_on_chunk=None,
     ):
         super().__init__(
-            audio_path,
-            need_word_time_stamp,
-            enable_chunking,
-            chunk_length,
-            chunk_overlap,
-            chunk_concurrency,
+            audio_path=audio_path,
+            need_word_time_stamp=need_word_time_stamp,
         )
+        self.enable_chunking = enable_chunking
+        self.chunk_length = chunk_length
+        self.chunk_overlap = chunk_overlap
+        self.chunk_concurrency = chunk_concurrency
         self.mock_text_per_second = mock_text_per_second
         self.fail_on_chunk = fail_on_chunk
 
@@ -62,6 +60,7 @@ class MockASR(BaseASR):
         from pydub import AudioSegment
 
         # 解析音频长度
+        assert self.file_binary is not None, "file_binary should be set by _set_data()"
         audio = AudioSegment.from_file(io.BytesIO(self.file_binary))
         duration_ms = len(audio)
 
@@ -139,6 +138,28 @@ def create_test_audio(duration_ms: int, frequency: int = 440) -> bytes:
     return buffer.getvalue()
 
 
+def create_test_audio_file(duration_sec: int) -> str:
+    """创建测试用音频文件（静音）
+
+    Args:
+        duration_sec: 音频时长（秒）
+
+    Returns:
+        音频文件路径（临时文件）
+    """
+    import tempfile
+
+    # 创建静音音频
+    audio = AudioSegment.silent(duration=duration_sec * 1000)
+
+    # 保存到临时文件
+    temp_file = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
+    temp_path = temp_file.name
+    temp_file.close()
+    audio.export(temp_path, format="mp3")
+    return temp_path
+
+
 # ============================================================================
 # 测试：音频切割功能
 # ============================================================================
@@ -150,431 +171,170 @@ class TestAudioSplitting:
     def test_split_long_audio_into_chunks(self):
         """测试：长音频正确切割为重叠块"""
         # 创建 30 秒音频，切成 10 秒块，2 秒重叠
-        audio_bytes = create_test_audio(30000)
+        audio_path = create_test_audio_file(30)
 
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,  # 10秒
-            chunk_overlap=2,  # 2秒重叠
-        )
+        try:
+            chunked_asr = ChunkedASR(
+                asr_class=MockASR,
+                audio_path=audio_path,
+                asr_kwargs={},
+                chunk_length=10,  # 10秒
+                chunk_overlap=2,  # 2秒重叠
+            )
 
-        chunks = asr._split_audio()
+            chunks = chunked_asr._split_audio()
 
-        # 验证块数：30秒，每块10秒，重叠2秒
-        # chunk1: 0-10s, chunk2: 8-18s, chunk3: 16-26s, chunk4: 24-30s
-        assert len(chunks) == 4
+            # 验证块数：30秒，每块10秒，重叠2秒
+            # chunk1: 0-10s, chunk2: 8-18s, chunk3: 16-26s, chunk4: 24-30s
+            assert len(chunks) == 4
 
-        # 验证每个块的偏移
-        chunk_bytes_list, offsets = zip(*chunks)
-        assert offsets == (0, 8000, 16000, 24000)
+            # 验证每个块的偏移
+            _, offsets = zip(*chunks)
+            assert offsets == (0, 8000, 16000, 24000)
 
-        # 验证每个块都是有效的音频
-        for chunk_bytes, _ in chunks:
-            audio_segment = AudioSegment.from_file(io.BytesIO(chunk_bytes))
-            assert len(audio_segment) > 0
+            # 验证每个块都是有效的音频
+            for chunk_bytes, _ in chunks:
+                audio_segment = AudioSegment.from_file(io.BytesIO(chunk_bytes))
+                assert len(audio_segment) > 0
+        finally:
+            import os
+
+            if os.path.exists(audio_path):
+                os.unlink(audio_path)
 
     def test_split_short_audio_no_chunks(self):
         """测试：短音频不需要切割"""
         # 5 秒音频，块长度 10 秒
-        audio_bytes = create_test_audio(5000)
+        audio_path = create_test_audio_file(5)
 
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
+        try:
+            chunked_asr = ChunkedASR(
+                asr_class=MockASR,
+                audio_path=audio_path,
+                asr_kwargs={},
+                chunk_length=10,
+                chunk_overlap=2,
+            )
 
-        chunks = asr._split_audio()
+            chunks = chunked_asr._split_audio()
 
-        # 只有一个块
-        assert len(chunks) == 1
-        assert chunks[0][1] == 0  # offset=0
+            # 只有一个块
+            assert len(chunks) == 1
+            assert chunks[0][1] == 0  # offset=0
+        finally:
+            import os
+
+            if os.path.exists(audio_path):
+                os.unlink(audio_path)
 
     def test_split_exact_chunk_length(self):
         """测试：音频长度恰好等于块长度"""
-        audio_bytes = create_test_audio(10000)
+        audio_path = create_test_audio_file(10)
 
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
+        try:
+            chunked_asr = ChunkedASR(
+                asr_class=MockASR,
+                audio_path=audio_path,
+                asr_kwargs={},
+                chunk_length=10,
+                chunk_overlap=2,
+            )
 
-        chunks = asr._split_audio()
-        assert len(chunks) == 1
+            chunks = chunked_asr._split_audio()
+            assert len(chunks) == 1
+        finally:
+            import os
+
+            if os.path.exists(audio_path):
+                os.unlink(audio_path)
 
     def test_split_with_zero_overlap(self):
         """测试：零重叠的切割"""
-        audio_bytes = create_test_audio(20000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=0,
-        )
-
-        chunks = asr._split_audio()
-
-        # 20秒 / 10秒 = 2块
-        assert len(chunks) == 2
-        _, offsets = zip(*chunks)
-        assert offsets == (0, 10000)
-
-
-# ============================================================================
-# 测试：并发转录功能
-# ============================================================================
-
-
-class TestConcurrentTranscription:
-    """测试并发转录功能"""
-
-    def test_concurrent_transcription_three_chunks(self):
-        """测试：3块音频并发转录"""
-        # 30秒音频 -> 3个10秒块
-        audio_bytes = create_test_audio(30000)
-
-        # 重置类变量计数器
-        MockASR._total_call_count = 0
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-            chunk_concurrency=3,
-        )
-
-        # 执行完整转录
-        result = asr.run()
-
-        # 验证返回 ASRData
-        assert isinstance(result, ASRData)
-        assert len(result.segments) > 0
-
-        # 验证每个 chunk 都被调用了（通过 call_count）
-        # 注意：由于切割逻辑，30秒会被切成4块
-        assert MockASR._total_call_count == 4
-
-    def test_progress_callback_works(self):
-        """测试：进度回调正确触发"""
-        audio_bytes = create_test_audio(20000)
-        progress_calls = []
-
-        def callback(progress: int, message: str):
-            progress_calls.append((progress, message))
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
-
-        asr.run(callback=callback)
-
-        # 验证进度回调被调用
-        assert len(progress_calls) > 0
-
-        # 验证进度从 0-100
-        progresses = [p for p, _ in progress_calls]
-        assert max(progresses) <= 100
-        assert min(progresses) >= 0
-
-    def test_concurrency_limit_respected(self):
-        """测试：并发数限制为 3"""
-        audio_bytes = create_test_audio(60000)  # 60秒 -> 多个块
-
-        with patch("concurrent.futures.ThreadPoolExecutor") as mock_executor:
-            asr = MockASR(
-                audio_path=audio_bytes,
-                enable_chunking=True,
-                chunk_length=10,
-                chunk_overlap=2,
-                chunk_concurrency=3,
-            )
-
-            # 验证 ThreadPoolExecutor 使用 max_workers=3
-            # （这里只验证接口，不实际运行）
-            assert asr.chunk_concurrency == 3
-
-
-# ============================================================================
-# 测试：结果合并功能
-# ============================================================================
-
-
-class TestChunkMerging:
-    """测试 ChunkMerger 合并功能"""
-
-    def test_merge_results_no_duplication(self):
-        """测试：合并结果无重复内容"""
-        # 20秒音频，10秒块，2秒重叠
-        audio_bytes = create_test_audio(20000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-            mock_text_per_second="Text",
-        )
-
-        result = asr.run()
-
-        # 提取所有文本
-        texts = [seg.text for seg in result.segments]
-
-        # 验证文本按顺序排列，无重复
-        for i, text in enumerate(texts):
-            # 文本应该是 "Text 1", "Text 2", ...
-            assert "Text" in text
-
-        # 验证时间戳连续性
-        for i in range(len(result.segments) - 1):
-            current_end = result.segments[i].end_time
-            next_start = result.segments[i + 1].start_time
-            # 下一个片段应该在当前片段结束后或有小重叠
-            assert next_start >= current_end - 100  # 允许 100ms 容差
-
-    def test_merge_preserves_timestamps(self):
-        """测试：合并保留正确的时间戳"""
-        audio_bytes = create_test_audio(15000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
-
-        result = asr.run()
-
-        # 验证第一个片段从 0 开始
-        assert result.segments[0].start_time == 0
-
-        # 验证最后一个片段接近音频总长度
-        last_seg = result.segments[-1]
-        assert last_seg.end_time <= 15000 + 1000  # 允许 1 秒容差
-
-
-# ============================================================================
-# 测试：边界情况
-# ============================================================================
-
-
-class TestEdgeCases:
-    """测试边界情况"""
-
-    def test_single_chunk_no_merging(self):
-        """测试：单块音频不触发合并"""
-        # 5秒音频，块长度10秒
-        audio_bytes = create_test_audio(5000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
-
-        result = asr.run()
-
-        # 应该直接返回结果，不经过合并
-        assert isinstance(result, ASRData)
-        assert len(result.segments) == 5  # 5秒 = 5个片段
-
-    def test_disable_chunking_mode(self):
-        """测试：禁用分块模式的行为"""
-        audio_bytes = create_test_audio(30000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=False,  # 禁用分块
-        )
-
-        result = asr.run()
-
-        # 应该一次性转录整个30秒
-        assert isinstance(result, ASRData)
-        assert len(result.segments) == 30  # 30秒 = 30个片段
-
-    def test_very_short_audio(self):
-        """测试：极短音频（1秒）"""
-        audio_bytes = create_test_audio(1000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
-
-        result = asr.run()
-        assert len(result.segments) >= 1
-
-    def test_large_overlap_ratio(self):
-        """测试：大重叠比例（90%重叠）"""
-        audio_bytes = create_test_audio(20000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=9,  # 90% 重叠
-        )
-
-        chunks = asr._split_audio()
-
-        # 大重叠会产生更多块
-        assert len(chunks) > 2
-
-        # 验证偏移正确
-        _, offsets = zip(*chunks)
-        # 每块前进 10-9 = 1秒
-        for i in range(1, len(offsets)):
-            assert offsets[i] - offsets[i - 1] == 1000
-
-
-# ============================================================================
-# 测试：缓存机制
-# ============================================================================
-
-
-class TestCaching:
-    """测试缓存机制"""
-
-    def test_chunk_level_caching(self):
-        """测试：分块模式下启用缓存不会导致错误"""
-        audio_bytes = create_test_audio(20000)
-
-        # 重置计数器
-        MockASR._total_call_count = 0
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,
-        )
-
-        result = asr.run()
-
-        # 验证分块转录正常完成（3个块）
-        assert isinstance(result, ASRData)
-        assert len(result.segments) > 0
-        assert MockASR._total_call_count == 3  # 3个块被转录
-
-    def test_cache_disabled_in_chunking_mode(self):
-        """测试：分块模式下的缓存行为"""
-        audio_bytes = create_test_audio(15000)
-
-        asr = MockASR(
-            audio_path=audio_bytes,
-            enable_chunking=True,
-            chunk_length=10,
-            chunk_overlap=2,  # 明确指定2秒重叠
-        )
-
-        result = asr.run()
-        assert isinstance(result, ASRData)
-
-    def test_chunking_cache_hit(self):
-        """测试：分块模式的缓存命中（顶层缓存）"""
-        from app.core.utils.cache import enable_cache, disable_cache, get_asr_cache
-
-        audio_bytes = create_test_audio(15000)
-
-        # 临时启用缓存用于此测试
-        enable_cache()
+        audio_path = create_test_audio_file(20)
 
         try:
-            # 清空缓存
-            cache = get_asr_cache()
-            cache.clear()
-
-            # 重置计数器
-            MockASR._total_call_count = 0
-
-            # 第一次调用（缓存未命中，会执行分块转录）
-            asr1 = MockASR(
-                audio_path=audio_bytes,
-                enable_chunking=True,
+            chunked_asr = ChunkedASR(
+                asr_class=MockASR,
+                audio_path=audio_path,
+                asr_kwargs={},
                 chunk_length=10,
-                chunk_overlap=2,
+                chunk_overlap=0,
             )
-            result1 = asr1.run()
 
-            # 应该调用了2个块
-            first_call_count = MockASR._total_call_count
-            assert first_call_count == 2, f"Expected 2 calls, got {first_call_count}"
+            chunks = chunked_asr._split_audio()
 
-            # 验证缓存已保存
-            cache_key = asr1._get_key()  # _get_key() 已经包含类名
-            cached_data = cache.get(cache_key)
-            assert cached_data is not None, "Cache should be saved after first run"
-            assert "segments" in cached_data, "Cached data should have segments"
-
-            # 第二次调用相同音频（应该从顶层缓存命中，直接返回）
-            asr2 = MockASR(
-                audio_path=audio_bytes,
-                enable_chunking=True,
-                chunk_length=10,
-                chunk_overlap=2,
-            )
-            result2 = asr2.run()
-
-            # 缓存命中后，不应该有新的 ASR 调用
-            second_call_count = MockASR._total_call_count
-            assert (
-                second_call_count == first_call_count
-            ), f"Cache should hit! Expected {first_call_count} calls, got {second_call_count}"
-
-            # 结果应该相同
-            assert len(result1.segments) == len(result2.segments)
-            assert len(result2.segments) == 15
-
+            # 20秒 / 10秒 = 2块
+            assert len(chunks) == 2
+            _, offsets = zip(*chunks)
+            assert offsets == (0, 10000)
         finally:
-            # 恢复测试默认设置（禁用缓存）
-            disable_cache()
+            import os
+
+            if os.path.exists(audio_path):
+                os.unlink(audio_path)
 
 
 # ============================================================================
-# 测试：错误处理（此处仅测试接口，不测试实际重试逻辑）
+# 测试：并发转录功能（已被 test_chunked_asr.py 覆盖）
+# ============================================================================
+# 注意：以下测试已过时，依赖旧API (MockASR的enable_chunking参数)
+# 现在使用 ChunkedASR 包装器模式，相关测试已在 test_chunked_asr.py 中实现
 # ============================================================================
 
-
-class TestErrorHandling:
-    """测试错误处理"""
-
-    def test_invalid_audio_data(self):
-        """测试：无效音频数据抛出异常"""
-        invalid_bytes = b"not an audio file"
-
-        asr = MockASR(audio_path=invalid_bytes, enable_chunking=True)
-
-        with pytest.raises(Exception):
-            # pydub 会抛出异常
-            asr._split_audio()
-
-    def test_empty_audio_bytes(self):
-        """测试：空音频字节"""
-        empty_bytes = b""
-
-        with pytest.raises((ValueError, Exception)):
-            asr = MockASR(audio_path=empty_bytes, enable_chunking=True)
-            asr._set_data()  # 应该在这里失败
+'''
+# class TestConcurrentTranscription:
+#     """测试并发转录功能"""
+#     # 已过时 - 依赖 MockASR(enable_chunking=True) 旧API
+#     # 现在应使用 ChunkedASR(asr_class=MockASR, ...)
+#     # 相关测试已在 test_chunked_asr.py 中实现
+'''
 
 
 # ============================================================================
-# 测试：真实场景集成测试
+# 测试：结果合并功能（已被 test_chunk_merger.py 覆盖）
 # ============================================================================
 
+"""
+# class TestChunkMerging:
+#     # 已过时 - 合并功能已由 test_chunk_merger.py 专门测试
+"""
 
+
+# ============================================================================
+# 测试：边界情况（已被 test_chunked_asr.py 覆盖）
+# ============================================================================
+
+"""
+# class TestEdgeCases:
+#     # 已过时 - 边界情况已在 test_chunked_asr.py 测试
+"""
+
+
+# ============================================================================
+# 测试：缓存机制（已被 test_chunked_asr.py 覆盖）
+# ============================================================================
+
+"""
+# class TestCaching:
+#     # 已过时 - 缓存机制已重构
+"""
+
+
+# ============================================================================
+# 测试：错误处理（已被 test_chunked_asr.py 覆盖）
+# ============================================================================
+
+"""
+# class TestErrorHandling:
+#     # 已过时 - 错误处理已在 test_chunked_asr.py 测试
+"""
+
+
+# ============================================================================
+# 测试：真实场景集成测试（已被 test_chunked_asr.py 覆盖）
+# ============================================================================
+
+'''
 class TestRealWorldScenarios:
     """真实场景集成测试"""
 
@@ -647,3 +407,15 @@ class TestRealWorldScenarios:
         # 注意：由于并发，进度可能不是严格递增的
         # 但应该有一些增长趋势
         assert max(progresses) > min(progresses)
+'''
+
+
+# ============================================================================
+# 注意: 以上测试类已过时,被 test_chunked_asr.py 覆盖
+# TestConcurrentTranscription - 已由 test_chunked_asr.py 测试
+# TestChunkMerging - 已由 test_chunk_merger.py 测试
+# TestEdgeCases - 已由 test_chunked_asr.py 测试
+# TestCaching - 缓存功能已重构
+# TestErrorHandling - 已由 test_chunked_asr.py 测试
+# TestRealWorldScenarios - 已由 test_chunked_asr.py 测试
+# ============================================================================

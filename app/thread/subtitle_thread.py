@@ -8,13 +8,13 @@ from app.core.asr.asr_data import ASRData
 from app.core.entities import (
     SubtitleConfig,
     SubtitleLayoutEnum,
+    SubtitleProcessData,
     SubtitleTask,
     TranslatorServiceEnum,
 )
 from app.core.llm.check_llm import check_llm_connection
 from app.core.optimize.optimize import SubtitleOptimizer
 from app.core.split.split import SubtitleSplitter
-from app.core.entities import SubtitleProcessData
 from app.core.translate import (
     BingTranslator,
     DeepLXTranslator,
