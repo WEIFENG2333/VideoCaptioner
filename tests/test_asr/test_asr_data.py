@@ -354,20 +354,22 @@ class TestFormatConversionEdgeCases:
 
     def test_srt_layout_modes_all(self):
         """测试所有SRT布局模式"""
+        from app.core.entities import SubtitleLayoutEnum
+
         segments = [ASRDataSeg("Hello", 0, 1000, translated_text="你好")]
         asr_data = ASRData(segments)
 
-        srt1 = asr_data.to_srt(layout="原文在上")
+        srt1 = asr_data.to_srt(layout=SubtitleLayoutEnum.ORIGINAL_ON_TOP)
         assert "Hello\n你好" in srt1
 
-        srt2 = asr_data.to_srt(layout="译文在上")
+        srt2 = asr_data.to_srt(layout=SubtitleLayoutEnum.TRANSLATE_ON_TOP)
         assert "你好\nHello" in srt2
 
-        srt3 = asr_data.to_srt(layout="仅原文")
+        srt3 = asr_data.to_srt(layout=SubtitleLayoutEnum.ONLY_ORIGINAL)
         assert "Hello" in srt3
         assert "你好" not in srt3
 
-        srt4 = asr_data.to_srt(layout="仅译文")
+        srt4 = asr_data.to_srt(layout=SubtitleLayoutEnum.ONLY_TRANSLATE)
         assert "你好" in srt4
 
     def test_srt_no_translation_all_layouts(self):

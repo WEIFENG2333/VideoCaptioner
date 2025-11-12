@@ -33,6 +33,7 @@ from app.core.constant import (
 )
 from app.core.entities import LLMServiceEnum, TranslatorServiceEnum
 from app.core.llm.check_llm import check_llm_connection, get_available_models
+from app.core.utils.cache import disable_cache, enable_cache
 
 
 class SettingInterface(ScrollArea):
@@ -709,8 +710,6 @@ class SettingInterface(ScrollArea):
 
     def __onCacheEnabledChanged(self, is_enabled: bool):
         """处理缓存开关变化"""
-        from app.core.utils.cache import enable_cache, disable_cache
-
         if is_enabled:
             enable_cache()
             InfoBar.success(
@@ -732,7 +731,7 @@ class SettingInterface(ScrollArea):
         """检查 LLM 连接"""
         # 保存当前滚动位置
         scroll_position = self.verticalScrollBar().value()
-        
+
         # 获取当前选中的服务
         current_service = LLMServiceEnum(self.llmServiceCard.comboBox.currentText())
 
@@ -760,7 +759,7 @@ class SettingInterface(ScrollArea):
         # 禁用检查按钮，显示加载状态
         self.checkLLMConnectionCard.button.setEnabled(False)
         self.checkLLMConnectionCard.button.setText(self.tr("正在检查..."))
-        
+
         # 立即恢复滚动位置（防止按钮状态改变导致的自动滚动）
         self.verticalScrollBar().setValue(scroll_position)
 
@@ -908,7 +907,7 @@ class SettingInterface(ScrollArea):
         """检查 Whisper API 连接"""
         # 保存当前滚动位置
         scroll_position = self.verticalScrollBar().value()
-        
+
         # 获取配置
         base_url = self.whisperApiBaseCard.lineEdit.text().strip()
         api_key = self.whisperApiKeyCard.lineEdit.text().strip()
@@ -945,7 +944,7 @@ class SettingInterface(ScrollArea):
         # 禁用按钮，显示加载状态
         self.checkWhisperConnectionCard.button.setEnabled(False)
         self.checkWhisperConnectionCard.button.setText(self.tr("正在测试..."))
-        
+
         # 立即恢复滚动位置（防止按钮状态改变导致的自动滚动）
         self.verticalScrollBar().setValue(scroll_position)
 

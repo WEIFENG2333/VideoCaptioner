@@ -8,13 +8,14 @@ from urllib.parse import urlparse, urlunparse
 import openai
 from openai import OpenAI
 from tenacity import (
+    RetryCallState,
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_random_exponential,
-    retry_if_exception_type,
-    RetryCallState,
 )
-from app.core.utils.cache import memoize, get_llm_cache
+
+from app.core.utils.cache import get_llm_cache, memoize
 from app.core.utils.logger import setup_logger
 
 _global_client: Optional[OpenAI] = None

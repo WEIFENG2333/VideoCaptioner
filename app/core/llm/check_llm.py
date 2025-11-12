@@ -3,6 +3,7 @@
 from typing import Literal, Optional
 
 import openai
+
 from app.core.llm.client import normalize_base_url
 
 

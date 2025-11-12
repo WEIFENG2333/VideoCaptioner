@@ -132,15 +132,10 @@ def base_config():
 class TestSubtitleThreadSplit:
     """Test subtitle splitting functionality."""
 
-    def test_split_sentence(self, subtitle_file, output_dir, base_config):
-        """Test sentence-based splitting.
-
-        Note: Even sentence splitting requires LLM API due to current implementation.
-        """
-        # Skip if no API configured
-        if not os.getenv("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set")
-
+    def test_split_sentence(
+        self, subtitle_file, output_dir, base_config, mock_llm_client
+    ):
+        """Test sentence-based splitting (using mock LLM)."""
         config = base_config
         config.need_split = True
         config.max_word_count_cjk = 15
@@ -163,11 +158,10 @@ class TestSubtitleThreadSplit:
         assert "output" in results
         assert Path(results["output"]).exists()
 
-    def test_split_semantic(self, subtitle_file, output_dir, base_config):
-        """Test semantic-based splitting (requires LLM)."""
-        if not os.getenv("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set")
-
+    def test_split_semantic(
+        self, subtitle_file, output_dir, base_config, mock_llm_client
+    ):
+        """Test semantic-based splitting (using mock LLM)."""
         config = base_config
         config.need_split = True
         config.llm_model = get_test_model()
@@ -190,11 +184,10 @@ class TestSubtitleThreadSplit:
 class TestSubtitleThreadOptimize:
     """Test subtitle optimization functionality."""
 
-    def test_optimize_with_llm(self, subtitle_file, output_dir, base_config):
-        """Test LLM-based subtitle optimization."""
-        if not os.getenv("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set")
-
+    def test_optimize_with_llm(
+        self, subtitle_file, output_dir, base_config, mock_llm_client
+    ):
+        """Test LLM-based subtitle optimization (using mock LLM)."""
         config = base_config
         config.need_optimize = True
         config.llm_model = get_test_model()
@@ -261,11 +254,10 @@ class TestSubtitleThreadTranslate:
         assert "error" not in results, f"Failed: {results.get('error')}"
         assert "output" in results
 
-    def test_translate_llm(self, subtitle_file, output_dir, base_config):
-        """Test LLM translation."""
-        if not os.getenv("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set")
-
+    def test_translate_llm(
+        self, subtitle_file, output_dir, base_config, mock_llm_client
+    ):
+        """Test LLM translation (using mock LLM)."""
         config = base_config
         config.need_translate = True
         config.translator_service = TranslatorServiceEnum.OPENAI
@@ -290,11 +282,10 @@ class TestSubtitleThreadTranslate:
 class TestSubtitleThreadFullPipeline:
     """Test complete subtitle processing pipeline."""
 
-    def test_split_and_translate(self, subtitle_file, output_dir, base_config):
-        """Test split + translate pipeline."""
-        if not os.getenv("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set")
-
+    def test_split_and_translate(
+        self, subtitle_file, output_dir, base_config, mock_llm_client
+    ):
+        """Test split + translate pipeline (using mock LLM)."""
         config = base_config
         config.need_split = True
         config.need_translate = True
@@ -316,11 +307,10 @@ class TestSubtitleThreadFullPipeline:
         assert "error" not in results, f"Failed: {results.get('error')}"
         assert "output" in results
 
-    def test_optimize_and_translate(self, subtitle_file, output_dir, base_config):
-        """Test optimize + translate pipeline."""
-        if not os.getenv("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set")
-
+    def test_optimize_and_translate(
+        self, subtitle_file, output_dir, base_config, mock_llm_client
+    ):
+        """Test optimize + translate pipeline (using mock LLM)."""
         config = base_config
         config.need_optimize = True
         config.need_translate = True

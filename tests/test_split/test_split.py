@@ -123,7 +123,9 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20
+        )
         result = splitter.split_subtitle(asr_data)
 
         assert len(result.segments) < len(segments)  # 应该合并了
@@ -134,7 +136,9 @@ class TestSubtitleSplitterEdgeCases:
         segments = [ASRDataSeg(text=long_text, start_time=0, end_time=60000)]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(
+            thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20
+        )
         result = splitter.split_subtitle(asr_data)
 
         # 应该被分割成多个片段
@@ -158,7 +162,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20)
         result = splitter.split_subtitle(asr_data)
 
         assert len(result.segments) > len(segments)
@@ -171,7 +175,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         assert isinstance(result, ASRData)
@@ -185,7 +189,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         assert len(result.segments) >= 3
@@ -202,7 +206,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter(max_word_count_cjk=20)
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20)
         result = splitter.split_subtitle(asr_data)
 
         assert isinstance(result, ASRData)
@@ -217,7 +221,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         # 混合语言可能被合并，所以只要有结果即可
@@ -232,7 +236,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         # 数字可能被合并，只要有结果即可
@@ -247,7 +251,7 @@ class TestSubtitleSplitterEdgeCases:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         assert len(result.segments) > 0
@@ -262,8 +266,7 @@ class TestSplitterParameters:
         asr_data = ASRData(segments)
 
         try:
-            splitter = SubtitleSplitter(
-                max_word_count_cjk=0,
+            splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=0,
             )
             result = splitter.split_subtitle(asr_data)
             # 如果不抛异常，应该返回有效结果
@@ -277,8 +280,7 @@ class TestSplitterParameters:
         segments = [ASRDataSeg(text="测试" * 100, start_time=0, end_time=10000)]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter(
-            max_word_count_cjk=10000,
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=10000,
         )
         result = splitter.split_subtitle(asr_data)
 
@@ -291,8 +293,7 @@ class TestSplitterParameters:
         segments = [ASRDataSeg(text=text, start_time=0, end_time=2000)]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter(
-            max_word_count_cjk=20,
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20,
         )
         result = splitter.split_subtitle(asr_data)
 
@@ -309,7 +310,7 @@ class TestMergeShortSegments:
             for i in range(100)
         ]
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
 
         # 应该被合并成更少的片段
@@ -325,7 +326,7 @@ class TestMergeShortSegments:
             ASRDataSeg(text="短", start_time=5000, end_time=5100),
         ]
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         original_len = len(segments)
         splitter.merge_short_segment(segments)
 
@@ -349,7 +350,7 @@ class TestMergeShortSegments:
                 )
             )
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         splitter.merge_short_segment(segments)
 
         assert len(segments) > 0
@@ -360,7 +361,7 @@ class TestStopAndThreading:
 
     def test_stop_before_start(self):
         """测试未开始就停止"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         assert splitter.is_running is True
 
         splitter.stop()
@@ -375,7 +376,7 @@ class TestStopAndThreading:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
 
         # 立即停止
         splitter.stop()
@@ -391,7 +392,7 @@ class TestStopAndThreading:
 
     def test_multiple_stop_calls(self):
         """测试多次调用stop"""
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
 
         splitter.stop()
         splitter.stop()
@@ -412,7 +413,7 @@ class TestTimestampIntegrity:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         for seg in result.segments:
@@ -427,7 +428,7 @@ class TestTimestampIntegrity:
         ]
         asr_data = ASRData(segments)
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         # 验证时间连续性
@@ -443,7 +444,7 @@ class TestTimestampIntegrity:
 
         original_duration = segments[0].end_time - segments[0].start_time
 
-        splitter = SubtitleSplitter()
+        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         result = splitter.split_subtitle(asr_data)
 
         # 总时长应该接近原始时长

@@ -16,8 +16,8 @@ from ..entities import SubtitleProcessData
 from ..llm import call_llm
 from ..prompts import get_prompt
 from ..split.alignment import SubtitleAligner
-from ..utils.text_utils import count_words
 from ..utils.logger import setup_logger
+from ..utils.text_utils import count_words
 
 logger = setup_logger("subtitle_optimizer")
 

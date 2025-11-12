@@ -26,6 +26,11 @@ class TestTranscriptThread:
             need_word_time_stamp=True,
         )
 
+    @pytest.mark.skipif(
+        not Path("resource/bin/faster-whisper-xxl").exists()
+        and not Path("resource/bin/faster-whisper-xxl.exe").exists(),
+        reason="FasterWhisper executable not found - 需要本地 FasterWhisper 可执行文件",
+    )
     def test_transcribe_audio_with_faster_whisper(
         self,
         sample_audio_path: str,
@@ -48,6 +53,11 @@ class TestTranscriptThread:
         assert results["finished"], "Thread did not finish"
         assert Path(output_path).exists(), f"Output file not created: {output_path}"
 
+    @pytest.mark.skipif(
+        not Path("resource/bin/faster-whisper-xxl").exists()
+        and not Path("resource/bin/faster-whisper-xxl.exe").exists(),
+        reason="FasterWhisper executable not found - 需要本地 FasterWhisper 可执行文件",
+    )
     def test_transcribe_video_with_faster_whisper(
         self,
         sample_video_path: str,

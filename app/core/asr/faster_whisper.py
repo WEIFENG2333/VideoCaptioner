@@ -7,14 +7,13 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable, List, Optional
 
+import GPUtil
+
 from ..utils.logger import setup_logger
 from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
 from .status import ASRStatus
-
-import GPUtil
-
 
 logger = setup_logger("faster_whisper")
 

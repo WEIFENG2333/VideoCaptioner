@@ -8,13 +8,12 @@ import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, List, Optional, Tuple
 
+from pydub import AudioSegment
+
 from ..utils.logger import setup_logger
 from .asr_data import ASRData
 from .base import BaseASR
 from .chunk_merger import ChunkMerger
-
-from pydub import AudioSegment
-
 
 logger = setup_logger("chunked_asr")
 
@@ -98,13 +97,8 @@ class ChunkedASR:
         # 3. 并发转录所有块
         chunk_results = self._transcribe_chunks(chunks, callback)
 
-        for index, chunk_result in enumerate(chunk_results):
-            chunk_result.to_srt(save_path=f"chunk_{index}.srt")
-
         # 4. 合并结果
         merged_result = self._merge_results(chunk_results, chunks)
-
-        merged_result.to_srt(save_path="merged_result.srt")
 
         logger.info(f"分块转录完成，共 {len(merged_result.segments)} 个片段")
         return merged_result

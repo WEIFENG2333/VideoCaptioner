@@ -36,13 +36,13 @@ from qfluentwidgets import (
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
 from app.components.LanguageSettingDialog import LanguageSettingDialog
-from app.components.TranscriptionSettingDialog import TranscriptionSettingDialog
 from app.components.transcription_setting_card import TranscriptionSettingCard
+from app.components.TranscriptionSettingDialog import TranscriptionSettingDialog
 from app.config import RESOURCE_PATH
 from app.core.constant import (
     INFOBAR_DURATION_ERROR,
-    INFOBAR_DURATION_WARNING,
     INFOBAR_DURATION_SUCCESS,
+    INFOBAR_DURATION_WARNING,
 )
 from app.core.entities import (
     SupportedAudioFormats,

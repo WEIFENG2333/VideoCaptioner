@@ -3,8 +3,8 @@
 from typing import Any
 
 import pytest
-
 from diskcache import Cache
+
 from app.core.utils.cache import (
     disable_cache,
     enable_cache,

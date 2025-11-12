@@ -48,8 +48,8 @@ class OpenAITTS(BaseTTS):
             model=self.config.model,
             voice=voice_to_use,
             input=segment.text,
-            response_format="mp3",
-            speed=1.0,
+            response_format=self.config.response_format,
+            speed=self.config.speed,
         ) as response:
             response.stream_to_file(output_path)
 
