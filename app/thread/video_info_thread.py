@@ -31,7 +31,7 @@ class VideoInfoThread(QThread):
             if video_info:
                 self.finished.emit(video_info)
             else:
-                self.error.emit("无法获取视频信息")
+                self.error.emit("无法获取媒体文件信息，请确保文件格式正确")
 
         except Exception as e:
             logger.exception("获取视频信息时出错")

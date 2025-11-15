@@ -350,14 +350,15 @@ def add_subtitles(
 def get_video_info(
     file_path: str, thumbnail_path: Optional[str] = None
 ) -> Optional["VideoInfo"]:
-    """获取视频信息（优雅重构版）
+    """获取媒体文件信息（支持视频和音频文件）
 
     Args:
-        file_path: 视频文件路径
-        thumbnail_path: 缩略图保存路径（可选）
+        file_path: 媒体文件路径（视频或音频）
+        thumbnail_path: 缩略图保存路径（可选，仅对视频文件有效）
 
     Returns:
         VideoInfo 对象，失败返回 None
+        对于纯音频文件，视频相关字段（width/height/fps）将为 0
     """
     try:
         # 执行 ffmpeg 获取视频信息
@@ -386,6 +387,7 @@ def get_video_info(
 
         # 提取视频流信息
         width, height, fps, video_codec = 0, 0, 0.0, ""
+        has_video_stream = False
         if video_stream_match := re.search(
             r"Stream #.*?Video: (\w+)(?:\s*\([^)]*\))?.* (\d+)x(\d+).*?(?:(\d+(?:\.\d+)?)\s*(?:fps|tb[rn]))",
             info,
@@ -395,10 +397,7 @@ def get_video_info(
             width = int(video_stream_match.group(2))
             height = int(video_stream_match.group(3))
             fps = float(video_stream_match.group(4))
-        else:
-            logger.warning("未找到视频流信息")
-            # 如果没有视频流,返回 None
-            return None
+            has_video_stream = True
 
         # 提取第一条音频流信息（用于兼容性）
         audio_codec, audio_sampling_rate = "", 0
@@ -425,9 +424,14 @@ def get_video_info(
         if audio_streams:
             logger.info(f"检测到 {len(audio_streams)} 条音轨")
 
-        # 提取缩略图（如果指定了路径）
+        # 验证文件是否包含有效的媒体流
+        if not has_video_stream and not audio_streams:
+            logger.error("文件既没有视频流也没有音频流，可能不是有效的媒体文件")
+            return None
+
+        # 提取缩略图（如果指定了路径且有视频流）
         final_thumbnail_path = ""
-        if thumbnail_path and duration_seconds > 0:
+        if thumbnail_path and duration_seconds > 0 and has_video_stream:
             if _extract_thumbnail(file_path, duration_seconds * 0.3, thumbnail_path):
                 final_thumbnail_path = thumbnail_path
 

@@ -27,7 +27,7 @@ class WhisperCppASR(BaseASR):
         self,
         audio_path,
         language="en",
-        whisper_cpp_path="whisper-cpp",
+        whisper_cpp_path=None,
         whisper_model=None,
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
@@ -35,6 +35,10 @@ class WhisperCppASR(BaseASR):
         super().__init__(audio_path, use_cache)
         assert os.path.exists(audio_path), f"Audio file not found: {audio_path}"
         assert audio_path.endswith(".wav"), f"Audio must be WAV format: {audio_path}"
+
+        # Auto-detect whisper executable if not provided
+        if whisper_cpp_path is None:
+            whisper_cpp_path = detect_whisper_executable()
 
         # Find model file in models directory
         if whisper_model:
@@ -102,7 +106,7 @@ class WhisperCppASR(BaseASR):
     def _run(
         self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
     ) -> str:
-        def _default_callback(x, y):
+        def _default_callback(_progress: int, _message: str) -> None:
             pass
 
         if callback is None:
@@ -249,6 +253,20 @@ class WhisperCppASR(BaseASR):
         except Exception as e:
             logger.exception("Failed to get audio duration: %s", str(e))
             return 600
+
+
+def detect_whisper_executable() -> str:
+    """Detect available whisper-cpp executable name."""
+    # Try new version first (whisper-cli)
+    if shutil.which("whisper-cli"):
+        return "whisper-cli"
+
+    # Fall back to old version (whisper-cpp)
+    if shutil.which("whisper-cpp"):
+        return "whisper-cpp"
+
+    # Neither found
+    raise RuntimeError("Neither 'whisper-cli' nor 'whisper-cpp' found in PATH. ")
 
 
 if __name__ == "__main__":
