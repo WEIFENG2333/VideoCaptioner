@@ -108,7 +108,7 @@ export default defineConfig({
           description: '基于大语言模型和Whisper的智能视频字幕处理工具，支持语音识别、智能断句、字幕优化和多语言翻译',
           applicationCategory: 'MultimediaApplication',
           operatingSystem: ['Windows 10', 'Windows 11', 'macOS 10.15+', 'Linux'],
-          softwareVersion: '1.3.3',
+          softwareVersion: '1.4.0',
           offers: {
             '@type': 'Offer',
             price: '0',
