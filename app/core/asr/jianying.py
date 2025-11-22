@@ -24,14 +24,14 @@ class JianYingASR(BaseASR):
 
     def __init__(
         self,
-        audio_path: Union[str, bytes],
+        audio_input: Union[str, bytes],
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
         start_time: float = 0,
         end_time: float = 6000,
     ):
-        super().__init__(audio_path, use_cache)
-        self.audio_path = audio_path
+        super().__init__(audio_input, use_cache)
+        self.audio_input = audio_input
         self.end_time = end_time
         self.start_time = start_time
 
@@ -221,10 +221,10 @@ class JianYingASR(BaseASR):
 
     def _upload_auth(self):
         """Get upload authorization"""
-        if isinstance(self.audio_path, bytes):
-            file_size = len(self.audio_path)
+        if isinstance(self.audio_input, bytes):
+            file_size = len(self.audio_input)
         else:
-            file_size = os.path.getsize(self.audio_path)
+            file_size = os.path.getsize(self.audio_input)
         request_parameters = f"Action=ApplyUploadInner&FileSize={file_size}&FileType=object&IsInner=1&SpaceName=lv-mac-recognition&Version=2020-11-19&s=5y0udbjapi"
 
         t = datetime.datetime.utcnow()

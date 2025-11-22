@@ -36,18 +36,18 @@ class BaseASR:
 
     def __init__(
         self,
-        audio_path: Optional[Union[str, bytes]] = None,
+        audio_input: Optional[Union[str, bytes]] = None,
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
     ):
         """Initialize ASR with audio data.
 
         Args:
-            audio_path: Path to audio file or raw audio bytes
+            audio_input: Path to audio file or raw audio bytes
             use_cache: Whether to cache recognition results
             need_word_time_stamp: Whether to return word-level timestamps
         """
-        self.audio_path = audio_path
+        self.audio_input = audio_input
         self.file_binary = None
         self.use_cache = use_cache
         self._set_data()
@@ -56,25 +56,27 @@ class BaseASR:
 
     def _set_data(self):
         """Load audio data and compute CRC32 hash for cache key."""
-        if isinstance(self.audio_path, bytes):
-            self.file_binary = self.audio_path
-        elif isinstance(self.audio_path, str):
-            ext = self.audio_path.split(".")[-1].lower()
+        if isinstance(self.audio_input, bytes):
+            self.file_binary = self.audio_input
+        elif isinstance(self.audio_input, str):
+            ext = self.audio_input.split(".")[-1].lower()
             assert (
                 ext in self.SUPPORTED_SOUND_FORMAT
             ), f"Unsupported sound format: {ext}"
-            assert os.path.exists(self.audio_path), f"File not found: {self.audio_path}"
-            with open(self.audio_path, "rb") as f:
+            assert os.path.exists(
+                self.audio_input
+            ), f"File not found: {self.audio_input}"
+            with open(self.audio_input, "rb") as f:
                 self.file_binary = f.read()
         else:
-            raise ValueError("audio_path must be provided as string or bytes")
+            raise ValueError("audio_input must be provided as string or bytes")
         crc32_value = zlib.crc32(self.file_binary) & 0xFFFFFFFF
         self.crc32_hex = format(crc32_value, "08x")
 
     def _get_audio_duration(self) -> float:
         """Get audio duration in seconds using pydub."""
         if not self.file_binary:
-            return 0.0
+            return 0.01
         try:
             audio = AudioSegment.from_file(BytesIO(self.file_binary))
             return audio.duration_seconds

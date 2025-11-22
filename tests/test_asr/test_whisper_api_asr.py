@@ -30,7 +30,7 @@ class TestWhisperAPI:
             test_audio_path_zh: Path to Chinese test audio file
         """
         whisper_api = WhisperAPI(
-            audio_path=str(test_audio_path_zh),
+            audio_input=str(test_audio_path_zh),
             whisper_model=os.getenv("WHISPER_MODEL", "whisper-1"),
             language="zh",
             prompt="",
@@ -78,7 +78,7 @@ class TestWhisperAPI:
         language_code = "zh" if "zh" in audio_fixture else "en"
 
         whisper_api = WhisperAPI(
-            audio_path=str(audio_path),
+            audio_input=str(audio_path),
             whisper_model=os.getenv("WHISPER_MODEL", "whisper-1"),
             language=language_code,
             prompt="",

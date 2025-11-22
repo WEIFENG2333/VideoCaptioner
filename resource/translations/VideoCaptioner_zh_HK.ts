@@ -2503,7 +2503,7 @@
     <name>WhisperCppSettingWidget</name>
     <message>
         <location filename="../../app/components/WhisperCppSettingWidget.py" line="530"/>
-        <source>Whisper CPP 设置（不稳定 🤔）</source>
+        <source>Whisper CPP 设置</source>
         <translation>Whisper CPP 設置（不穩定 🤔）</translation>
     </message>
     <message>

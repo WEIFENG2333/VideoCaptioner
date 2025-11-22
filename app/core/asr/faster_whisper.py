@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
 import GPUtil
 
@@ -27,7 +27,7 @@ class FasterWhisperASR(BaseASR):
 
     def __init__(
         self,
-        audio_path: str,
+        audio_input: Union[str, bytes],
         faster_whisper_program: str,
         whisper_model: str,
         model_dir: str,
@@ -52,7 +52,7 @@ class FasterWhisperASR(BaseASR):
         max_comma_cent: int = 50,
         prompt: Optional[str] = None,
     ):
-        super().__init__(audio_path, use_cache)
+        super().__init__(audio_input, use_cache)
 
         # 基本参数
         self.model_path = whisper_model
@@ -112,7 +112,7 @@ class FasterWhisperASR(BaseASR):
                 )
             self.faster_whisper_program = "faster-whisper-xxl"
 
-    def _build_command(self, audio_path: str) -> List[str]:
+    def _build_command(self, audio_input: str) -> List[str]:
         """Build command line arguments for faster-whisper."""
 
         cmd = [
@@ -129,7 +129,7 @@ class FasterWhisperASR(BaseASR):
 
         cmd.extend(
             [
-                str(audio_path),
+                str(audio_input),
                 "-l",
                 self.language,
                 "-d",
@@ -204,7 +204,7 @@ class FasterWhisperASR(BaseASR):
 
     def _make_segments(self, resp_data: str) -> List[ASRDataSeg]:
         asr_data = ASRData.from_srt(resp_data)
-        
+
         # 幻觉文本关键词列表
         hallucination_keywords = [
             "请不吝点赞 订阅 转发",
@@ -214,17 +214,17 @@ class FasterWhisperASR(BaseASR):
         filtered_segments = []
         for seg in asr_data.segments:
             text = seg.text.strip()
-            
+
             # 跳过音乐标记
             if text.startswith(("【", "[", "(", "（")):
                 continue
-            
+
             # 跳过包含幻觉关键词的文本
             if any(keyword in text for keyword in hallucination_keywords):
                 continue
-            
+
             filtered_segments.append(seg)
-        
+
         return filtered_segments
 
     def _run(
@@ -241,8 +241,8 @@ class FasterWhisperASR(BaseASR):
             wav_path = temp_dir / "audio.wav"
             output_path = wav_path.with_suffix(".srt")
 
-            if isinstance(self.audio_path, str):
-                shutil.copy2(self.audio_path, wav_path)
+            if isinstance(self.audio_input, str):
+                shutil.copy2(self.audio_input, wav_path)
             else:
                 if self.file_binary:
                     wav_path.write_bytes(self.file_binary)

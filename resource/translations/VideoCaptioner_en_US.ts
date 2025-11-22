@@ -2499,7 +2499,7 @@ Note: When using small LLM models, it is recommended to keep the script within 1
     <name>WhisperCppSettingWidget</name>
     <message>
         <location filename="../../app/components/WhisperCppSettingWidget.py" line="530" />
-        <source>Whisper CPP 设置（不稳定 🤔）</source>
+        <source>Whisper CPP 设置</source>
         <translation>Whisper CPP Settings (unstable 🤔)</translation>
     </message>
     <message>

@@ -32,7 +32,7 @@ class MockASR(BaseASR):
 
     def __init__(
         self,
-        audio_path,
+        audio_input,
         need_word_time_stamp=False,
         enable_chunking=False,
         chunk_length=600,
@@ -43,7 +43,7 @@ class MockASR(BaseASR):
         fail_on_chunk=None,
     ):
         super().__init__(
-            audio_path=audio_path,
+            audio_input=audio_input,
             need_word_time_stamp=need_word_time_stamp,
         )
         self.enable_chunking = enable_chunking
@@ -176,7 +176,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_path=audio_path,
+                audio_input=audio_path,
                 asr_kwargs={},
                 chunk_length=10,  # 10秒
                 chunk_overlap=2,  # 2秒重叠
@@ -210,7 +210,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_path=audio_path,
+                audio_input=audio_path,
                 asr_kwargs={},
                 chunk_length=10,
                 chunk_overlap=2,
@@ -234,7 +234,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_path=audio_path,
+                audio_input=audio_path,
                 asr_kwargs={},
                 chunk_length=10,
                 chunk_overlap=2,
@@ -255,7 +255,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_path=audio_path,
+                audio_input=audio_path,
                 asr_kwargs={},
                 chunk_length=10,
                 chunk_overlap=0,
@@ -344,7 +344,7 @@ class TestRealWorldScenarios:
         audio_bytes = create_test_audio(1800000)
 
         asr = MockASR(
-            audio_path=audio_bytes,
+            audio_input=audio_bytes,
             enable_chunking=True,
             chunk_length=600,  # 10分钟块
             chunk_overlap=10,  # 10秒重叠
@@ -367,7 +367,7 @@ class TestRealWorldScenarios:
         audio_bytes = create_test_audio(900000)  # 15分钟
 
         asr = MockASR(
-            audio_path=audio_bytes,
+            audio_input=audio_bytes,
             enable_chunking=True,
             chunk_length=300,  # 5分钟块
             chunk_overlap=10,
@@ -391,7 +391,7 @@ class TestRealWorldScenarios:
             progress_log.append({"progress": progress, "message": message})
 
         asr = MockASR(
-            audio_path=audio_bytes,
+            audio_input=audio_bytes,
             enable_chunking=True,
             chunk_length=30,  # 30秒块
             chunk_overlap=5,

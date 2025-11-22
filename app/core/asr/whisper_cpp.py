@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
@@ -25,16 +25,20 @@ class WhisperCppASR(BaseASR):
 
     def __init__(
         self,
-        audio_path,
+        audio_input: Union[str, bytes],
         language="en",
         whisper_cpp_path=None,
         whisper_model=None,
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
     ):
-        super().__init__(audio_path, use_cache)
-        assert os.path.exists(audio_path), f"Audio file not found: {audio_path}"
-        assert audio_path.endswith(".wav"), f"Audio must be WAV format: {audio_path}"
+        super().__init__(audio_input, use_cache)
+
+        if isinstance(audio_input, str):
+            assert os.path.exists(audio_input), f"Audio file not found: {audio_input}"
+            assert audio_input.endswith(
+                ".wav"
+            ), f"Audio must be WAV format: {audio_input}"
 
         # Auto-detect whisper executable if not provided
         if whisper_cpp_path is None:
@@ -116,13 +120,13 @@ class WhisperCppASR(BaseASR):
 
         with tempfile.TemporaryDirectory() as temp_path:
             temp_dir = Path(temp_path)
-            wav_path = temp_dir / "audio.wav"
+            wav_path = temp_dir / "whisper_cpp_audio.wav"
             output_path = wav_path.with_suffix(".srt")
 
             try:
                 # 复制音频文件
-                if isinstance(self.audio_path, str):
-                    shutil.copy2(self.audio_path, wav_path)
+                if isinstance(self.audio_input, str):
+                    shutil.copy2(self.audio_input, wav_path)
                 else:
                     if self.file_binary:
                         wav_path.write_bytes(self.file_binary)
@@ -136,10 +140,7 @@ class WhisperCppASR(BaseASR):
                 logger.info("Whisper.cpp command: %s", " ".join(whisper_params))
 
                 # Get audio duration
-                if isinstance(self.audio_path, str):
-                    total_duration = self.get_audio_duration(self.audio_path)
-                else:
-                    total_duration = 600
+                total_duration = self.audio_duration
                 logger.info("Audio duration: %d seconds", total_duration)
 
                 # Start process
@@ -272,7 +273,7 @@ def detect_whisper_executable() -> str:
 if __name__ == "__main__":
     # 简短示例
     asr = WhisperCppASR(
-        audio_path="audio.mp3",
+        audio_input="audio.mp3",
         whisper_model="tiny",
         whisper_cpp_path="bin/whisper-cpp.exe",
         language="en",

@@ -29,7 +29,7 @@ class TestBcutASR:
             BcutASR instance configured for sentence-level timestamps
         """
         return BcutASR(
-            audio_path=str(test_audio_path),
+            audio_input=str(test_audio_path),
             need_word_time_stamp=False,
         )
 
@@ -44,7 +44,7 @@ class TestBcutASR:
             BcutASR instance configured for word-level timestamps
         """
         return BcutASR(
-            audio_path=str(test_audio_path),
+            audio_input=str(test_audio_path),
             need_word_time_stamp=True,
         )
 
@@ -116,7 +116,7 @@ class TestBcutASR:
         level = "word" if need_word_ts else "sentence"
 
         asr = BcutASR(
-            audio_path=str(audio_path),
+            audio_input=str(audio_path),
             need_word_time_stamp=need_word_ts,
         )
 

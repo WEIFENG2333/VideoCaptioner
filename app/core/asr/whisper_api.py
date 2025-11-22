@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
 from openai import OpenAI
 
@@ -19,7 +19,7 @@ class WhisperAPI(BaseASR):
 
     def __init__(
         self,
-        audio_path: str,
+        audio_input: Union[str, bytes],
         whisper_model: str,
         need_word_time_stamp: bool = False,
         language: str = "zh",
@@ -31,7 +31,7 @@ class WhisperAPI(BaseASR):
         """Initialize Whisper API.
 
         Args:
-            audio_path: Path to audio file
+            audio_input: Path to audio file or raw audio bytes
             whisper_model: Model name
             need_word_time_stamp: Return word-level timestamps
             language: Language code (default: zh)
@@ -40,7 +40,7 @@ class WhisperAPI(BaseASR):
             api_key: API key
             use_cache: Enable caching
         """
-        super().__init__(audio_path, use_cache)
+        super().__init__(audio_input, use_cache)
 
         self.base_url = normalize_base_url(base_url)
         self.api_key = api_key.strip()
