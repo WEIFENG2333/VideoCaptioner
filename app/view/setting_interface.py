@@ -874,7 +874,7 @@ class SettingInterface(ScrollArea):
         if service in [TranslatorServiceEnum.DEEPLX.value]:
             for card in deeplx_cards:
                 card.setVisible(True)
-        elif service in [TranslatorServiceEnum.OPENAI.value]:
+        elif service in [TranslatorServiceEnum.OPENAI.value, TranslatorServiceEnum.GEMINI.value]:
             for card in openai_cards:
                 card.setVisible(True)
 

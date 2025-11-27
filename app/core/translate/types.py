@@ -7,6 +7,7 @@ class TranslatorType(Enum):
     """翻译器类型"""
 
     OPENAI = "openai"
+    GEMINI = "gemini"
     GOOGLE = "google"
     BING = "bing"
     DEEPLX = "deeplx"

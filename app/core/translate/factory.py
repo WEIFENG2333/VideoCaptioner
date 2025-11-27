@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from app.core.translate.base import BaseTranslator
 from app.core.translate.bing_translator import BingTranslator
 from app.core.translate.deeplx_translator import DeepLXTranslator
+from app.core.translate.gemini_translator import GeminiTranslator
 from app.core.translate.google_translator import GoogleTranslator
 from app.core.translate.llm_translator import LLMTranslator
 from app.core.translate.types import TargetLanguage, TranslatorType
@@ -35,6 +36,16 @@ class TranslatorFactory:
 
             if translator_type == TranslatorType.OPENAI:
                 return LLMTranslator(
+                    thread_num=thread_num,
+                    batch_num=batch_num,
+                    target_language=target_language,
+                    model=model,
+                    custom_prompt=custom_prompt,
+                    is_reflect=is_reflect,
+                    update_callback=update_callback,
+                )
+            elif translator_type == TranslatorType.GEMINI:
+                return GeminiTranslator(
                     thread_num=thread_num,
                     batch_num=batch_num,
                     target_language=target_language,

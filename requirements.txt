@@ -11,3 +11,4 @@ langdetect>=1.0.9
 pydub
 tenacity
 GPUtil>=1.4.0
+google-genai

@@ -120,7 +120,8 @@ class TranscribeModelEnum(Enum):
 class TranslatorServiceEnum(Enum):
     """翻译器服务"""
 
-    OPENAI = "LLM 大模型翻译"
+    OPENAI = "LLM 大模型翻译 - OpenAI 兼容API"
+    GEMINI = "LLM 大模型翻译 - Gemini"
     DEEPLX = "DeepLx 翻译"
     BING = "微软翻译"
     GOOGLE = "谷歌翻译"
@@ -601,7 +602,7 @@ class SubtitleConfig:
             lines.append(
                 f"  Service: {self.translator_service.value if self.translator_service else 'None'}"
             )
-            if self.translator_service == TranslatorServiceEnum.OPENAI:
+            if self.translator_service == TranslatorServiceEnum.OPENAI or self.translator_service == TranslatorServiceEnum.GEMINI:
                 lines.append(f"  API Base: {self.base_url}")
                 lines.append(f"  API Key: {self._mask_key(self.api_key)}")
                 lines.append(f"  Model: {self.llm_model}")

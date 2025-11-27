@@ -20,6 +20,7 @@ from app.core.translate import (
     DeepLXTranslator,
     GoogleTranslator,
     LLMTranslator,
+    GeminiTranslator
 )
 from app.core.utils.logger import setup_logger
 
@@ -64,6 +65,7 @@ class SubtitleThread(QThread):
                 os.environ["OPENAI_BASE_URL"] = self.task.subtitle_config.base_url
             if self.task.subtitle_config.api_key:
                 os.environ["OPENAI_API_KEY"] = self.task.subtitle_config.api_key
+                os.environ["GEMINI_API_KEY"] = self.task.subtitle_config.api_key
             return self.task.subtitle_config
         else:
             raise Exception(self.tr("LLM API 未配置, 请检查LLM配置"))
@@ -148,6 +150,18 @@ class SubtitleThread(QThread):
                     if not subtitle_config.llm_model:
                         raise Exception(self.tr("LLM 模型未配置"))
                     translator = LLMTranslator(
+                        thread_num=subtitle_config.thread_num,
+                        batch_num=subtitle_config.batch_size,
+                        target_language=subtitle_config.target_language,
+                        model=subtitle_config.llm_model,
+                        custom_prompt=custom_prompt or "",
+                        is_reflect=subtitle_config.need_reflect,
+                        update_callback=self.callback,
+                    )
+                elif translator_service == TranslatorServiceEnum.GEMINI:
+                    if not subtitle_config.llm_model:
+                        raise Exception(self.tr("Google Gemini LLM 模型未配置"))
+                    translator = GeminiTranslator(
                         thread_num=subtitle_config.thread_num,
                         batch_num=subtitle_config.batch_size,
                         target_language=subtitle_config.target_language,
