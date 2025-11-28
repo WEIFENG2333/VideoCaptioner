@@ -3,6 +3,7 @@
 import os
 import threading
 from typing import Any, List, Optional
+from types import SimpleNamespace
 from urllib.parse import urlparse, urlunparse
 
 import openai
@@ -17,7 +18,6 @@ from tenacity import (
 
 from app.core.utils.cache import get_llm_cache, memoize
 from app.core.utils.logger import setup_logger
-from types import SimpleNamespace
 
 _global_client: Optional[OpenAI] = None
 _client_lock = threading.Lock()
