@@ -125,6 +125,12 @@ class Config(QConfig):
         "LLM", "ChatGLM_API_Base", "https://open.bigmodel.cn/api/paas/v4"
     )
 
+    modelscope_model = ConfigItem("LLM", "ModelScope_Model", "Qwen/Qwen3-8B")
+    modelscope_api_key = ConfigItem("LLM", "ModelScope_API_Key", "")
+    modelscope_api_base = ConfigItem(
+        "LLM", "ModelScope_API_Base", "https://api-inference.modelscope.cn/v1"
+    )
+
     # ------------------- 翻译配置 -------------------
     translator_service = OptionsConfigItem(
         "Translate",

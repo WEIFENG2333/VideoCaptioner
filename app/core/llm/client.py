@@ -17,6 +17,7 @@ from tenacity import (
 
 from app.core.utils.cache import get_llm_cache, memoize
 from app.core.utils.logger import setup_logger
+from types import SimpleNamespace
 
 _global_client: Optional[OpenAI] = None
 _client_lock = threading.Lock()
@@ -135,13 +136,36 @@ def call_llm(
         ValueError: If response is invalid (empty choices or content)
     """
     client = get_llm_client()
+     # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameters
+    if "modelscope" in str(client.base_url):
+        logger.info("Detected ModelScope API, using stream mode with enable_thinking=True.")
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,  # pyright: ignore[reportArgumentType]
-        temperature=temperature,
-        **kwargs,
-    )
+        extra_body = {"enable_thinking": True}
+
+        response_stream = client.chat.completions.create(
+            model=model,
+            messages=messages,  # pyright: ignore[reportArgumentType]
+            temperature=temperature,
+            stream=True,
+            extra_body=extra_body,
+            **kwargs,
+        )
+
+        full_content = ""
+        for chunk in response_stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                full_content += chunk.choices[0].delta.content
+
+        fake_message = SimpleNamespace(content=full_content)
+        fake_choice = SimpleNamespace(message=fake_message)
+        response = SimpleNamespace(choices=[fake_choice])
+    else:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,  # pyright: ignore[reportArgumentType]
+            temperature=temperature,
+            **kwargs,
+        )
 
     # Validate response (exceptions are not cached by diskcache)
     if not (

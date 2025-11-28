@@ -26,17 +26,40 @@ def check_llm_connection(
         # 创建OpenAI客户端并发送请求到API
         base_url = normalize_base_url(base_url)
         api_key = api_key.strip()
-        response = openai.OpenAI(
-            base_url=base_url, api_key=api_key, timeout=60
-        ).chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": 'Just respond with "Hello"!'},
-            ],
-            timeout=30,
-        )
-        return True, response.choices[0].message.content
+        # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameters
+        if "modelscope" in base_url:
+            extra_body = {"enable_thinking": True}
+            response_stream = openai.OpenAI(
+                base_url=base_url, api_key=api_key, timeout=60
+            ).chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", 'content': 'Just respond with "Hello"!'},
+                ],
+                stream=True,
+                extra_body=extra_body,
+                timeout=30,
+            )
+
+            full_answer = ""
+            for chunk in response_stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    full_answer += chunk.choices[0].delta.content
+            
+            return True, full_answer.strip()
+        else:
+            response = openai.OpenAI(
+                base_url=base_url, api_key=api_key, timeout=60
+            ).chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": 'Just respond with "Hello"!'},
+                ],
+                timeout=30,
+            )
+            return True, response.choices[0].message.content
     except openai.APIConnectionError:
         return False, "API Connection Error. Please check your network or VPN."
     except openai.RateLimitError as e:
