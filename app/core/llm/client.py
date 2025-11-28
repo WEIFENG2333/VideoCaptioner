@@ -136,7 +136,7 @@ def call_llm(
         ValueError: If response is invalid (empty choices or content)
     """
     client = get_llm_client()
-     # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameters
+    # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameters
     if "modelscope" in str(client.base_url):
         logger.info("Detected ModelScope API, using stream mode with enable_thinking=True.")
 
@@ -155,7 +155,8 @@ def call_llm(
         for chunk in response_stream:
             if chunk.choices and chunk.choices[0].delta.content:
                 full_content += chunk.choices[0].delta.content
-
+        if not full_content:
+            raise ValueError("ModelScope streaming response yielded no content")
         fake_message = SimpleNamespace(content=full_content)
         fake_choice = SimpleNamespace(message=fake_message)
         response = SimpleNamespace(choices=[fake_choice])

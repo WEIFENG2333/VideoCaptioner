@@ -26,7 +26,7 @@ def check_llm_connection(
         # 创建OpenAI客户端并发送请求到API
         base_url = normalize_base_url(base_url)
         api_key = api_key.strip()
-        # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameters
+        # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameter
         if "modelscope" in base_url:
             extra_body = {"enable_thinking": True}
             response_stream = openai.OpenAI(
@@ -46,7 +46,8 @@ def check_llm_connection(
             for chunk in response_stream:
                 if chunk.choices and chunk.choices[0].delta.content:
                     full_answer += chunk.choices[0].delta.content
-            
+            if not full_answer:
+                raise ValueError("ModelScope streaming response yielded no content")
             return True, full_answer.strip()
         else:
             response = openai.OpenAI(
