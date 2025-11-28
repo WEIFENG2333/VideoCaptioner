@@ -138,6 +138,7 @@ LLM 大模型是用来字幕段句、字幕优化、以及字幕翻译（如果�
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | SiliconCloud   | [SiliconCloud 官网](https://cloud.siliconflow.cn/i/onCHcaDx)配置方法请参考[配置文档](./docs/llm_config.md)<br>该并发较低，建议把线程设置为5以下。 |
 | DeepSeek       | [DeepSeek 官网](https://platform.deepseek.com)，建议使用 `deepseek-v3` 模型，<br>官方网站最近服务好像并不太稳定。                                 |
+| ModelScope   | [ModelScope 官网](https://modelscope.cn/models?filter=inference_type&page=1&tabKey=task)配置方法请参考[配置文档](https://modelscope.cn/docs/model-service/API-Inference/intro)<br>该并发较低，建议把线程设置为5以下。 |
 | OpenAI兼容接口 | 如果有其他服务商的API，可直接在软件中填写。base_url 和api_key [VideoCaptioner API](https://api.videocaptioner.cn)                                 |
 
 注：如果用的 API 服务商不支持高并发，请在软件设置中将“线程数”调低，避免请求错误。
