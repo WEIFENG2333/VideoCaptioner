@@ -74,14 +74,6 @@ class SubtitleThread(QThread):
 
             # 字幕文件路径检查、对断句字幕路径进行定义
             subtitle_path = self.task.subtitle_path
-            output_name = (
-                Path(subtitle_path)
-                .stem.replace("【原始字幕】", "")
-                .replace("【下载字幕】", "")
-            )
-            split_path = str(
-                Path(subtitle_path).parent / f"【断句字幕】{output_name}.srt"
-            )
             assert subtitle_path is not None, self.tr("字幕文件路径为空")
 
             subtitle_config = self.task.subtitle_config
@@ -110,7 +102,6 @@ class SubtitleThread(QThread):
                     max_word_count_english=subtitle_config.max_word_count_english,
                 )
                 asr_data = splitter.split_subtitle(asr_data)
-                # asr_data.save(save_path=split_path)
                 self.update_all.emit(asr_data.to_json())
 
             # 3. 优化字幕
