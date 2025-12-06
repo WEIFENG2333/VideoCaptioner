@@ -79,6 +79,12 @@ myTranslator.load(str(translations_path))
 app.installTranslator(translator)
 app.installTranslator(myTranslator)
 
-w = MainWindow()
-w.show()
-sys.exit(app.exec_())
+
+def main():
+    w = MainWindow()
+    w.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

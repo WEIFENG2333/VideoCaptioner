@@ -12,22 +12,13 @@
 
 ## 项目介绍
 
-新版本：
+卡卡字幕助手（VideoCaptioner）操作简单且无需高配置，支持 API 和本地离线两种方式进行语音识别，利用大语言模型进行字幕智能断句、校正、翻译，字幕视频全流程一键处理。为视频配上效果惊艳的字幕。
 
-- 优化 Whisper API 的处理
-- 支持分段进行并发转录， 以及算法自能合并转录块
-- 优化字幕翻译、优化、断句的处理方式， 利用 LLM 反馈循环 极大降低出错率
-
-卡卡字幕助手（VideoCaptioner）操作简单且无需高配置，支持网络调用和本地离线（支持调用GPU）两种方式进行语音识别，利用大语言模型进行字幕智能断句、校正、翻译，字幕视频全流程一键处理。为视频配上效果惊艳的字幕。
-
-最新版本已经支持 VAD 、人声分离、字级时间戳、批量字幕等实用功能
-
-- 无需GPU即可使用强大的语音识别引擎，生成精准字幕
-- 基于 LLM 的智能分割与断句，字幕阅读更自然流畅
-- AI字幕多线程优化与翻译，调整字幕格式、表达更地道专业
+- 支持词级时间戳与 VAD 语音活动检测，识别准确率高
+- 基于 LLM 的语义理解，自动将逐字字幕重组为自然流畅的句子段落
+- 结合上下文的 AI 翻译，支持反思优化机制，译文地道专业
 - 支持批量视频字幕合成，提升处理效率
 - 直观的字幕编辑查看界面，支持实时预览和快捷编辑
-- 消耗模型 Token 少，且内置基础 LLM 模型，保证开箱即用
 
 ## 界面预览
 
@@ -62,7 +53,7 @@
 
 4. 翻译配置，选择是否启用翻译，翻译服务（默认使用微软翻译，质量一般，推荐使用大模型翻译）
 
-5. 语音识别配置（默认使用B接口，中英以外的语言请使用本地转录）
+5. 语音识别配置（默认使用B接口网络调用语音识别服务，中英以外的语言请使用本地转录）
 
 6. 拖拽视频文件到软件窗口，即可全自动处理
 
@@ -70,63 +61,66 @@
 
 ### macOS / Linux 用户
 
-1. 克隆项目并进入目录
+#### 一键安装运行（推荐）
 
 ```bash
+# 方式一：直接运行（自动安装 uv、克隆项目、安装依赖）
+curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/main/run.sh | bash
+
+# 方式二：先克隆再运行
 git clone https://github.com/WEIFENG2333/VideoCaptioner.git
 cd VideoCaptioner
-```
-
-2. 运行启动脚本
-
-```bash
-chmod +x run.sh
 ./run.sh
 ```
 
 脚本会自动：
 
-- 检测Python环境
-- 创建虚拟环境并安装Python依赖
-- 检测系统工具（ffmpeg、aria2）
-- 启动应用程序
-
-**注意**：macOS用户需要先安装Homebrew。
+1. 安装 [uv](https://docs.astral.sh/uv/) 包管理器（如果未安装）
+2. 克隆项目到 `~/VideoCaptioner`（如果不在项目目录中运行）
+3. 安装所有 Python 依赖
+4. 启动应用
 
 <details>
 <summary>手动安装步骤</summary>
 
-
-1. 安装 ffmpeg 和 Aria2 下载工具
+#### 1. 安装 uv 包管理器
 
 ```bash
-brew install ffmpeg
-brew install aria2
-brew install python@3.**
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-2. 克隆项目
+#### 2. 安装系统依赖（macOS）
+
+```bash
+brew install ffmpeg aria2
+```
+
+#### 3. 克隆并运行
 
 ```bash
 git clone https://github.com/WEIFENG2333/VideoCaptioner.git
 cd VideoCaptioner
-```
-
-3. 安装依赖
-
-```bash
-python3.** -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-4. 运行程序
-
-```bash
-python main.py
+uv sync          # 安装依赖
+uv run python main.py  # 运行
 ```
 
 </details>
+
+### 开发者指南
+
+```bash
+# 安装依赖（包括开发依赖）
+uv sync
+
+# 运行应用
+uv run python main.py
+
+# 类型检查
+uv run pyright
+
+# 代码检查
+uv run ruff check .
+```
 
 ## 基本配置
 
