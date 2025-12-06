@@ -1,76 +1,80 @@
-import re
+import io
+import logging
 import sys
+from typing import Callable
 
+from modelscope.hub.callback import ProgressCallback
 from modelscope.hub.snapshot_download import snapshot_download
 from PyQt5.QtCore import QThread, pyqtSignal
 
 
-class ModelscopeDownloadThread(QThread):
-    progress = pyqtSignal(int, str)  # 进度值和状态消息
-    error = pyqtSignal(str)  # 错误信息
+class SuppressOutput:
+    """上下文管理器：抑制 stdout/stderr 和 modelscope 日志"""
 
-    def __init__(self, model_id, save_path):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        self._stderr = sys.stderr
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
+        self._loggers: dict[str, int] = {}
+        for name in ["modelscope", "tqdm"]:
+            logger = logging.getLogger(name)
+            self._loggers[name] = logger.level
+            logger.setLevel(logging.CRITICAL)
+        return self
+
+    def __exit__(self, *args):
+        sys.stdout = self._stdout
+        sys.stderr = self._stderr
+        for name, level in self._loggers.items():
+            logging.getLogger(name).setLevel(level)
+
+
+def create_progress_callback_class(
+    progress_callback: Callable[[int, str], None],
+) -> type[ProgressCallback]:
+    """创建一个自定义的 ProgressCallback 类，用于接收下载进度"""
+
+    class CustomProgressCallback(ProgressCallback):
+        def __init__(self, filename: str, file_size: int):
+            super().__init__(filename, file_size)
+            self.downloaded = 0
+
+        def update(self, size: int):
+            self.downloaded += size
+            if self.file_size > 0:
+                percentage = min(int(self.downloaded * 100 / self.file_size), 99)
+                progress_callback(percentage, f"{self.filename}: {percentage}%")
+
+        def end(self):
+            pass
+
+    return CustomProgressCallback
+
+
+class ModelscopeDownloadThread(QThread):
+    progress = pyqtSignal(int, str)
+    error = pyqtSignal(str)
+
+    def __init__(self, model_id: str, save_path: str):
         super().__init__()
         self.model_id = model_id
         self.save_path = save_path
-        self._original_stdout = None
-        self._original_stderr = None
-
-    def custom_write(self, text):
-        # 解析进度信息
-        if "%|" in text:
-            try:
-                # 提取百分比
-                match = re.search(r"(\d+)%", text)
-                if match:
-                    percentage = int(match.group(1))
-                    # 提取文件名
-                    file_match = re.search(r"\[(.*?)\]:", text)
-                    if file_match:
-                        filename = file_match.group(1)
-                        self.progress.emit(
-                            percentage, f"正在下载 {filename}: {percentage}%"
-                        )
-            except Exception:
-                pass
-        # 写入原始stdout
-        self._original_stdout.write(text)
-        self._original_stdout.flush()
 
     def run(self):
         try:
-            # 发送开始下载信号
-            self.progress.emit(0, "开始下载...")
+            self.progress.emit(0, self.tr("开始下载..."))
 
-            # 保存原始stdout
-            self._original_stdout = sys.stdout
-            self._original_stderr = sys.stderr
+            callback_class = create_progress_callback_class(self.progress.emit)
 
-            # 创建自定义输出对象
-            class CustomOutput:
-                def __init__(self, callback):
-                    self.callback = callback
+            with SuppressOutput():
+                snapshot_download(
+                    self.model_id,
+                    local_dir=self.save_path,
+                    progress_callbacks=[callback_class],
+                )
 
-                def write(self, text):
-                    self.callback(text)
-
-                def flush(self):
-                    pass
-
-            # 重定向输出
-            sys.stdout = CustomOutput(self.custom_write)
-            sys.stderr = CustomOutput(self.custom_write)
-
-            try:
-                # 下载模型
-                snapshot_download(self.model_id, local_dir=self.save_path)
-            finally:
-                # 恢复原始输出
-                sys.stdout = self._original_stdout
-                sys.stderr = self._original_stderr
-
-            # 发送完成信号
-            self.progress.emit(100, "下载完成")
+            self.progress.emit(100, self.tr("下载完成"))
 
         except Exception as e:
             self.error.emit(str(e))
@@ -83,7 +87,7 @@ if __name__ == "__main__":
 
     app = QCoreApplication(sys.argv)
     model_id = "pengzhendong/faster-whisper-tiny"
-    save_path = r"models\faster-whisper-tiny"  # 保存到当前目录下的models文件夹
+    save_path = r"models/faster-whisper-tiny"
     downloader = ModelscopeDownloadThread(model_id, save_path)
 
     def on_progress(percentage, message):
@@ -101,9 +105,7 @@ if __name__ == "__main__":
     downloader.error.connect(on_error)
     downloader.finished.connect(on_finished)
 
-    # 开始下载
     print(f"开始下载模型 {model_id}")
     downloader.start()
 
-    # 运行事件循环
     sys.exit(app.exec_())
