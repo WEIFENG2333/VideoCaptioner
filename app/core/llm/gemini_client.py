@@ -134,7 +134,12 @@ def call_gemini(
 
     # Use generate_content with just the string content
     model_name = re.sub(r"models/", "", model, 0, re.MULTILINE)
-    thinking_budget = -1 if model_name == "gemini-2.5-pro" else 0
+    if model_name == "gemini-2.5-flash":
+        thinking_config = types.ThinkingConfig(thinking_budget = 0)
+    elif model_name == "gemini-3-pro-preview" or model_name == "gemini-pro-latest":
+        thinking_config = types.ThinkingConfig(thinking_level = types.ThinkingLevel.HIGH)
+    else:
+        thinking_config = types.ThinkingConfig(thinking_budget = -1)
     response = client.models.generate_content(
         model=model,
         config=types.GenerateContentConfig(
@@ -151,7 +156,7 @@ def call_gemini(
             # thinking_config=types.ThinkingConfig(thinking_budget=0)
             # Turn on dynamic thinking:
             # thinking_config=types.ThinkingConfig(thinking_budget=-1)
-            thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget)
+            thinking_config=thinking_config
         ),
         contents=final_content,
     )
