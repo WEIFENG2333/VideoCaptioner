@@ -117,7 +117,7 @@ def call_gemini(
     client = genai.Client(
         api_key=api_key,
         http_options=types.HttpOptions(
-            timeout=60 * 1000,
+            timeout=5 * 60 * 1000,
             retry_options=types.HttpRetryOptions(
                 attempts=5,
                 initial_delay=30,
