@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -96,8 +97,11 @@ class WhisperCppASR(BaseASR):
         ]
 
         if not is_const_me_version:
+            if sys.platform != "darwin":
+                whisper_params.append("--no-gpu")
+
             whisper_params.extend(
-                ["--no-gpu", "--output-file", str(output_path.with_suffix(""))]
+                ["--output-file", str(output_path.with_suffix(""))]
             )
 
         if self.language == "zh":
