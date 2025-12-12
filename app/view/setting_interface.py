@@ -353,6 +353,14 @@ class SettingInterface(ScrollArea):
                 "default_base": "https://open.bigmodel.cn/api/paas/v4",
                 "default_models": ["glm-4-plus", "glm-4-air-250414", "glm-4-flash"],
             },
+            LLMServiceEnum.MODELSCOPE: {
+                "prefix": "modelscope",
+                "api_key_cfg": cfg.modelscope_api_key,
+                "api_base_cfg": cfg.modelscope_api_base,
+                "model_cfg": cfg.modelscope_model,
+                "default_base": "https://api-inference.modelscope.cn/v1",
+                "default_models": ["Qwen/Qwen3-8B", "Qwen/Qwen3-30B-A3B-Instruct-2507", "deepseek-ai/DeepSeek-V3.1"],
+            },
         }
 
         # 创建服务配置映射

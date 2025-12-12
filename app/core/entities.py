@@ -105,6 +105,7 @@ class LLMServiceEnum(Enum):
     LM_STUDIO = "LM Studio"
     GEMINI = "Gemini"
     CHATGLM = "ChatGLM"
+    MODELSCOPE = "ModelScope"
 
 
 class TranscribeModelEnum(Enum):
