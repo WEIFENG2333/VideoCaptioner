@@ -138,20 +138,6 @@ def call_llm(
     """
     client = get_llm_client()
 
-    # # 在需要打印的地方
-    # extra_body = kwargs.get("extra_body", {})
-    # logger.info(f"DEBUG: Passing extra_body to API: {extra_body}") # 使用 logger
-     # --- 核心：智能处理平台特定参数 ---
-    # 检查是否为 ModelScope 平台
-    # if "modelscope" in str(client.base_url):
-    #     logger.info("Detected ModelScope API, ensuring 'enable_thinking' is set to false.")
-    #     # 从 kwargs 中获取现有的 extra_body，如果没有则创建一个空字典
-    #     extra_body = kwargs.get("extra_body", {})
-    #     # 强制设置 enable_thinking 为 false，以满足其 API 要求
-    #     extra_body["enable_thinking"] = False
-    #     # 将修改后的 extra_body 放回 kwargs
-    #     kwargs["extra_body"] = extra_body
-
     response = client.chat.completions.create(
         model=model,
         messages=messages,  # pyright: ignore[reportArgumentType]
