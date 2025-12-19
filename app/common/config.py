@@ -130,6 +130,13 @@ class Config(QConfig):
     modelscope_api_base = ConfigItem(
         "LLM", "ModelScope_API_Base", "https://api-inference.modelscope.cn/v1"
     )
+    modelscope_extra_body = ConfigItem(
+        "LLM",
+        "ModelScope_Extra_Body",
+        {
+            "enable_thinking": False,
+        },
+    )
 
     # ------------------- 翻译配置 -------------------
     translator_service = OptionsConfigItem(

@@ -1,7 +1,7 @@
 import datetime
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional, Dict, Any
 
 if TYPE_CHECKING:
     from app.core.translate.types import TargetLanguage
@@ -559,6 +559,7 @@ class SubtitleConfig:
     base_url: Optional[str] = None
     api_key: Optional[str] = None
     llm_model: Optional[str] = None
+    extra_body: Optional[Dict[str, Any]] = None
     deeplx_endpoint: Optional[str] = None
     # 翻译服务
     translator_service: Optional[TranslatorServiceEnum] = None

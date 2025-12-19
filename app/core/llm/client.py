@@ -1,5 +1,6 @@
 """Unified LLM client for the application."""
-
+from app.core.utils.logger import setup_logger
+logger = setup_logger(__name__) # 使用当前模块名作为logger名称
 import os
 import threading
 from typing import Any, List, Optional
@@ -136,37 +137,27 @@ def call_llm(
         ValueError: If response is invalid (empty choices or content)
     """
     client = get_llm_client()
-    # Check whether it is the ModelScope platform, as some models require the stream and enable_thinking parameters
-    if "modelscope" in str(client.base_url):
-        logger.info("Detected ModelScope API, using stream mode with enable_thinking=True.")
 
-        extra_body = {"enable_thinking": True}
+    # # 在需要打印的地方
+    # extra_body = kwargs.get("extra_body", {})
+    # logger.info(f"DEBUG: Passing extra_body to API: {extra_body}") # 使用 logger
+     # --- 核心：智能处理平台特定参数 ---
+    # 检查是否为 ModelScope 平台
+    # if "modelscope" in str(client.base_url):
+    #     logger.info("Detected ModelScope API, ensuring 'enable_thinking' is set to false.")
+    #     # 从 kwargs 中获取现有的 extra_body，如果没有则创建一个空字典
+    #     extra_body = kwargs.get("extra_body", {})
+    #     # 强制设置 enable_thinking 为 false，以满足其 API 要求
+    #     extra_body["enable_thinking"] = False
+    #     # 将修改后的 extra_body 放回 kwargs
+    #     kwargs["extra_body"] = extra_body
 
-        response_stream = client.chat.completions.create(
-            model=model,
-            messages=messages,  # pyright: ignore[reportArgumentType]
-            temperature=temperature,
-            stream=True,
-            extra_body=extra_body,
-            **kwargs,
-        )
-
-        full_content = ""
-        for chunk in response_stream:
-            if chunk.choices and chunk.choices[0].delta.content:
-                full_content += chunk.choices[0].delta.content
-        if not full_content:
-            raise ValueError("ModelScope streaming response yielded no content")
-        fake_message = SimpleNamespace(content=full_content)
-        fake_choice = SimpleNamespace(message=fake_message)
-        response = SimpleNamespace(choices=[fake_choice])
-    else:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,  # pyright: ignore[reportArgumentType]
-            temperature=temperature,
-            **kwargs,
-        )
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,  # pyright: ignore[reportArgumentType]
+        temperature=temperature,
+        **kwargs,
+    )
 
     # Validate response (exceptions are not cached by diskcache)
     if not (
