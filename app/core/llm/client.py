@@ -1,10 +1,7 @@
 """Unified LLM client for the application."""
-from app.core.utils.logger import setup_logger
-logger = setup_logger(__name__) # 使用当前模块名作为logger名称
 import os
 import threading
 from typing import Any, List, Optional
-from types import SimpleNamespace
 from urllib.parse import urlparse, urlunparse
 
 import openai
