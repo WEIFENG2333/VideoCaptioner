@@ -118,6 +118,10 @@ class TaskFactory:
             base_url = cfg.openai_api_base.value
             api_key = cfg.openai_api_key.value
             llm_model = cfg.openai_model.value
+        elif current_service == LLMServiceEnum.CUSTOM:
+            base_url = cfg.custom_api_base.value
+            api_key = cfg.custom_api_key.value
+            llm_model = cfg.custom_model.value
         elif current_service == LLMServiceEnum.SILICON_CLOUD:
             base_url = cfg.silicon_cloud_api_base.value
             api_key = cfg.silicon_cloud_api_key.value

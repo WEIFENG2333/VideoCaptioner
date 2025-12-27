@@ -99,6 +99,7 @@ class LLMServiceEnum(Enum):
     """LLM服务"""
 
     OPENAI = "OpenAI"
+    CUSTOM = "Custom"
     SILICON_CLOUD = "SiliconCloud"
     DEEPSEEK = "DeepSeek"
     OLLAMA = "Ollama"

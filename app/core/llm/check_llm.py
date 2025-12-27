@@ -7,6 +7,19 @@ import openai
 from app.core.llm.client import normalize_base_url
 
 
+def format_llm_error(error: openai.OpenAIError) -> str:
+    """Format OpenAI-compatible errors into user-friendly messages."""
+    message = str(error)
+    lowered = message.lower()
+    if "insufficient_user_quota" in lowered or (
+        "insufficient" in lowered and "quota" in lowered
+    ):
+        return "Insufficient balance or quota. Please recharge your account."
+    if "balance is insufficient" in lowered:
+        return "Insufficient balance or quota. Please recharge your account."
+    return "LLM Error: " + message
+
+
 def check_llm_connection(
     base_url: str, api_key: str, model: str
 ) -> tuple[Literal[True], Optional[str]] | tuple[Literal[False], Optional[str]]:
@@ -46,7 +59,7 @@ def check_llm_connection(
     except openai.NotFoundError:
         return False, "URL Not Found Error. Please check your Base URL."
     except openai.OpenAIError as e:
-        return False, "OpenAI Error: " + str(e)
+        return False, format_llm_error(e)
     except Exception as e:
         return False, str(e)
 
@@ -77,12 +90,9 @@ def get_available_models(base_url: str, api_key: str) -> list[str]:
             "vision",
             "audio",
             "search",
-            "text-",
             "image",
             "audio",
             "whisper",
-            "gpt-3.5",
-            "gpt-4-",
         )
         models = [
             model

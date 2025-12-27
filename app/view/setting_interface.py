@@ -298,6 +298,20 @@ class SettingInterface(ScrollArea):
                     "claude-haiku-4-5-20251001",
                 ],
             },
+            LLMServiceEnum.CUSTOM: {
+                "prefix": "custom",
+                "api_key_cfg": cfg.custom_api_key,
+                "api_base_cfg": cfg.custom_api_base,
+                "model_cfg": cfg.custom_model,
+                "default_base": "https://api.openai.com/v1",
+                "default_models": [
+                    "gemini-2.5-pro",
+                    "gpt-5",
+                    "claude-sonnet-4-5-20250929",
+                    "gemini-2.5-flash",
+                    "claude-haiku-4-5-20251001",
+                ],
+            },
             LLMServiceEnum.SILICON_CLOUD: {
                 "prefix": "silicon_cloud",
                 "api_key_cfg": cfg.silicon_cloud_api_key,
@@ -387,6 +401,7 @@ class SettingInterface(ScrollArea):
             # 设置只读状态：只有 OpenAI、Ollama、LM Studio 可以编辑 Base URL
             if service not in [
                 LLMServiceEnum.OPENAI,
+                LLMServiceEnum.CUSTOM,
                 LLMServiceEnum.OLLAMA,
                 LLMServiceEnum.LM_STUDIO,
             ]:
