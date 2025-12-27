@@ -1,6 +1,6 @@
+import importlib
+import importlib.util
 from typing import Any, Callable, List, Optional, Union
-
-from openai import OpenAI
 
 from app.core.llm.client import normalize_base_url
 
@@ -53,7 +53,15 @@ class WhisperAPI(BaseASR):
         self.prompt = prompt
         self.need_word_time_stamp = need_word_time_stamp
 
-        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+        if importlib.util.find_spec("openai") is None:
+            raise ModuleNotFoundError(
+                "Missing dependency 'openai'. Install with: pip install -r requirements.txt"
+            )
+
+        openai_module = importlib.import_module("openai")
+        self.client = openai_module.OpenAI(
+            base_url=self.base_url, api_key=self.api_key
+        )
 
     def _run(
         self, callback: Optional[Callable[[int, str], None]] = None, **kwargs: Any
