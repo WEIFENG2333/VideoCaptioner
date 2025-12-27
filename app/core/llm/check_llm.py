@@ -7,16 +7,19 @@ import openai
 from app.core.llm.client import normalize_base_url
 
 
+def is_insufficient_quota_error(error: openai.OpenAIError) -> bool:
+    """Check whether an OpenAI error indicates insufficient balance/quota."""
+    message = str(error).lower()
+    return (
+        "insufficient_user_quota" in message
+        or ("insufficient" in message and "quota" in message)
+        or "balance is insufficient" in message
+    )
+
+
 def format_llm_error(error: openai.OpenAIError) -> str:
     """Format OpenAI-compatible errors into user-friendly messages."""
     message = str(error)
-    lowered = message.lower()
-    if "insufficient_user_quota" in lowered or (
-        "insufficient" in lowered and "quota" in lowered
-    ):
-        return "Insufficient balance or quota. Please recharge your account."
-    if "balance is insufficient" in lowered:
-        return "Insufficient balance or quota. Please recharge your account."
     return "LLM Error: " + message
 
 
@@ -59,6 +62,8 @@ def check_llm_connection(
     except openai.NotFoundError:
         return False, "URL Not Found Error. Please check your Base URL."
     except openai.OpenAIError as e:
+        if is_insufficient_quota_error(e):
+            return True, "已忽略余额/额度提示，可继续使用该接口。"
         return False, format_llm_error(e)
     except Exception as e:
         return False, str(e)
