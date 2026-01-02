@@ -1,21 +1,24 @@
 #!/bin/bash
-# VideoCaptioner Launcher for macOS/Linux
+# VideoCaptioner Launcher for macOS/Linux/git-bash
 
 # Check Python installation
 if ! command -v python3 &> /dev/null && ! command -v python &> /dev/null; then
     echo "Error: Python not found. Please install Python 3.8+"
     echo "macOS: brew install python3"
     echo "Linux: sudo apt install python3 python3-pip python3-venv"
+    echo "Windows: winget install Python.Python.3.10"
     exit 1
 fi
 
+# Detect Windows environment
+case "$(uname)" in MINGW*|MSYS*|CYGWIN*) is_win='true' ;; esac
+
 # Determine Python command
-if command -v python3 &> /dev/null; then
+PYTHON_CMD="python"
+PIP_CMD="pip"
+if [ "$is_win" != 'true' ] && command -v python3 &> /dev/null; then
     PYTHON_CMD="python3"
     PIP_CMD="pip3"
-else
-    PYTHON_CMD="python"
-    PIP_CMD="pip"
 fi
 
 # Check if main.py exists
@@ -31,7 +34,11 @@ if [ ! -d "venv" ]; then
 fi
 
 # Activate virtual environment
-source venv/bin/activate
+if [ "$is_win" = 'true' ]; then
+    source venv/Scripts/activate
+else
+    source venv/bin/activate
+fi
 
 # Check and install dependencies
 if ! $PYTHON_CMD -c "import PyQt5" 2>/dev/null; then
