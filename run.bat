@@ -33,8 +33,7 @@ if %errorlevel% neq 0 (
     pip install -r requirements.txt
 )
 
-::
- Run the application
+:: Run the application
 echo Starting VideoCaptioner...
 python main.py
 
