@@ -9,7 +9,9 @@ from typing import Any, Callable, List, Optional, Union
 
 import GPUtil
 
+import app.config
 from ..utils.logger import setup_logger
+from ..utils.platform_utils import ensure_executable
 from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
@@ -96,21 +98,33 @@ class FasterWhisperASR(BaseASR):
             self.one_word = 0
             self.sentence = True
 
-        # 根据设备选择程序
-        if self.device == "cpu":
-            if shutil.which("faster-whisper-xxl"):
-                self.faster_whisper_program = "faster-whisper-xxl"
+        # 优先对主程序进行权限修复
+        # 即使 Windows 下不需要 chmod，这个函数也会帮我们确认文件是否存在于预期目录
+        ensure_executable(app.config.FASER_WHISPER_PATH, self.faster_whisper_program)
+
+        # 统一查找逻辑
+        if shutil.which(self.faster_whisper_program):
+            # 成功找到主程序 (XXL)
+            pass
+
+        else:
+            # 主程序没找到，进入 Fallback (降级) 逻辑
+            # 只有 CPU 模式下，我们允许降级使用普通的 "faster-whisper"
+            fallback_program = "faster-whisper"
+
+            if self.device == "cpu" and shutil.which(fallback_program):
+                logger.info(f"未找到 {self.faster_whisper_program}，降级使用 {fallback_program}")
+                self.faster_whisper_program = fallback_program
+                self.vad_method = ""  # 普通版可能不支持某些 VAD 参数
             else:
-                if not shutil.which("faster-whisper"):
-                    raise EnvironmentError("faster-whisper程序未找到，请确保已经下载。")
-                self.faster_whisper_program = "faster-whisper"
-                self.vad_method = ""
-        elif self.device == "cuda":
-            if not shutil.which("faster-whisper-xxl"):
-                raise EnvironmentError(
-                    "faster-whisper-xxl 程序未找到，请确保已经下载。"
+                # 无论是 CUDA 没找到 XXL，还是 CPU 既没找到 XXL 也没找到普通版
+                error_msg = (
+                    f"未找到程序: {self.faster_whisper_program}。\n"
+                    f"当前运行设备: {self.device}。\n"
+                    "请确保faster-whisper程序已下载并解压到 resource/bin 目录，或已添加到系统 PATH。"
                 )
-            self.faster_whisper_program = "faster-whisper-xxl"
+                raise EnvironmentError(error_msg)
+        # 到这里 self.faster_whisper_program 已经是确认可用的程序名了
 
     def _build_command(self, audio_input: str) -> List[str]:
         """Build command line arguments for faster-whisper."""

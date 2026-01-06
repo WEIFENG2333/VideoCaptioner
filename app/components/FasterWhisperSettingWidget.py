@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from pathlib import Path
 
@@ -44,7 +45,8 @@ from app.thread.file_download_thread import FileDownloadThread
 from app.thread.modelscope_download_thread import ModelscopeDownloadThread
 
 # 在文件开头添加常量定义
-FASTER_WHISPER_PROGRAMS = [
+# 定义 Windows 平台的程序列表
+WINDOWS_PROGRAMS = [
     {
         "label": "GPU（cuda） + CPU 版本",
         "value": "faster-whisper-gpu.7z",
@@ -60,6 +62,24 @@ FASTER_WHISPER_PROGRAMS = [
         "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/whisper-faster.exe",
     },
 ]
+
+# 定义 Linux 平台的程序列表
+LINUX_PROGRAMS = [
+    {
+        "label": "GPU（cuda） + CPU 版本",
+        "value": "Faster-Whisper-XXL_r245.4_linux.7z",
+        "type": "GPU",
+        "size": "1.54 GB",
+        "downloadLink": "https://github.com/Purfview/whisper-standalone-win/releases/download/Faster-Whisper-XXL/Faster-Whisper-XXL_r245.4_linux.7z",
+    }
+]
+# 根据当前系统选择对应的程序列表
+if sys.platform == "win32":
+    # Windows
+    FASTER_WHISPER_PROGRAMS = WINDOWS_PROGRAMS
+else:
+    # Linux
+    FASTER_WHISPER_PROGRAMS = LINUX_PROGRAMS
 
 FASTER_WHISPER_MODELS = [
     {
@@ -121,13 +141,12 @@ FASTER_WHISPER_MODELS = [
 ]
 
 
-# 在类外添加这个工具函数
 def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     """检查 faster-whisper 程序是否存在
 
-    检查以下两种情况:
-    1. bin目录下是否有 faster-whisper.exe
-    2. bin目录下是否有 Faster-Whisper-XXL/faster-whisper-xxl.exe
+    检查逻辑根据平台区分:
+    Windows: 检查 .exe 后缀
+    Linux: 检查无后缀文件
 
     Returns:
         tuple[bool, list[str]]: (是否存在程序, 已安装的版本列表)
@@ -135,14 +154,25 @@ def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     bin_path = Path(BIN_PATH)
     installed_versions = []
 
-    # 检查 faster-whisper.exe(CPU版本)
-    if (bin_path / "faster-whisper.exe").exists():
-        installed_versions.append("CPU")
+    if sys.platform == "win32":
+        # === Windows 检测逻辑 ===
+        # 1. 检查 faster-whisper.exe (纯CPU版本)
+        if (bin_path / "faster-whisper.exe").exists():
+            installed_versions.append("CPU")
 
-    # 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe(GPU版本)
-    xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe"
-    if xxl_path.exists():
-        installed_versions.extend(["GPU", "CPU"])
+        # 2. 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe (GPU版本)
+        xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe"
+        if xxl_path.exists():
+            installed_versions.extend(["GPU", "CPU"])
+
+    else:
+        # === Linux 检测逻辑 ===
+        # 检查 Faster-Whisper-XXL/faster-whisper-xxl (GPU版本)
+        xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl"
+        if xxl_path.exists():
+            installed_versions.extend(["GPU", "CPU"])
+
+    # 去重
     installed_versions = list(set(installed_versions))
 
     return bool(installed_versions), installed_versions
