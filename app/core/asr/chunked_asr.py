@@ -19,7 +19,7 @@ logger = setup_logger("chunked_asr")
 
 # 常量定义
 MS_PER_SECOND = 1000
-DEFAULT_CHUNK_LENGTH_SEC = 60 * 10  # 20分钟
+DEFAULT_CHUNK_LENGTH_SEC = 60 * 10  # 10分钟
 DEFAULT_CHUNK_OVERLAP_SEC = 10  # 10秒重叠
 DEFAULT_CHUNK_CONCURRENCY = 3  # 3个并发
 
@@ -49,7 +49,7 @@ class ChunkedASR:
         asr_class: ASR 类（非实例），如 BcutASR, JianYingASR
         audio_path: 音频文件路径
         asr_kwargs: 传递给 ASR 构造函数的参数字典
-        chunk_length: 每块长度（秒），默认 480 秒（8分钟）
+        chunk_length: 每块长度（秒），默认 600 秒（10分钟）
         chunk_overlap: 块之间重叠时长（秒），默认 10 秒
         chunk_concurrency: 并发转录数量，默认 3
     """
