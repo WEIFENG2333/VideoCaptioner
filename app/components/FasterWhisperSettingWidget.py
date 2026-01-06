@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import subprocess
 from pathlib import Path
@@ -191,19 +192,36 @@ class UnzipThread(QThread):
         self.extract_path = extract_path
 
     def run(self):
+        # 1. 预先检查 7z 命令是否存在
+        if not shutil.which("7z"):
+            # 根据平台给出具体的安装建议
+            if sys.platform != "win32":
+                error_msg = "解压失败: 未找到 7z 命令。\nLinux 执行: sudo apt update && sudo apt install p7zip-full \nMac 执行: brew install p7zip"
+
+            self.error.emit(error_msg)
+            return
+
         try:
+            # 2. 执行解压
             subprocess.run(
                 ["7z", "x", self.zip_file, f"-o{self.extract_path}", "-y"],
                 check=True,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
-            # 删除压缩包
-            os.remove(self.zip_file)
+            # 3. 删除压缩包
+            if os.path.exists(self.zip_file):
+                os.remove(self.zip_file)
             self.finished.emit()
         except subprocess.CalledProcessError as e:
-            self.error.emit(f"解压失败: {str(e)}")
+            # 7z 命令执行出错 (例如压缩包损坏)
+            # 尝试解码 stderr 获取具体错误信息
+            try:
+                err_info = e.stderr.decode(errors='ignore').strip()
+            except:
+                err_info = "未知错误"
+            self.error.emit(f"解压过程出错: {err_info}")
         except Exception as e:
-            self.error.emit(str(e))
+            self.error.emit(f"解压发生意外错误: {str(e)}")
 
 
 class FasterWhisperDownloadDialog(MessageBoxBase):
