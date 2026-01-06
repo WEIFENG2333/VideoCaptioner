@@ -280,7 +280,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         for program in FASTER_WHISPER_PROGRAMS:
             version_type = program["type"]
             if version_type not in installed_versions:
-                self.program_combo.addItem(f"{program['label']} ({program['size']})")
+                self.program_combo.addItem(f"{program['label']} ({program['size']})", userData=program)
 
         # 如果还有可下载的版本，显示下载控件
         if self.program_combo.count() > 0:
@@ -439,9 +439,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         selected_label = selected_text.split(" (")[0]
 
         # 根据标签找到对应的程序配置
-        program = next(
-            (p for p in FASTER_WHISPER_PROGRAMS if p["label"] == selected_label), None
-        )
+        program = self.program_combo.currentData()
 
         if not program:
             InfoBar.error(
