@@ -9,7 +9,9 @@ from typing import Any, Callable, List, Optional, Union
 
 import GPUtil
 
+import app.config
 from ..utils.logger import setup_logger
+from ..utils.platform_utils import ensure_executable
 from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
@@ -17,6 +19,13 @@ from .status import ASRStatus
 
 logger = setup_logger("faster_whisper")
 
+# 定义白名单关键字常量
+# 凡是显卡名称中包含以下任意一个字符串（不区分大小写），都强制开启 float16
+FORCE_FLOAT16_KEYWORDS = [
+    "RTX 50",    # RTX 50 系列 (Blackwell 架构)
+    "V100",      # Tesla V100 (Volta 架构)
+    "TITAN V",   # TITAN V (Volta 架构)
+]
 
 class FasterWhisperASR(BaseASR):
     """Faster-Whisper local ASR implementation.
@@ -96,21 +105,33 @@ class FasterWhisperASR(BaseASR):
             self.one_word = 0
             self.sentence = True
 
-        # 根据设备选择程序
-        if self.device == "cpu":
-            if shutil.which("faster-whisper-xxl"):
-                self.faster_whisper_program = "faster-whisper-xxl"
+        # 优先对主程序进行权限修复
+        # 即使 Windows 下不需要 chmod，这个函数也会帮我们确认文件是否存在于预期目录
+        ensure_executable(app.config.FASER_WHISPER_PATH, self.faster_whisper_program)
+
+        # 统一查找逻辑
+        if shutil.which(self.faster_whisper_program):
+            # 成功找到主程序 (XXL)
+            pass
+
+        else:
+            # 主程序没找到，进入 Fallback (降级) 逻辑
+            # 只有 CPU 模式下，我们允许降级使用普通的 "faster-whisper"
+            fallback_program = "faster-whisper"
+
+            if self.device == "cpu" and shutil.which(fallback_program):
+                logger.info(f"未找到 {self.faster_whisper_program}，降级使用 {fallback_program}")
+                self.faster_whisper_program = fallback_program
+                self.vad_method = ""  # 普通版可能不支持某些 VAD 参数
             else:
-                if not shutil.which("faster-whisper"):
-                    raise EnvironmentError("faster-whisper程序未找到，请确保已经下载。")
-                self.faster_whisper_program = "faster-whisper"
-                self.vad_method = ""
-        elif self.device == "cuda":
-            if not shutil.which("faster-whisper-xxl"):
-                raise EnvironmentError(
-                    "faster-whisper-xxl 程序未找到，请确保已经下载。"
+                # 无论是 CUDA 没找到 XXL，还是 CPU 既没找到 XXL 也没找到普通版
+                error_msg = (
+                    f"未找到程序: {self.faster_whisper_program}。\n"
+                    f"当前运行设备: {self.device}。\n"
+                    "请确保faster-whisper程序已下载并解压到 resource/bin 目录，或已添加到系统 PATH。"
                 )
-            self.faster_whisper_program = "faster-whisper-xxl"
+                raise EnvironmentError(error_msg)
+        # 到这里 self.faster_whisper_program 已经是确认可用的程序名了
 
     def _build_command(self, audio_input: str) -> List[str]:
         """Build command line arguments for faster-whisper."""
@@ -164,7 +185,7 @@ class FasterWhisperASR(BaseASR):
         if self.ff_mdx_kim2 and self.faster_whisper_program.startswith(
             "faster-whisper-xxl"
         ):
-            cmd.append("--ff_mdx_kim2")
+            cmd.extend(["--ff_vocal_extract", "mdx_kim2"])
 
         # 文本处理参数
         if self.one_word:
@@ -196,8 +217,8 @@ class FasterWhisperASR(BaseASR):
         # 完成的提示音
         cmd.extend(["--beep_off"])
 
-        # 检测 50 系显卡，添加 compute_type 参数
-        if is_rtx_50_series():
+        # 检测 50 系显卡或 Volta 架构 (V100)，添加 compute_type 参数
+        if should_force_float16():
             cmd.extend(["--compute_type", "float16"])
 
         return cmd
@@ -329,19 +350,31 @@ class FasterWhisperASR(BaseASR):
         return f"{self.crc32_hex}-{cmd_hash}"
 
 
-def is_rtx_50_series() -> bool:
-    """检测是否为 RTX 50 系显卡"""
-    if GPUtil is None:
-        logger.debug("GPUtil 未安装，无法检测 GPU 型号")
-        return False
+def should_force_float16() -> bool:
+    """
+    检查是否需要强制指定 float16 compute_type。
+    使用 GPUtil 库获取显卡名称，并与预定义的白名单进行匹配。
+    """
     try:
+        # 获取所有可用的 NVIDIA GPU
         gpus = GPUtil.getGPUs()
+
+        if not gpus:
+            return False
+
         for gpu in gpus:
-            gpu_name = gpu.name.lower()
-            # 检测是否包含 50 系列标识，如 RTX 5090, RTX 5080 等
-            if re.search(r"rtx\s*50\d{2}", gpu_name):
-                logger.info(f"检测到 RTX 50 系显卡: {gpu.name}")
-                return True
+            # 拿到显卡名称并转为大写，确保匹配时不区分大小写
+            gpu_name = gpu.name.upper()
+
+            # 遍历白名单进行匹配
+            for keyword in FORCE_FLOAT16_KEYWORDS:
+                if keyword in gpu_name:
+                    logger.info(f"检测到特定架构显卡 ({gpu.name}) 匹配规则 [{keyword}]，强制开启 float16")
+                    return True
+
+        return False
+
     except Exception as e:
-        logger.debug(f"无法检测 GPU 型号: {e}")
-    return False
+        # 防止 GPUtil 内部报错导致程序崩溃
+        logger.error(f"检测显卡型号时发生错误: {e}")
+        return False

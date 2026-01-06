@@ -9,5 +9,6 @@ psutil>=7.0.0
 json-repair>=0.49.0
 langdetect>=1.0.9
 pydub
+audioop-lts
 tenacity
 GPUtil>=1.4.0

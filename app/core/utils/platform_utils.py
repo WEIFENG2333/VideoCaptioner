@@ -3,9 +3,12 @@
 """
 
 import os
+import sys
+import stat
 import platform
 import subprocess
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 if TYPE_CHECKING:
     from app.core.entities import TranscribeModelEnum
@@ -149,3 +152,37 @@ def is_model_available(model: "TranscribeModelEnum") -> bool:
         return False
 
     return True
+
+
+def ensure_executable(folder_path, binary_name):
+    """
+    确保指定目录下的二进制文件具有执行权限
+
+    根据当前平台自动处理文件名后缀（Windows 下自动补全 .exe），
+    并检查文件是否存在。如果在 Linux/macOS 下文件存在但无权限，
+    会自动赋予执行权限 (chmod +x)。
+
+    Args:
+        folder_path: 二进制文件所在的目录路径
+        binary_name: 程序名称 (建议传入不带后缀的名称，如 'faster-whisper-xxl')
+    """
+    target_name = binary_name
+
+    # Windows 平台下，如果传入的名字没后缀，但在硬盘上必须有 .exe
+    if sys.platform.startswith("win"):
+        if not target_name.lower().endswith(".exe"):
+            target_name += ".exe"
+
+    target_path = folder_path / target_name
+
+    # 检查文件是否存在
+    if target_path.exists() and target_path.is_file():
+        # Linux/Mac 需要赋予执行权限
+        if not sys.platform.startswith("win"):
+            st = os.stat(target_path)
+            if not (st.st_mode & stat.S_IEXEC):
+                print(f"正在赋予执行权限: {target_path}")
+                os.chmod(target_path, st.st_mode | stat.S_IEXEC)
+    else:
+        # 这里只是警告，不抛异常，因为可能用户已经把它装在系统全局 PATH 里了，不在这个文件夹
+        print(f"提示: 在 {folder_path} 下未找到 {target_name}，将尝试在系统 PATH 中查找。")
