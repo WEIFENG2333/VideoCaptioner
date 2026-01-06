@@ -178,7 +178,7 @@ class FasterWhisperASR(BaseASR):
         if self.ff_mdx_kim2 and self.faster_whisper_program.startswith(
             "faster-whisper-xxl"
         ):
-            cmd.append("--ff_mdx_kim2")
+            cmd.extend(["--ff_vocal_extract", "mdx_kim2"])
 
         # 文本处理参数
         if self.one_word:
