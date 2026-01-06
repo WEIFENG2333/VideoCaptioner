@@ -19,6 +19,13 @@ from .status import ASRStatus
 
 logger = setup_logger("faster_whisper")
 
+# 定义白名单关键字常量
+# 凡是显卡名称中包含以下任意一个字符串（不区分大小写），都强制开启 float16
+FORCE_FLOAT16_KEYWORDS = [
+    "RTX 50",    # RTX 50 系列 (Blackwell 架构)
+    "V100",      # Tesla V100 (Volta 架构)
+    "TITAN V",   # TITAN V (Volta 架构)
+]
 
 class FasterWhisperASR(BaseASR):
     """Faster-Whisper local ASR implementation.
@@ -210,8 +217,8 @@ class FasterWhisperASR(BaseASR):
         # 完成的提示音
         cmd.extend(["--beep_off"])
 
-        # 检测 50 系显卡，添加 compute_type 参数
-        if is_rtx_50_series():
+        # 检测 50 系显卡或 Volta 架构 (V100)，添加 compute_type 参数
+        if should_force_float16():
             cmd.extend(["--compute_type", "float16"])
 
         return cmd
@@ -343,19 +350,31 @@ class FasterWhisperASR(BaseASR):
         return f"{self.crc32_hex}-{cmd_hash}"
 
 
-def is_rtx_50_series() -> bool:
-    """检测是否为 RTX 50 系显卡"""
-    if GPUtil is None:
-        logger.debug("GPUtil 未安装，无法检测 GPU 型号")
-        return False
+def should_force_float16() -> bool:
+    """
+    检查是否需要强制指定 float16 compute_type。
+    使用 GPUtil 库获取显卡名称，并与预定义的白名单进行匹配。
+    """
     try:
+        # 获取所有可用的 NVIDIA GPU
         gpus = GPUtil.getGPUs()
+
+        if not gpus:
+            return False
+
         for gpu in gpus:
-            gpu_name = gpu.name.lower()
-            # 检测是否包含 50 系列标识，如 RTX 5090, RTX 5080 等
-            if re.search(r"rtx\s*50\d{2}", gpu_name):
-                logger.info(f"检测到 RTX 50 系显卡: {gpu.name}")
-                return True
+            # 拿到显卡名称并转为大写，确保匹配时不区分大小写
+            gpu_name = gpu.name.upper()
+
+            # 遍历白名单进行匹配
+            for keyword in FORCE_FLOAT16_KEYWORDS:
+                if keyword in gpu_name:
+                    logger.info(f"检测到特定架构显卡 ({gpu.name}) 匹配规则 [{keyword}]，强制开启 float16")
+                    return True
+
+        return False
+
     except Exception as e:
-        logger.debug(f"无法检测 GPU 型号: {e}")
-    return False
+        # 防止 GPUtil 内部报错导致程序崩溃
+        logger.error(f"检测显卡型号时发生错误: {e}")
+        return False
