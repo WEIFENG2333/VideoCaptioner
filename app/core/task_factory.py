@@ -22,28 +22,19 @@ class TaskFactory:
     """任务工厂类，用于创建各种类型的任务"""
 
     @staticmethod
-    def get_ass_style(style_name: str) -> str:
-        """获取 ASS 字幕样式内容"""
+    def get_subtitle_style(style_name: str) -> str:
+        """获取字幕样式内容
+
+        Args:
+            style_name: 样式名称
+
+        Returns:
+            str: 样式内容字符串，如果样式文件不存在则返回None
+        """
         style_path = SUBTITLE_STYLE_PATH / f"{style_name}.txt"
         if style_path.exists():
             return style_path.read_text(encoding="utf-8")
         return ""
-
-    @staticmethod
-    def get_rounded_style() -> dict:
-        """获取圆角背景样式配置"""
-        return {
-            "font_name": cfg.rounded_bg_font_name.value,
-            "font_size": cfg.rounded_bg_font_size.value,
-            "bg_color": cfg.rounded_bg_color.value,
-            "text_color": cfg.rounded_bg_text_color.value,
-            "corner_radius": cfg.rounded_bg_corner_radius.value,
-            "padding_h": cfg.rounded_bg_padding_h.value,
-            "padding_v": cfg.rounded_bg_padding_v.value,
-            "margin_bottom": cfg.rounded_bg_margin_bottom.value,
-            "line_spacing": cfg.rounded_bg_line_spacing.value,
-            "letter_spacing": cfg.rounded_bg_letter_spacing.value,
-        }
 
     @staticmethod
     def create_transcribe_task(
@@ -172,7 +163,9 @@ class TaskFactory:
             batch_size=cfg.batch_size.value,
             # 字幕布局、样式
             subtitle_layout=cfg.subtitle_layout.value,  # Now returns SubtitleLayoutEnum
-            subtitle_style=TaskFactory.get_ass_style(cfg.subtitle_style_name.value),
+            subtitle_style=TaskFactory.get_subtitle_style(
+                cfg.subtitle_style_name.value
+            ),
             # 字幕分割
             max_word_count_cjk=cfg.max_word_count_cjk.value,
             max_word_count_english=cfg.max_word_count_english.value,
@@ -209,11 +202,7 @@ class TaskFactory:
         config = SynthesisConfig(
             need_video=cfg.need_video.value,
             soft_subtitle=cfg.soft_subtitle.value,
-            render_mode=cfg.subtitle_render_mode.value,
             video_quality=cfg.video_quality.value,
-            subtitle_layout=cfg.subtitle_layout.value,
-            ass_style=TaskFactory.get_ass_style(cfg.subtitle_style_name.value),
-            rounded_style=TaskFactory.get_rounded_style(),
         )
 
         return SynthesisTask(

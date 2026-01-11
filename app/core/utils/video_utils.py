@@ -5,34 +5,11 @@ import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Literal, Optional
+from typing import Callable, Literal, Optional
 
-from ..entities import (
-    AudioStreamInfo,
-    SubtitleLayoutEnum,
-    SubtitleRenderModeEnum,
-    VideoInfo,
-)
-from ..subtitle.ass_renderer import render_ass_video
-from ..subtitle.ass_utils import auto_wrap_ass_file
-from ..subtitle.rounded_renderer import render_rounded_video
+from ..entities import AudioStreamInfo, VideoInfo
+from ..utils.ass_auto_wrap import auto_wrap_ass_file
 from ..utils.logger import setup_logger
-
-if TYPE_CHECKING:
-    from app.core.asr.asr_data import ASRData
-
-# FFmpeg preset 类型
-PresetType = Literal[
-    "ultrafast",
-    "superfast",
-    "veryfast",
-    "faster",
-    "fast",
-    "medium",
-    "slow",
-    "slower",
-    "veryslow",
-]
 
 logger = setup_logger("video_utils")
 
@@ -524,57 +501,3 @@ def _extract_thumbnail(video_path: str, seek_time: float, thumbnail_path: str) -
     except Exception as e:
         logger.exception(f"提取缩略图时出错: {str(e)}")
         return False
-
-
-def add_subtitles_with_style(
-    video_path: str,
-    asr_data: "ASRData",
-    output_path: str,
-    render_mode: SubtitleRenderModeEnum,
-    subtitle_layout: SubtitleLayoutEnum,
-    ass_style: str = "",
-    rounded_style: Optional[dict] = None,
-    crf: int = 23,
-    preset: PresetType = "medium",
-    progress_callback: Optional[Callable] = None,
-) -> None:
-    """
-    根据渲染模式选择合成方式
-
-    Args:
-        video_path: 输入视频路径
-        asr_data: 字幕数据
-        output_path: 输出视频路径
-        render_mode: 渲染模式 (ASS_STYLE 或 ROUNDED_BG)
-        subtitle_layout: 字幕布局
-        ass_style: ASS 样式字符串 (仅 ASS_STYLE 模式使用)
-        rounded_style: 圆角背景样式配置字典 (仅 ROUNDED_BG 模式使用)
-        crf: 视频质量
-        preset: FFmpeg 编码预设
-        progress_callback: 进度回调
-    """
-
-    if render_mode == SubtitleRenderModeEnum.ROUNDED_BG:
-        # 圆角背景模式
-        render_rounded_video(
-            video_path=video_path,
-            asr_data=asr_data,
-            output_path=output_path,
-            rounded_style=rounded_style,
-            layout=subtitle_layout,
-            crf=crf,
-            preset=preset,
-            progress_callback=progress_callback,
-        )
-    else:
-        # ASS 样式模式
-        render_ass_video(
-            video_path=video_path,
-            asr_data=asr_data,
-            output_path=output_path,
-            style_str=ass_style,
-            layout=subtitle_layout,
-            crf=crf,
-            preset=preset,
-            progress_callback=progress_callback,
-        )

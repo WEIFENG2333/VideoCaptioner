@@ -268,7 +268,7 @@ class VideoSynthesisInterface(QWidget):
         else:
             InfoBar.info(
                 self.tr("开启硬烧录字幕"),
-                self.tr("字幕直接烧录到视频画面中，使用字幕样式配置"),
+                self.tr("字幕直接烧录到视频画面中，带有设置的样式"),
                 duration=3000,
                 position=InfoBarPosition.BOTTOM,
                 parent=self,

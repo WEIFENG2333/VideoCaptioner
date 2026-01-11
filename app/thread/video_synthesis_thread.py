@@ -1,13 +1,10 @@
 import datetime
-import tempfile
-from pathlib import Path
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from app.core.asr.asr_data import ASRData
 from app.core.entities import SynthesisTask
 from app.core.utils.logger import setup_logger
-from app.core.utils.video_utils import add_subtitles, add_subtitles_with_style
+from app.core.utils.video_utils import add_subtitles
 
 logger = setup_logger("video_synthesis_thread")
 
@@ -25,14 +22,14 @@ class VideoSynthesisThread(QThread):
     def run(self):
         try:
             self.task.started_at = datetime.datetime.now()
-            config = self.task.synthesis_config
-            logger.info(f"\n{config.print_config()}")
-
+            logger.info(f"\n{self.task.synthesis_config.print_config()}")
             video_file = self.task.video_path
             subtitle_file = self.task.subtitle_path
             output_path = self.task.output_path
+            soft_subtitle = self.task.synthesis_config.soft_subtitle
+            need_video = self.task.synthesis_config.need_video
 
-            if not config.need_video:
+            if not need_video:
                 logger.info("不需要合成视频，跳过")
                 self.progress.emit(100, self.tr("合成完成"))
                 self.finished.emit(self.task)
@@ -48,58 +45,25 @@ class VideoSynthesisThread(QThread):
             if not output_path:
                 raise ValueError(self.tr("输出路径为空"))
 
-            video_quality = config.video_quality
+            # 获取视频质量参数
+            video_quality = self.task.synthesis_config.video_quality
             crf = video_quality.get_crf()
             preset = video_quality.get_preset()
 
-            # 读取字幕数据
-            asr_data = ASRData.from_subtitle_file(subtitle_file)
-
-            if config.soft_subtitle:
-                # 软字幕：转为 SRT 后内嵌
-                with tempfile.NamedTemporaryFile(
-                    mode="w",
-                    suffix=".srt",
-                    delete=False,
-                    encoding="utf-8",
-                    prefix="VideoCaptioner_soft_",
-                ) as f:
-                    srt_content = asr_data.to_srt(layout=config.subtitle_layout)
-                    f.write(srt_content)
-                    temp_srt_path = f.name
-
-                try:
-                    add_subtitles(
-                        video_file,
-                        temp_srt_path,
-                        output_path,
-                        crf=crf,
-                        preset=preset,
-                        soft_subtitle=True,
-                        progress_callback=self.progress_callback,
-                    )
-                finally:
-                    Path(temp_srt_path).unlink(missing_ok=True)
-
-            else:
-                # 硬字幕：使用样式配置渲染
-                add_subtitles_with_style(
-                    video_path=video_file,
-                    asr_data=asr_data,
-                    output_path=output_path,
-                    render_mode=config.render_mode,
-                    subtitle_layout=config.subtitle_layout,
-                    ass_style=config.ass_style,
-                    rounded_style=config.rounded_style,
-                    crf=crf,
-                    preset=preset,
-                    progress_callback=self.progress_callback,
-                )
+            add_subtitles(
+                video_file,
+                subtitle_file,
+                output_path,
+                crf=crf,
+                preset=preset,
+                soft_subtitle=soft_subtitle,
+                progress_callback=self.progress_callback,
+            )
 
             self.progress.emit(100, self.tr("合成完成"))
             logger.info(f"视频合成完成，保存路径: {output_path}")
-            self.finished.emit(self.task)
 
+            self.finished.emit(self.task)
         except Exception as e:
             logger.exception(f"视频合成失败: {e}")
             self.error.emit(str(e))
