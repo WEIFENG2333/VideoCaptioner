@@ -898,26 +898,10 @@ class SubtitleStyleInterface(QWidget):
         user_bg_path = cfg.get(cfg.subtitle_preview_image)
         if user_bg_path and Path(user_bg_path).exists():
             path = user_bg_path
-            # 获取原始图片尺寸
-            from PIL import Image
-            with Image.open(path) as img:
-                orig_width, orig_height = img.size
         else:
             path = default_preview["path"]
-            orig_width = default_preview["width"]
-            orig_height = default_preview["height"]
 
-        # 限制预览尺寸以提高渲染性能（最大高度 480 像素）
-        max_preview_height = 480
-        if orig_height > max_preview_height:
-            scale = max_preview_height / orig_height
-            width = int(orig_width * scale)
-            height = max_preview_height
-        else:
-            width = orig_width
-            height = orig_height
-
-        # 根据渲染模式创建不同的预览线程
+        # 根据渲染模式创建不同的预览线程（不传入尺寸，由渲染层自动从图片获取）
         render_mode = self._getCurrentRenderMode()
 
         if render_mode == SubtitleRenderModeEnum.ROUNDED_BG:
@@ -940,8 +924,6 @@ class SubtitleStyleInterface(QWidget):
 
             self.preview_thread = RoundedBgPreviewThread(
                 preview_text=(main_text, sub_text),
-                width=width,
-                height=height,
                 style=style,
                 bg_image_path=str(path),
             )
@@ -950,8 +932,6 @@ class SubtitleStyleInterface(QWidget):
             style_str = self.generateAssStyles()
             self.preview_thread = AssPreviewThread(
                 preview_text=(main_text, sub_text),
-                width=width,
-                height=height,
                 style_str=style_str,
                 bg_image_path=str(path),
             )
