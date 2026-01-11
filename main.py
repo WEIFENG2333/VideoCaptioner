@@ -79,12 +79,6 @@ myTranslator.load(str(translations_path))
 app.installTranslator(translator)
 app.installTranslator(myTranslator)
 
-
-def main():
-    w = MainWindow()
-    w.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
+w = MainWindow()
+w.show()
+sys.exit(app.exec_())

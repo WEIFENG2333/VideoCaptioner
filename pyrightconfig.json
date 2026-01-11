@@ -1,0 +1,26 @@
+{
+  "include": ["app", "main.py"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/venv", "**/env"],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportGeneralTypeIssues": true,
+  "reportCallIssue": false,
+  "reportOptionalMemberAccess": false,
+  // "reportArgumentType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownParameterType": false,
+  "reportUnnecessaryTypeIgnoreComment": false,
+  "pythonVersion": "3.11",
+  "venvPath": ".",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "pythonVersion": "3.11",
+      "extraPaths": []
+    }
+  ]
+}

@@ -1,21 +1,21 @@
 #!/bin/bash
-# Clean unused imports and sort import order in Python project
+# 清理Python项目中未使用的导入并整理导入顺序
 
-echo "🧹 Cleaning unused imports..."
+echo "🧹 开始清理未使用的导入..."
 
-# Remove unused imports (F401)
-echo "📍 Step 1: Remove unused imports"
+# 检查并修复未使用的导入 (F401)
+echo "📍 步骤1: 移除未使用的导入"
 ruff check . --select F401 --fix
 
-# Sort import order (I)
-echo "📍 Step 2: Sort import order"
+# 整理导入顺序 (I)
+echo "📍 步骤2: 整理导入顺序"
 ruff check . --select I --fix
 
-# Show statistics
+# 显示统计信息
 echo ""
-echo "✅ Done!"
-echo "📊 Check other issues:"
+echo "✅ 清理完成！"
+echo "📊 检查其他可能的问题:"
 ruff check . --statistics
 
 echo ""
-echo "💡 Tip: Run 'ruff check . --fix' to auto-fix most code style issues"
+echo "💡 提示: 使用 'ruff check . --fix' 可以自动修复大部分代码风格问题"
