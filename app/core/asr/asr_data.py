@@ -370,11 +370,12 @@ class ASRData:
 
             if layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 if has_translation:
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Secondary", original
-                    )
+                    # 先写译文(Default)显示在上，后写原文(Secondary)显示在下
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Default", translated
+                    )
+                    ass_content += dialogue_template.format(
+                        start_time, end_time, "Secondary", original
                     )
                 else:
                     ass_content += dialogue_template.format(
@@ -382,11 +383,12 @@ class ASRData:
                     )
             elif layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 if has_translation:
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Secondary", translated
-                    )
+                    # 先写原文(Default)显示在上，后写译文(Secondary)显示在下
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Default", original
+                    )
+                    ass_content += dialogue_template.format(
+                        start_time, end_time, "Secondary", translated
                     )
                 else:
                     ass_content += dialogue_template.format(
