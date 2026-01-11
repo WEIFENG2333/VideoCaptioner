@@ -161,6 +161,7 @@ class SpinBoxSettingCard(SettingCard):
         content: Optional[str] = None,
         minimum: int = 0,
         maximum: int = 100,
+        step: int = 2,
         parent=None,
     ):
         super().__init__(icon, title, content, parent)
@@ -169,7 +170,7 @@ class SpinBoxSettingCard(SettingCard):
         self.spinBox = CompactSpinBox(self)
         self.spinBox.setRange(minimum, maximum)
         self.spinBox.setMinimumWidth(60)
-        self.spinBox.setSingleStep(2)  # 设置步长为2
+        self.spinBox.setSingleStep(step)
 
         # 添加到布局
         self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)  # type: ignore

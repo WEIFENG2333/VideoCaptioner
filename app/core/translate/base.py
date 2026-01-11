@@ -1,5 +1,6 @@
 """翻译器基类"""
 
+import atexit
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, List, Optional
@@ -36,8 +37,6 @@ class BaseTranslator(ABC):
     def _init_thread_pool(self):
         """初始化线程池"""
         self.executor = ThreadPoolExecutor(max_workers=self.thread_num)
-        import atexit
-
         atexit.register(self.stop)
 
     def translate_subtitle(self, subtitle_data: ASRData) -> ASRData:

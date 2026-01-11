@@ -1,3 +1,4 @@
+import atexit
 import difflib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Union
@@ -112,8 +113,6 @@ class SubtitleSplitter:
     def _init_thread_pool(self):
         """初始化线程池并注册清理"""
         self.executor = ThreadPoolExecutor(max_workers=self.thread_num)
-        import atexit
-
         atexit.register(self.stop)
 
     def split_subtitle(self, subtitle_data: Union[str, ASRData]) -> ASRData:

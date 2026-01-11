@@ -1,3 +1,4 @@
+import atexit
 import os
 
 import psutil
@@ -52,8 +53,6 @@ class MainWindow(FluentWindow):
         self.splashScreen.finish()
 
         # 注册退出处理， 清理进程
-        import atexit
-
         atexit.register(self.stop)
 
     def initNavigation(self):

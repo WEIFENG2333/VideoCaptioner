@@ -9,6 +9,7 @@ import requests
 from app.core.entities import SubtitleProcessData
 from app.core.translate.base import BaseTranslator, logger
 from app.core.translate.types import TargetLanguage, get_language_code
+from app.core.utils.cache import generate_cache_key
 
 
 class GoogleTranslator(BaseTranslator):
@@ -71,8 +72,6 @@ class GoogleTranslator(BaseTranslator):
 
     def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
         """生成缓存键"""
-        from app.core.utils.cache import generate_cache_key
-
         class_name = self.__class__.__name__
         chunk_key = generate_cache_key(chunk)
         lang = self.target_language.value

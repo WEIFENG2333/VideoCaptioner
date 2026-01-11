@@ -31,7 +31,8 @@ from app.core.constant import (
     INFOBAR_DURATION_SUCCESS,
     INFOBAR_DURATION_WARNING,
 )
-from app.core.entities import LLMServiceEnum, TranslatorServiceEnum
+from app.core.entities import LLMServiceEnum, TranscribeModelEnum, TranslatorServiceEnum
+from app.core.llm import check_whisper_connection
 from app.core.llm.check_llm import check_llm_connection, get_available_models
 from app.core.utils.cache import disable_cache, enable_cache
 
@@ -884,8 +885,6 @@ class SettingInterface(ScrollArea):
 
     def __onTranscribeModelChanged(self, model_name):
         """处理转录模型切换事件"""
-        from app.core.entities import TranscribeModelEnum
-
         # Whisper API 配置卡片
         whisper_api_cards = [
             self.whisperApiBaseCard,
@@ -1008,8 +1007,6 @@ class WhisperConnectionThread(QThread):
     def run(self):
         """执行连接测试"""
         try:
-            from app.core.llm import check_whisper_connection
-
             success, result = check_whisper_connection(
                 self.base_url, self.api_key, self.model
             )

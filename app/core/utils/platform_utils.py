@@ -5,10 +5,8 @@
 import os
 import platform
 import subprocess
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from app.core.entities import TranscribeModelEnum
+from app.core.entities import TranscribeModelEnum
 
 
 def open_folder(path):
@@ -110,7 +108,7 @@ def is_linux() -> bool:
     return platform.system() == "Linux"
 
 
-def get_available_transcribe_models() -> list["TranscribeModelEnum"]:
+def get_available_transcribe_models() -> list[TranscribeModelEnum]:
     """
     获取当前平台可用的转录模型列表
 
@@ -119,8 +117,6 @@ def get_available_transcribe_models() -> list["TranscribeModelEnum"]:
     Returns:
         list[TranscribeModelEnum]: 可用的转录模型列表
     """
-    from app.core.entities import TranscribeModelEnum
-
     all_models = list(TranscribeModelEnum)
 
     # macOS 上过滤掉 FasterWhisper
@@ -132,7 +128,7 @@ def get_available_transcribe_models() -> list["TranscribeModelEnum"]:
     return all_models
 
 
-def is_model_available(model: "TranscribeModelEnum") -> bool:
+def is_model_available(model: TranscribeModelEnum) -> bool:
     """
     检查指定模型是否在当前平台可用
 
@@ -142,8 +138,6 @@ def is_model_available(model: "TranscribeModelEnum") -> bool:
     Returns:
         bool: 如果模型可用返回 True，否则返回 False
     """
-    from app.core.entities import TranscribeModelEnum
-
     # FasterWhisper 在 macOS 上不可用
     if is_macos() and model == TranscribeModelEnum.FASTER_WHISPER:
         return False

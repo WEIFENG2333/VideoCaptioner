@@ -10,6 +10,7 @@ from app.core.llm import call_llm
 from app.core.prompts import get_prompt
 from app.core.translate.base import BaseTranslator, SubtitleProcessData, logger
 from app.core.translate.types import TargetLanguage
+from app.core.utils.cache import generate_cache_key
 
 
 class LLMTranslator(BaseTranslator):
@@ -210,8 +211,6 @@ class LLMTranslator(BaseTranslator):
 
     def _get_cache_key(self, chunk: List[SubtitleProcessData]) -> str:
         """生成缓存键"""
-        from app.core.utils.cache import generate_cache_key
-
         class_name = self.__class__.__name__
         chunk_key = generate_cache_key(chunk)
         lang = self.target_language.value
