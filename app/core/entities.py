@@ -155,6 +155,13 @@ class SubtitleLayoutEnum(Enum):
     ONLY_TRANSLATE = "仅译文"
 
 
+class SubtitleRenderModeEnum(Enum):
+    """字幕渲染模式"""
+
+    ASS_STYLE = "ASS 样式"  # FFmpeg ASS 渲染
+    ROUNDED_BG = "圆角背景"  # Pillow 圆角矩形背景
+
+
 class VideoQualityEnum(Enum):
     """视频合成质量"""
 
@@ -519,7 +526,9 @@ class TranscribeConfig:
         )
         lines.append(f"Language: {self.transcribe_language or 'Auto'}")
         lines.append(f"Word Timestamp: {self.need_word_time_stamp}")
-        lines.append(f"Output Format: {self.output_format.value if self.output_format else 'None'}")
+        lines.append(
+            f"Output Format: {self.output_format.value if self.output_format else 'None'}"
+        )
 
         if self.transcribe_model == TranscribeModelEnum.WHISPER_API:
             lines.append(f"API Base: {self.whisper_api_base}")
@@ -625,7 +634,12 @@ class SynthesisConfig:
 
     need_video: bool = True
     soft_subtitle: bool = True
+    render_mode: SubtitleRenderModeEnum = SubtitleRenderModeEnum.ASS_STYLE
     video_quality: VideoQualityEnum = VideoQualityEnum.MEDIUM
+    subtitle_layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP
+    # 字幕样式配置
+    ass_style: str = ""  # ASS 样式字符串
+    rounded_style: Optional[dict] = None  # 圆角背景样式配置
 
     def print_config(self) -> str:
         """Print video synthesis configuration"""
@@ -633,6 +647,8 @@ class SynthesisConfig:
         lines.append(f"Generate Video: {self.need_video}")
         if self.need_video:
             lines.append(f"Subtitle Type: {'Soft' if self.soft_subtitle else 'Hard'}")
+            if not self.soft_subtitle:
+                lines.append(f"Render Mode: {self.render_mode.value}")
             lines.append(f"Video Quality: {self.video_quality.value}")
             lines.append(f"  CRF: {self.video_quality.get_crf()}")
             lines.append(f"  Preset: {self.video_quality.get_preset()}")
