@@ -18,7 +18,6 @@ from qfluentwidgets import (
     HyperlinkButton,
     HyperlinkCard,
     InfoBar,
-    InfoBarPosition,
     MessageBoxBase,
     ProgressBar,
     PushButton,
@@ -867,6 +866,8 @@ class FasterWhisperSettingWidget(QWidget):
 
     def show_error_info(self, error_msg):
         """显示错误信息"""
+        from qfluentwidgets import InfoBar, InfoBarPosition
+
         InfoBar.error(
             title=self.tr("错误"),
             content=error_msg,

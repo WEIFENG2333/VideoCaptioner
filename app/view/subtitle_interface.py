@@ -51,9 +51,9 @@ from app.core.entities import (
     SubtitleTask,
     SupportedSubtitleFormats,
 )
-from app.core.subtitle import get_subtitle_style
 from app.core.task_factory import TaskFactory
 from app.core.translate.types import TargetLanguage
+from app.core.utils.get_subtitle_style import get_subtitle_style
 from app.core.utils.platform_utils import open_folder
 from app.thread.subtitle_thread import SubtitleThread
 
@@ -675,8 +675,8 @@ class SubtitleInterface(QWidget):
 
     def show_video_player(self) -> None:
         """显示视频播放器窗口"""
-        # 创建视频播放器窗口（延迟导入，因为vlc是可选依赖）
-        from app.components.MyVideoWidget import MyVideoWidget
+        # 创建视频播放器窗口
+        from ..components.MyVideoWidget import MyVideoWidget
 
         self.video_player = MyVideoWidget()
         self.video_player.resize(800, 600)

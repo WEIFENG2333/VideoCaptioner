@@ -201,6 +201,8 @@ class BatchProcessThread(QThread):
         # 保存线程引用
         self.threads.append(thread)
 
+        from functools import partial
+
         thread.progress.connect(
             partial(self._on_trans_sub_subtitle_progress_wrapper, batch_task)
         )

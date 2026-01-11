@@ -135,7 +135,7 @@ class TranscriptThread(QThread):
             
             # 保存字幕文件
             for fmt in formats_to_export:
-                save_path = f"{base_path}.{fmt}"
+                save_path = str(base_path.with_suffix(f".{fmt}"))
                 asr_data.save(save_path)
                 logger.info("%s 字幕文件已保存到: %s", fmt.upper(), save_path)
 

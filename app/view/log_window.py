@@ -1,6 +1,4 @@
 import os
-import platform
-import subprocess
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
@@ -157,9 +155,15 @@ class LogWindow(QWidget):
 
     def open_log_folder(self):
         """打开日志文件所在文件夹"""
+        import platform
+
         if platform.system() == "Windows":
             os.startfile(str(LOG_PATH))  # type: ignore
         elif platform.system() == "Darwin":  # macOS
+            import subprocess
+
             subprocess.run(["open", str(LOG_PATH)])
         else:  # Linux
+            import subprocess
+
             subprocess.run(["xdg-open", str(LOG_PATH)])
