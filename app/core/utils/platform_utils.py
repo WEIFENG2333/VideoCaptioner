@@ -2,11 +2,14 @@
 跨平台工具函数
 """
 
+import logging
 import os
 import platform
 import subprocess
 
 from app.core.entities import TranscribeModelEnum
+
+logger = logging.getLogger(__name__)
 
 
 def open_folder(path):
@@ -32,7 +35,7 @@ def open_folder(path):
         try:
             subprocess.Popen(["xdg-open", path])
         except (OSError, subprocess.SubprocessError):
-            print(f"无法在当前系统打开文件夹: {path}")
+            logger.warning(f"无法在当前系统打开文件夹: {path}")
 
 
 def open_file(path):
@@ -58,7 +61,7 @@ def open_file(path):
         try:
             subprocess.Popen(["xdg-open", path])
         except (OSError, subprocess.SubprocessError):
-            print(f"无法在当前系统打开文件: {path}")
+            logger.warning(f"无法在当前系统打开文件: {path}")
 
 
 def get_subprocess_kwargs():

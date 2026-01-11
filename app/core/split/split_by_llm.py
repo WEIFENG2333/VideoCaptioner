@@ -95,13 +95,13 @@ def _split_with_agent_loop(
 
         # 添加反馈到对话
         logger.warning(
-            f"断句验证失败，开始反馈循环 (第{step + 1}次尝试): {error_message}"
+            f"模型输出错误，断句验证失败，频繁出现建议更换更智能的模型。开始反馈循环 (第{step + 1}次尝试):\n {error_message}\n\n"
         )
         messages.append({"role": "assistant", "content": result_text})
         messages.append(
             {
                 "role": "user",
-                "content": f"Error: {error_message}\nFix the errors above and output ONLY the corrected text with <br> tags, no explanation",
+                "content": f"Error: {error_message}\nFix the errors above and output the COMPLETE corrected text with <br> tags (include ALL segments, not just the fixed ones), no explanation.",
             }
         )
 
@@ -201,10 +201,8 @@ def _validate_split_result(
             )
 
     if violations:
-        error_msg = "Length violations:\n" + "\n".join(f"- {v}" for v in violations[:5])
-        if len(violations) > 5:
-            error_msg += f"\n- ... and {len(violations) - 5} more segments too long"
-        error_msg += "\n\nSplit these long segments further with <br>."
+        error_msg = "Length violations:\n" + "\n".join(f"- {v}" for v in violations)
+        error_msg += "\n\nSplit these long segments further with <br>, then output the COMPLETE text with ALL segments (not just the fixed ones)."
         return False, error_msg
 
     return True, ""

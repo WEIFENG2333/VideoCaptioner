@@ -224,7 +224,6 @@ class SubtitleOptimizer:
                 model=self.model,
                 temperature=0.2,
             )
-            print(messages)
 
             result_text = response.choices[0].message.content
             if not result_text:
