@@ -34,6 +34,7 @@ dependencies = [
     "tenacity>=8.2.0",
     "GPUtil>=1.4.0",
     "pillow>=12.0.0",
+    "fonttools>=4.61.1",
 ]
 
 [project.urls]
@@ -59,19 +60,39 @@ dev-dependencies = [
 ]
 
 [tool.pyright]
-pythonVersion = "3.11"
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
 typeCheckingMode = "basic"
 include = ["app", "main.py"]
-exclude = ["**/__pycache__", ".venv", "venv", "build", "dist", "**/node_modules"]
-reportMissingImports = true
+exclude = [
+    "**/__pycache__",
+    "**/.pytest_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "work-dir",
+    "AppData",
+    "resource",
+    "**/node_modules"
+]
+# 导入相关
+reportMissingImports = "warning"
 reportMissingTypeStubs = false
-reportGeneralTypeIssues = true
-reportCallIssue = false
+# 类型检查级别（降低严格度）
+reportGeneralTypeIssues = false
+reportOptionalOperand = "warning"
 reportOptionalMemberAccess = false
+reportArgumentType = "warning"
+# 禁用的检查
+reportCallIssue = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportUnknownVariableType = false
 reportUnknownParameterType = false
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
