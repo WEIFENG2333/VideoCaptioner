@@ -25,7 +25,6 @@ from ..core.entities import (
     FasterWhisperModelEnum,
     LLMServiceEnum,
     SubtitleLayoutEnum,
-    SubtitleRenderModeEnum,
     TranscribeLanguageEnum,
     TranscribeModelEnum,
     TranscribeOutputFormatEnum,
@@ -261,42 +260,6 @@ class Config(QConfig):
         EnumSerializer(SubtitleLayoutEnum),
     )
     subtitle_preview_image = ConfigItem("SubtitleStyle", "PreviewImage", "")
-
-    # 字幕渲染模式
-    subtitle_render_mode = OptionsConfigItem(
-        "SubtitleStyle",
-        "RenderMode",
-        SubtitleRenderModeEnum.ROUNDED_BG,
-        OptionsValidator(SubtitleRenderModeEnum),
-        EnumSerializer(SubtitleRenderModeEnum),
-    )
-
-    # 圆角背景模式配置
-    rounded_bg_font_name = ConfigItem("RoundedBgStyle", "FontName", "Noto Sans SC")
-    rounded_bg_font_size = RangeConfigItem(
-        "RoundedBgStyle", "FontSize", 52, RangeValidator(16, 120)
-    )
-    # 背景色：深灰半透明 (R=25, G=25, B=25, A=200)
-    rounded_bg_color = ConfigItem("RoundedBgStyle", "BgColor", "#191919C8")
-    rounded_bg_text_color = ConfigItem("RoundedBgStyle", "TextColor", "#FFFFFF")
-    rounded_bg_corner_radius = RangeConfigItem(
-        "RoundedBgStyle", "CornerRadius", 12, RangeValidator(0, 50)
-    )
-    rounded_bg_padding_h = RangeConfigItem(
-        "RoundedBgStyle", "PaddingH", 28, RangeValidator(4, 100)
-    )
-    rounded_bg_padding_v = RangeConfigItem(
-        "RoundedBgStyle", "PaddingV", 14, RangeValidator(4, 50)
-    )
-    rounded_bg_margin_bottom = RangeConfigItem(
-        "RoundedBgStyle", "MarginBottom", 60, RangeValidator(20, 300)
-    )
-    rounded_bg_line_spacing = RangeConfigItem(
-        "RoundedBgStyle", "LineSpacing", 10, RangeValidator(0, 50)
-    )
-    rounded_bg_letter_spacing = RangeConfigItem(
-        "RoundedBgStyle", "LetterSpacing", 0, RangeValidator(0, 20)
-    )
 
     # ------------------- 保存配置 -------------------
     work_dir = ConfigItem("Save", "Work_Dir", WORK_PATH, FolderValidator())
