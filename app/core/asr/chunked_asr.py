@@ -5,6 +5,7 @@
 """
 
 import io
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, List, Optional, Tuple
 
@@ -167,20 +168,29 @@ class ChunkedASR:
         results: List[Optional[ASRData]] = [None] * len(chunks)
         total_chunks = len(chunks)
 
+        # 进度追踪：记录每个 chunk 的进度，确保整体进度单调递增
+        chunk_progress = [0] * total_chunks
+        last_overall = 0
+        progress_lock = threading.Lock()
+
         def transcribe_single_chunk(
             idx: int, chunk_bytes: bytes, offset_ms: int
         ) -> Tuple[int, ASRData]:
             """转录单个音频块 - 为每个块创建独立的 ASR 实例"""
+            nonlocal last_overall
             logger.info(f"开始转录 chunk {idx+1}/{total_chunks} (offset={offset_ms}ms)")
 
-            # 包装进度回调
             def chunk_callback(progress: int, message: str):
-                if callback:
-                    # 整体进度 = (已完成块 / 总块数) * 100 + (当前块进度 / 总块数)
-                    overall_progress = int(
-                        (idx / total_chunks) * 100 + progress / total_chunks
-                    )
-                    callback(overall_progress, f"{idx+1}/{total_chunks}: {message}")
+                nonlocal last_overall
+                if not callback:
+                    return
+                with progress_lock:
+                    chunk_progress[idx] = progress
+                    overall = sum(chunk_progress) // total_chunks
+                    # 只允许进度单调递增
+                    if overall > last_overall:
+                        last_overall = overall
+                        callback(overall, f"{idx+1}/{total_chunks}: {message}")
 
             # 为当前 chunk 创建独立的 ASR 实例
             # 使用 chunk_bytes 作为音频输入

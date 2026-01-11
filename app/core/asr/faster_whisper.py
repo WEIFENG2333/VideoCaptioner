@@ -270,6 +270,7 @@ class FasterWhisperASR(BaseASR):
 
             is_finish = False
             error_msg = ""
+            last_progress = 0
 
             # 实时处理输出
             while True:
@@ -297,7 +298,10 @@ class FasterWhisperASR(BaseASR):
                             if progress == 100:
                                 is_finish = True
                             mapped_progress = int(5 + (progress * 0.9))
-                            callback(mapped_progress, f"{mapped_progress} %")
+                            # 只允许进度单调递增
+                            if mapped_progress > last_progress:
+                                last_progress = mapped_progress
+                                callback(mapped_progress, f"{mapped_progress}%")
                         if "Subtitles are written to" in line:
                             is_finish = True
                             callback(*ASRStatus.COMPLETED.callback_tuple())
