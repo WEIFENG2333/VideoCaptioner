@@ -795,7 +795,7 @@ class SettingInterface(ScrollArea):
             if service_config and service_config["model"]:
                 temp = service_config["model"].comboBox.currentText()
                 service_config["model"].setItems(models)
-                service_config["model"].comboBox.setCurrentText(temp)
+                service_config["model"].setValue(temp)
 
             InfoBar.success(
                 self.tr("获取模型列表成功:"),
