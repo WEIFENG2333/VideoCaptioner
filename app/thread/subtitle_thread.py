@@ -110,7 +110,7 @@ class SubtitleThread(QThread):
                     max_word_count_english=subtitle_config.max_word_count_english,
                 )
                 asr_data = splitter.split_subtitle(asr_data)
-                # asr_data.save(save_path=split_path)
+                asr_data.save(save_path=split_path)
                 self.update_all.emit(asr_data.to_json())
 
             # 3. 优化字幕
