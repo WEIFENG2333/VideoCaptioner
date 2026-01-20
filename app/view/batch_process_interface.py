@@ -27,6 +27,7 @@ from qfluentwidgets import (
 )
 
 from app.core.constant import (
+    INFOBAR_DURATION_INFO,
     INFOBAR_DURATION_SUCCESS,
     INFOBAR_DURATION_WARNING,
 )
@@ -68,6 +69,14 @@ class BatchProcessInterface(QWidget):
         self.task_type_combo = ComboBox()
         self.task_type_combo.addItems([str(task_type) for task_type in BatchTaskType])
         self.task_type_combo.setCurrentText(str(BatchTaskType.FULL_PROCESS))
+
+        # 任务类型说明
+        self.task_type_descriptions = {
+            str(BatchTaskType.TRANSCRIBE): self.tr("仅进行语音识别，生成字幕文件"),
+            str(BatchTaskType.SUBTITLE): self.tr("对已有字幕进行分割、优化或翻译"),
+            str(BatchTaskType.TRANS_SUB): self.tr("先转录再处理字幕，不合成视频"),
+            str(BatchTaskType.FULL_PROCESS): self.tr("转录 → 字幕处理 → 合成视频"),
+        }
 
         # 控制按钮
         self.add_file_btn = PushButton(self.tr("添加文件"), icon=FIF.ADD)
@@ -422,7 +431,17 @@ class BatchProcessInterface(QWidget):
         self.batch_thread.stop_all()
         self.task_table.setRowCount(0)
 
-    def on_task_type_changed(self, task_type):
+    def on_task_type_changed(self, task_type: str):
+        # 显示任务类型说明
+        description = self.task_type_descriptions.get(task_type, "")
+        if description:
+            InfoBar.info(
+                title=task_type,
+                content=description,
+                duration=INFOBAR_DURATION_INFO,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
         # 清空当前任务列表
         self.clear_tasks()
 

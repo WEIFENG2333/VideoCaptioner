@@ -183,11 +183,6 @@ class VideoSynthesisInterface(QWidget):
         folder_action.setToolTip(self.tr("打开输出文件夹"))
         self.command_bar.addAction(folder_action)
 
-        # 添加文件选择按钮
-        file_action = Action(FIF.FOLDER_ADD, "", triggered=self.choose_video_file)
-        file_action.setToolTip(self.tr("选择视频文件"))
-        self.command_bar.addAction(file_action)
-
     def setup_style(self):
         self.subtitle_input.focusOutEvent = lambda e: super(
             LineEdit, self.subtitle_input
@@ -260,7 +255,7 @@ class VideoSynthesisInterface(QWidget):
         if checked:
             InfoBar.info(
                 self.tr("开启软字幕"),
-                self.tr("字幕作为独立轨道嵌入视频，播放器中可关闭或调整"),
+                self.tr("字幕作为独立轨道嵌入视频，不包含字幕样式"),
                 duration=3000,
                 position=InfoBarPosition.BOTTOM,
                 parent=self,
@@ -268,7 +263,7 @@ class VideoSynthesisInterface(QWidget):
         else:
             InfoBar.info(
                 self.tr("开启硬烧录字幕"),
-                self.tr("字幕直接烧录到视频画面中，使用字幕样式配置"),
+                self.tr("字幕直接烧录到视频画面中，包含字幕样式"),
                 duration=3000,
                 position=InfoBarPosition.BOTTOM,
                 parent=self,
