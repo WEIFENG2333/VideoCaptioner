@@ -98,7 +98,7 @@ class TranscribeOutputFormatEnum(Enum):
 class LLMServiceEnum(Enum):
     """LLM服务"""
 
-    OPENAI = "OpenAI"
+    OPENAI = "OpenAI 兼容"
     SILICON_CLOUD = "SiliconCloud"
     DEEPSEEK = "DeepSeek"
     OLLAMA = "Ollama"

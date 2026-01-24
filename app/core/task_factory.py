@@ -206,14 +206,16 @@ class TaskFactory:
                 Path(video_path).parent / f"【卡卡】{Path(video_path).stem}.mp4"
             )
 
+        # 只有启用样式时才传入样式配置
+        use_style = cfg.use_subtitle_style.value
         config = SynthesisConfig(
             need_video=cfg.need_video.value,
             soft_subtitle=cfg.soft_subtitle.value,
             render_mode=cfg.subtitle_render_mode.value,
             video_quality=cfg.video_quality.value,
             subtitle_layout=cfg.subtitle_layout.value,
-            ass_style=TaskFactory.get_ass_style(cfg.subtitle_style_name.value),
-            rounded_style=TaskFactory.get_rounded_style(),
+            ass_style=TaskFactory.get_ass_style(cfg.subtitle_style_name.value) if use_style else "",
+            rounded_style=TaskFactory.get_rounded_style() if use_style else None,
         )
 
         return SynthesisTask(

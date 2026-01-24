@@ -93,11 +93,11 @@ def get_available_models(base_url: str, api_key: str) -> list[str]:
         # 根据不同模型设置权重进行排序
         def get_model_weight(model_name: str) -> int:
             model_name = model_name.lower()
-            if model_name.startswith(("gpt-5", "claude-4", "gemini-2")):
+            if model_name.startswith(("gpt-5", "claude-4", "gemini-2", "gemini-3")):
                 return 10
             elif model_name.startswith(("gpt-4")):
                 return 5
-            elif model_name.startswith(("deepseek", "glm", "qwen")):
+            elif model_name.startswith(("deepseek", "glm", "qwen", "doubao")):
                 return 3
             return 0
 

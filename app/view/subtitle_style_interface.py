@@ -681,6 +681,9 @@ class SubtitleStyleInterface(QWidget):
         )
         signalBus.subtitle_layout_changed.connect(self.on_subtitle_layout_changed)
 
+        # 连接渲染模式信号（从视频合成界面同步）
+        signalBus.subtitle_render_mode_changed.connect(self.on_render_mode_changed_external)
+
     def on_open_style_folder_clicked(self):
         """打开样式文件夹"""
         open_folder(str(SUBTITLE_STYLE_PATH))
@@ -690,11 +693,23 @@ class SubtitleStyleInterface(QWidget):
         cfg.subtitle_layout.value = layout_enum
         self.layoutCard.setCurrentText(layout)
 
+    def on_render_mode_changed_external(self, mode_text: str):
+        """处理外部渲染模式变更（从视频合成界面同步）"""
+        # 避免信号循环：阻断信号后再更新
+        self.renderModeCard.comboBox.blockSignals(True)
+        self.renderModeCard.comboBox.setCurrentText(mode_text)
+        self.renderModeCard.comboBox.blockSignals(False)
+        # 手动触发 UI 更新
+        self._updateVisibleGroups()
+        self._refreshStyleList()
+        self.updatePreview()
+
     def onRenderModeChanged(self):
-        """渲染模式切换"""
+        """渲染模式切换（本界面触发）"""
         mode_text = self.renderModeCard.comboBox.currentText()
         mode = SubtitleRenderModeEnum(mode_text)
         cfg.set(cfg.subtitle_render_mode, mode)
+        signalBus.subtitle_render_mode_changed.emit(mode_text)
         self._updateVisibleGroups()
         self._refreshStyleList()
         self.updatePreview()

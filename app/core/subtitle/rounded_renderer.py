@@ -306,7 +306,6 @@ def render_rounded_video(
             for seg in asr_data.segments
         )
         if not has_translation:
-            logger.warning("选择了'仅译文'但没有翻译文本，自动切换到'仅原文'")
             layout = SubtitleLayoutEnum.ONLY_ORIGINAL
     elif (
         layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP
@@ -317,7 +316,6 @@ def render_rounded_video(
             for seg in asr_data.segments
         )
         if not has_translation:
-            logger.warning("没有翻译文本，自动切换到'仅原文'")
             layout = SubtitleLayoutEnum.ONLY_ORIGINAL
 
     # 获取视频信息

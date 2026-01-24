@@ -18,6 +18,10 @@ class SignalBus(QObject):
     need_video_changed = pyqtSignal(bool)
     # 视频质量信号
     video_quality_changed = pyqtSignal(str)
+    # 使用样式信号
+    use_subtitle_style_changed = pyqtSignal(bool)
+    # 渲染模式变更信号
+    subtitle_render_mode_changed = pyqtSignal(str)
 
     # 新增视频控制相关信号
     video_play = pyqtSignal()  # 播放信号

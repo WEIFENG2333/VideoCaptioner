@@ -33,6 +33,7 @@ from app.core.constant import (
     INFOBAR_DURATION_WARNING,
 )
 from app.core.entities import (
+    SubtitleRenderModeEnum,
     SupportedSubtitleFormats,
     SupportedVideoFormats,
     SynthesisTask,
@@ -41,9 +42,6 @@ from app.core.entities import (
 from app.core.task_factory import TaskFactory
 from app.core.utils.platform_utils import open_folder
 from app.thread.video_synthesis_thread import VideoSynthesisThread
-
-current_dir = Path(__file__).parent.parent
-SUBTITLE_STYLE_DIR = current_dir / "resource" / "subtitle_style"
 
 
 class VideoSynthesisInterface(QWidget):
@@ -147,6 +145,36 @@ class VideoSynthesisInterface(QWidget):
         # 添加分隔符
         self.command_bar.addSeparator()
 
+        # 添加使用样式开关
+        self.use_style_action = Action(
+            FIF.PALETTE,
+            self.tr("使用样式"),
+            triggered=self.on_use_style_action_triggered,
+            checkable=True,
+        )
+        self.use_style_action.setToolTip(self.tr("启用字幕样式渲染"))
+        self.command_bar.addAction(self.use_style_action)
+
+        self.command_bar.addSeparator()
+
+        # 添加渲染模式下拉按钮
+        self.render_mode_button = TransparentDropDownPushButton(
+            self.tr("渲染模式"), self, FIF.FONT_SIZE
+        )
+        self.render_mode_button.setFixedHeight(34)
+        self.render_mode_button.setMinimumWidth(140)
+        self.render_mode_menu = RoundMenu(parent=self)
+        for mode in SubtitleRenderModeEnum:
+            action = Action(text=mode.value)
+            action.triggered.connect(
+                lambda checked, m=mode.value: self.on_render_mode_changed(m)
+            )
+            self.render_mode_menu.addAction(action)
+        self.render_mode_button.setMenu(self.render_mode_menu)
+        self.command_bar.addWidget(self.render_mode_button)
+
+        self.command_bar.addSeparator()
+
         # 添加视频质量选择下拉按钮
         self.video_quality_button = TransparentDropDownPushButton(
             self.tr("视频质量"), self, FIF.SPEED_HIGH
@@ -240,6 +268,8 @@ class VideoSynthesisInterface(QWidget):
         signalBus.soft_subtitle_changed.connect(self.on_soft_subtitle_changed)
         signalBus.need_video_changed.connect(self.on_need_video_changed)
         signalBus.video_quality_changed.connect(self.on_video_quality_changed)
+        signalBus.use_subtitle_style_changed.connect(self.on_use_style_changed)
+        signalBus.subtitle_render_mode_changed.connect(self.on_render_mode_changed_external)
 
     def set_value(self):
         """设置初始值"""
@@ -247,12 +277,22 @@ class VideoSynthesisInterface(QWidget):
         self.need_video_action.setChecked(cfg.need_video.value)
         self.video_quality_button.setText(cfg.video_quality.value.value)
 
+        # 设置样式相关初始值
+        self.use_style_action.setChecked(cfg.use_subtitle_style.value)
+        self.render_mode_button.setText(cfg.subtitle_render_mode.value.value)
+        self._update_synthesis_controls_state()
+
     def on_soft_subtitle_action_triggered(self, checked: bool):
         """处理软字幕按钮点击（更新配置+显示InfoBar）"""
         cfg.set(cfg.soft_subtitle, checked)
 
         # 显示说明信息
         if checked:
+            # 开启软字幕时自动关闭使用样式
+            if self.use_style_action.isChecked():
+                self.use_style_action.setChecked(False)
+                cfg.set(cfg.use_subtitle_style, False)
+                self._update_style_controls_state()
             InfoBar.info(
                 self.tr("开启软字幕"),
                 self.tr("字幕作为独立轨道嵌入视频，不包含字幕样式"),
@@ -276,6 +316,7 @@ class VideoSynthesisInterface(QWidget):
     def on_need_video_action_triggered(self, checked: bool):
         """处理视频合成按钮点击（更新配置+显示InfoBar）"""
         cfg.set(cfg.need_video, checked)
+        self._update_synthesis_controls_state()
 
         # 显示说明信息
         if checked:
@@ -298,6 +339,7 @@ class VideoSynthesisInterface(QWidget):
     def on_need_video_changed(self, checked: bool):
         """处理外部视频合成配置变更（仅更新UI状态）"""
         self.need_video_action.setChecked(checked)
+        self._update_synthesis_controls_state()
 
     def on_video_quality_action_changed(self, quality_text: str):
         """处理质量选择"""
@@ -317,6 +359,72 @@ class VideoSynthesisInterface(QWidget):
     def on_video_quality_changed(self, quality_text: str):
         """处理外部质量配置变更（仅更新UI状态）"""
         self.video_quality_button.setText(quality_text)
+
+    def on_use_style_action_triggered(self, checked: bool):
+        """处理使用样式开关点击"""
+        cfg.set(cfg.use_subtitle_style, checked)
+        self._update_style_controls_state()
+
+        if checked:
+            # 启用样式时自动关闭软字幕
+            if self.soft_subtitle_action.isChecked():
+                self.soft_subtitle_action.setChecked(False)
+                cfg.set(cfg.soft_subtitle, False)
+            InfoBar.info(
+                self.tr("启用字幕样式"),
+                self.tr("已自动切换为硬字幕渲染"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
+        else:
+            InfoBar.info(
+                self.tr("关闭字幕样式"),
+                self.tr("将使用默认字幕渲染"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )
+
+    def on_use_style_changed(self, checked: bool):
+        """处理外部使用样式配置变更（仅更新 UI）"""
+        self.use_style_action.setChecked(checked)
+        self._update_style_controls_state()
+
+    def on_render_mode_changed(self, mode_text: str):
+        """处理渲染模式选择（本界面触发）"""
+        mode_enum = None
+        for e in SubtitleRenderModeEnum:
+            if e.value == mode_text:
+                mode_enum = e
+                break
+        if mode_enum:
+            cfg.set(cfg.subtitle_render_mode, mode_enum)
+            self.render_mode_button.setText(mode_text)
+            signalBus.subtitle_render_mode_changed.emit(mode_text)
+
+    def on_render_mode_changed_external(self, mode_text: str):
+        """处理外部渲染模式变更（仅更新 UI）"""
+        self.render_mode_button.setText(mode_text)
+
+    def _update_synthesis_controls_state(self):
+        """更新所有合成相关控件的启用/禁用状态"""
+        need_video = self.need_video_action.isChecked()
+
+        # 合成视频关闭时，禁用所有相关选项
+        self.soft_subtitle_action.setEnabled(need_video)
+        self.use_style_action.setEnabled(need_video)
+        self.video_quality_button.setEnabled(need_video)
+
+        # 渲染模式按钮需要同时满足：合成视频开启 且 使用样式开启
+        self._update_style_controls_state()
+
+    def _update_style_controls_state(self):
+        """更新样式相关控件的启用/禁用状态"""
+        need_video = self.need_video_action.isChecked()
+        use_style = self.use_style_action.isChecked()
+        # 渲染模式按钮：需要合成视频开启 且 使用样式开启
+        self.render_mode_button.setEnabled(need_video and use_style)
 
     def choose_subtitle_file(self):
         # 构建文件过滤器

@@ -233,7 +233,7 @@ class Config(QConfig):
         EnumSerializer(TargetLanguage),
     )
     max_word_count_cjk = ConfigItem(
-        "Subtitle", "MaxWordCountCJK", 25, RangeValidator(8, 100)
+        "Subtitle", "MaxWordCountCJK", 28, RangeValidator(8, 100)
     )
     max_word_count_english = ConfigItem(
         "Subtitle", "MaxWordCountEnglish", 20, RangeValidator(8, 100)
@@ -250,6 +250,7 @@ class Config(QConfig):
         OptionsValidator(VideoQualityEnum),
         EnumSerializer(VideoQualityEnum),
     )
+    use_subtitle_style = ConfigItem("Video", "UseSubtitleStyle", False, BoolValidator())
 
     # ------------------- 字幕样式配置 -------------------
     subtitle_style_name = ConfigItem("SubtitleStyle", "StyleName", "default")

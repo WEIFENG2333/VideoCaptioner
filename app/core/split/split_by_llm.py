@@ -10,7 +10,7 @@ from ..utils.text_utils import count_words, is_mainly_cjk
 logger = setup_logger("split_by_llm")
 
 MAX_WORD_COUNT = 20  # 英文单词或中文字符的最大数量
-MAX_STEPS = 3  # Agent loop最大尝试次数
+MAX_STEPS = 2  # Agent loop最大尝试次数
 
 
 def split_by_llm(
@@ -95,7 +95,7 @@ def _split_with_agent_loop(
 
         # 添加反馈到对话
         logger.warning(
-            f"模型输出错误，断句验证失败，频繁出现建议更换更智能的模型。开始反馈循环 (第{step + 1}次尝试):\n {error_message}\n\n"
+            f"模型输出错误，断句验证失败，频繁出现建议更换更智能的模型或者调整最大字数限制。开始反馈循环 (第{step + 1}次尝试):\n {error_message}\n\n"
         )
         messages.append({"role": "assistant", "content": result_text})
         messages.append(

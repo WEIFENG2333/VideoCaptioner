@@ -264,8 +264,8 @@ class SettingInterface(ScrollArea):
         self.llmServiceCard = ComboBoxSettingCard(
             cfg.llm_service,
             FIF.ROBOT,
-            self.tr("LLM服务"),
-            self.tr("选择大模型服务，用于字幕断句、字幕优化、字幕翻译"),
+            self.tr("LLM 提供商"),
+            self.tr("选择大模型提供商，用于字幕断句、优化、翻译"),
             texts=[service.value for service in cfg.llm_service.validator.options],  # type: ignore
             parent=self.llmGroup,
         )
