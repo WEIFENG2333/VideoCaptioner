@@ -1,5 +1,6 @@
 import atexit
 import os
+import shutil
 
 import psutil
 from PyQt5.QtCore import QSize, QThread, QUrl
@@ -18,6 +19,7 @@ from qfluentwidgets import (
 from app.common.config import cfg
 from app.components.DonateDialog import DonateDialog
 from app.config import ASSETS_PATH, GITHUB_REPO_URL
+from app.core.constant import INFOBAR_DURATION_FOREVER
 from app.thread.version_checker_thread import VersionChecker
 from app.view.batch_process_interface import BatchProcessInterface
 from app.view.home_interface import HomeInterface
@@ -51,6 +53,9 @@ class MainWindow(FluentWindow):
         # 初始化导航界面
         self.initNavigation()
         self.splashScreen.finish()
+
+        # 检查系统依赖
+        self._check_ffmpeg()
 
         # 注册退出处理， 清理进程
         atexit.register(self.stop)
@@ -189,3 +194,14 @@ class MainWindow(FluentWindow):
         process = psutil.Process(os.getpid())
         for child in process.children(recursive=True):
             child.kill()
+
+    def _check_ffmpeg(self):
+        """检查 FFmpeg 是否已安装"""
+        if shutil.which("ffmpeg") is None:
+            InfoBar.warning(
+                self.tr("FFmpeg 未安装"),
+                self.tr("软件处理音视频文件时需要 FFmpeg，请先安装"),
+                duration=INFOBAR_DURATION_FOREVER,
+                position=InfoBarPosition.BOTTOM,
+                parent=self,
+            )

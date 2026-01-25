@@ -127,14 +127,9 @@ exit /b 0
 :check_system_deps
 where ffmpeg >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [WARN] ffmpeg not found. Some features may not work.
+    echo [WARN] FFmpeg not found ^(required for video synthesis^)
     echo   Install with: winget install ffmpeg
     echo   Or download from: https://ffmpeg.org/download.html
-)
-
-where aria2c >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [WARN] aria2 not found ^(optional, for faster model downloads^)
 )
 exit /b 0
 

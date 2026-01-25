@@ -106,29 +106,18 @@ install_dependencies() {
 
 # Check system dependencies
 check_system_deps() {
-    local missing_deps=()
-
-    # Check ffmpeg
+    # Check ffmpeg (required)
     if ! command -v ffmpeg &> /dev/null; then
-        missing_deps+=("ffmpeg")
-    fi
-
-    # Check aria2 (optional, for faster downloads)
-    if ! command -v aria2c &> /dev/null; then
-        print_warning "aria2 not found (optional, for faster model downloads)"
-    fi
-
-    if [ ${#missing_deps[@]} -gt 0 ]; then
-        print_warning "Missing system dependencies: ${missing_deps[*]}"
+        print_warning "FFmpeg not found (required for video synthesis)"
 
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            echo "  Install with: brew install ${missing_deps[*]}"
+            echo "  Install with: brew install ffmpeg"
         elif command -v apt &> /dev/null; then
-            echo "  Install with: sudo apt install ${missing_deps[*]}"
+            echo "  Install with: sudo apt install ffmpeg"
         elif command -v dnf &> /dev/null; then
-            echo "  Install with: sudo dnf install ${missing_deps[*]}"
+            echo "  Install with: sudo dnf install ffmpeg"
         elif command -v pacman &> /dev/null; then
-            echo "  Install with: sudo pacman -S ${missing_deps[*]}"
+            echo "  Install with: sudo pacman -S ffmpeg"
         fi
     fi
 }
