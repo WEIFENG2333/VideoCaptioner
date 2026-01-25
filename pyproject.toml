@@ -23,7 +23,8 @@ dependencies = [
     "requests>=2.32.4",
     "openai>=1.97.1",
     "diskcache>=5.6.3",
-    "PyQt5==5.15.11",
+    "PyQt5>=5.15.0,<5.16.0",
+    "PyQt5-Qt5==5.15.2; sys_platform == 'win32'",  # Windows 只有此版本
     "PyQt-Fluent-Widgets==1.8.4",
     "yt-dlp>=2025.7.21",
     "modelscope>=1.32.0",

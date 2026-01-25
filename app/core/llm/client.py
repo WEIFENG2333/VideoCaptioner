@@ -18,6 +18,8 @@ from tenacity import (
 from app.core.utils.cache import get_llm_cache, memoize
 from app.core.utils.logger import setup_logger
 
+from .request_logger import create_logging_http_client, log_llm_response
+
 _global_client: Optional[OpenAI] = None
 _client_lock = threading.Lock()
 
@@ -25,30 +27,7 @@ logger = setup_logger("llm_client")
 
 
 def normalize_base_url(base_url: str) -> str:
-    """Normalize API base URL by ensuring /v1 suffix when needed.
-
-    Handles various edge cases:
-    - Removes leading/trailing whitespace
-    - Only adds /v1 if domain has no path, or path is empty/root
-    - Removes trailing slashes from /v1 (e.g., /v1/ -> /v1)
-    - Preserves custom paths (e.g., /custom stays as /custom)
-
-    Args:
-        base_url: Raw base URL string
-
-    Returns:
-        Normalized base URL
-
-    Examples:
-        >>> normalize_base_url("https://api.openai.com")
-        'https://api.openai.com/v1'
-        >>> normalize_base_url("https://api.openai.com/v1/")
-        'https://api.openai.com/v1'
-        >>> normalize_base_url("https://api.openai.com/custom")
-        'https://api.openai.com/custom'
-        >>> normalize_base_url("  https://api.openai.com  ")
-        'https://api.openai.com/v1'
-    """
+    """Normalize API base URL by ensuring /v1 suffix when needed."""
     url = base_url.strip()
     parsed = urlparse(url)
     path = parsed.path.rstrip("/")
@@ -71,19 +50,11 @@ def normalize_base_url(base_url: str) -> str:
 
 
 def get_llm_client() -> OpenAI:
-    """Get global LLM client instance (thread-safe singleton).
-
-    Returns:
-        Global OpenAI client instance
-
-    Raises:
-        ValueError: If OPENAI_BASE_URL or OPENAI_API_KEY env vars not set
-    """
+    """Get global LLM client instance (thread-safe singleton)."""
     global _global_client
 
     if _global_client is None:
         with _client_lock:
-            # Double-check locking pattern
             if _global_client is None:
                 base_url = os.getenv("OPENAI_BASE_URL", "").strip()
                 base_url = normalize_base_url(base_url)
@@ -94,7 +65,11 @@ def get_llm_client() -> OpenAI:
                         "OPENAI_BASE_URL and OPENAI_API_KEY environment variables must be set"
                     )
 
-                _global_client = OpenAI(base_url=base_url, api_key=api_key)
+                _global_client = OpenAI(
+                    base_url=base_url,
+                    api_key=api_key,
+                    http_client=create_logging_http_client(),
+                )
 
     return _global_client
 
@@ -105,35 +80,19 @@ def before_sleep_log(retry_state: RetryCallState) -> None:
     )
 
 
-@memoize(get_llm_cache(), expire=3600, typed=True)
 @retry(
     stop=stop_after_attempt(10),
     wait=wait_random_exponential(multiplier=1, min=5, max=60),
     retry=retry_if_exception_type(openai.RateLimitError),
     before_sleep=before_sleep_log,
 )
-def call_llm(
+def _call_llm_api(
     messages: List[dict],
     model: str,
     temperature: float = 1,
     **kwargs: Any,
 ) -> Any:
-    """Call LLM API with automatic caching.
-
-    Uses global LLM client configured via environment variables.
-
-    Args:
-        messages: Chat messages list
-        model: Model name
-        temperature: Sampling temperature
-        **kwargs: Additional parameters for API call
-
-    Returns:
-        API response object
-
-    Raises:
-        ValueError: If response is invalid (empty choices or content)
-    """
+    """实际调用 LLM API（带重试）"""
     client = get_llm_client()
 
     response = client.chat.completions.create(
@@ -143,7 +102,22 @@ def call_llm(
         **kwargs,
     )
 
-    # Validate response (exceptions are not cached by diskcache)
+    # 记录响应内容
+    log_llm_response(response)
+
+    return response
+
+
+@memoize(get_llm_cache(), expire=3600, typed=True)
+def call_llm(
+    messages: List[dict],
+    model: str,
+    temperature: float = 1,
+    **kwargs: Any,
+) -> Any:
+    """Call LLM API with automatic caching."""
+    response = _call_llm_api(messages, model, temperature, **kwargs)
+
     if not (
         response
         and hasattr(response, "choices")

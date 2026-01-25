@@ -139,7 +139,7 @@ class Config(QConfig):
     )
     deeplx_endpoint = ConfigItem("Translate", "DeeplxEndpoint", "")
     batch_size = RangeConfigItem("Translate", "BatchSize", 10, RangeValidator(5, 50))
-    thread_num = RangeConfigItem("Translate", "ThreadNum", 10, RangeValidator(1, 100))
+    thread_num = RangeConfigItem("Translate", "ThreadNum", 10, RangeValidator(1, 50))
 
     # ------------------- 转录配置 -------------------
     transcribe_model = OptionsConfigItem(
@@ -273,7 +273,7 @@ class Config(QConfig):
     )
 
     # 圆角背景模式配置
-    rounded_bg_font_name = ConfigItem("RoundedBgStyle", "FontName", "Noto Sans SC")
+    rounded_bg_font_name = ConfigItem("RoundedBgStyle", "FontName", "LXGW WenKai")
     rounded_bg_font_size = RangeConfigItem(
         "RoundedBgStyle", "FontSize", 52, RangeValidator(16, 120)
     )

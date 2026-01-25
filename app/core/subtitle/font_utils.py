@@ -71,11 +71,6 @@ def get_builtin_fonts() -> tuple[Dict[str, str], ...]:
 
 
 @lru_cache(maxsize=64)
-def _load_font(font_path_or_name: str, size: int) -> FontType:
-    """Internal cached font loader"""
-    return ImageFont.truetype(font_path_or_name, size)
-
-
 def get_font(size: int, font_name: str = "") -> FontType:
     """Get font object (built-in fonts first, then system fonts)"""
     if font_name:
@@ -83,7 +78,7 @@ def get_font(size: int, font_name: str = "") -> FontType:
         for builtin in builtin_fonts:
             if builtin["name"] == font_name:
                 try:
-                    font = _load_font(builtin["path"], size)
+                    font = ImageFont.truetype(builtin["path"], size)
                     logger.debug(f"Loaded built-in font: '{font_name}'")
                     return font
                 except Exception as e:
@@ -91,17 +86,13 @@ def get_font(size: int, font_name: str = "") -> FontType:
                     break
 
         try:
-            font = _load_font(font_name, size)
+            font = ImageFont.truetype(font_name, size)
             logger.debug(f"Loaded system font: '{font_name}'")
             return font
         except (OSError, IOError):
             logger.warning(f"Cannot load font '{font_name}', using fallback")
 
-    fallback_fonts = []
-
-    for builtin in get_builtin_fonts():
-        fallback_fonts.append(builtin["name"])
-
+    fallback_fonts = [f["name"] for f in get_builtin_fonts()]
     fallback_fonts.extend(
         [
             "PingFang SC",
@@ -116,7 +107,7 @@ def get_font(size: int, font_name: str = "") -> FontType:
 
     for fallback in fallback_fonts:
         try:
-            font = _load_font(fallback, size)
+            font = ImageFont.truetype(fallback, size)
             logger.info(f"Using fallback font: '{fallback}'")
             return font
         except Exception:
@@ -174,5 +165,6 @@ def get_ass_to_pil_ratio(font_name: str) -> float:
 def clear_font_cache():
     """Clear font cache"""
     get_builtin_fonts.cache_clear()
+    get_font.cache_clear()
     get_ass_to_pil_ratio.cache_clear()
     logger.info("Font cache cleared")

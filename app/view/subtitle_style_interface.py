@@ -774,6 +774,9 @@ class SubtitleStyleInterface(QWidget):
         ext = self._getStyleFileExtension()
         pattern = f"*{ext}"
 
+        # 阻断信号，避免 addItems/setCurrentText 重复触发 loadStyle
+        self.styleNameComboBox.comboBox.blockSignals(True)
+
         # 清空现有列表
         self.styleNameComboBox.comboBox.clear()
 
@@ -793,10 +796,15 @@ class SubtitleStyleInterface(QWidget):
         subtitle_style_name = cfg.get(cfg.subtitle_style_name)
         if subtitle_style_name in style_files:
             self.styleNameComboBox.comboBox.setCurrentText(subtitle_style_name)
-            self.loadStyle(subtitle_style_name)
         else:
             self.styleNameComboBox.comboBox.setCurrentText(style_files[0])
-            self.loadStyle(style_files[0])
+            subtitle_style_name = style_files[0]
+
+        # 恢复信号
+        self.styleNameComboBox.comboBox.blockSignals(False)
+
+        # 只调用一次 loadStyle
+        self.loadStyle(subtitle_style_name)
 
     def _getCurrentRenderMode(self) -> SubtitleRenderModeEnum:
         """获取当前渲染模式"""

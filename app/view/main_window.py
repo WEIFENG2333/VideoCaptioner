@@ -23,6 +23,7 @@ from app.core.constant import INFOBAR_DURATION_FOREVER
 from app.thread.version_checker_thread import VersionChecker
 from app.view.batch_process_interface import BatchProcessInterface
 from app.view.home_interface import HomeInterface
+from app.view.llm_logs_interface import LLMLogsInterface
 from app.view.setting_interface import SettingInterface
 from app.view.subtitle_style_interface import SubtitleStyleInterface
 
@@ -39,6 +40,7 @@ class MainWindow(FluentWindow):
         self.settingInterface = SettingInterface(self)
         self.subtitleStyleInterface = SubtitleStyleInterface(self)
         self.batchProcessInterface = BatchProcessInterface(self)
+        self.llmLogsInterface = LLMLogsInterface(self)
 
         # 初始化版本检查器
         self.versionChecker = VersionChecker()
@@ -66,6 +68,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.homeInterface, FIF.HOME, self.tr("主页"))
         self.addSubInterface(self.batchProcessInterface, FIF.VIDEO, self.tr("批量处理"))
         self.addSubInterface(self.subtitleStyleInterface, FIF.FONT, self.tr("字幕样式"))
+        self.addSubInterface(self.llmLogsInterface, FIF.HISTORY, self.tr("请求日志"))
 
         self.navigationInterface.addSeparator()
 
