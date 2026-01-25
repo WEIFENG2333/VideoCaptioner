@@ -35,7 +35,7 @@
 
 近后台计算，模型优化和翻译消耗费用不足 ￥0.01（以OpenAI官方价格为计算）
 
-具体字幕和视频合成的效果的测试结果图片，请参考 [TED视频测试](./docs/test.md)
+具体字幕和视频合成的效果的测试结果图片，请参考 [TED视频测试](./legacy-docs/test.md)
 
 ## 快速开始
 
@@ -51,26 +51,22 @@
 
 3. LLM API 配置，（用于字幕断句、校正），可使用[本项目的中转站](https://api.videocaptioner.cn)
 
-4. 翻译配置，选择是否启用翻译，翻译服务（默认使用微软翻译，质量一般，推荐使用大模型翻译）
+4. 翻译配置，选择是否启用翻译，翻译服务（默认使用微软翻译，质量一般，推荐配置自己的 API KEY 使用大模型翻译）
 
 5. 语音识别配置（默认使用B接口网络调用语音识别服务，中英以外的语言请使用本地转录）
 
-6. 拖拽视频文件到软件窗口，即可全自动处理
-
-提示：每一个步骤均支持单独处理，均支持文件拖拽。软件具体模型选择和参数配置说明，请查看下文。
-
-### macOS / Linux 用户
+### macOS 用户
 
 #### 一键安装运行（推荐）
 
 ```bash
-# 方式一：直接运行（自动安装 uv、克隆项目、安装依赖）
-curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/main/run.sh | bash
+# 方式一：直接运行（自动安装 uv、克隆项目、安装相关依赖）
+curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/main/scripts/run.sh | bash
 
 # 方式二：先克隆再运行
 git clone https://github.com/WEIFENG2333/VideoCaptioner.git
 cd VideoCaptioner
-./run.sh
+./scripts/run.sh
 ```
 
 脚本会自动：
@@ -92,7 +88,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 #### 2. 安装系统依赖（macOS）
 
 ```bash
-brew install ffmpeg aria2
+brew install ffmpeg
 ```
 
 #### 3. 克隆并运行
@@ -130,7 +126,7 @@ LLM 大模型是用来字幕段句、字幕优化、以及字幕翻译（如果�
 
 | 配置项         | 说明                                                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SiliconCloud   | [SiliconCloud 官网](https://cloud.siliconflow.cn/i/onCHcaDx)配置方法请参考[配置文档](./docs/llm_config.md)<br>该并发较低，建议把线程设置为5以下。 |
+| SiliconCloud   | [SiliconCloud 官网](https://cloud.siliconflow.cn/i/onCHcaDx)配置方法请参考[配置文档](https://weifeng2333.github.io/VideoCaptioner/config/llm)<br>该并发较低，建议把线程设置为5以下。 |
 | DeepSeek       | [DeepSeek 官网](https://platform.deepseek.com)，建议使用 `deepseek-v3` 模型，<br>官方网站最近服务好像并不太稳定。                                 |
 | OpenAI兼容接口 | 如果有其他服务商的API，可直接在软件中填写。base_url 和api_key [VideoCaptioner API](https://api.videocaptioner.cn)                                 |
 
@@ -152,15 +148,15 @@ API-key: `个人中心-API 令牌页面自行获取。`
 
 💡 模型选择建议 (本人在各质量层级中精选出的高性价比模型)：
 
-- 高质量之选： `gemini-2.5-pro`、`claude-sonnet-4-5-20250929` (耗费比例：3)
+- 高质量之选： `gemini-3-pro`、`claude-sonnet-4-5-20250929` (耗费比例：3)
 
 - 较高质量之选： `gpt-5-2025-08-07`、 `claude-haiku-4-5-20251001` (耗费比例：1.2)
 
-- 中质量之选： `gpt-5-mini`、`gemini-2.5-flash` (耗费比例：0.3)
+- 中质量之选： `gpt-5-mini`、`gemini-3-flash` (耗费比例：0.3)
 
 本站支持超高并发，软件中线程数直接拉满即可~ 处理速度非常快~
 
-更详细的API配置教程：[中转站配置配置](./docs/llm_config.md#中转站配置)
+更详细的API配置教程：[中转站配置](https://weifeng2333.github.io/VideoCaptioner/config/llm)
 
 ---
 
@@ -181,7 +177,7 @@ API-key: `个人中心-API 令牌页面自行获取。`
 | B接口            | 仅支持中文、英文                                   | 在线     | 免费、速度较快                                                                                                    |
 | J接口            | 仅支持中文、英文                                   | 在线     | 免费、速度较快                                                                                                    |
 | WhisperCpp       | 中文、日语、韩语、英文等 99 种语言，外语效果较好   | 本地     | （实际使用不稳定）需要下载转录模型<br>中文建议medium以上模型<br>英文等使用较小模型即可达到不错效果。              |
-| fasterWhisper 👍 | 中文、英文等多99种语言，外语效果优秀，时间轴更准确 | 本地     | （🌟极力推荐🌟）需要下载程序和转录模型<br>支持CUDA,速度更快，转录准确。<br>超级准确的时间戳字幕。<br>建议优先使用 |
+| fasterWhisper 👍 | 中文、英文等多99种语言，外语效果优秀，时间轴更准确 | 本地     | （🌟推荐🌟）需要下载程序和转录模型<br>支持CUDA,速度更快，转录准确。<br>超级准确的时间戳字幕。<br>仅支持 window |
 
 ### 4. 本地 Whisper 语音识别模型
 
@@ -197,7 +193,6 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 
 推荐模型: `Large-v2` 稳定且质量较好。
 
-注：以上模型国内网络可直接在软件内下载。
 
 ### 5. 文稿匹配
 
@@ -222,7 +217,7 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 2. 只能下载较低分辨率的视频；
 3. 网络条件较差时需要验证；
 
-- 请参考 [Cookie 配置说明](./docs/get_cookies.md) 获取Cookie信息，并将cookies.txt文件放置到软件安装目录的 `AppData` 目录下，即可正常下载高质量视频。
+- 请参考 [Cookie 配置说明](https://weifeng2333.github.io/VideoCaptioner/guide/cookies-config) 获取Cookie信息，并将cookies.txt文件放置到软件安装目录的 `AppData` 目录下，即可正常下载高质量视频。
 
 ## 软件流程介绍
 
@@ -291,16 +286,27 @@ Whisper 版本有 WhisperCpp 和 fasterWhisper（推荐） 两种，后者效果
 
 ```
 VideoCaptioner/
-├── runtime/                    # 运行环境目录
-├── resources/                  # 软件资源文件目录（二进制程序、图标等,以及下载的faster-whisper程序）
-├── work-dir/                   # 工作目录，处理完成的视频和字幕文件保存在这里
+├── app/                        # 应用源代码目录
+│   ├── common/                 # 公共模块（配置、信号总线）
+│   ├── components/             # UI 组件
+│   ├── core/                   # 核心业务逻辑（ASR、翻译、优化等）
+│   ├── thread/                 # 异步线程
+│   └── view/                   # 界面视图
+├── resource/                   # 资源文件目录
+│   ├── assets/                 # 图标、Logo 等
+│   ├── bin/                    # 二进制程序（FFmpeg、Whisper 等）
+│   ├── fonts/                  # 字体文件
+│   ├── subtitle_style/         # 字幕样式模板
+│   └── translations/           # 多语言翻译文件
+├── work-dir/                   # 工作目录（处理完成的视频和字幕）
 ├── AppData/                    # 应用数据目录
-    ├── cache/                  # 缓存目录，缓存转录、大模型请求的数据。
-    ├── models/                 # 存放 Whisper 模型文件
-    ├── logs/                   # 日志目录，记录软件运行状态
-    ├── settings.json           # 存储用户设置
-    └──  cookies.txt            # 视频平台的 cookie 信息（下载高清视频时需要）
-└── VideoCaptioner.exe          # 主程序执行文件
+│   ├── cache/                  # 缓存目录（转录、LLM 请求）
+│   ├── models/                 # Whisper 模型文件
+│   ├── logs/                   # 日志文件
+│   └── settings.json           # 用户设置
+├── scripts/                    # 安装和运行脚本
+├── main.py                     # 程序入口
+└── pyproject.toml              # 项目配置和依赖
 ```
 
 ## 📝 说明
@@ -328,8 +334,8 @@ VideoCaptioner/
 <details>
 <summary>捐助支持</summary>
 <div align="center">
-  <img src="./docs/images/alipay.jpg" alt="支付宝二维码" width="30%">
-  <img src="./docs/images/wechat.jpg" alt="微信二维码" width="30%">
+  <img src="./legacy-docs/images/alipay.jpg" alt="支付宝二维码" width="30%">
+  <img src="./legacy-docs/images/wechat.jpg" alt="微信二维码" width="30%">
 </div>
 </details>
 

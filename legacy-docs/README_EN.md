@@ -4,22 +4,19 @@
   <h1>VideoCaptioner</h1>
   <p>An LLM-powered video subtitle processing assistant, supporting speech recognition, subtitle segmentation, optimization, and translation.</p>
 
-  [简体中文](./README.md) / [正體中文](./docs/README_TW.md) / English / [日本語](./docs/README_JA.md)
+  [简体中文](../README.md) / [正體中文](./README_TW.md) / English / [日本語](./README_JA.md)
 
 </div>
 
 ## 📖 Introduction
 
-Kaka Subtitle Assistant (VideoCaptioner) is easy to operate and doesn't require high-end hardware. It supports both online API calls and local offline processing (with GPU support) for speech recognition.  It leverages Large Language Models (LLMs) for intelligent subtitle segmentation, correction, and translation.  It offers a one-click solution for the entire video subtitle workflow!  Add stunning subtitles to your videos.
+Kaka Subtitle Assistant (VideoCaptioner) is easy to operate and doesn't require high-end hardware. It supports both online API calls and local offline processing (with GPU support) for speech recognition. It leverages Large Language Models (LLMs) for intelligent subtitle segmentation, correction, and translation. It offers a one-click solution for the entire video subtitle workflow! Add stunning subtitles to your videos.
 
-The latest version now supports VAD, vocal separation, word-level timestamps, batch subtitle processing, and other practical features.
-
-- 🎯 No GPU required to use powerful speech recognition engines for accurate subtitle generation.
-- ✂️ LLM-based intelligent segmentation and sentence breaking for more natural subtitle reading.
-- 🔄 AI subtitle multi-threading optimization and translation, adjusting subtitle format and making expressions more idiomatic and professional.
-- 🎬 Supports batch video subtitle synthesis, improving processing efficiency.
-- 📝 Intuitive subtitle editing and viewing interface, supporting real-time preview and quick editing.
-- 🤖 Low model token consumption, and built-in basic LLM model to ensure out-of-the-box use.
+- Support for word-level timestamps and VAD voice activity detection with high recognition accuracy
+- LLM-based semantic understanding to automatically reorganize word-by-word subtitles into natural, fluent sentence paragraphs
+- Context-aware AI translation with reflection optimization mechanism for idiomatic and professional translations
+- Batch video subtitle synthesis support to improve processing efficiency
+- Intuitive subtitle editing and viewing interface with real-time preview and quick editing
 
 ## 📸 Interface Preview
 
@@ -33,11 +30,11 @@ The latest version now supports VAD, vocal separation, word-level timestamps, ba
 
 ## 🧪 Testing
 
-Processing a 14-minute 1080P [English TED video from Bilibili](https://www.bilibili.com/video/BV1jT411X7Dz) end-to-end, using the local Whisper model for speech recognition and the `gpt-4o-mini` model for optimization and translation into Chinese, took approximately **3 minutes**.
+Processing a 14-minute 1080P [English TED video from Bilibili](https://www.bilibili.com/video/BV1jT411X7Dz) end-to-end, using the local Whisper model for speech recognition and the `gpt-5-mini` model for optimization and translation into Chinese, took approximately **4 minutes**.
 
 Based on backend calculations, the cost for model optimization and translation was less than ¥0.01 (calculated using OpenAI's official pricing).
 
-For detailed results of subtitle and video synthesis, please refer to the [TED Video Test](./docs/test.md).
+For detailed results of subtitle and video synthesis, please refer to the [TED Video Test](./test.md).
 
 
 ## 🚀 Quick Start
@@ -46,98 +43,85 @@ For detailed results of subtitle and video synthesis, please refer to the [TED V
 
 The software is lightweight, with a package size of less than 60MB, and includes all necessary environments. Download and run directly.
 
-1. Download the latest version of the executable from the [Release](https://github.com/WEIFENG2333/VideoCaptioner/releases) page. Or: [Lanzou Cloud Download](https://wwwm.lanzoue.com/iam1L2n8n3za)
+1. Download the latest version of the executable from the [Release](https://github.com/WEIFENG2333/VideoCaptioner/releases) page. Or: [Lanzou Cloud Download](https://wwwm.lanzoue.com/ii14G2pdsbej)
 
 2. Open the installer to install.
 
-3. (Optional) LLM API Configuration, choose whether to enable subtitle optimization or subtitle translation.
+3. LLM API Configuration (for subtitle segmentation and correction), you can use [this project's API relay](https://api.videocaptioner.cn)
 
-4. Drag and drop the video file into the software window for fully automatic processing.
+4. Translation configuration, choose whether to enable translation (default uses Microsoft Translator, average quality, recommend configuring your own API KEY for LLM translation)
 
-Note: Each step supports independent processing and file drag-and-drop.
+5. Speech recognition configuration (default uses B interface for online speech recognition, use local transcription for languages other than Chinese and English)
+
+### For macOS Users
+
+#### One-Click Install & Run (Recommended)
+
+```bash
+# Method 1: Direct run (auto-installs uv, clones project, installs dependencies)
+curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/main/scripts/run.sh | bash
+
+# Method 2: Clone first, then run
+git clone https://github.com/WEIFENG2333/VideoCaptioner.git
+cd VideoCaptioner
+./scripts/run.sh
+```
+
+The script will automatically:
+
+1. Install the [uv](https://docs.astral.sh/uv/) package manager (if not installed)
+2. Clone the project to `~/VideoCaptioner` (if not running from project directory)
+3. Install all Python dependencies
+4. Launch the application
 
 <details>
-<summary>For MacOS Users</summary>
- 
- 
-Due to my lack of a Mac, I cannot test and package for MacOS.  MacOS executables are temporarily unavailable.
+<summary>Manual Installation Steps</summary>
 
-Mac users, please download the source code and install Python dependencies to run. (Local Whisper functionality is currently not supported on MacOS.)
+#### 1. Install uv package manager
 
-1. Install ffmpeg and Aria2 download tools
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+#### 2. Install system dependencies (macOS)
+
 ```bash
 brew install ffmpeg
-brew install aria2
-brew install python@3.**
 ```
 
-2. Clone the project
-```bash
-git clone https://github.com/WEIFENG2333/VideoCaptioner.git
-cd VideoCaptioner
-```
-
-3. Install dependencies
-```bash
-python3.** -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-4. Run the program
-```bash
-python main.py
-```
-</details>
-
-<details>
-<summary>Docker Deployment (beta)</summary>
-
-The current application is relatively basic.  We welcome PR contributions.
-
-### 1. Clone the project
+#### 3. Clone and run
 
 ```bash
 git clone https://github.com/WEIFENG2333/VideoCaptioner.git
 cd VideoCaptioner
+uv sync          # Install dependencies
+uv run python main.py  # Run
 ```
-
-### 2. Build the image
-
-```bash
-docker build -t video-captioner .
-```
-
-### 3. Run the container
-
-Run with custom API configuration:
-```bash
-docker run -d \
-  -p 8501:8501 \
-  -v $(pwd)/temp:/app/temp \
-  -e OPENAI_BASE_URL="Your API address" \
-  -e OPENAI_API_KEY="Your API key" \
-  --name video-captioner \
-  video-captioner
-```
-
-### 4. Access the application
-
-Open your browser and go to: `http://localhost:8501`
-
-### Notes
-
-- The container already includes necessary dependencies like ffmpeg.
-- If you need to use other models, please configure them through environment variables.
 
 </details>
+
+### Developer Guide
+
+```bash
+# Install dependencies (including dev dependencies)
+uv sync
+
+# Run application
+uv run python main.py
+
+# Type checking
+uv run pyright
+
+# Code linting
+uv run ruff check .
+```
 
 ## ✨ Main Features
 
-The software fully utilizes the advantages of Large Language Models (LLMs) in understanding context to further process subtitles generated by speech recognition.  It effectively corrects typos, unifies terminology, and makes the subtitle content more accurate and coherent, providing users with an excellent viewing experience!
+The software fully utilizes the advantages of Large Language Models (LLMs) in understanding context to further process subtitles generated by speech recognition. It effectively corrects typos, unifies terminology, and makes the subtitle content more accurate and coherent, providing users with an excellent viewing experience!
 
 #### 1. Multi-platform Video Download and Processing
-- Supports mainstream video platforms at home and abroad (Bilibili, YouTube, etc.)
+- Supports mainstream video platforms (Bilibili, YouTube, TikTok, X, etc.)
 - Automatically extracts and processes the original subtitles of the video.
 
 #### 2. Professional Speech Recognition Engine
@@ -161,17 +145,67 @@ The software fully utilizes the advantages of Large Language Models (LLMs) in un
 
 ## ⚙️ Basic Configuration
 
-### 1. LLM API Configuration Instructions (Optional)
+### 1. LLM API Configuration Instructions
+
+LLM is used for subtitle segmentation, optimization, and translation (if LLM translation is selected).
 
 | Configuration Item | Description |
 |--------|------|
-| Built-in Model | The software includes a basic large language model (`gpt-4o-mini`), which can be used without configuration (public service is unstable). |
-| API Support | Supports standard OpenAI API format. Compatible with [SiliconCloud](https://cloud.siliconflow.cn/i/HF95kaoz), [DeepSeek](https://platform.deepseek.com/), [Ollama](https://ollama.com/blog/openai-compatibility), etc. <br>For configuration methods, please refer to the [Configuration Documentation](./docs/llm_config.md). |
+| SiliconCloud | [SiliconCloud Official](https://cloud.siliconflow.cn/i/onCHcaDx), for configuration see [online docs](https://weifeng2333.github.io/VideoCaptioner/config/llm)<br>Low concurrency, recommend setting threads below 5. |
+| DeepSeek | [DeepSeek Official](https://platform.deepseek.com), recommend using `deepseek-v3` model. |
+| OpenAI Compatible | If you have API from other providers, fill in directly. base_url and api_key [VideoCaptioner API](https://api.videocaptioner.cn) |
 
-Recommended models: For higher quality, choose `Claude-3.5-sonnet` or `gpt-4o`.
+Note: If your API provider doesn't support high concurrency, lower the "thread count" in settings to avoid request errors.
+
+---
+
+For high concurrency, or to use quality models like OpenAI or Claude for subtitle correction and translation:
+
+Use this project's ✨LLM API Relay✨: [https://api.videocaptioner.cn](https://api.videocaptioner.cn)
+
+Supports high concurrency, excellent value, with many domestic and international models available.
+
+After registering and getting your key, configure settings as follows:
+
+BaseURL: `https://api.videocaptioner.cn/v1`
+
+API-key: `Get from Personal Center - API Token page.`
+
+💡 Model Selection Recommendations (high-value models selected at each quality tier):
+
+- High quality: `gemini-3-pro`, `claude-sonnet-4-5-20250929` (cost ratio: 3)
+
+- Higher quality: `gpt-5-2025-08-07`, `claude-haiku-4-5-20251001` (cost ratio: 1.2)
+
+- Medium quality: `gpt-5-mini`, `gemini-3-flash` (cost ratio: 0.3)
+
+This site supports ultra-high concurrency, max out the thread count in the software~ Processing speed is very fast~
+
+For more detailed API configuration tutorial: [API Configuration](https://weifeng2333.github.io/VideoCaptioner/config/llm)
+
+---
+
+### 2. Translation Configuration
+
+| Configuration Item | Description |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| LLM Translation | 🌟 Best translation quality. Uses AI large models for translation, better context understanding, more natural translations. Requires LLM API configuration (e.g., OpenAI, DeepSeek, etc.) |
+| Microsoft Translator | Uses Microsoft's translation service, very fast |
+| Google Translate | Google's translation service, fast, but requires access to Google's network |
+
+Recommended: `LLM Translation` for the best translation quality.
+
+### 3. Speech Recognition Interface Description
+
+| Interface Name | Supported Languages | Running Mode | Description |
+|---------|---------|---------|------|
+| Interface B | Chinese, English only | Online | Free, fast |
+| Interface J | Chinese, English only | Online | Free, fast |
+| WhisperCpp | Chinese, Japanese, Korean, English, and 99 other languages. Good performance for foreign languages. | Local | (Actual use is unstable) Requires downloading transcription models.<br>Chinese: Medium or larger model recommended.<br>English, etc.: Smaller models can achieve good results. |
+| fasterWhisper 👍 | Chinese, English, and 99 other languages. Excellent performance for foreign languages, more accurate timeline. | Local | (🌟Recommended🌟) Requires downloading the program and transcription models.<br>Supports CUDA, faster, accurate transcription.<br>Super accurate timestamp subtitles.<br>Windows only |
 
 
-### 2. Local Whisper Speech Recognition Configuration (Requires download within the software)
+### 4. Local Whisper Speech Recognition Configuration (Requires download within the software)
 
 There are two Whisper versions: WhisperCpp and fasterWhisper (recommended). The latter has better performance and both require downloading models within the software.
 
@@ -180,46 +214,34 @@ There are two Whisper versions: WhisperCpp and fasterWhisper (recommended). The 
 | Tiny | 75 MiB | ~273 MB | Transcription is mediocre, for testing only. |
 | Small | 466 MiB | ~852 MB | English recognition is already good. |
 | Medium | 1.5 GiB | ~2.1 GB | This version is recommended as the minimum for Chinese recognition. |
-| Large-v1/v2 👍 | 2.9 GiB | ~3.9 GB | Good performance, recommended if your configuration allows. |
+| Large-v2 👍 | 2.9 GiB | ~3.9 GB | Good performance, recommended if your configuration allows. |
 | Large-v3 | 2.9 GiB | ~3.9 GB | Community feedback suggests potential hallucination/subtitle repetition issues. |
 
-Recommended model: Large-v1 is stable and of good quality.
-
-Note: The above models can be downloaded directly within the software using a domestic network; both GPU and integrated graphics are supported.
+Recommended model: `Large-v2` is stable and of good quality.
 
 
-### 3. Manuscript Matching
+### 5. Manuscript Matching
 
 - On the "Subtitle Optimization and Translation" page, there is a "Manuscript Matching" option, which supports the following **one or more** types of content to assist in subtitle correction and translation:
 
 | Type | Description | Example |
 |------|------|------|
-| Glossary | Correction table for terminology, names, and specific words. | 机器学习->Machine Learning<br>马斯克->Elon Musk<br>打call -> Cheer on<br>Turing patterns<br>Bus paradox |
+| Glossary | Correction table for terminology, names, and specific words. | Machine Learning->机器学习<br>Elon Musk->马斯克<br>Turing patterns<br>Bus paradox |
 | Original Subtitle Text | The original manuscript or related content of the video. | Complete speech scripts, lecture notes, etc. |
 | Correction Requirements | Specific correction requirements related to the content. | Unify personal pronouns, standardize terminology, etc.<br>Fill in requirements **related to the content**, [example reference](https://github.com/WEIFENG2333/VideoCaptioner/issues/59#issuecomment-2495849752) |
 
 - If you need manuscript assistance for subtitle optimization, fill in the manuscript information first, then start the task processing.
-- Note: When using small LLM models with limited context, it is recommended to keep the manuscript content within 1000 words.  If using a model with a larger context window, you can appropriately increase the manuscript content.
+- Note: When using small LLM models with limited context, it is recommended to keep the manuscript content within 1000 words. If using a model with a larger context window, you can appropriately increase the manuscript content.
 
 
-### 4. Speech Recognition Interface Description
-
-| Interface Name | Supported Languages | Running Mode | Description |
-|---------|---------|---------|------|
-| Interface B | Chinese, English | Online | Free, fast |
-| Interface J | Chinese, English | Online | Free, fast |
-| WhisperCpp | Chinese, Japanese, Korean, English, and 99 other languages.  Good performance for foreign languages. | Local | (Actual use is unstable) Requires downloading transcription models.<br>Chinese: Medium or larger model recommended.<br>English, etc.: Smaller models can achieve good results. |
-| fasterWhisper 👍 | Chinese, English, and 99 other languages. Excellent performance for foreign languages, more accurate timeline. | Local | (🌟Highly Recommended🌟) Requires downloading the program and transcription models.<br>Supports CUDA, faster, accurate transcription.<br>Super accurate timestamp subtitles.<br>Prioritize using this. |
-
-
-### 5. Cookie Configuration Instructions
+### 6. Cookie Configuration Instructions
 
 If you encounter the following situations when using the URL download function:
 1. The video website requires login information to download.
 2. Only lower resolution videos can be downloaded.
 3. Verification is required when network conditions are poor.
 
-- Please refer to the [Cookie Configuration Instructions](./docs/get_cookies.md) to obtain cookie information and place the `cookies.txt` file in the `AppData` directory of the software installation directory to download high-quality videos normally.
+- Please refer to the [Cookie Configuration Instructions](https://weifeng2333.github.io/VideoCaptioner/guide/cookies-config) to obtain cookie information and place the `cookies.txt` file in the `AppData` directory of the software installation directory to download high-quality videos normally.
 
 ## 💡 Software Process Introduction
 
@@ -228,119 +250,49 @@ The simple processing flow of the program is as follows:
 Speech Recognition -> Subtitle Segmentation (optional) -> Subtitle Optimization & Translation (optional) -> Subtitle & Video Synthesis
 ```
 
-The main directory structure after installing the software is as follows:
+The main directory structure of the project is as follows:
 ```
 VideoCaptioner/
-├── runtime/                    # Runtime environment directory (do not modify)
-├── resources/               # Software resource file directory (binaries, icons, etc., and downloaded faster-whisper program)
-├── work-dir/               # Working directory, where processed videos and subtitle files are saved
+├── app/                        # Application source code directory
+│   ├── common/                 # Common modules (config, signal bus)
+│   ├── components/             # UI components
+│   ├── core/                   # Core business logic (ASR, translation, optimization, etc.)
+│   ├── thread/                 # Async threads
+│   └── view/                   # Interface views
+├── resource/                   # Resource file directory
+│   ├── assets/                 # Icons, Logo, etc.
+│   ├── bin/                    # Binary programs (FFmpeg, Whisper, etc.)
+│   ├── fonts/                  # Font files
+│   ├── subtitle_style/         # Subtitle style templates
+│   └── translations/           # Multi-language translation files
+├── work-dir/                   # Working directory (processed videos and subtitles)
 ├── AppData/                    # Application data directory
-    ├── cache/              # Cache directory, caching transcription and large model request data.
-    ├── models/              # Stores Whisper model files
-    ├── logs/               # Log directory, recording software running status
-    ├── settings.json          # Stores user settings
-    └──  cookies.txt           # Cookie information for video platforms (required for downloading high-definition videos)
-└── VideoCaptioner.exe      # Main program executable file
+│   ├── cache/                  # Cache directory (transcription, LLM requests)
+│   ├── models/                 # Whisper model files
+│   ├── logs/                   # Log files
+│   └── settings.json           # User settings
+├── scripts/                    # Installation and run scripts
+├── main.py                     # Program entry
+└── pyproject.toml              # Project configuration and dependencies
 ```
 
 ## 📝 Notes
 
-1. The quality of subtitle segmentation is crucial for the viewing experience.  For this, I developed [SubtitleSpliter](https://github.com/WEIFENG2333/SubtitleSpliter), which can intelligently reorganize word-by-word subtitles into paragraphs that conform to natural language habits and perfectly synchronize with the video frames.
+1. The quality of subtitle segmentation is crucial for the viewing experience. The software can intelligently reorganize word-by-word subtitles into paragraphs that conform to natural language habits and perfectly synchronize with the video frames.
 
 2. During processing, only the text content is sent to the large language model, without timeline information, which greatly reduces processing overhead.
 
-3. In the translation stage, we adopt the "translate-reflect-translate" methodology proposed by Andrew Ng.  This iterative optimization method not only ensures the accuracy of the translation.
+3. In the translation stage, we adopt the "translate-reflect-translate" methodology proposed by Andrew Ng. This iterative optimization method ensures the accuracy of the translation.
+
+4. When processing YouTube links, video subtitles are automatically downloaded, saving the transcription step and significantly reducing operation time.
 
 ## 🤝 Contribution Guidelines
 
-The author is a junior college student. Both my personal abilities and the project have many shortcomings.  The project is also constantly being improved.  If you encounter any bugs during use, please feel free to submit [Issues](https://github.com/WEIFENG2333/VideoCaptioner/issues) and Pull Requests to help improve the project.
+The project is constantly being improved. If you encounter any bugs during use, please feel free to submit [Issues](https://github.com/WEIFENG2333/VideoCaptioner/issues) and Pull Requests to help improve the project.
 
-## Update Log
+## 📝 Changelog
 
-<details>
-<summary>2024.1.22</summary>
-
-### Core Feature Enhancements
-- Complete code architecture refactoring, optimizing overall performance
-- Subtitle optimization and translation function modules are separated, providing more flexible processing options
-- Added batch processing function: supports batch subtitles, batch transcription, batch subtitle video synthesis
-- Comprehensive optimization of UI interface and interaction details
-
-### AI Model and Translation Upgrades
-- Expanded LLM support: Added SiliconCloud, DeepSeek, Ollama, Gemini, ChatGLM, and other models
-- Integrated multiple translation services: DeepLx, Bing, Google, LLM
-- Added faster-whisper-large-v3-turbo model support
-- Added multiple VAD (Voice Activity Detection) methods
-- Support custom reflection translation switch
-- Subtitle segmentation supports semantic/sentence modes
-- Optimization of prompts for subtitle segmentation, optimization, and translation
-- Optimization of subtitle and transcription caching mechanism
-- Improved automatic line wrapping for Chinese subtitles
-- Added vertical subtitle style
-- Improved subtitle timeline switching mechanism to eliminate flickering issues
-
-### Bug Fixes and Other Improvements
-- Fixed the issue where Whisper API could not be used
-- Added support for multiple subtitle video formats
-- Fixed the problem of transcription errors in some cases
-- Optimized video working directory structure
-- Added log viewing function
-- Added subtitle optimization for Thai, German, and other languages
-- Fixed many bugs...
-
-</details>
-
-
-<details>
-<summary>2024.12.07</summary>
-
-- Added Faster-whisper support, better audio-to-subtitle quality
-- Support for Vad voice breakpoint detection, greatly reducing hallucination phenomena
-- Support for vocal separation, separating video background noise
-- Support for turning off video synthesis
-- Added maximum subtitle length setting
-- Added setting to remove punctuation at the end of subtitles
-- Optimization of prompts for optimization and translation
-- Optimized LLM subtitle segmentation errors
-- Fixed inconsistent audio conversion format issues
-
-</details>
-
-<details>
-<summary>2024.11.23</summary>
-
-- Added Whisper-v3 model support, greatly improving speech recognition accuracy
-- Optimized subtitle segmentation algorithm, providing a more natural reading experience
-- Fixed stability issues when detecting model availability
-</details>
-
-<details>
-<summary>2024.11.20</summary>
-
-- Support custom adjustment of subtitle position and style
-- Added real-time log viewing for the subtitle optimization and translation process
-- Fixed automatic translation issues when using the API
-- Optimized video working directory structure, improving file management efficiency
-</details>
-
-<details>
-<summary>2024.11.17</summary>
-
-- Support flexible export of bilingual/monolingual subtitles
-- Added alignment function for manuscript matching prompts
-- Fixed stability issues when importing subtitles
-- Fixed compatibility issues with non-Chinese paths for model downloads
-</details>
-
-<details>
-<summary>2024.11.13</summary>
-
-- Added Whisper API call support
-- Support importing cookie.txt to download resources from major video platforms
-- Subtitle file names are automatically consistent with video file names
-- Added real-time viewing of running logs on the software homepage
-- Unified and improved internal software functions
-</details>
+View the complete update history at [CHANGELOG.md](../CHANGELOG.md)
 
 ## ⭐ Star History
 
@@ -348,9 +300,12 @@ The author is a junior college student. Both my personal abilities and the proje
 
 ## 💖 Support the Author
 
-If you find this project helpful, please give it a Star. This will be the greatest encouragement and support for me!
+If you find this project helpful, please give it a Star!
 
+<details>
+<summary>Donation Support</summary>
 <div align="center">
   <img src="./images/alipay.jpg" alt="Alipay QR Code" width="30%">
   <img src="./images/wechat.jpg" alt="WeChat QR Code" width="30%">
 </div>
+</details>
