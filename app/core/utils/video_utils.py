@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-import subprocess
+import subprocess,json
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -63,6 +63,35 @@ def temporary_subtitle_file(subtitle_path: str):
         # 自动清理临时文件
         Path(temp_path).unlink(missing_ok=True)
 
+def get_best_audio_track(input_file: str) -> int:
+    """
+    自动选可用音轨：优先 AAC，其次 AAC 5.1，最后 EAC3，若无则用 0
+    """
+
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a", input_file],
+            capture_output=True, text=True
+        )
+        streams = json.loads(r.stdout).get("streams", [])
+
+        priority = [
+            ("aac", 2),   # 最希望：AAC 立体声
+            ("aac", None),
+            ("eac3", None) # 兼容保底
+        ]
+
+        for codec, ch in priority:
+            for i,s in enumerate(streams):
+                if s.get("codec_name")==codec and (ch==None or s.get("channels")==ch):
+                    logger.info(f"匹配到最优音轨 → index={i}, codec={codec}, channels={s.get('channels')}")
+                    return i
+
+        logger.warning("⚠ 找不到优先音轨，将使用默认音轨0")
+        return 0
+
+    except:
+        return 0
 
 def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -> bool:
     """使用 ffmpeg 将视频转换为音频
@@ -75,6 +104,8 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
     Returns:
         转换是否成功
     """
+    # 自动选择最佳音轨
+    audio_track_index = get_best_audio_track(input_file)
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output = str(output_path)
@@ -84,8 +115,8 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
         "ffmpeg",
         "-i",
         input_file,
-        "-map",
-        f"0:a:{audio_track_index}",
+        "-map", f"0:a:{audio_track_index}",
+        # f"0:a:{audio_track_index}",
         "-vn",
         "-ac",
         "1",  # 单声道
@@ -98,6 +129,16 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
     logger.info(f"转换为音频执行命令: {' '.join(cmd)}")
 
     try:
+        # result = subprocess.run(
+        #     cmd,
+        #     capture_output=True,
+        #     check=True,
+        #     encoding="utf-8",
+        #     errors="replace",
+        #     creationflags=(
+        #         getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+        #     ),
+        # )
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -105,8 +146,8 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
             encoding="utf-8",
             errors="replace",
             creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+                getattr(subprocess,"CREATE_NO_WINDOW",0) if os.name=="nt" else 0
+                ),
         )
         if result.returncode == 0 and Path(output).is_file():
             logger.info("音频转换成功")
