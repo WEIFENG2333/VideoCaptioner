@@ -7,7 +7,7 @@ from typing import Any, Dict
 import httpx
 
 from app.config import LOG_PATH
-
+from app.core.llm.context import get_task_context
 
 LLM_LOG_FILE = LOG_PATH / "llm_requests.jsonl"
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10MB
@@ -74,6 +74,7 @@ def _on_response(response: httpx.Response) -> None:
 
     pending["status"] = response.status_code
     pending["duration_ms"] = int((time.time() - pending["start_time"]) * 1000)
+    pending["completed"] = True  # 标记响应已完成
 
 
 # ==================== 公开 API ====================
@@ -91,10 +92,18 @@ def create_logging_http_client() -> httpx.Client:
 
 def log_llm_response(response: Any) -> None:
     """记录完整的请求+响应（在 SDK 解析响应后调用）"""
-    # 取出最近的 pending request
     if not _pending_requests:
         return
-    key = next(iter(_pending_requests))
+
+    # 优先选择已完成响应的请求（有 duration_ms）
+    completed_key = None
+    for key, pending in _pending_requests.items():
+        if pending.get("completed"):
+            completed_key = key
+            break
+
+    # 如果没有已完成的，取第一个
+    key = completed_key if completed_key else next(iter(_pending_requests))
     pending = _pending_requests.pop(key)
 
     # 序列化完整响应体
@@ -102,8 +111,14 @@ def log_llm_response(response: Any) -> None:
     if response and hasattr(response, "model_dump"):
         response_data = response.model_dump()
 
+    # 获取任务上下文
+    ctx = get_task_context()
+
     log_entry = {
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "task_id": ctx.task_id if ctx else "",
+        "file_name": ctx.file_name if ctx else "",
+        "stage": ctx.stage if ctx else "",
         "url": pending.get("url", ""),
         "status": pending.get("status", 0),
         "duration_ms": pending.get("duration_ms", 0),

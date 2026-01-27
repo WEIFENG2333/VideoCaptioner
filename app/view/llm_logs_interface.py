@@ -56,8 +56,19 @@ class LogDetailDialog(MessageBoxBase):
         prompt_tokens = usage.get("prompt_tokens", 0)
         completion_tokens = usage.get("completion_tokens", 0)
 
-        info_text = f"时间: {time_str}  |  模型: {model}  |  耗时: {duration:.1f}s  |  Tokens: {prompt_tokens} → {completion_tokens}"
-        self.viewLayout.addWidget(BodyLabel(info_text))
+        # 任务上下文
+        task_id = self.log_entry.get("task_id", "")
+        file_name = self.log_entry.get("file_name", "")
+        stage = self.log_entry.get("stage", "")
+
+        info_lines = [
+            f"时间: {time_str}  |  模型: {model}  |  耗时: {duration:.1f}s  |  Tokens: {prompt_tokens} → {completion_tokens}"
+        ]
+        if task_id:
+            info_lines.append(f"任务: {task_id}  |  文件: {file_name}  |  阶段: {stage}")
+
+        for line in info_lines:
+            self.viewLayout.addWidget(BodyLabel(line))
 
         # Request
         self.viewLayout.addWidget(SubtitleLabel("Request"))
@@ -118,7 +129,6 @@ class LogDetailDialog(MessageBoxBase):
         )
 
 
-
 class LLMLogsInterface(QWidget):
     """LLM 请求日志界面"""
 
@@ -148,8 +158,8 @@ class LLMLogsInterface(QWidget):
         toolbar.setSpacing(10)
 
         self.search_edit = SearchLineEdit()
-        self.search_edit.setPlaceholderText(self.tr("搜索模型名称或内容..."))
-        self.search_edit.setFixedWidth(250)
+        self.search_edit.setPlaceholderText(self.tr("搜索任务ID、文件名、模型..."))
+        self.search_edit.setFixedWidth(280)
         toolbar.addWidget(self.search_edit)
 
         toolbar.addStretch()
@@ -164,15 +174,16 @@ class LLMLogsInterface(QWidget):
 
     def _setup_table(self):
         self.table = TableWidget()
-        self.table.setColumnCount(6)
+        self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(
             [
                 self.tr("时间"),
+                self.tr("任务ID"),
+                self.tr("文件"),
+                self.tr("阶段"),
                 self.tr("模型"),
-                self.tr("输出预览"),
                 self.tr("耗时"),
-                self.tr("输入"),
-                self.tr("输出"),
+                self.tr("Tokens"),
             ]
         )
 
@@ -180,16 +191,17 @@ class LLMLogsInterface(QWidget):
         if header:
             header.setSectionResizeMode(0, QHeaderView.Fixed)
             header.setSectionResizeMode(1, QHeaderView.Fixed)
-            header.setSectionResizeMode(2, QHeaderView.Stretch)
+            header.setSectionResizeMode(2, QHeaderView.Stretch)  # 文件 - 自适应
             header.setSectionResizeMode(3, QHeaderView.Fixed)
-            header.setSectionResizeMode(4, QHeaderView.Fixed)
+            header.setSectionResizeMode(4, QHeaderView.Stretch)  # 模型 - 自适应
             header.setSectionResizeMode(5, QHeaderView.Fixed)
+            header.setSectionResizeMode(6, QHeaderView.Fixed)
 
-        self.table.setColumnWidth(0, 140)
-        self.table.setColumnWidth(1, 200)
-        self.table.setColumnWidth(3, 80)
-        self.table.setColumnWidth(4, 60)
-        self.table.setColumnWidth(5, 60)
+        self.table.setColumnWidth(0, 130)  # 时间
+        self.table.setColumnWidth(1, 100)  # 任务ID
+        self.table.setColumnWidth(3, 90)  # 阶段
+        self.table.setColumnWidth(5, 70)  # 耗时
+        self.table.setColumnWidth(6, 70)  # Tokens
 
         v_header = self.table.verticalHeader()
         if v_header:
@@ -198,6 +210,8 @@ class LLMLogsInterface(QWidget):
         self.table.setEditTriggers(self.table.NoEditTriggers)
         self.table.setSelectionBehavior(self.table.SelectRows)
         self.table.setSelectionMode(self.table.SingleSelection)
+        self.table.setBorderVisible(True)
+        self.table.setBorderRadius(8)
 
         self.main_layout.addWidget(self.table)
 
@@ -279,11 +293,17 @@ class LLMLogsInterface(QWidget):
             self.filtered_logs = []
             for log in self.all_logs:
                 model = log.get("request", {}).get("model", "").lower()
+                task_id = log.get("task_id", "").lower()
+                file_name = log.get("file_name", "").lower()
+                stage = log.get("stage", "").lower()
                 messages = json.dumps(log.get("request", {}).get("messages", []))
                 response = json.dumps(log.get("response", {}))
 
                 if (
                     search_text in model
+                    or search_text in task_id
+                    or search_text in file_name
+                    or search_text in stage
                     or search_text in messages.lower()
                     or search_text in response.lower()
                 ):
@@ -310,32 +330,32 @@ class LLMLogsInterface(QWidget):
                 time_str = time_str[5:]  # 去掉 "YYYY-"
             self.table.setItem(row, 0, self._create_item(time_str))
 
+            # 任务ID
+            task_id = log.get("task_id", "") or "-"
+            self.table.setItem(row, 1, self._create_item(task_id))
+
+            # 文件
+            file_name = log.get("file_name", "") or "-"
+            self.table.setItem(row, 2, self._create_item(file_name, align_left=True))
+
+            # 阶段
+            stage = log.get("stage", "") or "-"
+            self.table.setItem(row, 3, self._create_item(stage))
+
             # 模型
             model = log.get("request", {}).get("model", "未知")
-            self.table.setItem(row, 1, self._create_item(model))
-
-            # 输出预览
-            response_content = ""
-            choices = log.get("response", {}).get("choices", [])
-            if choices and len(choices) > 0:
-                msg = choices[0].get("message", {})
-                response_content = msg.get("content", "") or ""
-            # 截断显示
-            preview = response_content[:80].replace("\n", " ")
-            if len(response_content) > 80:
-                preview += "..."
-            self.table.setItem(row, 2, self._create_item(preview, align_left=True))
+            self.table.setItem(row, 4, self._create_item(model))
 
             # 耗时
             duration = log.get("duration_ms", 0) / 1000
-            self.table.setItem(row, 3, self._create_item(f"{duration:.1f}s"))
+            self.table.setItem(row, 5, self._create_item(f"{duration:.1f}s"))
 
-            # 输入/输出 Tokens
+            # 总 Tokens
             usage = log.get("response", {}).get("usage", {})
-            prompt_tokens = usage.get("prompt_tokens", 0)
-            completion_tokens = usage.get("completion_tokens", 0)
-            self.table.setItem(row, 4, self._create_item(str(prompt_tokens)))
-            self.table.setItem(row, 5, self._create_item(str(completion_tokens)))
+            total_tokens = usage.get("total_tokens", 0)
+            if not total_tokens:
+                total_tokens = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+            self.table.setItem(row, 6, self._create_item(str(total_tokens)))
 
         # 更新分页和统计
         self.page_label.setText(f"{self.current_page + 1} / {total_pages}")

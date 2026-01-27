@@ -29,10 +29,9 @@ from app.components.MySettingCard import (
     SpinBoxSettingCard,
 )
 from app.config import ASSETS_PATH, SUBTITLE_STYLE_PATH
-from app.core.subtitle import get_builtin_fonts
 from app.core.constant import INFOBAR_DURATION_SUCCESS, INFOBAR_DURATION_WARNING
 from app.core.entities import SubtitleLayoutEnum, SubtitleRenderModeEnum
-from app.core.subtitle import render_ass_preview, render_preview
+from app.core.subtitle import get_builtin_fonts, render_ass_preview, render_preview
 from app.core.subtitle.styles import RoundedBgStyle
 from app.core.utils.platform_utils import open_folder
 

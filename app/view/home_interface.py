@@ -1,6 +1,9 @@
+from typing import Optional
+
 from PyQt5.QtWidgets import QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import SegmentedWidget
 
+from app.core.llm.context import generate_task_id
 from app.core.task_factory import TaskFactory
 from app.view.subtitle_interface import SubtitleInterface
 from app.view.task_creation_interface import TaskCreationInterface
@@ -11,6 +14,7 @@ from app.view.video_synthesis_interface import VideoSynthesisInterface
 class HomeInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._current_task_id: Optional[str] = None  # 当前流程的任务 ID
 
         # 设置对象名称和样式
         self.setObjectName("HomeInterface")
@@ -67,9 +71,11 @@ class HomeInterface(QWidget):
         )
 
     def switch_to_transcription(self, file_path):
-        # 切换到转录界面
+        # 流程开始，生成新的 task_id
+        self._current_task_id = generate_task_id()
+
         transcribe_task = TaskFactory.create_transcribe_task(
-            file_path, need_next_task=True
+            file_path, need_next_task=True, task_id=self._current_task_id
         )
         self.transcription_interface.set_task(transcribe_task)
         self.transcription_interface.process()
@@ -77,9 +83,9 @@ class HomeInterface(QWidget):
         self.pivot.setCurrentItem("TranscriptionInterface")
 
     def switch_to_subtitle_optimization(self, file_path, video_path):
-        # 切换到字幕处理界面
+        # 继续使用同一个 task_id
         subtitle_task = TaskFactory.create_subtitle_task(
-            file_path, video_path, need_next_task=True
+            file_path, video_path, need_next_task=True, task_id=self._current_task_id
         )
         self.subtitle_optimization_interface.set_task(subtitle_task)
         self.subtitle_optimization_interface.process()
@@ -87,10 +93,11 @@ class HomeInterface(QWidget):
         self.pivot.setCurrentItem("SubtitleInterface")
 
     def switch_to_video_synthesis(self, video_path, subtitle_path):
-        # 切换到视频合成界面
+        # 继续使用同一个 task_id，流程结束后清空
         synthesis_task = TaskFactory.create_synthesis_task(
-            video_path, subtitle_path, need_next_task=True
+            video_path, subtitle_path, need_next_task=True, task_id=self._current_task_id
         )
+        self._current_task_id = None  # 流程结束
         self.video_synthesis_interface.set_task(synthesis_task)
         self.video_synthesis_interface.process()
         self.stackedWidget.setCurrentWidget(self.video_synthesis_interface)

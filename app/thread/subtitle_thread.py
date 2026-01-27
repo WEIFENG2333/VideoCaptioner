@@ -13,6 +13,7 @@ from app.core.entities import (
     TranslatorServiceEnum,
 )
 from app.core.llm.check_llm import check_llm_connection
+from app.core.llm.context import clear_task_context, set_task_context, update_stage
 from app.core.optimize.optimize import SubtitleOptimizer
 from app.core.split.split import SubtitleSplitter
 from app.core.translate import (
@@ -69,6 +70,14 @@ class SubtitleThread(QThread):
             raise Exception(self.tr("LLM API 未配置, 请检查LLM配置"))
 
     def run(self):
+        # 设置任务上下文
+        file_name = Path(self.task.subtitle_path).name if self.task.subtitle_path else ""
+        set_task_context(
+            task_id=self.task.task_id,
+            file_name=file_name,
+            stage="subtitle",
+        )
+
         try:
             logger.info(f"\n{self.task.subtitle_config.print_config()}")
 
@@ -93,6 +102,7 @@ class SubtitleThread(QThread):
 
             # 2. 重新断句（对于字词级字幕）
             if asr_data.is_word_timestamp():
+                update_stage("split")
                 self.progress.emit(5, self.tr("字幕断句..."))
                 logger.info("正在字幕断句...")
                 splitter = SubtitleSplitter(
@@ -109,6 +119,7 @@ class SubtitleThread(QThread):
             self.subtitle_length = len(asr_data.segments)
 
             if subtitle_config.need_optimize:
+                update_stage("optimize")
                 self.progress.emit(0, self.tr("优化字幕..."))
                 logger.info("正在优化字幕...")
                 self.finished_subtitle_length = 0
@@ -127,6 +138,7 @@ class SubtitleThread(QThread):
 
             # 4. 翻译字幕
             if subtitle_config.need_translate:
+                update_stage("translate")
                 self.progress.emit(0, self.tr("翻译字幕..."))
                 logger.info("正在翻译字幕...")
                 self.finished_subtitle_length = 0
@@ -234,6 +246,8 @@ class SubtitleThread(QThread):
             logger.exception(f"字幕处理失败: {str(e)}")
             self.error.emit(str(e))
             self.progress.emit(100, self.tr("字幕处理失败"))
+        finally:
+            clear_task_context()
 
     def need_llm(self, subtitle_config: SubtitleConfig, asr_data: ASRData):
         return (

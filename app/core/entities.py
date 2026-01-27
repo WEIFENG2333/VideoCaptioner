@@ -1,10 +1,16 @@
 import datetime
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional
 
 if TYPE_CHECKING:
     from app.core.translate.types import TargetLanguage
+
+
+def _generate_task_id() -> str:
+    """生成 8 位任务 ID"""
+    return uuid.uuid4().hex[:8]
 
 
 @dataclass
@@ -660,6 +666,9 @@ class SynthesisConfig:
 class TranscribeTask:
     """转录任务类"""
 
+    # 任务标识
+    task_id: str = field(default_factory=_generate_task_id)
+
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
     completed_at: Optional[datetime.datetime] = None
@@ -683,6 +692,9 @@ class TranscribeTask:
 class SubtitleTask:
     """字幕任务类"""
 
+    # 任务标识
+    task_id: str = field(default_factory=_generate_task_id)
+
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
     completed_at: Optional[datetime.datetime] = None
@@ -705,6 +717,9 @@ class SubtitleTask:
 class SynthesisTask:
     """视频合成任务类"""
 
+    # 任务标识
+    task_id: str = field(default_factory=_generate_task_id)
+
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
     completed_at: Optional[datetime.datetime] = None
@@ -726,6 +741,9 @@ class SynthesisTask:
 class TranscriptAndSubtitleTask:
     """转录和字幕任务类"""
 
+    # 任务标识
+    task_id: str = field(default_factory=_generate_task_id)
+
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
     completed_at: Optional[datetime.datetime] = None
@@ -743,6 +761,9 @@ class TranscriptAndSubtitleTask:
 @dataclass
 class FullProcessTask:
     """完整处理任务类(转录+字幕+合成)"""
+
+    # 任务标识
+    task_id: str = field(default_factory=_generate_task_id)
 
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
