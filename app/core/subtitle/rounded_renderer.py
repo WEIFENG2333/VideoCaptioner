@@ -23,23 +23,31 @@ if TYPE_CHECKING:
 logger = setup_logger("subtitle.rounded")
 
 
-def _get_video_resolution(video_path: str) -> Tuple[int, int]:
-    """获取视频分辨率"""
+def _get_video_info(video_path: str) -> Tuple[int, int, float]:
+    """获取视频分辨率和时长"""
     result = subprocess.run(
         ["ffmpeg", "-i", video_path],
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
-        creationflags=(
-            getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-        ),
+        creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
     )
 
+    # 解析分辨率
+    width, height = 0, 0
     if match := re.search(r"Stream.*Video:.* (\d{2,5})x(\d{2,5})", result.stderr):
-        return int(match.group(1)), int(match.group(2))
+        width, height = int(match.group(1)), int(match.group(2))
+    else:
+        raise ValueError(f"无法获取视频分辨率: {video_path}")
 
-    raise ValueError(f"无法获取视频分辨率: {video_path}")
+    # 解析时长
+    duration = 0.0
+    if match := re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", result.stderr):
+        h, m, s = match.groups()
+        duration = int(h) * 3600 + int(m) * 60 + float(s)
+
+    return width, height, duration
 
 
 def render_text_block(
@@ -154,9 +162,7 @@ def render_subtitle_image(
         else []
     )
     secondary_lines = (
-        wrap_text(
-            secondary_text, font, width, style.padding_h, extra_margin=extra_margin
-        )
+        wrap_text(secondary_text, font, width, style.padding_h, extra_margin=extra_margin)
         if secondary_text
         else []
     )
@@ -169,11 +175,7 @@ def render_subtitle_image(
             return 0
         bbox = font.getbbox("测试Ag")
         line_h = bbox[3] - bbox[1]
-        return (
-            line_h * len(lines)
-            + style.line_spacing * (len(lines) - 1)
-            + style.padding_v * 2
-        )
+        return line_h * len(lines) + style.line_spacing * (len(lines) - 1) + style.padding_v * 2
 
     primary_height = calc_block_height(primary_lines)
     secondary_height = calc_block_height(secondary_lines)
@@ -254,15 +256,11 @@ def render_preview(
         )
 
     # 渲染字幕并叠加
-    subtitle_img = render_subtitle_image(
-        primary_text, secondary_text, width, height, style
-    )
+    subtitle_img = render_subtitle_image(primary_text, secondary_text, width, height, style)
     background.paste(subtitle_img, (0, 0), subtitle_img)
 
     # 保存到临时目录
-    with tempfile.NamedTemporaryFile(
-        mode="wb", suffix=".png", delete=False
-    ) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=".png", delete=False) as tmp_file:
         background.save(tmp_file, "PNG")
         return tmp_file.name
 
@@ -302,8 +300,7 @@ def render_rounded_video(
     # 检查布局合理性
     if layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
         has_translation = any(
-            seg.translated_text and seg.translated_text.strip()
-            for seg in asr_data.segments
+            seg.translated_text and seg.translated_text.strip() for seg in asr_data.segments
         )
         if not has_translation:
             layout = SubtitleLayoutEnum.ONLY_ORIGINAL
@@ -312,14 +309,13 @@ def render_rounded_video(
         or layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP
     ):
         has_translation = any(
-            seg.translated_text and seg.translated_text.strip()
-            for seg in asr_data.segments
+            seg.translated_text and seg.translated_text.strip() for seg in asr_data.segments
         )
         if not has_translation:
             layout = SubtitleLayoutEnum.ONLY_ORIGINAL
 
     # 获取视频信息
-    width, height = _get_video_resolution(video_path)
+    width, height, video_duration = _get_video_info(video_path)
 
     # 构建并缩放样式
     style_config = rounded_style or {}
@@ -343,9 +339,7 @@ def render_rounded_video(
         temp_path = Path(temp_dir)
 
         # 步骤1: 生成所有字幕PNG (0-30%)
-        logger.info(
-            f"生成字幕PNG图片（共{len(asr_data.segments)}个，布局：{layout.value}）"
-        )
+        logger.info(f"生成字幕PNG图片（共{len(asr_data.segments)}个，布局：{layout.value}）")
         subtitle_frames = []
 
         for i, seg in enumerate(asr_data.segments):
@@ -372,9 +366,7 @@ def render_rounded_video(
             # 进度回调
             if progress_callback:
                 progress = int((i + 1) / len(asr_data.segments) * 30)
-                progress_callback(
-                    progress, f"生成字幕图片 {i + 1}/{len(asr_data.segments)}"
-                )
+                progress_callback(progress, f"生成字幕图片 {i + 1}/{len(asr_data.segments)}")
 
         if not subtitle_frames:
             raise ValueError("没有生成任何有效的字幕图片")
@@ -409,14 +401,12 @@ def render_rounded_video(
             # 判断是否是最后一批
             is_last_batch = batch_idx == total_batches - 1
             batch_output = (
-                output_path
-                if is_last_batch
-                else temp_path / f"batch_{batch_idx:03d}.mp4"
+                output_path if is_last_batch else temp_path / f"batch_{batch_idx:03d}.mp4"
             )
 
-            logger.info(
-                f"处理批次 {batch_idx + 1}/{total_batches}（{len(batch_frames)}个字幕）"
-            )
+            logger.info(f"处理批次 {batch_idx + 1}/{total_batches}（{len(batch_frames)}个字幕）")
+            # 构建 ffmpeg 命令
+            # -t 参数强制保持原视频时长，防止因 overlay 结束而截断视频
             cmd = [
                 "ffmpeg",
                 "-y",
@@ -426,7 +416,9 @@ def render_rounded_video(
                 "-map",
                 final_output,
                 "-map",
-                "0:a?",  # 每一批都需要映射音频流
+                "0:a?",
+                "-t",
+                str(video_duration),  # 强制保持原视频时长
                 "-c:v",
                 "libx264",
                 "-preset",
@@ -436,7 +428,7 @@ def render_rounded_video(
                 "-pix_fmt",
                 "yuv420p",
                 "-c:a",
-                "copy",  # 每一批都复制音频
+                "copy",
                 str(batch_output),
             ]
 
@@ -448,6 +440,8 @@ def render_rounded_video(
                 cmd,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 creationflags=(
                     getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
                 ),
