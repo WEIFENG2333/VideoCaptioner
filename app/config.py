@@ -27,6 +27,7 @@ TRANSLATIONS_PATH = RESOURCE_PATH / "translations"
 FONTS_PATH = RESOURCE_PATH / "fonts"
 
 LOG_PATH = APPDATA_PATH / "logs"
+LLM_LOG_FILE = LOG_PATH / "llm_requests.jsonl"
 SETTINGS_PATH = APPDATA_PATH / "settings.json"
 CACHE_PATH = APPDATA_PATH / "cache"
 MODEL_PATH = APPDATA_PATH / "models"

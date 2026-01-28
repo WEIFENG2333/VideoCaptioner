@@ -21,6 +21,7 @@ Critically examine your translation and identify:
 4. **Cultural mismatch**: Can we use local idioms（中文成语）, references, or expressions to localize the translation?
 5. **Register issues**: Is the formality level appropriate for the context?
 6. **Native speaker test**: Would a native speaker say it this way? If not, how WOULD they say it?
+7. **Cross-subtitle coherence**: Check the connection with the previous and next subtitles—does the flow feel natural and smooth when read together?
 
 For each issue found, propose specific alternatives with reasoning.
 
@@ -41,48 +42,30 @@ Based on your analysis, rewrite the translation to sound completely natural in $
 
 <examples>
 <example>
-<scenario>Technical video about software development</scenario>
+<scenario>Motivational speech about life philosophy</scenario>
 <input>
 {
-  "1": "今天我们来看一下这个bug是怎么产生的",
-  "2": "主要是因为我们在处理用户输入的时候没有做验证"
+  "1": "人生就像一场马拉松",
+  "2": "不在乎你跑得多快",
+  "3": "而在乎你能不能跑到终点"
 }
 </input>
 <output>
 {
   "1": {
-    "initial_translation": "Today we will look at how this bug was generated.",
-    "reflection": "Problems identified: 1) 'Today we will look at' is overly formal and stiff—machine translation of '今天我们来看一下'. Native speakers would use more casual transitions. 2) 'was generated' is passive and unnatural for bugs—they don't 'generate', they 'happen' or 'occur'. 3) Missing the casual, conversational tone of the original. Native alternative: 'Let's see what caused this bug' or 'So, what's behind this bug?' - much more natural for video narration.",
-    "native_translation": "Let's see what's causing this bug."
+    "initial_translation": "Life is like a marathon.",
+    "reflection": "The translation is accurate but feels disconnected from what follows. The original sets up a metaphor that the next two sentences develop. Consider: 1) Using an em-dash to signal continuation rather than ending with a period, 2) 'Life is a marathon' (direct metaphor) is stronger than 'like a marathon' (simile). The sentence should feel like the opening of a thought, inviting the listener to hear more.",
+    "native_translation": "Life is a marathon—"
   },
   "2": {
-    "initial_translation": "The main reason is that we did not do validation when processing user input.",
-    "reflection": "Problems: 1) 'The main reason is that' is bureaucratic—direct translation of '主要是因为'. Native speakers rarely start explanations this formally in video context. 2) 'did not do validation' is awkward—'do validation' is not idiomatic. 3) 'when processing' is correct but mechanical. Native alternatives: 'It's mainly because...' or 'Basically, we...' for the opening. 'We didn't validate' or 'We're not validating' for the action. Better: 'We're not validating user input' - concise, natural, appropriate register.",
-    "native_translation": "Basically, we're not validating user input."
-  }
-}
-</output>
-</example>
-
-<example>
-<scenario>Casual vlog with young audience</scenario>
-<input>
-{
-  "1": "这个地方真的太美了我都不想走了",
-  "2": "你们一定要来打卡啊"
-}
-</input>
-<output>
-{
-  "1": {
-    "initial_translation": "This place is really too beautiful, I don't want to leave.",
-    "reflection": "Problems: 1) '太...了' translated as 'too...+adjective' misses the Chinese emphatic pattern—it doesn't mean 'excessively' but 'extremely/so'. 2) Structure is choppy and unnatural—comma splice feels translated. 3) Missing the enthusiastic, spontaneous tone. 4) 'I don't want to leave' is flat compared to the original's emotion. Native speaker would use: 'This place is SO gorgeous' or 'absolutely stunning' for emphasis. For the second part: 'I could stay here forever' or 'I never want to leave' captures the emotion better. Combine naturally: 'This place is absolutely stunning—I never want to leave!'",
-    "native_translation": "This place is absolutely stunning—I could stay here forever!"
+    "initial_translation": "It doesn't matter how fast you run.",
+    "reflection": "Correct but breaks the flow by starting a new sentence. The original forms a parallel structure with sentence 3 (不在乎...而在乎...). To maintain this rhetorical connection: 1) Continue from the em-dash with lowercase, 2) Use 'it's not about' for better rhythm with the upcoming 'but whether', 3) End with comma to signal the contrast coming next. This creates anticipation.",
+    "native_translation": "it's not about how fast you run,"
   },
-  "2": {
-    "initial_translation": "You all must come to check in.",
-    "reflection": "Major problems: 1) '打卡' (daka/check-in) is a Chinese internet culture term meaning 'visit a trendy place'. Translating to 'check in' sounds like hotel check-in, completely wrong meaning. 2) 'You all must come' is stiff and imperative. 3) Missing the friendly, inviting tone. Native alternatives for '打卡': 'visit', 'check out this spot', 'come see this place'. For tone: 'You've gotta...' or 'You should definitely...' is more natural than 'must'. Best option: 'You've gotta check this place out!' or 'You need to visit!'—captures enthusiasm and invitation.",
-    "native_translation": "You've gotta check this place out!"
+  "3": {
+    "initial_translation": "What matters is whether you can reach the finish line.",
+    "reflection": "Technically correct but 'What matters is whether you can' is wordy and loses the punch of the original's parallel structure. Improvements: 1) Use 'but' to complete the 'not about X, but Y' pattern, 2) Simplify to 'whether you finish', 3) 'That finish line' adds emotional weight—it's THE finish line you've been working toward. Reading all three together: 'Life is a marathon—it's not about how fast you run, but whether you cross that finish line.' Now it flows as one powerful statement.",
+    "native_translation": "but whether you cross that finish line."
   }
 }
 </output>

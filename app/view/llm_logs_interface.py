@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, List
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QFileSystemWatcher, Qt
 from PyQt5.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -19,18 +19,19 @@ from qfluentwidgets import (
     InfoBarPosition,
     MessageBox,
     MessageBoxBase,
+    PillPushButton,
     PlainTextEdit,
     PushButton,
     SearchLineEdit,
     SubtitleLabel,
     TableWidget,
     ToolButton,
+    setCustomStyleSheet,
 )
 from qfluentwidgets import FluentIcon as FIF
 
-from app.config import LOG_PATH
+from app.config import LLM_LOG_FILE, LOG_PATH
 
-LLM_LOG_FILE = LOG_PATH / "llm_requests.jsonl"
 PAGE_SIZE = 50
 
 
@@ -43,39 +44,52 @@ class LogDetailDialog(MessageBoxBase):
         self._setup_ui()
 
     def _setup_ui(self):
-        # 标题
         self.titleLabel = SubtitleLabel(self.tr("请求详情"))
         self.viewLayout.addWidget(self.titleLabel)
 
-        # 基本信息
+        # 提取信息
         time_str = self.log_entry.get("time", "")
         model = self.log_entry.get("request", {}).get("model", "未知")
         duration = self.log_entry.get("duration_ms", 0) / 1000
+        stage = self.log_entry.get("stage", "") or "-"
 
         usage = self.log_entry.get("response", {}).get("usage", {})
         prompt_tokens = usage.get("prompt_tokens", 0)
         completion_tokens = usage.get("completion_tokens", 0)
 
-        # 任务上下文
-        task_id = self.log_entry.get("task_id", "")
-        file_name = self.log_entry.get("file_name", "")
-        stage = self.log_entry.get("stage", "")
+        # 顶部信息栏
+        info_row = QHBoxLayout()
+        info_row.setSpacing(8)
+        info_row.setContentsMargins(0, 0, 0, 8)
 
-        info_lines = [
-            f"时间: {time_str}  |  模型: {model}  |  耗时: {duration:.1f}s  |  Tokens: {prompt_tokens} → {completion_tokens}"
+        # 用 PillPushButton 展示各项信息（禁用点击）
+        items = [
+            time_str,
+            stage,
+            model,
+            f"{duration:.1f}s",
+            f"input token: {prompt_tokens}",
+            f"output token: {completion_tokens}",
         ]
-        if task_id:
-            info_lines.append(f"任务: {task_id}  |  文件: {file_name}  |  阶段: {stage}")
+        for text in items:
+            if text:
+                pill = PillPushButton(str(text))
+                pill.setCheckable(False)
+                pill.setEnabled(False)
+                pill.setFixedHeight(24)
+                info_row.addWidget(pill)
 
-        for line in info_lines:
-            self.viewLayout.addWidget(BodyLabel(line))
+        info_row.addStretch()
+        self.viewLayout.addLayout(info_row)
 
         # Request
         self.viewLayout.addWidget(SubtitleLabel("Request"))
         self.request_edit = PlainTextEdit()
         self.request_edit.setReadOnly(True)
         self.request_edit.setMinimumHeight(180)
-        request_text = json.dumps(self.log_entry.get("request", {}), indent=2, ensure_ascii=False)
+        request_text = json.dumps(
+            self.log_entry.get("request", {}), indent=2, ensure_ascii=False
+        )
         self.request_edit.setPlainText(request_text)
         self.viewLayout.addWidget(self.request_edit)
 
@@ -84,7 +98,9 @@ class LogDetailDialog(MessageBoxBase):
         self.response_edit = PlainTextEdit()
         self.response_edit.setReadOnly(True)
         self.response_edit.setMinimumHeight(180)
-        response_text = json.dumps(self.log_entry.get("response", {}), indent=2, ensure_ascii=False)
+        response_text = json.dumps(
+            self.log_entry.get("response", {}), indent=2, ensure_ascii=False
+        )
         self.response_edit.setPlainText(response_text)
         self.viewLayout.addWidget(self.response_edit)
 
@@ -103,7 +119,9 @@ class LogDetailDialog(MessageBoxBase):
         self.widget.setMinimumWidth(700)
 
     def _copy_request(self):
-        text = json.dumps(self.log_entry.get("request", {}), indent=2, ensure_ascii=False)
+        text = json.dumps(
+            self.log_entry.get("request", {}), indent=2, ensure_ascii=False
+        )
         clipboard = QApplication.clipboard()
         if clipboard:
             clipboard.setText(text)
@@ -116,7 +134,9 @@ class LogDetailDialog(MessageBoxBase):
         )
 
     def _copy_response(self):
-        text = json.dumps(self.log_entry.get("response", {}), indent=2, ensure_ascii=False)
+        text = json.dumps(
+            self.log_entry.get("response", {}), indent=2, ensure_ascii=False
+        )
         clipboard = QApplication.clipboard()
         if clipboard:
             clipboard.setText(text)
@@ -135,6 +155,7 @@ class LLMLogsInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("llmLogsInterface")
+        self.setWindowTitle(self.tr("LLM 请求日志"))
 
         self.all_logs: List[Dict[str, Any]] = []
         self.filtered_logs: List[Dict[str, Any]] = []
@@ -143,6 +164,7 @@ class LLMLogsInterface(QWidget):
         self._setup_ui()
         self._connect_signals()
         self._load_logs()
+        self._setup_file_watcher()
 
     def _setup_ui(self):
         self.main_layout = QVBoxLayout(self)
@@ -213,21 +235,25 @@ class LLMLogsInterface(QWidget):
         self.table.setBorderVisible(True)
         self.table.setBorderRadius(8)
 
+        # 减少单元格内边距，让文字显示更多
+        qss = "QTableView::item { padding-left: 8px; padding-right: 8px; }"
+        setCustomStyleSheet(self.table, qss, qss)
+
         self.main_layout.addWidget(self.table)
 
     def _setup_footer(self):
-        """底部：提示 + 记录数 + 分页"""
+        """底部：记录数 + 提示 + 分页"""
         footer = QHBoxLayout()
         footer.setSpacing(15)
-
-        # 左侧：双击提示
-        hint_label = CaptionLabel(self.tr("双击查看详情"))
-        hint_label.setStyleSheet("color: gray;")
-        footer.addWidget(hint_label)
 
         # 记录数
         self.status_label = BodyLabel(self.tr("共 0 条"))
         footer.addWidget(self.status_label)
+
+        # 双击提示
+        hint_label = CaptionLabel(self.tr("双击查看详情"))
+        hint_label.setStyleSheet("color: gray;")
+        footer.addWidget(hint_label)
 
         footer.addStretch()
 
@@ -246,12 +272,46 @@ class LLMLogsInterface(QWidget):
         self.main_layout.addLayout(footer)
 
     def _connect_signals(self):
-        self.refresh_btn.clicked.connect(self._load_logs)
+        self.refresh_btn.clicked.connect(self._on_refresh_clicked)
         self.clear_btn.clicked.connect(self._clear_logs)
         self.search_edit.textChanged.connect(self._filter_logs)
         self.table.doubleClicked.connect(self._show_detail)
         self.prev_btn.clicked.connect(self._prev_page)
         self.next_btn.clicked.connect(self._next_page)
+
+    def _setup_file_watcher(self):
+        """设置文件监控，日志文件变化时自动刷新"""
+        self.file_watcher = QFileSystemWatcher(self)
+        if LLM_LOG_FILE.exists():
+            self.file_watcher.addPath(str(LLM_LOG_FILE))
+        # 同时监控目录，以便检测文件创建
+        self.file_watcher.addPath(str(LOG_PATH))
+        self.file_watcher.fileChanged.connect(self._on_file_changed)
+        self.file_watcher.directoryChanged.connect(self._on_dir_changed)
+
+    def _on_file_changed(self, path: str):
+        """日志文件内容变化时自动刷新"""
+        self._load_logs()
+        # 文件变化后可能需要重新添加监控
+        if LLM_LOG_FILE.exists() and str(LLM_LOG_FILE) not in self.file_watcher.files():
+            self.file_watcher.addPath(str(LLM_LOG_FILE))
+
+    def _on_dir_changed(self, path: str):
+        """目录变化时检查日志文件是否创建"""
+        if LLM_LOG_FILE.exists() and str(LLM_LOG_FILE) not in self.file_watcher.files():
+            self.file_watcher.addPath(str(LLM_LOG_FILE))
+            self._load_logs()
+
+    def _on_refresh_clicked(self):
+        """手动刷新按钮点击"""
+        self._load_logs()
+        InfoBar.success(
+            title="",
+            content=self.tr("刷新成功"),
+            parent=self,
+            position=InfoBarPosition.TOP,
+            duration=1000,
+        )
 
     def _load_logs(self):
         """加载日志文件"""
@@ -354,7 +414,9 @@ class LLMLogsInterface(QWidget):
             usage = log.get("response", {}).get("usage", {})
             total_tokens = usage.get("total_tokens", 0)
             if not total_tokens:
-                total_tokens = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+                total_tokens = usage.get("prompt_tokens", 0) + usage.get(
+                    "completion_tokens", 0
+                )
             self.table.setItem(row, 6, self._create_item(str(total_tokens)))
 
         # 更新分页和统计
