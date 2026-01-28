@@ -23,8 +23,7 @@ dependencies = [
     "requests>=2.32.4",
     "openai>=1.97.1",
     "diskcache>=5.6.3",
-    "PyQt5>=5.15.0,<5.16.0",
-    "PyQt5-Qt5==5.15.2; sys_platform == 'win32'",  # Windows 只有此版本
+    "PyQt5==5.15.11",
     "PyQt-Fluent-Widgets==1.8.4",
     "yt-dlp>=2025.7.21",
     "modelscope>=1.32.0",
@@ -54,6 +53,17 @@ build-backend = "hatchling.build"
 packages = ["app"]
 
 [tool.uv]
+# 为不同平台分别解析依赖（PyQt5-Qt5 版本因平台而异）
+environments = [
+    "sys_platform == 'win32'",
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+# 覆盖 PyQt5-Qt5 版本：Windows 用 5.15.2，其他平台用最新版
+override-dependencies = [
+    "PyQt5-Qt5==5.15.2; sys_platform == 'win32'",
+    "PyQt5-Qt5>=5.15.11; sys_platform != 'win32'",
+]
 dev-dependencies = [
     "pyright>=1.1.0",
     "ruff>=0.4.0",
