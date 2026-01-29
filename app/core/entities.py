@@ -2,7 +2,7 @@ import datetime
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional, Dict, Any
 
 if TYPE_CHECKING:
     from app.core.translate.types import TargetLanguage
@@ -111,6 +111,7 @@ class LLMServiceEnum(Enum):
     LM_STUDIO = "LM Studio"
     GEMINI = "Gemini"
     CHATGLM = "ChatGLM"
+    MODELSCOPE = "ModelScope"
 
 
 class TranscribeModelEnum(Enum):
@@ -573,6 +574,7 @@ class SubtitleConfig:
     base_url: Optional[str] = None
     api_key: Optional[str] = None
     llm_model: Optional[str] = None
+    extra_body: Optional[Dict[str, Any]] = None
     deeplx_endpoint: Optional[str] = None
     # 翻译服务
     translator_service: Optional[TranslatorServiceEnum] = None
