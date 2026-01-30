@@ -12,12 +12,10 @@ from app.core.asr import transcribe
 from app.core.asr.asr_data import ASRData
 from app.core.entities import (
     SubtitleConfig,
-    SynthesisConfig,
     TranscribeConfig,
     TranscribeModelEnum,
     TranslatorServiceEnum,
 )
-from app.core.optimize.optimize import SubtitleOptimizer
 from app.core.split.split import SubtitleSplitter
 from app.core.translate.factory import TranslatorFactory
 from app.core.translate.types import TargetLanguage, TranslatorType
@@ -27,36 +25,107 @@ logger = setup_logger("cli_pipeline")
 
 
 class ProgressReporter:
-    """Simple progress reporter for CLI output."""
+    """Progress reporter for CLI output with rich library support."""
 
     def __init__(self, quiet: bool = False):
         self.quiet = quiet
         self.current_stage = ""
+        self._rich_available = False
+        self._progress = None
+        self._task_id = None
 
-    def set_stage(self, stage: str):
-        """Set current processing stage."""
+        # Try to import rich
+        if not quiet:
+            try:
+                from rich.console import Console
+                from rich.progress import (
+                    BarColumn,
+                    Progress,
+                    SpinnerColumn,
+                    TaskProgressColumn,
+                    TextColumn,
+                    TimeElapsedColumn,
+                )
+
+                self._rich_available = True
+                self.console = Console()
+                self._Progress = Progress
+                self._SpinnerColumn = SpinnerColumn
+                self._TextColumn = TextColumn
+                self._BarColumn = BarColumn
+                self._TaskProgressColumn = TaskProgressColumn
+                self._TimeElapsedColumn = TimeElapsedColumn
+            except ImportError:
+                self._rich_available = False
+
+    def print(self, message: str, style: str = ""):
+        """Print message to console."""
+        if self.quiet:
+            return
+        if self._rich_available and style:
+            self.console.print(message, style=style)
+        else:
+            print(message)
+
+    def start_stage(self, stage: str, total: int = 100):
+        """Start a new processing stage with progress bar."""
         self.current_stage = stage
-        if not self.quiet:
+        if self.quiet:
+            return
+
+        if self._rich_available:
+            self._progress = self._Progress(
+                self._SpinnerColumn(),
+                self._TextColumn("[bold blue]{task.description}"),
+                self._BarColumn(),
+                self._TaskProgressColumn(),
+                self._TimeElapsedColumn(),
+                console=self.console,
+                transient=True,
+            )
+            self._progress.start()
+            self._task_id = self._progress.add_task(stage, total=total)
+        else:
             print(f"\n[{stage}]")
 
-    def update(self, progress: int, message: str = ""):
+    def update(self, progress: int = 0, message: str = "", advance: int = 0):
         """Update progress."""
         if self.quiet:
             return
-        if message:
-            print(f"  {progress}% - {message}")
-        else:
-            print(f"  {progress}%", end="\r")
-            sys.stdout.flush()
 
-    def done(self, message: str = "Done"):
-        """Mark stage as complete."""
-        if not self.quiet:
-            print(f"  {message}")
+        if self._rich_available and self._progress and self._task_id is not None:
+            if advance > 0:
+                self._progress.update(self._task_id, advance=advance)
+            elif progress > 0:
+                self._progress.update(self._task_id, completed=progress)
+            if message:
+                self._progress.update(self._task_id, description=f"{self.current_stage}: {message}")
+        else:
+            if message:
+                print(f"  {message}")
+            elif progress > 0:
+                print(f"  {progress}%", end="\r")
+                sys.stdout.flush()
+
+    def finish_stage(self, message: str = "Done"):
+        """Finish current stage."""
+        if self.quiet:
+            return
+
+        if self._rich_available and self._progress:
+            self._progress.stop()
+            self._progress = None
+            self._task_id = None
+            self.console.print(f"  [green]✓[/green] {self.current_stage}: {message}")
+        else:
+            print(f"  ✓ {message}")
 
     def error(self, message: str):
         """Report error."""
-        print(f"  Error: {message}", file=sys.stderr)
+        if self._rich_available:
+            self.console.print(f"  [red]✗ Error:[/red] {message}")
+        else:
+            print(f"  ✗ Error: {message}", file=sys.stderr)
 
 
 class CLIPipeline:
@@ -67,7 +136,6 @@ class CLIPipeline:
     - Subtitle splitting
     - Subtitle optimization
     - Translation
-    - Video rendering
     """
 
     def __init__(self, quiet: bool = False):
@@ -92,14 +160,14 @@ class CLIPipeline:
         Returns:
             ASRData with transcription results
         """
-        self.progress.set_stage("Transcribing")
+        self.progress.start_stage("Transcribing", total=100)
 
         def callback(progress: int, message: str):
-            self.progress.update(progress, message)
+            self.progress.update(progress=progress, message=message)
 
         try:
             result = transcribe(audio_path, config, callback=callback)
-            self.progress.done(f"Transcribed {len(result.segments)} segments")
+            self.progress.finish_stage(f"{len(result.segments)} segments")
             return result
         except Exception as e:
             self.progress.error(str(e))
@@ -122,7 +190,7 @@ class CLIPipeline:
         if not config.need_split:
             return asr_data
 
-        self.progress.set_stage("Splitting")
+        self.progress.start_stage("Splitting", total=100)
 
         try:
             splitter = SubtitleSplitter(
@@ -132,46 +200,9 @@ class CLIPipeline:
                 max_word_count_english=config.max_word_count_english,
             )
 
-            result = splitter.split(asr_data)
-            self.progress.done(f"Split into {len(result.segments)} segments")
-            return result
-        except Exception as e:
-            self.progress.error(str(e))
-            raise
-
-    def optimize_subtitle(
-        self,
-        asr_data: ASRData,
-        config: SubtitleConfig,
-    ) -> ASRData:
-        """Optimize subtitle text using LLM.
-
-        Args:
-            asr_data: Input ASR data
-            config: Subtitle configuration
-
-        Returns:
-            ASRData with optimized text
-        """
-        if not config.need_optimize:
-            return asr_data
-
-        self.progress.set_stage("Optimizing")
-
-        def callback(progress: int, message: str):
-            self.progress.update(progress, message)
-
-        try:
-            optimizer = SubtitleOptimizer(
-                thread_num=config.thread_num,
-                batch_num=config.batch_size,
-                model=config.llm_model or "gpt-4o-mini",
-                custom_prompt=config.custom_prompt_text or "",
-                update_callback=callback,
-            )
-
-            result = optimizer.optimize_subtitle(asr_data)
-            self.progress.done("Optimization complete")
+            # The actual method is split_subtitle
+            result = splitter.split_subtitle(asr_data)
+            self.progress.finish_stage(f"{len(result.segments)} segments")
             return result
         except Exception as e:
             self.progress.error(str(e))
@@ -194,8 +225,6 @@ class CLIPipeline:
         if not config.need_translate or config.target_language is None:
             return asr_data
 
-        self.progress.set_stage("Translating")
-
         # Map service enum to translator type
         service_map = {
             TranslatorServiceEnum.OPENAI: TranslatorType.OPENAI,
@@ -209,14 +238,15 @@ class CLIPipeline:
             TranslatorType.OPENAI
         )
 
-        completed = 0
         total = len(asr_data.segments)
+        self.progress.start_stage("Translating", total=total)
+
+        completed = 0
 
         def callback(count: int):
             nonlocal completed
             completed += count
-            progress = int(completed / total * 100) if total > 0 else 100
-            self.progress.update(progress, f"{completed}/{total}")
+            self.progress.update(advance=count)
 
         try:
             translator = TranslatorFactory.create_translator(
@@ -231,7 +261,7 @@ class CLIPipeline:
             )
 
             result = translator.translate(asr_data)
-            self.progress.done(f"Translated {len(result.segments)} segments")
+            self.progress.finish_stage(f"{len(result.segments)} segments")
             return result
         except Exception as e:
             self.progress.error(str(e))
@@ -247,8 +277,8 @@ class CLIPipeline:
 
         Args:
             asr_data: ASR data to save
-            output_path: Output file path (without extension)
-            format: Output format (srt, ass, vtt, txt, json)
+            output_path: Output file path (with or without extension)
+            format: Output format (srt, ass, txt, json)
 
         Returns:
             Path to saved file
@@ -260,28 +290,22 @@ class CLIPipeline:
 
         format_lower = format.lower()
 
-        if format_lower == "srt":
-            file_path = output_path.with_suffix(".srt")
-            content = asr_data.to_srt()
-        elif format_lower == "ass":
-            file_path = output_path.with_suffix(".ass")
-            content = asr_data.to_ass()
-        elif format_lower == "vtt":
-            file_path = output_path.with_suffix(".vtt")
-            content = asr_data.to_vtt()
-        elif format_lower == "txt":
-            file_path = output_path.with_suffix(".txt")
-            content = asr_data.to_txt()
-        elif format_lower == "json":
-            file_path = output_path.with_suffix(".json")
-            content = asr_data.to_json()
+        # Handle extension
+        if output_path.suffix.lower() in [".srt", ".ass", ".txt", ".json"]:
+            file_path = output_path
+            format_lower = output_path.suffix[1:].lower()
         else:
-            raise ValueError(f"Unsupported format: {format}")
+            file_path = output_path.with_suffix(f".{format_lower}")
 
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(content)
-
-        return str(file_path)
+        # Use ASRData's save method
+        if format_lower in ["srt", "ass", "txt", "json"]:
+            asr_data.save(str(file_path))
+            return str(file_path)
+        else:
+            # Fallback to SRT for unsupported formats
+            file_path = output_path.with_suffix(".srt")
+            asr_data.save(str(file_path))
+            return str(file_path)
 
     def process_full(
         self,
@@ -316,18 +340,17 @@ class CLIPipeline:
         # Step 1: Transcribe
         asr_data = self.transcribe(str(input_path), transcribe_config)
 
-        # Step 2: Split
-        asr_data = self.split_subtitle(asr_data, subtitle_config)
+        # Step 2: Split (if enabled)
+        if subtitle_config.need_split:
+            asr_data = self.split_subtitle(asr_data, subtitle_config)
 
-        # Step 3: Optimize
-        asr_data = self.optimize_subtitle(asr_data, subtitle_config)
+        # Step 3: Translate (if enabled)
+        if subtitle_config.need_translate:
+            asr_data = self.translate_subtitle(asr_data, subtitle_config)
 
-        # Step 4: Translate
-        asr_data = self.translate_subtitle(asr_data, subtitle_config)
-
-        # Step 5: Save
-        output_base = out_dir / base_name
-        subtitle_path = self.save_subtitle(asr_data, str(output_base), output_format)
+        # Step 4: Save
+        output_file = out_dir / f"{base_name}.{output_format}"
+        subtitle_path = self.save_subtitle(asr_data, str(output_file), output_format)
 
         return {
             "subtitle": subtitle_path,
@@ -371,7 +394,6 @@ def create_transcribe_config(
 
 def create_subtitle_config(
     need_split: bool = True,
-    need_optimize: bool = False,
     need_translate: bool = False,
     target_language: Optional[TargetLanguage] = None,
     translator_service: TranslatorServiceEnum = TranslatorServiceEnum.OPENAI,
@@ -389,7 +411,6 @@ def create_subtitle_config(
 
     Args:
         need_split: Enable subtitle splitting
-        need_optimize: Enable LLM optimization
         need_translate: Enable translation
         target_language: Translation target language
         translator_service: Translation service to use
@@ -408,7 +429,7 @@ def create_subtitle_config(
     """
     return SubtitleConfig(
         need_split=need_split,
-        need_optimize=need_optimize,
+        need_optimize=False,  # Optimization requires LLM
         need_translate=need_translate,
         target_language=target_language,
         translator_service=translator_service,
