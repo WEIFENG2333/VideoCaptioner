@@ -54,7 +54,7 @@ htmlcov/
 *.log
 
 # 项目文档
-CLAUDE.md
+# CLAUDE.md is tracked for AI assistant context
 
 # Node.js 和 VitePress
 node_modules/
