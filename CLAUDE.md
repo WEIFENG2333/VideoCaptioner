@@ -11,16 +11,27 @@ This document provides essential context for AI assistants working with the Vide
 - **Translation** - AI-powered contextual translation with reflection mechanism
 - **Video Synthesis** - Embed styled subtitles into videos
 
-**Tech Stack:** Python 3.10-3.12, PyQt5 with Fluent Widgets, OpenAI-compatible LLM APIs
+**Tech Stack:** Python 3.10-3.12, PyQt5 with Fluent Widgets (GUI), OpenAI-compatible LLM APIs
 
 ## Quick Reference
 
 ```bash
-# Install dependencies
+# Install CLI only (no GUI dependencies)
+pip install videocaptioner
+
+# Install with GUI
+pip install videocaptioner[gui]
+
+# Development install
 uv sync
 
-# Run application
+# Run GUI application
 uv run python main.py
+
+# Run CLI
+uv run videocaptioner --help
+uv run videocaptioner process video.mp4 --translate en
+uv run videocaptioner transcribe audio.mp3 --model whisper-api
 
 # Type checking
 uv run pyright
@@ -30,9 +41,70 @@ uv run ruff check .
 
 # Run tests
 uv run pytest tests/
+```
 
-# Run specific test
-uv run pytest tests/test_translate/test_llm_translator.py -v
+## CLI Usage
+
+The CLI is completely decoupled from GUI and can be installed separately.
+
+### Installation
+
+```bash
+# CLI only (lightweight, no PyQt5)
+pip install videocaptioner
+
+# With GUI support
+pip install videocaptioner[gui]
+```
+
+### Commands
+
+```bash
+# Full pipeline: transcribe + split + translate
+videocaptioner process video.mp4 --translate en --format srt
+
+# Transcribe only
+videocaptioner transcribe audio.mp3 --model whisper-api --language zh
+
+# Process existing subtitle
+videocaptioner subtitle input.srt --translate ja --translator google
+
+# Initialize config file
+videocaptioner config --init
+```
+
+### Environment Variables
+
+```bash
+VIDEOCAPTIONER_API_KEY      # LLM API key (or OPENAI_API_KEY)
+VIDEOCAPTIONER_BASE_URL     # LLM API base URL (or OPENAI_BASE_URL)
+VIDEOCAPTIONER_WHISPER_KEY  # Whisper API key
+VIDEOCAPTIONER_WHISPER_URL  # Whisper API base URL
+VIDEOCAPTIONER_OUTPUT_DIR   # Default output directory
+```
+
+### Configuration File
+
+Place at `~/.videocaptioner/config.yaml` or `./videocaptioner.yaml`:
+
+```yaml
+llm:
+  api_key: ${OPENAI_API_KEY}
+  base_url: https://api.openai.com/v1
+  model: gpt-4o-mini
+
+whisper:
+  api_key: ${OPENAI_API_KEY}
+  base_url: https://api.openai.com/v1
+  model: whisper-1
+
+transcribe:
+  model: whisper-api
+  language: ""  # auto-detect
+
+translate:
+  service: llm
+  target_language: zh
 ```
 
 ## Project Structure
@@ -40,11 +112,16 @@ uv run pytest tests/test_translate/test_llm_translator.py -v
 ```
 VideoCaptioner/
 ├── app/                        # Main application source code
+│   ├── cli/                    # CLI module (no GUI dependency)
+│   │   ├── __init__.py
+│   │   ├── main.py            # CLI entry point
+│   │   ├── config.py          # CLI config loader (env/file/args)
+│   │   └── pipeline.py        # Synchronous processing pipeline
 │   ├── common/                 # Shared modules
-│   │   ├── config.py          # Configuration management (settings storage)
+│   │   ├── config.py          # GUI configuration management
 │   │   └── signal_bus.py      # PyQt5 signal bus for event communication
 │   ├── components/             # Reusable UI components (dialogs, widgets)
-│   ├── core/                   # Core business logic
+│   ├── core/                   # Core business logic (GUI-independent)
 │   │   ├── asr/               # Speech recognition (Whisper, APIs)
 │   │   ├── translate/         # Translation engines (LLM, Google, Bing)
 │   │   ├── split/             # Subtitle splitting algorithms
@@ -56,8 +133,8 @@ VideoCaptioner/
 │   │   ├── utils/             # Utility modules
 │   │   ├── entities.py        # Data models and enums
 │   │   └── task_factory.py    # Task creation factory
-│   ├── thread/                 # Background worker threads
-│   └── view/                   # UI views/interfaces
+│   ├── thread/                 # Background worker threads (GUI)
+│   └── view/                   # UI views/interfaces (GUI)
 ├── resource/                   # Application resources
 │   ├── assets/                # UI assets, QSS stylesheets
 │   ├── fonts/                 # Font files
@@ -66,7 +143,7 @@ VideoCaptioner/
 ├── tests/                      # Test suite
 ├── scripts/                    # Development and build scripts
 ├── docs/                       # VitePress documentation
-├── main.py                     # Application entry point
+├── main.py                     # GUI application entry point
 └── pyproject.toml             # Project configuration
 ```
 
@@ -74,12 +151,15 @@ VideoCaptioner/
 
 | File | Purpose |
 |------|---------|
-| `main.py` | Application entry point, PyQt5 setup |
+| `main.py` | GUI application entry point, PyQt5 setup |
+| `app/cli/main.py` | CLI entry point, argument parsing |
+| `app/cli/config.py` | CLI config loader (env vars, yaml, args) |
+| `app/cli/pipeline.py` | Synchronous processing pipeline for CLI |
 | `app/core/entities.py` | Core data models: `SubtitleProcessData`, task configs, enums |
 | `app/core/task_factory.py` | Creates typed task objects from user inputs |
-| `app/common/config.py` | Persistent settings management |
-| `app/common/signal_bus.py` | Inter-component event communication |
-| `app/view/main_window.py` | Main application window |
+| `app/common/config.py` | GUI persistent settings management |
+| `app/common/signal_bus.py` | Inter-component event communication (GUI) |
+| `app/view/main_window.py` | Main application window (GUI) |
 | `app/core/asr/base.py` | Base ASR class with caching support |
 | `app/core/translate/base.py` | Base translator interface |
 
@@ -288,15 +368,20 @@ class TranscriptThread(QThread):
 
 ## Dependencies
 
-### Core Dependencies
+### Core Dependencies (CLI)
 
-- **PyQt5** (5.15.11) - UI framework
-- **PyQt-Fluent-Widgets** (1.8.4) - Modern UI components
 - **openai** - LLM API client
 - **yt-dlp** - Video downloading
 - **diskcache** - Caching layer
 - **pydub** - Audio processing
 - **tenacity** - Retry logic
+- **pyyaml** - Configuration files
+- **pillow** - Image processing
+
+### GUI Dependencies (optional)
+
+- **PyQt5** (5.15.11) - UI framework
+- **PyQt-Fluent-Widgets** (1.8.4) - Modern UI components
 
 ### Development Dependencies
 

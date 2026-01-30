@@ -9,6 +9,7 @@ requires-python = ">=3.10,<3.13"
 keywords = ["video", "caption", "subtitle", "asr", "llm", "translation"]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Environment :: Console",
     "Environment :: X11 Applications :: Qt",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -19,12 +20,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Video",
 ]
+
+# Core dependencies (CLI-compatible, no GUI)
 dependencies = [
     "requests>=2.32.4",
     "openai>=1.97.1",
     "diskcache>=5.6.3",
-    "PyQt5==5.15.11",
-    "PyQt-Fluent-Widgets==1.8.4",
     "yt-dlp>=2025.7.21",
     "modelscope>=1.32.0",
     "psutil>=7.0.0",
@@ -35,6 +36,18 @@ dependencies = [
     "GPUtil>=1.4.0",
     "pillow>=12.0.0",
     "fonttools>=4.61.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# GUI dependencies (PyQt5)
+gui = [
+    "PyQt5==5.15.11",
+    "PyQt-Fluent-Widgets==1.8.4",
+]
+# Full installation (CLI + GUI)
+full = [
+    "videocaptioner[gui]",
 ]
 
 [project.urls]
@@ -43,7 +56,12 @@ Repository = "https://github.com/WEIFENG2333/VideoCaptioner"
 Issues = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 
 [project.scripts]
-videocaptioner = "main:main"
+# CLI entry point (no GUI required)
+videocaptioner = "app.cli.main:main"
+
+[project.gui-scripts]
+# GUI entry point (requires gui extra)
+videocaptioner-gui = "main:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -51,6 +69,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"main.py" = "main.py"
 
 [tool.uv]
 # 为不同平台分别解析依赖（PyQt5-Qt5 版本因平台而异）
