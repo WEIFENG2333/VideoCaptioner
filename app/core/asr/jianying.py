@@ -178,9 +178,9 @@ class JianYingASR(BaseASR):
             if not sign:
                 raise ValueError("No 'sign' in response")
         except requests.exceptions.RequestException as e:
-            raise SystemExit(f"HTTP Request failed: {e}")
+            raise RuntimeError(f"HTTP Request failed: {e}")
         except ValueError as ve:
-            raise SystemExit(f"Invalid response: {ve}")
+            raise RuntimeError(f"Invalid response: {ve}")
         return sign.lower(), current_time
 
     def _build_headers(self, device_time: str, sign: str) -> Dict[str, str]:

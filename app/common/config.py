@@ -159,7 +159,7 @@ class Config(QConfig):
     transcribe_language = OptionsConfigItem(
         "Transcribe",
         "TranscribeLanguage",
-        TranscribeLanguageEnum.ENGLISH,
+        TranscribeLanguageEnum.AUTO,
         OptionsValidator(TranscribeLanguageEnum),
         EnumSerializer(TranscribeLanguageEnum),
     )

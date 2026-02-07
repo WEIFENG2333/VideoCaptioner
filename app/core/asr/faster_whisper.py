@@ -127,17 +127,11 @@ class FasterWhisperASR(BaseASR):
         if self.model_dir:
             cmd.extend(["--model_dir", str(self.model_dir)])
 
-        cmd.extend(
-            [
-                str(audio_input),
-                "-l",
-                self.language,
-                "-d",
-                self.device,
-                "--output_format",
-                self.output_format,
-            ]
-        )
+        cmd.extend([str(audio_input), "-d", self.device, "--output_format", self.output_format])
+
+        # 有指定语言才传 -l，空字符串让 faster-whisper 自动检测
+        if self.language:
+            cmd.extend(["-l", self.language])
 
         # 输出目录
         if self.output_dir:

@@ -95,14 +95,18 @@ class WhisperAPI(BaseASR):
             if not self.base_url:
                 raise ValueError("Whisper BASE_URL must be set")
 
-            completion = self.client.audio.transcriptions.create(
-                model=self.model,
-                response_format="verbose_json",
-                file=("audio.mp3", self.file_binary or b"", "audio/mp3"),
-                prompt=self.prompt,
-                language=self.language,
-                timestamp_granularities=["word", "segment"],
-            )
+            api_kwargs: dict[str, Any] = {
+                "model": self.model,
+                "response_format": "verbose_json",
+                "file": ("audio.mp3", self.file_binary or b"", "audio/mp3"),
+                "prompt": self.prompt,
+                "timestamp_granularities": ["word", "segment"],
+            }
+            # 空字符串表示自动检测，不传 language 参数让 API 自行判断
+            if self.language:
+                api_kwargs["language"] = self.language
+
+            completion = self.client.audio.transcriptions.create(**api_kwargs)
             if isinstance(completion, str):
                 raise ValueError(
                     "WhisperAPI returned type error, please check your base URL."

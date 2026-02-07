@@ -225,6 +225,7 @@ class VideoQualityEnum(Enum):
 class TranscribeLanguageEnum(Enum):
     """转录语言"""
 
+    AUTO = "自动检测"
     ENGLISH = "英语"
     CHINESE = "中文"
     JAPANESE = "日本語"
@@ -349,6 +350,7 @@ class FasterWhisperModelEnum(Enum):
 
 
 LANGUAGES = {
+    "自动检测": "",
     "英语": "en",
     "中文": "zh",
     "日本語": "ja",
@@ -461,6 +463,60 @@ LANGUAGES = {
     "Sundanese": "su",
     "Cantonese": "yue",
 }
+
+
+@dataclass
+class ASRLanguageCapability:
+    """ASR语言支持能力"""
+
+    supported_languages: list[TranscribeLanguageEnum]
+    supports_auto: bool
+
+
+def _get_all_languages_except_auto() -> list[TranscribeLanguageEnum]:
+    """获取除 AUTO 外的所有语言"""
+    return [lang for lang in TranscribeLanguageEnum if lang != TranscribeLanguageEnum.AUTO]
+
+
+ASR_LANGUAGE_CAPABILITIES: dict[TranscribeModelEnum, ASRLanguageCapability] = {
+    TranscribeModelEnum.BIJIAN: ASRLanguageCapability(
+        supported_languages=[
+            TranscribeLanguageEnum.CHINESE,
+            TranscribeLanguageEnum.ENGLISH,
+        ],
+        supports_auto=True,
+    ),
+    TranscribeModelEnum.JIANYING: ASRLanguageCapability(
+        supported_languages=[
+            TranscribeLanguageEnum.CHINESE,
+            TranscribeLanguageEnum.ENGLISH,
+        ],
+        supports_auto=True,
+    ),
+    TranscribeModelEnum.FASTER_WHISPER: ASRLanguageCapability(
+        supported_languages=_get_all_languages_except_auto(),
+        supports_auto=False,
+    ),
+    TranscribeModelEnum.WHISPER_CPP: ASRLanguageCapability(
+        supported_languages=_get_all_languages_except_auto(),
+        supports_auto=True,
+    ),
+    TranscribeModelEnum.WHISPER_API: ASRLanguageCapability(
+        supported_languages=_get_all_languages_except_auto(),
+        supports_auto=True,
+    ),
+}
+
+
+def get_asr_language_capability(model: TranscribeModelEnum) -> ASRLanguageCapability:
+    """获取指定模型的语言能力"""
+    return ASR_LANGUAGE_CAPABILITIES.get(
+        model,
+        ASRLanguageCapability(
+            supported_languages=_get_all_languages_except_auto(),
+            supports_auto=True,
+        ),
+    )
 
 
 @dataclass

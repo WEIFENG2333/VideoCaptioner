@@ -92,7 +92,7 @@ class WhisperCppASR(BaseASR):
             "-f",
             str(wav_path),
             "-l",
-            self.language,
+            self.language or "auto",
             "--output-srt",
         ]
 

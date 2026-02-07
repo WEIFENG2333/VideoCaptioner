@@ -35,7 +35,6 @@ from qfluentwidgets import (
 
 from app.common.config import cfg
 from app.common.signal_bus import signalBus
-from app.components.LanguageSettingDialog import LanguageSettingDialog
 from app.components.transcription_setting_card import TranscriptionSettingCard
 from app.components.TranscriptionSettingDialog import TranscriptionSettingDialog
 from app.config import RESOURCE_PATH
@@ -257,23 +256,8 @@ class VideoInfoCard(CardWidget):
         self.start_button.clicked.connect(self.on_start_button_clicked)
         self.open_folder_button.clicked.connect(self.on_open_folder_clicked)
 
-    def show_language_settings(self):
-        """显示语言设置对话框"""
-        dialog = LanguageSettingDialog(self.window())
-        if dialog.exec_():
-            return True
-        return False
-
     def on_start_button_clicked(self):
         """开始转录按钮点击事件"""
-        if self.task and not self.task.need_next_task:
-            need_language_settings = cfg.transcribe_model.value in [
-                TranscribeModelEnum.WHISPER_CPP,
-                TranscribeModelEnum.WHISPER_API,
-                TranscribeModelEnum.FASTER_WHISPER,
-            ]
-            if need_language_settings and not self.show_language_settings():
-                return
         self.progress_ring.setValue(0)
         self.progress_ring.show()
         self.start_button.setDisabled(True)

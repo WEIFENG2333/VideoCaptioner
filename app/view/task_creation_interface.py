@@ -26,7 +26,6 @@ from qfluentwidgets import (
 
 from app.common.config import cfg
 from app.components.DonateDialog import DonateDialog
-from app.components.LanguageSettingDialog import LanguageSettingDialog
 from app.config import APPDATA_PATH, ASSETS_PATH, VERSION
 from app.core.constant import (
     INFOBAR_DURATION_ERROR,
@@ -37,7 +36,6 @@ from app.core.constant import (
 from app.core.entities import (
     SupportedAudioFormats,
     SupportedVideoFormats,
-    TranscribeModelEnum,
 )
 from app.thread.video_download_thread import VideoDownloadThread
 from app.view.log_window import LogWindow
@@ -370,15 +368,6 @@ class TaskCreationInterface(QWidget):
     def process(self):
         search_input = self.search_input.text()
 
-        # 检查是否需要显示语言设置对话框
-        need_language_settings = cfg.transcribe_model.value in [
-            TranscribeModelEnum.WHISPER_CPP,
-            TranscribeModelEnum.WHISPER_API,
-            TranscribeModelEnum.FASTER_WHISPER,
-        ]
-        if need_language_settings and not self.show_language_settings():
-            return
-
         if os.path.isfile(search_input):
             self._process_file(search_input)
         elif self._is_valid_url(search_input):
@@ -390,13 +379,6 @@ class TaskCreationInterface(QWidget):
                 duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )
-
-    def show_language_settings(self):
-        """显示语言设置对话框"""
-        dialog = LanguageSettingDialog(self.window())
-        if dialog.exec_():
-            return True
-        return False
 
     def show_log_window(self):
         """显示日志窗口"""
