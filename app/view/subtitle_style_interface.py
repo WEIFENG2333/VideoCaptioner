@@ -708,7 +708,10 @@ class SubtitleStyleInterface(QWidget):
         mode_text = self.renderModeCard.comboBox.currentText()
         mode = SubtitleRenderModeEnum(mode_text)
         cfg.set(cfg.subtitle_render_mode, mode)
+        # 断开自身监听，避免信号回传导致重复执行
+        signalBus.subtitle_render_mode_changed.disconnect(self.on_render_mode_changed_external)
         signalBus.subtitle_render_mode_changed.emit(mode_text)
+        signalBus.subtitle_render_mode_changed.connect(self.on_render_mode_changed_external)
         self._updateVisibleGroups()
         self._refreshStyleList()
         self.updatePreview()
