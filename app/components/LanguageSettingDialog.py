@@ -46,7 +46,7 @@ class LanguageSettingDialog(MessageBoxBase):
         self.language_card = SettingCard(
             FIF.LANGUAGE,
             self.tr("源语言"),
-            self.tr("自动检测会根据前30秒音频识别语言，也可手动指定"),
+            self.tr("音视频中说话的语言，默认根据前30秒自动识别"),
             self,
         )
 

@@ -555,7 +555,7 @@ class WhisperCppSettingWidget(QWidget):
             cfg.transcribe_language,
             FIF.LANGUAGE,
             self.tr("源语言"),
-            self.tr("音频的源语言"),
+            self.tr("音视频中说话的语言，默认根据前30秒自动识别"),
             [language.value for language in TranscribeLanguageEnum],
             self.setting_group,
         )
