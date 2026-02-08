@@ -574,11 +574,12 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
                 for enum_val in available:
                     combo.addItem(enum_val.value, userData=enum_val)
 
-                # 恢复选择
-                if current_value in available:
-                    combo.setCurrentText(current_value.value)
-                elif combo.count() > 0:
-                    combo.setCurrentIndex(0)
+                # 自动选择刚下载的模型
+                downloaded_model_value = model["value"]
+                for enum_val in available:
+                    if enum_val.value == downloaded_model_value:
+                        combo.setCurrentText(enum_val.value)
+                        break
 
             InfoBar.success(
                 self.tr("下载成功"),
