@@ -129,6 +129,7 @@ class TaskFactory:
                 Path(file_path).parent / f"【字幕】{output_name}{suffix}.srt"
             )
 
+        extra_body = None  # 默认值为None
         # 根据当前选择的LLM服务获取对应的配置
         current_service = cfg.llm_service.value
         if current_service == LLMServiceEnum.OPENAI:
@@ -159,6 +160,11 @@ class TaskFactory:
             base_url = cfg.chatglm_api_base.value
             api_key = cfg.chatglm_api_key.value
             llm_model = cfg.chatglm_model.value
+        elif current_service == LLMServiceEnum.MODELSCOPE:
+            base_url = cfg.modelscope_api_base.value
+            api_key = cfg.modelscope_api_key.value
+            llm_model = cfg.modelscope_model.value
+            extra_body = cfg.modelscope_extra_body.value
         else:
             base_url = ""
             api_key = ""
@@ -169,6 +175,7 @@ class TaskFactory:
             base_url=base_url,
             api_key=api_key,
             llm_model=llm_model,
+            extra_body=extra_body,
             deeplx_endpoint=cfg.deeplx_endpoint.value,
             # 翻译服务
             translator_service=cfg.translator_service.value,
