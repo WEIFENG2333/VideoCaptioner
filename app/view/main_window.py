@@ -1,14 +1,17 @@
 import atexit
 import os
 import shutil
+import sys
 
 import psutil
-from PyQt5.QtCore import QSize, QThread, QUrl
+from PyQt5.QtCore import QSize, QThread, QUrl, QRect, Qt
 from PyQt5.QtGui import QDesktopServices, QIcon
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QLabel, QHBoxLayout
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     FluentWindow,
+    FluentStyleSheet,
+    FluentTitleBar,
     InfoBar,
     InfoBarPosition,
     MessageBox,
@@ -29,10 +32,40 @@ from app.view.subtitle_style_interface import SubtitleStyleInterface
 
 LOGO_PATH = ASSETS_PATH / "logo.png"
 
+MAC_SYSTEM_BUTTON_WIDTH = 85
+MAC_TITLE_LEFT_MARGIN = 45
+
+class MacTitleBar(FluentTitleBar):
+    """macOS style title bar with buttons on the left"""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setFixedHeight(48)
+
+        self.hBoxLayout.removeWidget(self.minBtn)
+        self.hBoxLayout.removeWidget(self.maxBtn)
+        self.hBoxLayout.removeWidget(self.closeBtn)
+
+        self.hBoxLayout.setContentsMargins(MAC_TITLE_LEFT_MARGIN, 0, 0, 0)
+
+        self.vBoxLayout = QHBoxLayout()
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setAlignment(Qt.AlignTop)
+        self.vBoxLayout.addWidget(self.minBtn)
+        self.vBoxLayout.addWidget(self.maxBtn)
+        self.vBoxLayout.addWidget(self.closeBtn)
+
+        FluentStyleSheet.FLUENT_WINDOW.apply(self)
+
 
 class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
+
+        if sys.platform == "darwin":
+            self.setTitleBar(MacTitleBar(self))
+
         self.initWindow()
 
         # 创建子界面
@@ -86,6 +119,11 @@ class MainWindow(FluentWindow):
             self.tr("Settings"),
             NavigationItemPosition.BOTTOM,
         )
+
+        if sys.platform == "darwin":
+            # 隐藏返回按钮并避开三色灯
+            self.navigationInterface.setReturnButtonVisible(False)
+            self.navigationInterface.panel.topLayout.setContentsMargins(4, 40, 4, 0)
 
         # 设置默认界面
         self.switchTo(self.homeInterface)
@@ -176,6 +214,12 @@ class MainWindow(FluentWindow):
         super().resizeEvent(e)
         if hasattr(self, "splashScreen"):
             self.splashScreen.resize(self.size())
+
+    def systemTitleBarRect(self, size: QSize) -> QRect:
+        """Returns the system title bar rect for macOS"""
+        if sys.platform == "darwin":
+            return QRect(0, 0 if self.isFullScreen() else 9, MAC_SYSTEM_BUTTON_WIDTH, size.height())
+        return super().systemTitleBarRect(size)
 
     def closeEvent(self, event):
         # 关闭所有子界面
