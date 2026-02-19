@@ -100,6 +100,13 @@ def _create_whisper_cpp_asr(audio_path: str, config: TranscribeConfig) -> Chunke
         "need_word_time_stamp": config.need_word_time_stamp,
         "language": config.transcribe_language,
         "whisper_model": config.whisper_model.value if config.whisper_model else None,
+        "enable_vad": config.whisper_cpp_enable_vad,
+        "vad_model": config.whisper_cpp_vad_model,
+        "vad_threshold": config.whisper_cpp_vad_threshold,
+        "vad_min_speech_duration_ms": config.whisper_cpp_vad_min_speech_duration_ms,
+        "vad_min_silence_duration_ms": config.whisper_cpp_vad_min_silence_duration_ms,
+        "vad_max_speech_duration_s": config.whisper_cpp_vad_max_speech_duration_s,
+        "vad_speech_pad_ms": config.whisper_cpp_vad_speech_pad_ms,
     }
     return ChunkedASR(
         asr_class=WhisperCppASR,

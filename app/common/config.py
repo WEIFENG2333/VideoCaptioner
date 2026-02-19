@@ -172,6 +172,27 @@ class Config(QConfig):
         OptionsValidator(WhisperModelEnum),
         EnumSerializer(WhisperModelEnum),
     )
+    whisper_cpp_enable_vad = ConfigItem(
+        "Whisper", "EnableVad", True, BoolValidator()
+    )
+    whisper_cpp_vad_model = ConfigItem(
+        "Whisper", "VadModel", "silero-v6.2.0"
+    )
+    whisper_cpp_vad_threshold = RangeConfigItem(
+        "Whisper", "VadThreshold", 0.3, RangeValidator(0, 1)
+    )
+    whisper_cpp_vad_min_speech_duration_ms = ConfigItem(
+        "Whisper", "VadMinSpeechDurationMs", 150
+    )
+    whisper_cpp_vad_min_silence_duration_ms = ConfigItem(
+        "Whisper", "VadMinSilenceDurationMs", 200
+    )
+    whisper_cpp_vad_max_speech_duration_s = ConfigItem(
+        "Whisper", "VadMaxSpeechDurationS", 30
+    )
+    whisper_cpp_vad_speech_pad_ms = ConfigItem(
+        "Whisper", "VadSpeechPadMs", 50
+    )
 
     # ------------------- Faster Whisper 配置 -------------------
     faster_whisper_program = ConfigItem(

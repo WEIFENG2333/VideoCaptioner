@@ -107,7 +107,15 @@ WHISPER_CPP_MODELS = [
     #     "downloadLink": "https://huggingface.co/distil-whisper/distil-large-v3-ggml/resolve/main/ggml-distil-large-v3.bin?download=true",
     #     "mirrorLink": "https://www.modelscope.cn/models/cjc1887415157/whisper.cpp/resolve/master/ggml-distil-large-v3.bin",
     #     "sha": "5e61e98bdcf3b9a78516c59bf7d1a10d64cae67a"
-    # }
+    # },
+    {
+        "label": "Silero V6.2.0(VAD model)",
+        "value": "ggml-silero-v6.2.0.bin",
+        "size": "889 KB",
+        "downloadLink": "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin?download=true",
+        "mirrorLink": "https://www.modelscope.cn/models/ggml-org/whisper-vad/resolve/master/ggml-silero-v6.2.0.bin",
+        "sha": "470e5d9d094ddba2f0a512cecc3732a252188abd",
+    }
 ]
 
 

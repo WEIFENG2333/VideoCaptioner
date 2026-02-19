@@ -557,6 +557,13 @@ class TranscribeConfig:
     output_format: Optional[TranscribeOutputFormatEnum] = None
     # Whisper Cpp 配置
     whisper_model: Optional[WhisperModelEnum] = None
+    whisper_cpp_enable_vad: bool = True
+    whisper_cpp_vad_model: str = "silero-v6.2.0"
+    whisper_cpp_vad_threshold: float = 0.3
+    whisper_cpp_vad_min_speech_duration_ms: int = 150
+    whisper_cpp_vad_min_silence_duration_ms: int = 200
+    whisper_cpp_vad_max_speech_duration_s: int = 30
+    whisper_cpp_vad_speech_pad_ms: int = 50
     # Whisper API 配置
     whisper_api_key: Optional[str] = None
     whisper_api_base: Optional[str] = None
@@ -616,6 +623,14 @@ class TranscribeConfig:
             lines.append(
                 f"Model: {self.whisper_model.value if self.whisper_model else 'None'}"
             )
+            lines.append(f"VAD Enabled: {self.whisper_cpp_enable_vad}")
+            if self.whisper_cpp_enable_vad:
+                lines.append(f"VAD Model: {self.whisper_cpp_vad_model}")
+                lines.append(f"VAD Threshold: {self.whisper_cpp_vad_threshold}")
+                lines.append(f"VAD Min Speech: {self.whisper_cpp_vad_min_speech_duration_ms}ms")
+                lines.append(f"VAD Min Silence: {self.whisper_cpp_vad_min_silence_duration_ms}ms")
+                lines.append(f"VAD Max Speech: {self.whisper_cpp_vad_max_speech_duration_s}s")
+                lines.append(f"VAD Speech Pad: {self.whisper_cpp_vad_speech_pad_ms}ms")
 
         lines.append("=" * 42)
         return "\n".join(lines)

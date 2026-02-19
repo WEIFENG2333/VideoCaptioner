@@ -32,6 +32,13 @@ class WhisperCppASR(BaseASR):
         whisper_model=None,
         use_cache: bool = False,
         need_word_time_stamp: bool = False,
+        enable_vad: bool = False,
+        vad_model: Optional[str] = None,
+        vad_threshold: float = 0.3,
+        vad_min_speech_duration_ms: int = 150,
+        vad_min_silence_duration_ms: int = 200,
+        vad_max_speech_duration_s: int = 30,
+        vad_speech_pad_ms: int = 50,
     ):
         super().__init__(audio_input, use_cache)
 
@@ -46,8 +53,8 @@ class WhisperCppASR(BaseASR):
             whisper_cpp_path = detect_whisper_executable()
 
         # Find model file in models directory
+        models_dir = Path(MODEL_PATH)
         if whisper_model:
-            models_dir = Path(MODEL_PATH)
             model_files = list(models_dir.glob(f"*ggml*{whisper_model}*.bin"))
             if not model_files:
                 raise ValueError(
@@ -62,6 +69,29 @@ class WhisperCppASR(BaseASR):
         self.whisper_cpp_path = Path(whisper_cpp_path)
         self.need_word_time_stamp = need_word_time_stamp
         self.language = language
+        self.enable_vad = enable_vad
+        self.vad_model_path = None
+        self.vad_threshold = vad_threshold
+        self.vad_min_speech_duration_ms = vad_min_speech_duration_ms
+        self.vad_min_silence_duration_ms = vad_min_silence_duration_ms
+        self.vad_max_speech_duration_s = vad_max_speech_duration_s
+        self.vad_speech_pad_ms = vad_speech_pad_ms
+
+        if self.enable_vad:
+            if vad_model:
+                vad_model_files = list(models_dir.glob(f"*{vad_model}*.bin"))
+                if vad_model_files:
+                    self.vad_model_path = str(vad_model_files[0])
+                    logger.info(f"VAD Model found: {self.vad_model_path}")
+                elif os.path.exists(vad_model):
+                    self.vad_model_path = vad_model
+                    logger.info(f"VAD Model found at path: {self.vad_model_path}")
+                else:
+                     logger.warning(f"VAD Model not found: {vad_model}, VAD will be disabled")
+                     self.enable_vad = False
+            else:
+                 logger.warning("VAD enabled but no model provided. VAD will be disabled unless a default is found (not implemented).")
+                 self.enable_vad = False
 
         self.process = None
 
@@ -108,6 +138,15 @@ class WhisperCppASR(BaseASR):
             whisper_params.extend(
                 ["--prompt", "你好，我们需要使用简体中文，以下是普通话的句子。"]
             )
+
+        if self.enable_vad and self.vad_model_path:
+            whisper_params.append("--vad")
+            whisper_params.extend(["-vm", str(self.vad_model_path)])
+            whisper_params.extend(["-vt", str(self.vad_threshold)])
+            whisper_params.extend(["-vspd", str(self.vad_min_speech_duration_ms)])
+            whisper_params.extend(["-vsd", str(self.vad_min_silence_duration_ms)])
+            whisper_params.extend(["-vmsd", str(self.vad_max_speech_duration_s)])
+            whisper_params.extend(["-vp", str(self.vad_speech_pad_ms)])
 
         return whisper_params
 
@@ -235,7 +274,7 @@ class WhisperCppASR(BaseASR):
                 raise RuntimeError(f"SRT generation failed: {str(e)}")
 
     def _get_key(self):
-        return f"{self.crc32_hex}-{self.need_word_time_stamp}-{self.model_path}-{self.language}"
+        return f"{self.crc32_hex}-{self.need_word_time_stamp}-{self.model_path}-{self.language}-{self.enable_vad}-{self.vad_model_path}-{self.vad_threshold}-{self.vad_min_speech_duration_ms}-{self.vad_min_silence_duration_ms}-{self.vad_max_speech_duration_s}-{self.vad_speech_pad_ms}"
 
     def get_audio_duration(self, filepath: str) -> int:
         """Get audio file duration in seconds using ffmpeg."""

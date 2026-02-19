@@ -75,6 +75,13 @@ class TaskFactory:
             output_format=cfg.transcribe_output_format.value,
             # Whisper Cpp 配置
             whisper_model=cfg.whisper_model.value,
+            whisper_cpp_enable_vad=cfg.whisper_cpp_enable_vad.value,
+            whisper_cpp_vad_model=cfg.whisper_cpp_vad_model.value,
+            whisper_cpp_vad_threshold=cfg.whisper_cpp_vad_threshold.value,
+            whisper_cpp_vad_min_speech_duration_ms=cfg.whisper_cpp_vad_min_speech_duration_ms.value,
+            whisper_cpp_vad_min_silence_duration_ms=cfg.whisper_cpp_vad_min_silence_duration_ms.value,
+            whisper_cpp_vad_max_speech_duration_s=cfg.whisper_cpp_vad_max_speech_duration_s.value,
+            whisper_cpp_vad_speech_pad_ms=cfg.whisper_cpp_vad_speech_pad_ms.value,
             # Whisper API 配置
             whisper_api_key=cfg.whisper_api_key.value,
             whisper_api_base=cfg.whisper_api_base.value,
