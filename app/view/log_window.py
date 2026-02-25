@@ -1,13 +1,10 @@
-import os
-import platform
-import subprocess
-
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import FluentStyleSheet, PushButton, TextEdit, isDarkTheme
 
 from app.config import LOG_PATH, RESOURCE_PATH
+from app.core.utils.platform_utils import reveal_in_explorer
 
 
 class LogWindow(QWidget):
@@ -157,9 +154,4 @@ class LogWindow(QWidget):
 
     def open_log_folder(self):
         """打开日志文件所在文件夹"""
-        if platform.system() == "Windows":
-            os.startfile(str(LOG_PATH))  # type: ignore
-        elif platform.system() == "Darwin":  # macOS
-            subprocess.run(["open", str(LOG_PATH)])
-        else:  # Linux
-            subprocess.run(["xdg-open", str(LOG_PATH)])
+        reveal_in_explorer(str(self.log_path))

@@ -54,7 +54,7 @@ from app.core.entities import (
 from app.core.subtitle import get_subtitle_style
 from app.core.task_factory import TaskFactory
 from app.core.translate.types import TargetLanguage
-from app.core.utils.platform_utils import open_folder
+from app.core.utils.platform_utils import open_folder, reveal_in_explorer
 from app.thread.subtitle_thread import SubtitleThread
 
 
@@ -591,6 +591,7 @@ class SubtitleInterface(QWidget):
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
+            reveal_in_explorer(file_path)
         except Exception as e:
             InfoBar.error(
                 self.tr("保存失败"),
@@ -741,18 +742,17 @@ class SubtitleInterface(QWidget):
 
         # 添加菜单项
         # retranslate_action = Action(FIF.SYNC, self.tr("重新翻译"))
-        merge_action = Action(FIF.LINK, self.tr("合并"))  # 添加快捷键提示
-        # menu.addAction(retranslate_action)
+        merge_action = Action(FIF.LINK, self.tr("合并"))
+        delete_action = Action(FIF.DELETE, self.tr("删除"))
         menu.addAction(merge_action)
-        merge_action.setShortcut("Ctrl+M")  # 设置快捷键
+        menu.addAction(delete_action)
+        merge_action.setShortcut("Ctrl+M")
+        delete_action.setShortcut("Delete")
 
-        # 设置动作状态
-        # retranslate_action.setEnabled(cfg.need_translate.value)
         merge_action.setEnabled(len(rows) > 1)
 
-        # 连接动作信号
-        # retranslate_action.triggered.connect(lambda: self.retranslate_selected_rows(rows))
         merge_action.triggered.connect(lambda: self.merge_selected_rows(rows))
+        delete_action.triggered.connect(lambda: self.delete_selected_rows(rows))
 
         # 显示菜单
         menu.exec(self.subtitle_table.viewport().mapToGlobal(pos))
@@ -820,15 +820,37 @@ class SubtitleInterface(QWidget):
             parent=self,
         )
 
+    def delete_selected_rows(self, rows: List[int]) -> None:
+        """删除选中的字幕行"""
+        if not rows:
+            return
+
+        data = self.model._data
+        keys = list(data.keys())
+        rows_set = set(rows)
+
+        new_data = {}
+        for i, key in enumerate(keys):
+            if i not in rows_set:
+                new_key = f"{len(new_data) + 1}"
+                new_data[new_key] = data[key]
+
+        self.model.update_all(new_data)
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """处理键盘事件"""
-        # 处理 Ctrl+M 快捷键
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_M:  # type: ignore
             indexes = self.subtitle_table.selectedIndexes()
             if indexes:
                 rows = sorted(set(index.row() for index in indexes))
                 if len(rows) > 1:
                     self.merge_selected_rows(rows)
+            event.accept()
+        elif event.key() == Qt.Key_Delete:  # type: ignore
+            indexes = self.subtitle_table.selectedIndexes()
+            if indexes:
+                rows = sorted(set(index.row() for index in indexes))
+                self.delete_selected_rows(rows)
             event.accept()
         else:
             super().keyPressEvent(event)

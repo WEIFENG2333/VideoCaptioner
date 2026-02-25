@@ -1,7 +1,7 @@
 import os
 
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtGui import QColor, QDesktopServices, QFont
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -38,6 +38,7 @@ from app.core.entities import (
     SupportedSubtitleFormats,
     SupportedVideoFormats,
 )
+from app.core.utils.platform_utils import open_folder
 from app.thread.batch_process_thread import (
     BatchProcessThread,
     BatchTask,
@@ -174,6 +175,21 @@ class BatchProcessInterface(QWidget):
 
     def add_files(self, file_paths):
         task_type = BatchTaskType(self.task_type_combo.currentText())
+
+        # 展开文件夹为其中的文件（最多 3 层深度）
+        max_depth = 3
+        expanded = []
+        for path in file_paths:
+            if os.path.isdir(path):
+                for root, dirs, files in os.walk(path):
+                    depth = root.replace(path, "").count(os.sep)
+                    if depth >= max_depth:
+                        dirs.clear()
+                        continue
+                    expanded.extend(os.path.join(root, f) for f in files)
+            else:
+                expanded.append(path)
+        file_paths = expanded
 
         # 检查文件是否存在并收集不存在的文件
         non_existent_files = []
@@ -330,8 +346,7 @@ class BatchProcessInterface(QWidget):
             # 其他任务输出在文件同目录下
             output_dir = file_dir
 
-        # 打开文件夹
-        QDesktopServices.openUrl(QUrl.fromLocalFile(output_dir))
+        open_folder(output_dir)
 
     def update_task_progress(self, file_path: str, progress: int, status: str):
         for row in range(self.task_table.rowCount()):

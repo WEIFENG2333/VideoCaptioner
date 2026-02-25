@@ -38,6 +38,21 @@ def open_folder(path):
             logger.warning(f"无法在当前系统打开文件夹: {path}")
 
 
+def reveal_in_explorer(file_path):
+    """跨平台在文件管理器中显示并选中文件"""
+    system = platform.system()
+    try:
+        if system == "Windows":
+            subprocess.Popen(["explorer", "/select,", os.path.normpath(file_path)])
+        elif system == "Darwin":
+            subprocess.Popen(["open", "-R", file_path])
+        else:
+            # Linux 没有统一的选中文件方式，打开父文件夹
+            subprocess.Popen(["xdg-open", os.path.dirname(file_path)])
+    except (OSError, subprocess.SubprocessError):
+        logger.warning(f"can not reveal in explorer: {file_path}")
+
+
 def open_file(path):
     """
     跨平台打开文件
