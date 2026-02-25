@@ -20,6 +20,9 @@ print_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# Friendly error on unexpected exit
+trap 'if [ $? -ne 0 ]; then echo ""; print_error "Installation failed at line $LINENO. Please check the output above."; fi' EXIT
+
 # Check if running from within the project directory
 detect_project_dir() {
     # If main.py exists in current directory, use it
@@ -28,10 +31,15 @@ detect_project_dir() {
         return 0
     fi
 
+    # Guard: BASH_SOURCE is empty when piped via curl | bash
+    if [ -z "${BASH_SOURCE[0]}" ] || [ "${BASH_SOURCE[0]}" = "bash" ]; then
+        return 1
+    fi
+
     # If script is run from scripts/ subdirectory, check parent
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PARENT_DIR="$(dirname "$SCRIPT_DIR")"
-    
+
     if [ -f "$PARENT_DIR/main.py" ] && [ -f "$PARENT_DIR/pyproject.toml" ]; then
         INSTALL_DIR="$PARENT_DIR"
         return 0
@@ -44,6 +52,37 @@ detect_project_dir() {
     fi
 
     return 1
+}
+
+# Install git if not present
+install_git() {
+    if command -v git &> /dev/null; then
+        return 0
+    fi
+
+    print_info "Git not found, installing..."
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS: xcode-select triggers git installation
+        xcode-select --install 2>/dev/null || true
+        print_warning "Please complete the Xcode Command Line Tools installation, then re-run this script."
+        exit 1
+    elif command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y git
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y git
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -S --noconfirm git
+    else
+        print_error "Could not install git automatically. Please install git manually."
+        exit 1
+    fi
+
+    if ! command -v git &> /dev/null; then
+        print_error "Git installation failed. Please install manually."
+        exit 1
+    fi
+    print_success "Git installed successfully"
 }
 
 # Install uv if not present
@@ -75,6 +114,50 @@ install_uv() {
     fi
 }
 
+# Install ffmpeg if not present
+install_ffmpeg() {
+    if command -v ffmpeg &> /dev/null; then
+        print_success "FFmpeg is already installed: $(ffmpeg -version 2>&1 | head -n1)"
+        return 0
+    fi
+
+    print_info "Installing FFmpeg (required for video synthesis)..."
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if ! command -v brew &> /dev/null; then
+            print_info "Homebrew not found, installing..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            # Add brew to PATH for Apple Silicon and Intel
+            [ -f /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+            [ -f /usr/local/bin/brew ] && eval "$(/usr/local/bin/brew shellenv)"
+        fi
+        brew install ffmpeg
+    elif command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y ffmpeg
+    elif command -v dnf &> /dev/null; then
+        # Fedora: ffmpeg requires RPM Fusion
+        if ! dnf repolist 2>/dev/null | grep -q rpmfusion-free; then
+            print_info "Enabling RPM Fusion repository (required for FFmpeg on Fedora)..."
+            FEDORA_VERSION=$(rpm -E %fedora)
+            sudo dnf install -y \
+                "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VERSION}.noarch.rpm"
+        fi
+        sudo dnf install -y ffmpeg
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -S --noconfirm ffmpeg
+    else
+        print_error "Could not detect package manager. Please install FFmpeg manually."
+        exit 1
+    fi
+
+    if command -v ffmpeg &> /dev/null; then
+        print_success "FFmpeg installed successfully"
+    else
+        print_error "FFmpeg installation failed. Please install manually."
+        exit 1
+    fi
+}
+
 # Clone or update repository
 setup_repository() {
     if [ -d "$INSTALL_DIR/.git" ]; then
@@ -88,7 +171,7 @@ setup_repository() {
         fi
     else
         print_info "Cloning VideoCaptioner to $INSTALL_DIR..."
-        git clone "$REPO_URL" "$INSTALL_DIR"
+        git clone --depth 1 "$REPO_URL" "$INSTALL_DIR"
         cd "$INSTALL_DIR"
         print_success "Repository cloned successfully"
     fi
@@ -97,36 +180,14 @@ setup_repository() {
 # Install dependencies with uv
 install_dependencies() {
     print_info "Installing dependencies with uv..."
-
-    # Sync dependencies (creates .venv if needed)
     uv sync
-
     print_success "Dependencies installed"
-}
-
-# Check system dependencies
-check_system_deps() {
-    # Check ffmpeg (required)
-    if ! command -v ffmpeg &> /dev/null; then
-        print_warning "FFmpeg not found (required for video synthesis)"
-
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            echo "  Install with: brew install ffmpeg"
-        elif command -v apt &> /dev/null; then
-            echo "  Install with: sudo apt install ffmpeg"
-        elif command -v dnf &> /dev/null; then
-            echo "  Install with: sudo dnf install ffmpeg"
-        elif command -v pacman &> /dev/null; then
-            echo "  Install with: sudo pacman -S ffmpeg"
-        fi
-    fi
 }
 
 # Run the application
 run_app() {
     print_info "Starting VideoCaptioner..."
     echo ""
-
     cd "$INSTALL_DIR"
     uv run python main.py
 }
@@ -144,13 +205,7 @@ main() {
         print_info "Running from project directory: $INSTALL_DIR"
     fi
 
-    # Check git
-    if ! command -v git &> /dev/null; then
-        print_error "Git is not installed. Please install git first."
-        exit 1
-    fi
-
-    # Install uv
+    install_git
     install_uv
 
     # Setup repository (clone if needed)
@@ -160,15 +215,10 @@ main() {
         cd "$INSTALL_DIR"
     fi
 
-    # Install/update dependencies
     install_dependencies
+    install_ffmpeg
 
-    # Check system dependencies
-    check_system_deps
-
-    # Run the app
     run_app
 }
 
 main "$@"
-
