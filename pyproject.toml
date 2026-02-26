@@ -68,6 +68,10 @@ dev-dependencies = [
     "pyright>=1.1.0",
     "ruff>=0.4.0",
     "pytest>=8.0.0",
+    "python-dotenv>=1.2.1",
+    "openinference-instrumentation-openai>=0.1.41",
+    "opentelemetry-exporter-otlp-proto-http>=1.39.1",
+    "opentelemetry-sdk>=1.39.1",
 ]
 
 [tool.pyright]
