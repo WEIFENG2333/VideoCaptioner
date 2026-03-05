@@ -13,6 +13,7 @@ from app.core.entities import (
     SynthesisConfig,
     SynthesisTask,
     TranscribeConfig,
+    TranscribeModelEnum,
     TranscribeTask,
     TranscriptAndSubtitleTask,
 )
@@ -57,7 +58,12 @@ class TaskFactory:
 
         # 构建输出路径
         if need_next_task:
-            need_word_time_stamp = cfg.need_split.value
+            if cfg.transcribe_model.value == TranscribeModelEnum.QWEN_ASR:
+                need_word_time_stamp = (
+                    cfg.need_split.value and cfg.qwen_asr_word_timestamp.value
+                )
+            else:
+                need_word_time_stamp = cfg.need_split.value
             output_path = str(
                 Path(cfg.work_dir.value)
                 / file_name
@@ -65,7 +71,11 @@ class TaskFactory:
                 / f"【原始字幕】{file_name}-{cfg.transcribe_model.value.value}-{cfg.transcribe_language.value.value}.srt"
             )
         else:
-            need_word_time_stamp = False
+            need_word_time_stamp = (
+                cfg.qwen_asr_word_timestamp.value
+                if cfg.transcribe_model.value == TranscribeModelEnum.QWEN_ASR
+                else False
+            )
             output_path = str(Path(file_path).parent / f"{file_name}.srt")
 
         config = TranscribeConfig(
@@ -80,6 +90,21 @@ class TaskFactory:
             whisper_api_base=cfg.whisper_api_base.value,
             whisper_api_model=cfg.whisper_api_model.value,
             whisper_api_prompt=cfg.whisper_api_prompt.value,
+            # Qwen ASR 配置
+            qwen_asr_backend=cfg.qwen_asr_backend.value,
+            qwen_asr_model=cfg.qwen_asr_model.value,
+            qwen_asr_aligner_model=cfg.qwen_asr_aligner_model.value,
+            qwen_asr_api_base=cfg.qwen_asr_api_base.value,
+            qwen_asr_api_key=cfg.qwen_asr_api_key.value,
+            qwen_asr_prompt=cfg.qwen_asr_prompt.value,
+            qwen_asr_word_timestamp=cfg.qwen_asr_word_timestamp.value,
+            qwen_asr_max_new_tokens=cfg.qwen_asr_max_new_tokens.value,
+            qwen_asr_timestamp_mode=cfg.qwen_asr_timestamp_mode.value,
+            qwen_asr_compute_dtype=cfg.qwen_asr_compute_dtype.value,
+            qwen_asr_language_mode=cfg.qwen_asr_language_mode.value,
+            qwen_asr_force_language=LANGUAGES[cfg.qwen_asr_force_language.value.value],
+            qwen_asr_timestamp_rounding=cfg.qwen_asr_timestamp_rounding.value,
+            qwen_asr_vocal_separation=cfg.qwen_asr_vocal_separation.value,
             # Faster Whisper 配置
             faster_whisper_program=cfg.faster_whisper_program.value,
             faster_whisper_model=cfg.faster_whisper_model.value,

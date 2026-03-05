@@ -35,6 +35,9 @@ dependencies = [
     "GPUtil>=1.4.0",
     "pillow>=12.0.0",
     "fonttools>=4.61.1",
+    "qwen-asr",
+    "demucs>=4.0.1",
+    "torchcodec>=0.8.0",
 ]
 
 [project.urls]

@@ -116,6 +116,30 @@ class SettingInterface(ScrollArea):
             texts=[lang.value for lang in cfg.target_language.validator.options],  # type: ignore
             parent=self.translateGroup,
         )
+        self.splitModelCard = LineEditSettingCard(
+            cfg.split_model,
+            FIF.ALIGNMENT,
+            self.tr("断句模型"),
+            self.tr("字幕断句阶段使用的模型，留空则使用 LLM 主模型"),
+            self.tr("例如: gpt-5-mini / deepseek-chat"),
+            self.translateGroup,
+        )
+        self.optimizeModelCard = LineEditSettingCard(
+            cfg.optimize_model,
+            FIF.EDIT,
+            self.tr("优化模型"),
+            self.tr("字幕优化阶段使用的模型，留空则使用 LLM 主模型"),
+            self.tr("例如: gpt-5-mini / deepseek-v3"),
+            self.translateGroup,
+        )
+        self.translateModelCard = LineEditSettingCard(
+            cfg.translate_model,
+            FIF.LANGUAGE,
+            self.tr("翻译模型"),
+            self.tr("LLM 翻译阶段使用的模型，留空则使用 LLM 主模型"),
+            self.tr("例如: gemini-2.0-flash / gpt-4o-mini"),
+            self.translateGroup,
+        )
 
         # 字幕合成配置卡片
         self.subtitleStyleCard = HyperlinkCard(
@@ -239,6 +263,9 @@ class SettingInterface(ScrollArea):
         self.translateGroup.addSettingCard(self.subtitleCorrectCard)
         self.translateGroup.addSettingCard(self.subtitleTranslateCard)
         self.translateGroup.addSettingCard(self.targetLanguageCard)
+        self.translateGroup.addSettingCard(self.splitModelCard)
+        self.translateGroup.addSettingCard(self.optimizeModelCard)
+        self.translateGroup.addSettingCard(self.translateModelCard)
 
         self.subtitleGroup.addSettingCard(self.subtitleStyleCard)
         self.subtitleGroup.addSettingCard(self.subtitleLayoutCard)

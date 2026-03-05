@@ -40,13 +40,19 @@ def handle_long_path(path: str) -> str:
     Returns:
         Path with \\?\ prefix if needed (Windows only)
     """
-    if (
-        platform.system() == "Windows"
-        and len(path) > 260
-        and not path.startswith(r"\\?\ ")
-    ):
-        return rf"\\?\{os.path.abspath(path)}"
-    return path
+    if platform.system() != "Windows":
+        return path
+
+    abs_path = os.path.abspath(path)
+
+    # 已是 Windows 长路径前缀，直接返回，避免重复前缀导致路径非法
+    if abs_path.startswith("\\\\?\\"):
+        return abs_path
+
+    if len(abs_path) > 260:
+        return rf"\\?\{abs_path}"
+
+    return abs_path
 
 
 class ASRDataSeg:

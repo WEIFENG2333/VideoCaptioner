@@ -121,6 +121,7 @@ class TranscribeModelEnum(Enum):
     WHISPER_API = "Whisper [API] ✨"
     FASTER_WHISPER = "FasterWhisper ✨"
     WHISPER_CPP = "WhisperCpp"
+    QWEN_ASR = "Qwen-ASR ✨"
 
 
 class TranslatorServiceEnum(Enum):
@@ -505,6 +506,10 @@ ASR_LANGUAGE_CAPABILITIES: dict[TranscribeModelEnum, ASRLanguageCapability] = {
         supported_languages=_get_all_languages_except_auto(),
         supports_auto=True,
     ),
+    TranscribeModelEnum.QWEN_ASR: ASRLanguageCapability(
+        supported_languages=_get_all_languages_except_auto(),
+        supports_auto=True,
+    ),
 }
 
 
@@ -562,6 +567,21 @@ class TranscribeConfig:
     whisper_api_base: Optional[str] = None
     whisper_api_model: Optional[str] = None
     whisper_api_prompt: Optional[str] = None
+    # Qwen ASR 配置
+    qwen_asr_backend: str = "transformers"
+    qwen_asr_model: str = "Qwen/Qwen3-ASR-0.6B"
+    qwen_asr_aligner_model: str = "Qwen/Qwen3-ForcedAligner-0.6B"
+    qwen_asr_api_base: Optional[str] = None
+    qwen_asr_api_key: Optional[str] = None
+    qwen_asr_prompt: Optional[str] = None
+    qwen_asr_word_timestamp: bool = True
+    qwen_asr_max_new_tokens: int = 1024
+    qwen_asr_timestamp_mode: str = "forced_aligner_word"
+    qwen_asr_compute_dtype: str = "bfloat16"
+    qwen_asr_language_mode: str = "auto"
+    qwen_asr_force_language: str = ""
+    qwen_asr_timestamp_rounding: str = "round"
+    qwen_asr_vocal_separation: bool = False
     # Faster Whisper 配置
     faster_whisper_program: Optional[str] = None
     faster_whisper_model: Optional[FasterWhisperModelEnum] = None
@@ -598,6 +618,23 @@ class TranscribeConfig:
             lines.append(f"API Model: {self.whisper_api_model}")
             if self.whisper_api_prompt:
                 lines.append(f"Prompt: {self.whisper_api_prompt[:30]}...")
+        elif self.transcribe_model == TranscribeModelEnum.QWEN_ASR:
+            lines.append(f"Backend: {self.qwen_asr_backend}")
+            lines.append(f"Model: {self.qwen_asr_model}")
+            lines.append(f"Aligner: {self.qwen_asr_aligner_model}")
+            if self.qwen_asr_backend == "vllm":
+                lines.append(f"API Base: {self.qwen_asr_api_base}")
+                lines.append(f"API Key: {self._mask_key(self.qwen_asr_api_key)}")
+            lines.append(f"Word Timestamp: {self.qwen_asr_word_timestamp}")
+            lines.append(f"Max New Tokens: {self.qwen_asr_max_new_tokens}")
+            lines.append(f"Timestamp Mode: {self.qwen_asr_timestamp_mode}")
+            lines.append(f"Compute DType: {self.qwen_asr_compute_dtype}")
+            lines.append(f"Language Mode: {self.qwen_asr_language_mode}")
+            lines.append(
+                f"Force Language: {self.qwen_asr_force_language or 'Auto'}"
+            )
+            lines.append(f"Timestamp Rounding: {self.qwen_asr_timestamp_rounding}")
+            lines.append(f"Vocal Separation: {self.qwen_asr_vocal_separation}")
 
         elif self.transcribe_model == TranscribeModelEnum.FASTER_WHISPER:
             lines.append(
