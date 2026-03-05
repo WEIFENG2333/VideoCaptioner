@@ -1,13 +1,14 @@
 import datetime
+import shutil
 import tempfile
 from pathlib import Path
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from app.core.asr import transcribe
-from app.core.entities import TranscribeOutputFormatEnum, TranscribeTask
+from app.core.entities import TranscribeModelEnum, TranscribeOutputFormatEnum, TranscribeTask
 from app.core.utils.logger import setup_logger
-from app.core.utils.video_utils import video2audio
+from app.core.utils.video_utils import separate_vocals_with_demucs, video2audio
 
 logger = setup_logger("transcript_thread")
 
@@ -90,6 +91,8 @@ class TranscriptThread(QThread):
         temp_audio_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         temp_audio_path = temp_audio_file.name
         temp_audio_file.close()  # 立即关闭文件句柄，让 ffmpeg 可以写入
+        demucs_temp_dir = ""
+        asr_audio_path = temp_audio_path
 
         try:
             # 转换音频文件
@@ -104,12 +107,22 @@ class TranscriptThread(QThread):
                 logger.error("音频转换失败")
                 raise RuntimeError(self.tr("音频转换失败"))
 
+            if (
+                self.task.transcribe_config.transcribe_model == TranscribeModelEnum.QWEN_ASR
+                and self.task.transcribe_config.qwen_asr_vocal_separation
+            ):
+                self.progress.emit(12, self.tr("Qwen 人声分离中"))
+                logger.info("Qwen ASR 启用人声分离（demucs）")
+                asr_audio_path, demucs_temp_dir = separate_vocals_with_demucs(
+                    temp_audio_path
+                )
+
             self.progress.emit(20, self.tr("语音转录中"))
             logger.info("开始语音转录")
 
             # 进行转录
             asr_data = transcribe(
-                temp_audio_path,
+                asr_audio_path,
                 self.task.transcribe_config,
                 callback=self.progress_callback,
             )
@@ -143,6 +156,8 @@ class TranscriptThread(QThread):
             self.finished.emit(self.task)
         finally:
             Path(temp_audio_path).unlink(missing_ok=True)
+            if demucs_temp_dir:
+                shutil.rmtree(demucs_temp_dir, ignore_errors=True)
 
     def progress_callback(self, value, message):
         progress = min(20 + (value * 0.8), 100)

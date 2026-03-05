@@ -221,6 +221,61 @@ class Config(QConfig):
     whisper_api_model = OptionsConfigItem("WhisperAPI", "WhisperApiModel", "")
     whisper_api_prompt = ConfigItem("WhisperAPI", "WhisperApiPrompt", "")
 
+    # ------------------- Qwen ASR 配置 -------------------
+    qwen_asr_backend = OptionsConfigItem(
+        "QwenASR",
+        "Backend",
+        "transformers",
+        OptionsValidator(["transformers", "vllm"]),
+    )
+    qwen_asr_model = ConfigItem("QwenASR", "Model", "Qwen/Qwen3-ASR-0.6B")
+    qwen_asr_aligner_model = ConfigItem(
+        "QwenASR", "AlignerModel", "Qwen/Qwen3-ForcedAligner-0.6B"
+    )
+    qwen_asr_api_base = ConfigItem("QwenASR", "ApiBase", "")
+    qwen_asr_api_key = ConfigItem("QwenASR", "ApiKey", "")
+    qwen_asr_prompt = ConfigItem("QwenASR", "Prompt", "")
+    qwen_asr_word_timestamp = ConfigItem(
+        "QwenASR", "WordTimestamp", True, BoolValidator()
+    )
+    qwen_asr_max_new_tokens = RangeConfigItem(
+        "QwenASR", "MaxNewTokens", 1024, RangeValidator(16, 8192)
+    )
+    qwen_asr_timestamp_mode = OptionsConfigItem(
+        "QwenASR",
+        "TimestampMode",
+        "forced_aligner_word",
+        OptionsValidator(["forced_aligner_word", "segment_only"]),
+    )
+    qwen_asr_compute_dtype = OptionsConfigItem(
+        "QwenASR",
+        "ComputeDType",
+        "bfloat16",
+        OptionsValidator(["bfloat16", "float16", "float32"]),
+    )
+    qwen_asr_language_mode = OptionsConfigItem(
+        "QwenASR",
+        "LanguageMode",
+        "auto",
+        OptionsValidator(["auto", "force"]),
+    )
+    qwen_asr_force_language = OptionsConfigItem(
+        "QwenASR",
+        "ForceLanguage",
+        TranscribeLanguageEnum.AUTO,
+        OptionsValidator(TranscribeLanguageEnum),
+        EnumSerializer(TranscribeLanguageEnum),
+    )
+    qwen_asr_timestamp_rounding = OptionsConfigItem(
+        "QwenASR",
+        "TimestampRounding",
+        "round",
+        OptionsValidator(["round", "floor"]),
+    )
+    qwen_asr_vocal_separation = ConfigItem(
+        "QwenASR", "VocalSeparation", False, BoolValidator()
+    )
+
     # ------------------- 字幕配置 -------------------
     need_optimize = ConfigItem("Subtitle", "NeedOptimize", False, BoolValidator())
     need_translate = ConfigItem("Subtitle", "NeedTranslate", False, BoolValidator())

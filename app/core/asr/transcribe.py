@@ -3,6 +3,7 @@ from app.core.asr.bcut import BcutASR
 from app.core.asr.chunked_asr import ChunkedASR
 from app.core.asr.faster_whisper import FasterWhisperASR
 from app.core.asr.jianying import JianYingASR
+from app.core.asr.qwen_asr import QwenASR
 from app.core.asr.whisper_api import WhisperAPI
 from app.core.asr.whisper_cpp import WhisperCppASR
 from app.core.entities import TranscribeConfig, TranscribeModelEnum
@@ -68,6 +69,8 @@ def _create_asr_instance(audio_path: str, config: TranscribeConfig) -> ChunkedAS
 
     elif model_type == TranscribeModelEnum.FASTER_WHISPER:
         return _create_faster_whisper_asr(audio_path, config)
+    elif model_type == TranscribeModelEnum.QWEN_ASR:
+        return _create_qwen_asr(audio_path, config)
 
     else:
         raise ValueError(f"Invalid transcription model: {model_type}")
@@ -155,6 +158,34 @@ def _create_faster_whisper_asr(audio_path: str, config: TranscribeConfig) -> Chu
         asr_kwargs=asr_kwargs,
         chunk_concurrency=1,  # 本地转录使用单线程
         chunk_length=60 * 20,  # 每块20分钟
+    )
+
+
+def _create_qwen_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create Qwen ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "model_name": config.qwen_asr_model,
+        "aligner_model_name": config.qwen_asr_aligner_model,
+        "backend": config.qwen_asr_backend,
+        "language": config.transcribe_language,
+        "api_base": config.qwen_asr_api_base or "",
+        "api_key": config.qwen_asr_api_key or "",
+        "prompt": config.qwen_asr_prompt or "",
+        "max_new_tokens": config.qwen_asr_max_new_tokens,
+        "timestamp_mode": config.qwen_asr_timestamp_mode,
+        "compute_dtype": config.qwen_asr_compute_dtype,
+        "language_mode": config.qwen_asr_language_mode,
+        "force_language": config.qwen_asr_force_language,
+        "timestamp_rounding": config.qwen_asr_timestamp_rounding,
+    }
+    return ChunkedASR(
+        asr_class=QwenASR,
+        audio_path=audio_path,
+        asr_kwargs=asr_kwargs,
+        chunk_concurrency=1,
+        chunk_length=60 * 20,
     )
 
 
