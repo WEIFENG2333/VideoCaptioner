@@ -1,4 +1,6 @@
 import os
+import platform
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -44,8 +46,7 @@ from app.core.utils.platform_utils import open_folder
 from app.thread.file_download_thread import FileDownloadThread
 from app.thread.modelscope_download_thread import ModelscopeDownloadThread
 
-# 在文件开头添加常量定义
-FASTER_WHISPER_PROGRAMS = [
+WINDOWS_FASTER_WHISPER_PROGRAMS = [
     {
         "label": "GPU（cuda） + CPU 版本",
         "value": "faster-whisper-gpu.7z",
@@ -61,6 +62,21 @@ FASTER_WHISPER_PROGRAMS = [
         "downloadLink": "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/whisper-faster.exe",
     },
 ]
+
+LINUX_FASTER_WHISPER_PROGRAMS = [
+    {
+        "label": "GPU（cuda） + CPU 版本",
+        "value": "Faster-Whisper-XXL_r245.4_linux.7z",
+        "type": "GPU",
+        "size": "1.30 GB",
+        "downloadLink": "https://github.com/Purfview/whisper-standalone-win/releases/download/Faster-Whisper-XXL/Faster-Whisper-XXL_r245.4_linux.7z",
+    }
+]
+
+if platform.system() == "Linux":
+    FASTER_WHISPER_PROGRAMS = LINUX_FASTER_WHISPER_PROGRAMS
+else:
+    FASTER_WHISPER_PROGRAMS = WINDOWS_FASTER_WHISPER_PROGRAMS
 
 FASTER_WHISPER_MODELS = [
     {
@@ -127,8 +143,8 @@ def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     """检查 faster-whisper 程序是否存在
 
     检查以下两种情况:
-    1. bin目录下是否有 faster-whisper.exe
-    2. bin目录下是否有 Faster-Whisper-XXL/faster-whisper-xxl.exe
+    1. PATH/本地目录是否有 faster-whisper(.exe)
+    2. PATH/本地目录是否有 faster-whisper-xxl(.exe)
 
     Returns:
         tuple[bool, list[str]]: (是否存在程序, 已安装的版本列表)
@@ -136,15 +152,28 @@ def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     bin_path = Path(BIN_PATH)
     installed_versions = []
 
-    # 检查 faster-whisper.exe(CPU版本)
-    if (bin_path / "faster-whisper.exe").exists():
+    # 检查 faster-whisper(CPU版本)
+    cpu_candidates = [
+        bin_path / "faster-whisper",
+        bin_path / "faster-whisper.exe",
+    ]
+    has_cpu = any(p.exists() for p in cpu_candidates) or bool(shutil.which("faster-whisper"))
+    if has_cpu:
         installed_versions.append("CPU")
 
-    # 检查 Faster-Whisper-XXL/faster-whisper-xxl.exe(GPU版本)
-    xxl_path = bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe"
-    if xxl_path.exists():
+    # 检查 faster-whisper-xxl(GPU版本)
+    xxl_candidates = [
+        bin_path / "faster-whisper-xxl",
+        bin_path / "faster-whisper-xxl.exe",
+        bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl",
+        bin_path / "Faster-Whisper-XXL" / "faster-whisper-xxl.exe",
+    ]
+    has_xxl = any(p.exists() for p in xxl_candidates) or bool(
+        shutil.which("faster-whisper-xxl")
+    )
+    if has_xxl:
         installed_versions.extend(["GPU", "CPU"])
-    installed_versions = list(set(installed_versions))
+    installed_versions = sorted(set(installed_versions))
 
     return bool(installed_versions), installed_versions
 
@@ -457,7 +486,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         """程序下载完成处理"""
         try:
             # 检查是否是 CPU 版本的直接下载
-            if save_path.endswith(".exe"):
+            if save_path.lower().endswith(".exe"):
                 # 如果是exe文件,重命名为faster-whisper.exe
                 os.rename(save_path, os.path.join(BIN_PATH, "faster-whisper.exe"))
                 self._finish_program_installation()
@@ -633,6 +662,17 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
 
     def _finish_program_installation(self):
         """完成程序安装"""
+        # Linux 可执行文件下载后需要补充执行权限
+        if platform.system() == "Linux":
+            for candidate in [
+                Path(BIN_PATH) / "faster-whisper-xxl",
+                Path(BIN_PATH) / "faster-whisper",
+                Path(BIN_PATH) / "Faster-Whisper-XXL" / "faster-whisper-xxl",
+                Path(BIN_PATH) / "Faster-Whisper-XXL" / "faster-whisper",
+            ]:
+                if candidate.exists():
+                    candidate.chmod(candidate.stat().st_mode | 0o111)
+
         InfoBar.success(
             self.tr("安装完成"),
             self.tr("Faster Whisper 程序已安装成功"),

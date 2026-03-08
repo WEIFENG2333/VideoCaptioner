@@ -9,6 +9,7 @@ from typing import Any, Callable, List, Optional, Union
 
 import GPUtil
 
+from ...config import BIN_PATH
 from ..utils.logger import setup_logger
 from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
@@ -96,21 +97,115 @@ class FasterWhisperASR(BaseASR):
             self.one_word = 0
             self.sentence = True
 
-        # 根据设备选择程序
-        if self.device == "cpu":
-            if shutil.which("faster-whisper-xxl"):
-                self.faster_whisper_program = "faster-whisper-xxl"
-            else:
-                if not shutil.which("faster-whisper"):
-                    raise EnvironmentError("faster-whisper程序未找到，请确保已经下载。")
-                self.faster_whisper_program = "faster-whisper"
-                self.vad_method = ""
-        elif self.device == "cuda":
-            if not shutil.which("faster-whisper-xxl"):
-                raise EnvironmentError(
-                    "faster-whisper-xxl 程序未找到，请确保已经下载。"
-                )
-            self.faster_whisper_program = "faster-whisper-xxl"
+        # 根据设备和平台自动解析程序路径（支持 Linux/Windows、本地 bin 目录和 PATH）
+        self.faster_whisper_program = self._resolve_program(
+            preferred_program=faster_whisper_program,
+            device=self.device,
+        )
+
+        # CPU 下如果退化到普通 faster-whisper，关闭 xxl 才支持的 VAD 方法参数
+        if self.device == "cpu" and not self._is_xxl_program(self.faster_whisper_program):
+            self.vad_method = ""
+
+    @staticmethod
+    def _is_xxl_program(program: str) -> bool:
+        return "faster-whisper-xxl" in Path(program).name.lower()
+
+    @staticmethod
+    def _is_error_line(line: str) -> bool:
+        lower_line = line.lower()
+        return (
+            "error" in lower_line
+            or "failed" in lower_line
+            or "traceback" in lower_line
+            or "exception" in lower_line
+        )
+
+    @staticmethod
+    def _detect_glibc_error(line: str) -> bool:
+        lower_line = line.lower()
+        return "glibc_" in lower_line and "not found" in lower_line
+
+    @staticmethod
+    def _candidate_paths(name: str) -> List[Path]:
+        """Generate local filesystem candidates from a command/program name."""
+        if not name:
+            return []
+
+        candidate = Path(name)
+        paths: List[Path] = []
+
+        # Absolute or relative path from config/user
+        if candidate.is_absolute() or candidate.parent != Path("."):
+            paths.append(candidate)
+            if not str(candidate).lower().endswith(".exe"):
+                paths.append(Path(f"{candidate}.exe"))
+
+        # Common local locations in this project
+        local_names = [name]
+        if not name.lower().endswith(".exe"):
+            local_names.append(f"{name}.exe")
+
+        for local_name in local_names:
+            paths.append(BIN_PATH / local_name)
+            paths.append(BIN_PATH / "Faster-Whisper-XXL" / local_name)
+
+        return paths
+
+    @classmethod
+    def _resolve_existing_program(cls, name: str) -> Optional[str]:
+        """Resolve executable by checking PATH and local bin folders."""
+        if not name:
+            return None
+
+        # PATH lookup first
+        which_path = shutil.which(name)
+        if which_path:
+            return which_path
+
+        # Also try .exe on non-Windows when config keeps old value
+        if not name.lower().endswith(".exe"):
+            which_exe = shutil.which(f"{name}.exe")
+            if which_exe:
+                return which_exe
+
+        for candidate in cls._candidate_paths(name):
+            if candidate.exists():
+                return str(candidate)
+
+        return None
+
+    @classmethod
+    def _resolve_program(cls, preferred_program: str, device: str) -> str:
+        """Resolve usable faster-whisper executable path for target device."""
+        if device == "cuda":
+            candidate_names = [
+                preferred_program,
+                "faster-whisper-xxl",
+                "faster-whisper-xxl.exe",
+            ]
+        else:
+            candidate_names = [
+                preferred_program,
+                "faster-whisper-xxl",
+                "faster-whisper-xxl.exe",
+                "faster-whisper",
+                "faster-whisper.exe",
+            ]
+
+        # Keep order while removing empty/duplicated values
+        deduped_names = list(dict.fromkeys([name for name in candidate_names if name]))
+
+        for name in deduped_names:
+            resolved = cls._resolve_existing_program(name)
+            if resolved:
+                return resolved
+
+        if device == "cuda":
+            raise EnvironmentError(
+                "faster-whisper-xxl 程序未找到，请先下载 Linux/Windows 对应版本。"
+            )
+        raise EnvironmentError("faster-whisper 程序未找到，请确保已经下载。")
 
     def _build_command(self, audio_input: str) -> List[str]:
         """Build command line arguments for faster-whisper."""
@@ -155,9 +250,7 @@ class FasterWhisperASR(BaseASR):
             cmd.extend(["--vad_filter", "false"])
 
         # 人声分离
-        if self.ff_mdx_kim2 and self.faster_whisper_program.startswith(
-            "faster-whisper-xxl"
-        ):
+        if self.ff_mdx_kim2 and self._is_xxl_program(self.faster_whisper_program):
             cmd.append("--ff_mdx_kim2")
 
         # 文本处理参数
@@ -264,6 +357,7 @@ class FasterWhisperASR(BaseASR):
 
             is_finish = False
             error_msg = ""
+            known_runtime_error = ""
             last_progress = 0
 
             # 实时处理输出
@@ -274,8 +368,14 @@ class FasterWhisperASR(BaseASR):
                     for stream_name, line in reader.get_remaining_output():
                         line = line.strip()
                         if line:
-                            if "error" in line:
-                                error_msg += line
+                            if self._is_error_line(line):
+                                error_msg += f"{line}\n"
+                                if self._detect_glibc_error(line):
+                                    known_runtime_error = (
+                                        "Faster-Whisper-XXL 与当前系统 GLIBC 不兼容。"
+                                        "请重新运行 run.sh 自动切换兼容版本，"
+                                        "或在环境变量 FASTER_WHISPER_XXL_LINUX_URL 指定兼容包。"
+                                    )
                             else:
                                 logger.info(line)
                     break
@@ -299,15 +399,23 @@ class FasterWhisperASR(BaseASR):
                         if "Subtitles are written to" in line:
                             is_finish = True
                             callback(*ASRStatus.COMPLETED.callback_tuple())
-                        if "error" in line or "Error" in line:
-                            error_msg += line
+                        if self._is_error_line(line):
+                            error_msg += f"{line}\n"
+                            if self._detect_glibc_error(line):
+                                known_runtime_error = (
+                                    "Faster-Whisper-XXL 与当前系统 GLIBC 不兼容。"
+                                    "请重新运行 run.sh 自动切换兼容版本，"
+                                    "或在环境变量 FASTER_WHISPER_XXL_LINUX_URL 指定兼容包。"
+                                )
                             logger.error(line)
                         else:
                             logger.info(line)
 
             if not is_finish:
                 logger.error("Faster Whisper 错误: %s", error_msg)
-                raise RuntimeError(error_msg)
+                if known_runtime_error:
+                    raise RuntimeError(known_runtime_error)
+                raise RuntimeError(error_msg.strip() or "Faster Whisper 运行失败")
 
             # 判断是否识别成功
             if not output_path.exists():
