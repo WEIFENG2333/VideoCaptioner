@@ -19,7 +19,7 @@ from qfluentwidgets import (
 )
 
 from app.config import SETTINGS_PATH, WORK_PATH
-from app.core.utils.platform_utils import get_available_transcribe_models
+from app.core.utils.platform_utils import get_available_transcribe_models, is_windows
 
 from ..core.entities import (
     FasterWhisperModelEnum,
@@ -174,10 +174,13 @@ class Config(QConfig):
     )
 
     # ------------------- Faster Whisper 配置 -------------------
+    _default_faster_whisper_program = (
+        "faster-whisper-xxl.exe" if is_windows() else "faster-whisper-xxl"
+    )
     faster_whisper_program = ConfigItem(
         "FasterWhisper",
         "Program",
-        "faster-whisper-xxl.exe",
+        _default_faster_whisper_program,
     )
     faster_whisper_model = OptionsConfigItem(
         "FasterWhisper",
