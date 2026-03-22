@@ -1,0 +1,35 @@
+1
+00:00:00,000 --> 00:00:04,843
+Hello everyone welcome to this video tutorial Today we will learn about
+
+2
+00:00:04,843 --> 00:00:09,994
+Python programming Python is a powerful and easy to learn programming language
+
+3
+00:00:10,500 --> 00:00:13,051
+It has efficient high level data structures and a simple approach to
+
+4
+00:00:13,051 --> 00:00:17,169
+object oriented programming Let's start with the basics First we need to
+
+5
+00:00:17,169 --> 00:00:22,000
+install Python You can download it from the official website python org
+
+6
+00:00:22,500 --> 00:00:27,155
+After installation you can run Python from the command line Now let's
+
+7
+00:00:27,155 --> 00:00:31,858
+write our first program print hello world The syntax is very simple
+
+8
+00:00:31,858 --> 00:00:36,248
+just type print and the string in quotes That's it for today's
+
+9
+00:00:36,248 --> 00:00:37,995
+lesson See you next time

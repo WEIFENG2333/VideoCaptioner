@@ -17,7 +17,7 @@ echo ==================================
 echo.
 
 :: Check if running from project directory (current dir)
-if exist "main.py" if exist "pyproject.toml" if exist "app" (
+if exist "pyproject.toml" if exist "pyproject.toml" if exist "videocaptioner" (
     set "INSTALL_DIR=!CD!"
     echo [INFO] Running from project directory: !INSTALL_DIR!
     goto :after_detect
@@ -26,7 +26,7 @@ if exist "main.py" if exist "pyproject.toml" if exist "app" (
 :: Check if running from scripts/ subdirectory
 set "SCRIPT_DIR=%~dp0"
 set "PARENT_DIR=%SCRIPT_DIR%.."
-if exist "%PARENT_DIR%\main.py" if exist "%PARENT_DIR%\pyproject.toml" (
+if exist "%PARENT_DIR%\pyproject.toml" (
     pushd "%PARENT_DIR%"
     set "INSTALL_DIR=!CD!"
     popd
@@ -44,7 +44,7 @@ call :install_uv
 if !errorlevel! neq 0 exit /b 1
 
 :: Setup repository if needed
-if not exist "%INSTALL_DIR%\main.py" (
+if not exist "%INSTALL_DIR%\pyproject.toml" (
     call :setup_repository
     if !errorlevel! neq 0 exit /b 1
 )
@@ -170,7 +170,7 @@ exit /b 0
 echo.
 echo [INFO] Starting VideoCaptioner...
 echo.
-uv run python main.py
+uv run videocaptioner
 if !errorlevel! neq 0 (
     echo.
     echo Application exited with error.

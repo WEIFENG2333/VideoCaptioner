@@ -1,16 +1,13 @@
 """TTS 核心功能测试"""
 
-import os
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
-import requests
 
-from app.core.tts import (
+from videocaptioner.core.tts import (
     BaseTTS,
-    OpenAIFmTTS,
     OpenAITTS,
     SiliconFlowTTS,
     TTSConfig,
@@ -308,7 +305,7 @@ class TestSiliconFlowTTS:
         with pytest.raises(ValueError, match="API key is required"):
             SiliconFlowTTS(config)
 
-    @patch("app.core.tts.siliconflow.requests.post")
+    @patch("videocaptioner.core.tts.siliconflow.requests.post")
     def test_synthesize_success(self, mock_post):
         """测试成功合成"""
         config = TTSConfig(
@@ -343,7 +340,7 @@ class TestSiliconFlowTTS:
             assert output_path.exists()
             assert output_path.read_bytes() == b"fake audio data"
 
-    @patch("app.core.tts.siliconflow.requests.post")
+    @patch("videocaptioner.core.tts.siliconflow.requests.post")
     def test_synthesize_with_optional_params(self, mock_post):
         """测试带可选参数的合成"""
         config = TTSConfig(
@@ -380,7 +377,7 @@ class TestOpenAITTS:
         with pytest.raises(ValueError, match="API key is required"):
             OpenAITTS(config)
 
-    @patch("app.core.tts.openai_tts.OpenAI")
+    @patch("videocaptioner.core.tts.openai_tts.OpenAI")
     def test_synthesize_success(self, mock_openai_class):
         """测试成功合成"""
         config = TTSConfig(
@@ -432,7 +429,7 @@ class TestOpenAITTS:
             assert segment.audio_path == str(output_path)
             assert segment.voice == "alloy"
 
-    @patch("app.core.tts.openai_tts.OpenAI")
+    @patch("videocaptioner.core.tts.openai_tts.OpenAI")
     def test_synthesize_with_custom_voice(self, mock_openai_class):
         """测试使用自定义音色"""
         config = TTSConfig(
@@ -469,7 +466,7 @@ class TestOpenAITTS:
             assert call_kwargs["voice"] == "FunAudioLLM/CosyVoice2-0.5B:alex"
             assert call_kwargs["speed"] == 1.2
 
-    @patch("app.core.tts.openai_tts.OpenAI")
+    @patch("videocaptioner.core.tts.openai_tts.OpenAI")
     def test_default_voice(self, mock_openai_class):
         """测试默认音色"""
         config = TTSConfig(
@@ -553,7 +550,7 @@ class TestOpenAIFmTTS:
         tts = OpenAIFmTTS(config)
         assert tts.config.voice == "echo"
 
-    @patch("app.core.tts.openai_fm.requests.get")
+    @patch("videocaptioner.core.tts.openai_fm.requests.get")
     def test_synthesize_success(self, mock_get):
         """测试语音合成成功"""
         config = TTSConfig(
@@ -597,7 +594,7 @@ class TestOpenAIFmTTS:
             assert segment.audio_path == str(output_path)
             assert segment.voice == "fable"
 
-    @patch("app.core.tts.openai_fm.requests.get")
+    @patch("videocaptioner.core.tts.openai_fm.requests.get")
     def test_synthesize_with_different_voices(self, mock_get):
         """测试不同音色的合成"""
         voices = ["alloy", "echo", "nova", "shimmer"]
@@ -626,7 +623,7 @@ class TestOpenAIFmTTS:
                 assert params["voice"] == voice
                 assert segment.voice == voice
 
-    @patch("app.core.tts.openai_fm.requests.get")
+    @patch("videocaptioner.core.tts.openai_fm.requests.get")
     def test_synthesize_with_long_text(self, mock_get):
         """测试长文本合成"""
         config = TTSConfig(
@@ -653,7 +650,7 @@ class TestOpenAIFmTTS:
             assert params["input"] == long_text
             assert segment.text == long_text
 
-    @patch("app.core.tts.openai_fm.requests.get")
+    @patch("videocaptioner.core.tts.openai_fm.requests.get")
     def test_synthesize_timeout(self, mock_get):
         """测试超时配置"""
         config = TTSConfig(
@@ -677,7 +674,7 @@ class TestOpenAIFmTTS:
             # 验证超时参数
             assert mock_get.call_args[1]["timeout"] == 30
 
-    @patch("app.core.tts.openai_fm.requests.get")
+    @patch("videocaptioner.core.tts.openai_fm.requests.get")
     def test_synthesize_api_error(self, mock_get):
         """测试 API 错误处理"""
         config = TTSConfig(

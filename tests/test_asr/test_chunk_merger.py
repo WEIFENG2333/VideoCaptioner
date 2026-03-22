@@ -9,8 +9,8 @@
 
 import pytest
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.asr.chunk_merger import ChunkMerger
+from videocaptioner.core.asr.asr_data import ASRData, ASRDataSeg
+from videocaptioner.core.asr.chunk_merger import ChunkMerger
 
 
 def create_sentence_segments(sentences, start_time=0):

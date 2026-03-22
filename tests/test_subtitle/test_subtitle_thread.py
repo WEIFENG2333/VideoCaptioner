@@ -11,20 +11,18 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
 from PyQt5.QtCore import QEventLoop, QTimer
 
-from app.core.entities import (
+from videocaptioner.core.entities import (
     SubtitleConfig,
     SubtitleTask,
     TranslatorServiceEnum,
 )
-from app.core.llm.check_llm import get_available_models
-from app.core.translate.types import TargetLanguage
-from app.thread.subtitle_thread import SubtitleThread
+from videocaptioner.core.llm.check_llm import get_available_models
+from videocaptioner.core.translate.types import TargetLanguage
+from videocaptioner.ui.thread.subtitle_thread import SubtitleThread
 
 # Load environment variables
-load_dotenv(Path(__file__).parent.parent / ".env")
 
 
 def get_test_model():

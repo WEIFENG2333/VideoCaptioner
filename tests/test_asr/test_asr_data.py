@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
+from videocaptioner.core.asr.asr_data import ASRData, ASRDataSeg
 
 
 class TestASRDataSegEdgeCases:
@@ -354,7 +354,7 @@ class TestFormatConversionEdgeCases:
 
     def test_srt_layout_modes_all(self):
         """测试所有SRT布局模式"""
-        from app.core.entities import SubtitleLayoutEnum
+        from videocaptioner.core.entities import SubtitleLayoutEnum
 
         segments = [ASRDataSeg("Hello", 0, 1000, translated_text="你好")]
         asr_data = ASRData(segments)

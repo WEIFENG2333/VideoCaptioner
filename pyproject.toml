@@ -1,15 +1,15 @@
 [project]
 name = "videocaptioner"
-version = "1.3.3"
-description = "AI-powered video captioning tool based on LLM"
+version = "1.4.0"
+description = "AI-powered video captioning tool — ASR, subtitle optimization, translation, and synthesis"
 readme = "README.md"
 license = { text = "GPL-3.0" }
 authors = [{ name = "Weifeng" }]
 requires-python = ">=3.10,<3.13"
-keywords = ["video", "caption", "subtitle", "asr", "llm", "translation"]
+keywords = ["video", "caption", "subtitle", "asr", "llm", "translation", "cli"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Environment :: X11 Applications :: Qt",
+    "Environment :: Console",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
@@ -19,22 +19,30 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Video",
 ]
+
+# Base dependencies (CLI-only, no PyQt)
 dependencies = [
     "requests>=2.32.4",
     "openai>=1.97.1",
     "diskcache>=5.6.3",
-    "PyQt5==5.15.11",
-    "PyQt-Fluent-Widgets==1.8.4",
     "yt-dlp>=2025.7.21",
-    "modelscope>=1.32.0",
-    "psutil>=7.0.0",
     "json-repair>=0.49.0",
     "langdetect>=1.0.9",
     "pydub>=0.25.1",
     "tenacity>=8.2.0",
-    "GPUtil>=1.4.0",
     "pillow>=12.0.0",
     "fonttools>=4.61.1",
+    "platformdirs>=4.0.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+gui = [
+    "PyQt5==5.15.11",
+    "PyQt-Fluent-Widgets==1.8.4",
+    "modelscope>=1.32.0",
+    "psutil>=7.0.0",
+    "GPUtil>=1.4.0",
 ]
 
 [project.urls]
@@ -43,23 +51,36 @@ Repository = "https://github.com/WEIFENG2333/VideoCaptioner"
 Issues = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 
 [project.scripts]
-videocaptioner = "main:main"
+videocaptioner = "videocaptioner.cli.main:main"
+
+# videocaptioner (no args) auto-launches GUI if [gui] extras are installed
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "resource/fonts/",
+    "docs/",
+    "legacy-docs/",
+    "work-dir/",
+    "AppData/",
+    "output/",
+    "scripts/",
+    "tests/",
+    ".github/",
+]
+
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["videocaptioner"]
 
 [tool.uv]
-# 为不同平台分别解析依赖（PyQt5-Qt5 版本因平台而异）
 environments = [
     "sys_platform == 'win32'",
     "sys_platform == 'darwin'",
     "sys_platform == 'linux'",
 ]
-# 覆盖 PyQt5-Qt5 版本：Windows 用 5.15.2，其他平台用最新版
 override-dependencies = [
     "PyQt5-Qt5==5.15.2; sys_platform == 'win32'",
     "PyQt5-Qt5>=5.15.11; sys_platform != 'win32'",
@@ -68,6 +89,12 @@ dev-dependencies = [
     "pyright>=1.1.0",
     "ruff>=0.4.0",
     "pytest>=8.0.0",
+    # GUI deps for development
+    "PyQt5==5.15.11",
+    "PyQt-Fluent-Widgets==1.8.4",
+    "modelscope>=1.32.0",
+    "psutil>=7.0.0",
+    "GPUtil>=1.4.0",
 ]
 
 [tool.pyright]
@@ -75,7 +102,7 @@ venvPath = "."
 venv = ".venv"
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
-include = ["app", "main.py"]
+include = ["videocaptioner"]
 exclude = [
     "**/__pycache__",
     "**/.pytest_cache",
@@ -88,15 +115,12 @@ exclude = [
     "resource",
     "**/node_modules"
 ]
-# 导入相关
 reportMissingImports = "warning"
 reportMissingTypeStubs = false
-# 类型检查级别（降低严格度）
 reportGeneralTypeIssues = false
 reportOptionalOperand = "warning"
 reportOptionalMemberAccess = false
 reportArgumentType = "warning"
-# 禁用的检查
 reportCallIssue = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false

@@ -11,11 +11,10 @@ from typing import Callable, Dict, List
 
 import pytest
 
-from app.core.asr.asr_data import ASRData
-from app.core.translate import SubtitleProcessData, TargetLanguage
-from app.core.translate.llm_translator import LLMTranslator
-from app.core.utils import cache
-from tests.conftest import assert_translation_quality
+from videocaptioner.core.asr.asr_data import ASRData
+from videocaptioner.core.translate import SubtitleProcessData, TargetLanguage
+from videocaptioner.core.translate.llm_translator import LLMTranslator
+from videocaptioner.core.utils import cache
 
 
 @pytest.mark.integration
@@ -86,7 +85,7 @@ class TestLLMTranslator:
         assert len(result) == len(sample_translate_data)
 
         # Get expected keywords for target language
-        lang_expectations = expected_translations.get(target_language.value, {})
+        expected_translations.get(target_language.value, {})
 
         # Validate translation exists (quality check skipped for mock)
         for data in result:

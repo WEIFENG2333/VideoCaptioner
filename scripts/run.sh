@@ -25,8 +25,8 @@ trap 'if [ $? -ne 0 ]; then echo ""; print_error "Installation failed at line $L
 
 # Check if running from within the project directory
 detect_project_dir() {
-    # If main.py exists in current directory, use it
-    if [ -f "main.py" ] && [ -f "pyproject.toml" ] && [ -d "app" ]; then
+    # Check if in project directory
+    if [ -f "pyproject.toml" ] && [ -f "pyproject.toml" ] && [ -d "videocaptioner" ]; then
         INSTALL_DIR="$(pwd)"
         return 0
     fi
@@ -40,13 +40,13 @@ detect_project_dir() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 
-    if [ -f "$PARENT_DIR/main.py" ] && [ -f "$PARENT_DIR/pyproject.toml" ]; then
+    if [ -f "$PARENT_DIR/pyproject.toml" ]; then
         INSTALL_DIR="$PARENT_DIR"
         return 0
     fi
 
     # If script is in project root
-    if [ -f "$SCRIPT_DIR/main.py" ] && [ -f "$SCRIPT_DIR/pyproject.toml" ]; then
+    if [ -f "$SCRIPT_DIR/pyproject.toml" ]; then
         INSTALL_DIR="$SCRIPT_DIR"
         return 0
     fi
@@ -189,7 +189,7 @@ run_app() {
     print_info "Starting VideoCaptioner..."
     echo ""
     cd "$INSTALL_DIR"
-    uv run python main.py
+    uv run videocaptioner
 }
 
 # Main
@@ -209,7 +209,7 @@ main() {
     install_uv
 
     # Setup repository (clone if needed)
-    if [ ! -f "$INSTALL_DIR/main.py" ]; then
+    if [ ! -f "$INSTALL_DIR/pyproject.toml" ]; then
         setup_repository
     else
         cd "$INSTALL_DIR"

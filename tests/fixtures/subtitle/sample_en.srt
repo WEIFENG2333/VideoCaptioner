@@ -1,0 +1,39 @@
+1
+00:00:00,000 --> 00:00:03,000
+Hello everyone, welcome to this video tutorial.
+
+2
+00:00:03,000 --> 00:00:06,000
+Today we will learn about Python programming.
+
+3
+00:00:06,500 --> 00:00:10,000
+Python is a powerful and easy to learn programming language.
+
+4
+00:00:10,500 --> 00:00:14,000
+It has efficient high-level data structures and a simple approach to object-oriented programming.
+
+5
+00:00:14,500 --> 00:00:18,000
+Let's start with the basics. First, we need to install Python.
+
+6
+00:00:18,500 --> 00:00:22,000
+You can download it from the official website python.org.
+
+7
+00:00:22,500 --> 00:00:26,000
+After installation, you can run Python from the command line.
+
+8
+00:00:26,500 --> 00:00:30,000
+Now let's write our first program: print hello world.
+
+9
+00:00:30,500 --> 00:00:34,000
+The syntax is very simple: just type print and the string in quotes.
+
+10
+00:00:34,500 --> 00:00:38,000
+That's it for today's lesson. See you next time!

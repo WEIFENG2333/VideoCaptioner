@@ -21,9 +21,9 @@ from typing import Callable, List, Optional
 import pytest
 from pydub import AudioSegment
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.asr.base import BaseASR
-from app.core.asr.chunked_asr import ChunkedASR
+from videocaptioner.core.asr.asr_data import ASRDataSeg
+from videocaptioner.core.asr.base import BaseASR
+from videocaptioner.core.asr.chunked_asr import ChunkedASR
 
 # ============================================================================
 # Mock ASR 辅助类

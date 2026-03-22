@@ -4,13 +4,10 @@ import os
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
 
-from app.core.entities import TranscribeConfig, TranscribeModelEnum, TranscribeTask
-from app.thread.transcript_thread import TranscriptThread
 from tests.test_thread.conftest import run_thread_with_timeout
-
-load_dotenv(Path(__file__).parent.parent / ".env")
+from videocaptioner.core.entities import TranscribeConfig, TranscribeModelEnum, TranscribeTask
+from videocaptioner.ui.thread.transcript_thread import TranscriptThread
 
 
 @pytest.mark.integration

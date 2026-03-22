@@ -1,9 +1,7 @@
 """Thread module test fixtures and utilities."""
 
-import os
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Generator
 

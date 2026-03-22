@@ -1,0 +1,49 @@
+1
+00:00:00,000 --> 00:00:03,000
+大家好，欢迎观看本次视频教程。
+Hello everyone, welcome to this video tutorial.
+
+2
+00:00:03,000 --> 00:00:06,000
+今天我们将学习Python编程。
+Today we will learn about Python programming.
+
+3
+00:00:06,500 --> 00:00:10,000
+Python是一种强大且易于学习的编程语言。
+Python is a powerful and easy to learn programming language.
+
+4
+00:00:10,500 --> 00:00:14,000
+它具有高效的高级数据结构，并且对面向对象编程有简单的处理方式。
+It has efficient high-level data structures and a simple approach to object-oriented programming.
+
+5
+00:00:14,500 --> 00:00:18,000
+让我们从基础开始。首先，我们需要安装Python。
+Let's start with the basics. First, we need to install Python.
+
+6
+00:00:18,500 --> 00:00:22,000
+您可以从官方网站python.org下载。
+You can download it from the official website python.org.
+
+7
+00:00:22,500 --> 00:00:26,000
+安装后，您可以从命令行运行Python。
+After installation, you can run Python from the command line.
+
+8
+00:00:26,500 --> 00:00:30,000
+现在让我们编写第一个程序：打印‘你好，世界’。
+Now let's write our first program: print hello world.
+
+9
+00:00:30,500 --> 00:00:34,000
+语法非常简单：只需键入print和引号中的字符串。
+The syntax is very simple: just type print and the string in quotes.
+
+10
+00:00:34,500 --> 00:00:38,000
+今天的课就到这里。下次见！
+That's it for today's lesson. See you next time!

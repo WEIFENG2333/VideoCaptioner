@@ -15,9 +15,9 @@ from typing import Callable, List, Optional
 from pydub import AudioSegment
 from pydub.generators import Sine
 
-from app.core.asr.asr_data import ASRDataSeg
-from app.core.asr.base import BaseASR
-from app.core.asr.chunked_asr import ChunkedASR
+from videocaptioner.core.asr.asr_data import ASRDataSeg
+from videocaptioner.core.asr.base import BaseASR
+from videocaptioner.core.asr.chunked_asr import ChunkedASR
 
 # ============================================================================
 # 测试用 Mock ASR 实现

@@ -6,13 +6,12 @@ Requires environment variables:
     OPENAI_MODEL: Model name (optional, defaults to gpt-4o-mini)
 """
 
-import os
 from typing import Callable
 
 import pytest
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.optimize.optimize import SubtitleOptimizer
+from videocaptioner.core.asr.asr_data import ASRData, ASRDataSeg
+from videocaptioner.core.optimize.optimize import SubtitleOptimizer
 
 
 @pytest.mark.integration

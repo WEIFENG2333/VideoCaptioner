@@ -4,10 +4,10 @@ from typing import Dict, List
 
 import pytest
 
-from app.core.asr.asr_data import ASRData
-from app.core.translate import SubtitleProcessData, TargetLanguage
-from app.core.translate.bing_translator import BingTranslator
 from tests.conftest import assert_translation_quality
+from videocaptioner.core.asr.asr_data import ASRData
+from videocaptioner.core.translate import SubtitleProcessData, TargetLanguage
+from videocaptioner.core.translate.bing_translator import BingTranslator
 
 
 @pytest.mark.integration

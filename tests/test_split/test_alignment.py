@@ -5,7 +5,7 @@
 
 import pytest
 
-from app.core.split.alignment import SubtitleAligner
+from videocaptioner.core.split.alignment import SubtitleAligner
 
 
 class TestSubtitleAligner:

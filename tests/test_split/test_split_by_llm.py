@@ -6,12 +6,10 @@ Requires environment variables:
     OPENAI_MODEL: Model name (optional, defaults to gpt-4o-mini)
 """
 
-import os
-from typing import Callable
 
 import pytest
 
-from app.core.split.split_by_llm import count_words, split_by_llm
+from videocaptioner.core.split.split_by_llm import count_words, split_by_llm
 
 
 @pytest.mark.integration

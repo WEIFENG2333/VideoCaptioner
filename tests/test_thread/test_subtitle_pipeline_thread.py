@@ -2,8 +2,6 @@
 
 import pytest
 
-from app.thread.subtitle_pipeline_thread import SubtitlePipelineThread
-
 
 @pytest.mark.integration
 class TestSubtitlePipelineThread:

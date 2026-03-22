@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.thread.video_info_thread import VideoInfoThread
 from tests.test_thread.conftest import run_thread_with_timeout
+from videocaptioner.ui.thread.video_info_thread import VideoInfoThread
 
 
 @pytest.mark.integration

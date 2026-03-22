@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from app.core.asr import WhisperAPI
-from app.core.asr.asr_data import ASRData
 from tests.test_asr.conftest import assert_asr_result_valid
+from videocaptioner.core.asr import WhisperAPI
+from videocaptioner.core.asr.asr_data import ASRData
 
 
 @pytest.mark.integration

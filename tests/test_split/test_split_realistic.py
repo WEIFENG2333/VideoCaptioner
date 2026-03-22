@@ -3,10 +3,9 @@
 使用真实的字幕数据和实际使用场景进行测试
 """
 
-import pytest
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.split.split import SubtitleSplitter, preprocess_segments
+from videocaptioner.core.asr.asr_data import ASRData, ASRDataSeg
+from videocaptioner.core.split.split import SubtitleSplitter, preprocess_segments
 
 # ==================== 真实字幕数据构造器 ====================
 
@@ -18,7 +17,7 @@ def create_whisper_style_segments(
 
     Whisper 通常输出词级时间戳，中文按字，英文按单词
     """
-    from app.core.utils.text_utils import is_mainly_cjk
+    from videocaptioner.core.utils.text_utils import is_mainly_cjk
 
     segments = []
     current_time = start_ms
@@ -26,7 +25,7 @@ def create_whisper_style_segments(
     if is_mainly_cjk(text):
         # 中文：每个字一个分段
         for char in text:
-            if char.strip() and not char in "，。！？、；：" "''（）":
+            if char.strip() and char not in "，。！？、；：" "''（）":
                 duration = char_duration_ms
                 # 标点符号更短
                 if char in "，。！？":
@@ -63,7 +62,7 @@ class TestRealWorldScenarios:
         text = "今天我们要讨论的话题是人工智能在现代社会中的应用特别是在医疗健康领域的突破性进展这些技术正在深刻地改变着我们的生活方式从诊断到治疗再到康复每个环节都有AI技术的身影"
         segments = create_whisper_style_segments(text, start_ms=0, char_duration_ms=200)
 
-        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20)
+        SubtitleSplitter(thread_num=1, model="gpt-4o-mini", max_word_count_cjk=20)
         asr_data = ASRData(segments)
 
         # 预处理：转换为词级
@@ -222,7 +221,7 @@ class TestRealWorldScenarios:
         s2 = create_whisper_style_segments("欢迎来到今天的分享", start_ms=current_time)
         segments.extend(s2)
 
-        splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
+        SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
         # 噪音应该在预处理时被识别（如果是纯标点）或合并
         result = preprocess_segments(segments)
 
@@ -445,7 +444,7 @@ class TestMergeShortSegmentRealistic:
         ]
 
         splitter = SubtitleSplitter(thread_num=1, model="gpt-4o-mini")
-        original_len = len(segments)
+        len(segments)
         splitter.merge_short_segment(segments)
 
         # 不应该跨越大停顿合并，至少保留2个片段

@@ -3,8 +3,8 @@
 全面测试 SubtitleSplitter 类的核心方法和边缘情况
 """
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.split.split import (
+from videocaptioner.core.asr.asr_data import ASRDataSeg
+from videocaptioner.core.split.split import (
     MAX_WORD_COUNT_CJK,
     MAX_WORD_COUNT_ENGLISH,
     SubtitleSplitter,
@@ -495,7 +495,7 @@ class TestStopMethod:
         first_state = splitter.is_running
         splitter.stop()
         second_state = splitter.is_running
-        assert first_state == second_state == False
+        assert first_state == second_state is False
 
 
 class TestEdgeCases:

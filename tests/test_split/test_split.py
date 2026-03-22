@@ -3,10 +3,9 @@
 测试 app/core/split/split.py 中的核心功能
 """
 
-import pytest
 
-from app.core.asr.asr_data import ASRData, ASRDataSeg
-from app.core.split.split import SubtitleSplitter, preprocess_segments
+from videocaptioner.core.asr.asr_data import ASRData, ASRDataSeg
+from videocaptioner.core.split.split import SubtitleSplitter, preprocess_segments
 
 
 class TestPreprocessEdgeCases:

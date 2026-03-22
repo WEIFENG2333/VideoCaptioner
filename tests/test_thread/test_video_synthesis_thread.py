@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from app.core.entities import SynthesisConfig, SynthesisTask
-from app.thread.video_synthesis_thread import VideoSynthesisThread
 from tests.test_thread.conftest import run_thread_with_timeout
+from videocaptioner.core.entities import SynthesisConfig, SynthesisTask
+from videocaptioner.ui.thread.video_synthesis_thread import VideoSynthesisThread
 
 
 @pytest.mark.integration

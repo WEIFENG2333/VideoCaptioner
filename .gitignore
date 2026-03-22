@@ -1,64 +1,48 @@
-# win 二进制文件资源目录
-/resource/bin/
-!/resource/bin/bin_environment.txt
-
-# 开发环境
-.idea/
+# Python
+__pycache__/
 *.pyc
-*/__pycache__/
-*.env
-*.env.local
-*.env.*.local
-.env.test
-**/.env
-**/.env.local
-venv/
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
 .venv/
+venv/
 
-# 系统文件
-.DS_Store
-
-# 测试和脚本
-/test/
-/release/
-/my_content/
-
-# 媒体文件
-*.srt
-*.mp4
-*.exe
-
-# 应用数据
-/AppData/
-**/settings.json
-!**/settings.json.example
-/output/
-/work-dir/
+# IDE
+.idea/
 .vscode/
-.claude/
 
-# 敏感文件
-cookies.txt
-**/cookies.txt
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment & secrets
+.env
 *.key
 *.pem
-*.p12
-*.pfx
-*secret*
-*credential*
+cookies.txt
 
-# 测试相关
+# Testing
 .pytest_cache/
 .coverage
 htmlcov/
-*.log
 
-# 项目文档
-CLAUDE.md
-
-# Node.js 和 VitePress
+# Node.js (docs site)
 node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
-/package-lock.json
-!docs/package-lock.json
+
+# Project-specific
+/resource/bin/
+!/resource/bin/bin_environment.txt
+/AppData/
+/work-dir/
+/*.srt
+/*.mp4
+*.log
+
+# Claude Code
+.claude/
+CLAUDE.md

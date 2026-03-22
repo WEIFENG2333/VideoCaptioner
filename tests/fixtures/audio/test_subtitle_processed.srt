@@ -1,0 +1,49 @@
+1
+00:00:00,000 --> 00:00:03,500
+Hello everyone um welcome to this ah tutorial
+Hello everyone um welcome to this ah tutorial
+
+2
+00:00:03,500 --> 00:00:07,000
+today we're going to learn about machine learning and uh neural networks
+today we're going to learn about machine learning and uh neural networks
+
+3
+00:00:07,000 --> 00:00:10,500
+first lets ah talk about the basic concepts of deep learning
+first lets ah talk about the basic concepts of deep learning
+
+4
+00:00:10,500 --> 00:00:14,000
+neural networks use backpropergation algorithm to train the model um
+neural networks use backpropergation algorithm to train the model um
+
+5
+00:00:14,000 --> 00:00:17,500
+the algoritm adjusts the weights and biases iteratively
+the algoritm adjusts the weights and biases iteratively
+
+6
+00:00:17,500 --> 00:00:21,000
+this process ah continues until the loss function is minimized
+this process ah continues until the loss function is minimized
+
+7
+00:00:21,000 --> 00:00:24,500
+now lets move on to convolutional neural networks or CNNs
+now lets move on to convolutional neural networks or CNNs
+
+8
+00:00:24,500 --> 00:00:28,000
+CNNs are particularly good at um image recognition tasks
+CNNs are particularly good at um image recognition tasks
+
+9
+00:00:28,000 --> 00:00:31,500
+they use filters to extract features from images ah
+they use filters to extract features from images ah
+
+10
+00:00:31,500 --> 00:00:35,000
+finally um lets discuss the training process and optimization
+finally um lets discuss the training process and optimization
