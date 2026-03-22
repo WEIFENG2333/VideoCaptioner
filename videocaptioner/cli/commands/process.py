@@ -21,12 +21,7 @@ def run(args: Namespace, config: dict) -> int:
     if getattr(args, "translator", None) or getattr(args, "target_language", None):
         no_translate = False
 
-    # Pre-flight validation — fail fast before expensive transcription
-    from videocaptioner.cli.validators import validate_process
-    if not validate_process(config, no_synthesize=no_synthesize):
-        return EXIT.USAGE_ERROR
-
-    # URL input not yet supported in pipeline
+    # URL input not yet supported
     is_url = input_path.startswith("http://") or input_path.startswith("https://")
     if is_url:
         output.error("URL input is not yet supported in the process pipeline")
@@ -34,11 +29,23 @@ def run(args: Namespace, config: dict) -> int:
         output.hint("Then: videocaptioner process <downloaded_file>")
         return EXIT.GENERAL_ERROR
 
-    # Validate input file
+    # Validate input file first (before expensive pre-flight checks)
     path = Path(input_path)
     if not path.exists():
         output.error(f"Input file not found: {path}")
         return EXIT.FILE_NOT_FOUND
+
+    # Auto-detect audio files and skip synthesis
+    audio_extensions = {"mp3", "wav", "flac", "m4a", "ogg", "opus", "aac", "wma"}
+    if path.suffix.lstrip(".").lower() in audio_extensions and not no_synthesize:
+        no_synthesize = True
+        if not quiet:
+            output.info("Audio file detected, skipping video synthesis")
+
+    # Pre-flight validation
+    from videocaptioner.cli.validators import validate_process
+    if not validate_process(config, no_synthesize=no_synthesize):
+        return EXIT.USAGE_ERROR
 
     out_dir = Path(getattr(args, "output", None) or path.parent)
 

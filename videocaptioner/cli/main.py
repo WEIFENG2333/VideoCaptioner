@@ -187,7 +187,7 @@ def _build_process_parser(subparsers) -> None:
         description="Run the complete captioning pipeline on a video or audio file. "
                     "Equivalent to running transcribe, subtitle, and synthesize in sequence.",
     )
-    p.add_argument("input", help="Video/audio file path, or online video URL")
+    p.add_argument("input", help="Video or audio file path")
     _add_common_options(p)
     _add_llm_options(p)
     _add_output_options(p)
