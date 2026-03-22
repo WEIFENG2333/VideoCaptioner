@@ -447,7 +447,8 @@ class SubtitleInterface(QWidget):
         self.status_label.setText(self.tr("已加载文件"))
 
     def start_subtitle_optimization(self, need_create_task: bool = True) -> None:
-        # 检查是否有任务
+        if self._is_processing():
+            return
         if not self.subtitle_path:
             InfoBar.warning(
                 self.tr("警告"),
@@ -881,6 +882,7 @@ class SubtitleInterface(QWidget):
         file_name = Path(self.subtitle_path).name if self.subtitle_path else ""
         self._retranslate_thread = RetranslateThread(selected_data, config, file_name)
         self._retranslate_thread.finished.connect(self._on_retranslate_finished)
+        self._retranslate_thread.progress.connect(self.on_subtitle_optimization_progress)
         self._retranslate_thread.error.connect(self._on_retranslate_error)
         self._retranslate_thread.start()
 

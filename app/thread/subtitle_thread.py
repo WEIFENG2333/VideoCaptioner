@@ -294,6 +294,7 @@ class RetranslateThread(QThread):
     """重新翻译选中行的轻量线程"""
 
     finished = pyqtSignal(dict)  # {key: translated_text}
+    progress = pyqtSignal(int, str)  # (百分比, 状态描述)
     error = pyqtSignal(str)
 
     def __init__(self, selected_data: dict, subtitle_config: SubtitleConfig, file_name: str = ""):
@@ -306,6 +307,13 @@ class RetranslateThread(QThread):
         self.selected_data = selected_data
         self.subtitle_config = subtitle_config
         self.file_name = file_name
+        self.total = len(selected_data)
+        self.done = 0
+
+    def _callback(self, result: List[SubtitleProcessData]):
+        self.done += len(result)
+        pct = min(int(self.done / self.total * 100), 100)
+        self.progress.emit(pct, self.tr("{0}% 翻译中").format(pct))
 
     def run(self):
         set_task_context(
@@ -329,7 +337,7 @@ class RetranslateThread(QThread):
             asr_data = ASRData.from_json(self.selected_data)
 
             # 创建翻译器并翻译
-            translator = create_translator_from_config(config)
+            translator = create_translator_from_config(config, callback=self._callback)
             asr_data = translator.translate_subtitle(asr_data)
 
             # 构建 {原始行号: translated_text} 映射
@@ -343,3 +351,5 @@ class RetranslateThread(QThread):
         except Exception as e:
             logger.exception(f"重新翻译失败: {e}")
             self.error.emit(str(e))
+        finally:
+            clear_task_context()
