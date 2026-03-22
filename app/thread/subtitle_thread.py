@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -13,19 +13,51 @@ from app.core.entities import (
     TranslatorServiceEnum,
 )
 from app.core.llm.check_llm import check_llm_connection
-from app.core.llm.context import clear_task_context, set_task_context, update_stage
+from app.core.llm.context import (
+    clear_task_context,
+    generate_task_id,
+    set_task_context,
+    update_stage,
+)
 from app.core.optimize.optimize import SubtitleOptimizer
 from app.core.split.split import SubtitleSplitter
-from app.core.translate import (
-    BingTranslator,
-    DeepLXTranslator,
-    GoogleTranslator,
-    LLMTranslator,
-)
+from app.core.translate.factory import TranslatorFactory
+from app.core.translate.types import TranslatorType
 from app.core.utils.logger import setup_logger
 
-# 配置日志
+SERVICE_TO_TYPE = {
+    TranslatorServiceEnum.OPENAI: TranslatorType.OPENAI,
+    TranslatorServiceEnum.GOOGLE: TranslatorType.GOOGLE,
+    TranslatorServiceEnum.BING: TranslatorType.BING,
+    TranslatorServiceEnum.DEEPLX: TranslatorType.DEEPLX,
+}
+
 logger = setup_logger("subtitle_optimization_thread")
+
+
+def create_translator_from_config(
+    config: SubtitleConfig,
+    custom_prompt: str = "",
+    callback=None,
+):
+    """根据 SubtitleConfig 创建翻译器"""
+    translator_service = config.translator_service
+    if translator_service not in SERVICE_TO_TYPE:
+        raise ValueError(f"不支持的翻译服务: {translator_service}")
+
+    if translator_service == TranslatorServiceEnum.DEEPLX:
+        os.environ["DEEPLX_ENDPOINT"] = config.deeplx_endpoint or ""
+
+    return TranslatorFactory.create_translator(
+        translator_type=SERVICE_TO_TYPE[translator_service],
+        thread_num=config.thread_num,
+        batch_num=config.batch_size,
+        target_language=config.target_language,
+        model=config.llm_model or "",
+        custom_prompt=custom_prompt,
+        is_reflect=config.need_reflect,
+        update_callback=callback,
+    )
 
 
 class SubtitleThread(QThread):
@@ -46,26 +78,22 @@ class SubtitleThread(QThread):
     def set_custom_prompt_text(self, text: str):
         self.custom_prompt_text = text
 
-    def _setup_llm_config(self) -> Optional[SubtitleConfig]:
-        """设置API配置，返回SubtitleConfig"""
-        if (
-            self.task.subtitle_config.base_url
-            and self.task.subtitle_config.api_key
-            and self.task.subtitle_config.llm_model
-        ):
+    def _setup_llm_config(self) -> SubtitleConfig:
+        """验证 LLM 配置并设置环境变量，返回 SubtitleConfig"""
+        config = self.task.subtitle_config
+        if not config:
+            raise Exception(self.tr("LLM API 未配置, 请检查LLM配置"))
+        if config.base_url and config.api_key and config.llm_model:
             success, message = check_llm_connection(
-                self.task.subtitle_config.base_url,
-                self.task.subtitle_config.api_key,
-                self.task.subtitle_config.llm_model,
+                config.base_url,
+                config.api_key,
+                config.llm_model,
             )
             if not success:
                 raise Exception(f"{self.tr('LLM API 测试失败: ')}{message or ''}")
-            # 设置环境变量
-            if self.task.subtitle_config.base_url:
-                os.environ["OPENAI_BASE_URL"] = self.task.subtitle_config.base_url
-            if self.task.subtitle_config.api_key:
-                os.environ["OPENAI_API_KEY"] = self.task.subtitle_config.api_key
-            return self.task.subtitle_config
+            os.environ["OPENAI_BASE_URL"] = config.base_url
+            os.environ["OPENAI_API_KEY"] = config.api_key
+            return config
         else:
             raise Exception(self.tr("LLM API 未配置, 请检查LLM配置"))
 
@@ -145,49 +173,13 @@ class SubtitleThread(QThread):
                 self.progress.emit(0, self.tr("翻译字幕..."))
                 logger.info("正在翻译字幕...")
                 self.finished_subtitle_length = 0
-                translator_service = subtitle_config.translator_service
 
                 if not subtitle_config.target_language:
                     raise Exception(self.tr("目标语言未配置"))
 
-                if translator_service == TranslatorServiceEnum.OPENAI:
-                    if not subtitle_config.llm_model:
-                        raise Exception(self.tr("LLM 模型未配置"))
-                    translator = LLMTranslator(
-                        thread_num=subtitle_config.thread_num,
-                        batch_num=subtitle_config.batch_size,
-                        target_language=subtitle_config.target_language,
-                        model=subtitle_config.llm_model,
-                        custom_prompt=custom_prompt or "",
-                        is_reflect=subtitle_config.need_reflect,
-                        update_callback=self.callback,
-                    )
-                elif translator_service == TranslatorServiceEnum.GOOGLE:
-                    translator = GoogleTranslator(
-                        thread_num=subtitle_config.thread_num,
-                        batch_num=5,
-                        target_language=subtitle_config.target_language,
-                        timeout=20,
-                        update_callback=self.callback,
-                    )
-                elif translator_service == TranslatorServiceEnum.BING:
-                    translator = BingTranslator(
-                        thread_num=subtitle_config.thread_num,
-                        batch_num=10,
-                        target_language=subtitle_config.target_language,
-                        update_callback=self.callback,
-                    )
-                elif translator_service == TranslatorServiceEnum.DEEPLX:
-                    os.environ["DEEPLX_ENDPOINT"] = subtitle_config.deeplx_endpoint or ""
-                    translator = DeepLXTranslator(
-                        thread_num=subtitle_config.thread_num,
-                        batch_num=5,
-                        target_language=subtitle_config.target_language,
-                        timeout=20,
-                        update_callback=self.callback,
-                    )
-                else:
-                    raise Exception(self.tr(f"不支持的翻译服务: {translator_service}"))
+                translator = create_translator_from_config(
+                    subtitle_config, custom_prompt, self.callback
+                )
 
                 asr_data = translator.translate_subtitle(asr_data)
 
@@ -296,3 +288,58 @@ class SubtitleThread(QThread):
         except Exception as e:
             logger.error(f"停止线程时出错：{str(e)}")
             self.progress.emit(100, self.tr("终止时发生错误"))
+
+
+class RetranslateThread(QThread):
+    """重新翻译选中行的轻量线程"""
+
+    finished = pyqtSignal(dict)  # {key: translated_text}
+    error = pyqtSignal(str)
+
+    def __init__(self, selected_data: dict, subtitle_config: SubtitleConfig, file_name: str = ""):
+        """
+        selected_data: model._data 中选中的条目，键为行号字符串
+        subtitle_config: 当前任务配置
+        file_name: 用于日志上下文的文件名
+        """
+        super().__init__()
+        self.selected_data = selected_data
+        self.subtitle_config = subtitle_config
+        self.file_name = file_name
+
+    def run(self):
+        set_task_context(
+            task_id=generate_task_id(),
+            file_name=self.file_name,
+            stage="translate",
+        )
+        try:
+            config = self.subtitle_config
+            if not config.target_language:
+                raise Exception("目标语言未配置")
+
+            # 设置 LLM 环境变量（LLM 翻译需要）
+            if config.translator_service == TranslatorServiceEnum.OPENAI:
+                if not (config.base_url and config.api_key and config.llm_model):
+                    raise Exception("LLM API 未配置，请检查 LLM 配置")
+                os.environ["OPENAI_BASE_URL"] = config.base_url
+                os.environ["OPENAI_API_KEY"] = config.api_key
+
+            # 构建仅含选中行的 ASRData
+            asr_data = ASRData.from_json(self.selected_data)
+
+            # 创建翻译器并翻译
+            translator = create_translator_from_config(config)
+            asr_data = translator.translate_subtitle(asr_data)
+
+            # 构建 {原始行号: translated_text} 映射
+            keys = list(self.selected_data.keys())
+            result = {
+                keys[i]: seg.translated_text
+                for i, seg in enumerate(asr_data.segments)
+            }
+            self.finished.emit(result)
+
+        except Exception as e:
+            logger.exception(f"重新翻译失败: {e}")
+            self.error.emit(str(e))

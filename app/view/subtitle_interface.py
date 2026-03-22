@@ -55,7 +55,7 @@ from app.core.subtitle import get_subtitle_style
 from app.core.task_factory import TaskFactory
 from app.core.translate.types import TargetLanguage
 from app.core.utils.platform_utils import open_folder, reveal_in_explorer
-from app.thread.subtitle_thread import SubtitleThread
+from app.thread.subtitle_thread import RetranslateThread, SubtitleThread
 
 
 class SubtitleTableModel(QAbstractTableModel):
@@ -462,6 +462,9 @@ class SubtitleInterface(QWidget):
         self.cancel_button.show()
 
         if need_create_task:
+            # 将当前表格状态写回原文件，保留用户的合并/删除/编辑
+            if self.model._data:
+                ASRData.from_json(self.model._data).to_srt(save_path=self.subtitle_path)
             self.task = TaskFactory.create_subtitle_task(file_path=self.subtitle_path)
         if self.task:
             self.subtitle_optimization_thread = SubtitleThread(self.task)
@@ -741,18 +744,22 @@ class SubtitleInterface(QWidget):
             return
 
         # 添加菜单项
-        # retranslate_action = Action(FIF.SYNC, self.tr("重新翻译"))
         merge_action = Action(FIF.LINK, self.tr("合并"))
         delete_action = Action(FIF.DELETE, self.tr("删除"))
+        retranslate_action = Action(FIF.SYNC, self.tr("重新翻译"))
         menu.addAction(merge_action)
         menu.addAction(delete_action)
+        menu.addAction(retranslate_action)
         merge_action.setShortcut("Ctrl+M")
         delete_action.setShortcut("Delete")
+        retranslate_action.setShortcut("Ctrl+T")
 
         merge_action.setEnabled(len(rows) > 1)
+        retranslate_action.setEnabled(cfg.need_translate.value and not self._is_processing())
 
         merge_action.triggered.connect(lambda: self.merge_selected_rows(rows))
         delete_action.triggered.connect(lambda: self.delete_selected_rows(rows))
+        retranslate_action.triggered.connect(lambda: self.retranslate_selected_rows(rows))
 
         # 显示菜单
         menu.exec(self.subtitle_table.viewport().mapToGlobal(pos))
@@ -810,6 +817,7 @@ class SubtitleInterface(QWidget):
             new_data[new_key] = merged_item
 
         # 更新模型数据
+        self.subtitle_table.clearSelection()
         self.model.update_all(new_data)
 
         # 显示成功提示
@@ -835,7 +843,69 @@ class SubtitleInterface(QWidget):
                 new_key = f"{len(new_data) + 1}"
                 new_data[new_key] = data[key]
 
+        self.subtitle_table.clearSelection()
         self.model.update_all(new_data)
+
+    def _is_processing(self) -> bool:
+        """是否有任何处理任务正在运行"""
+        if hasattr(self, "subtitle_optimization_thread") and self.subtitle_optimization_thread.isRunning():  # type: ignore
+            return True
+        if hasattr(self, "_retranslate_thread") and self._retranslate_thread.isRunning():
+            return True
+        return False
+
+    def retranslate_selected_rows(self, rows: List[int]) -> None:
+        """重新翻译选中的字幕行"""
+        if not rows or not self.model._data:
+            return
+        if self._is_processing():
+            return
+
+        # 提取选中行数据，保留原始键名（行号字符串）
+        all_keys = list(self.model._data.keys())
+        selected_data = {all_keys[row]: self.model._data[all_keys[row]] for row in rows}
+
+        # 获取当前翻译配置
+        subtitle_task = TaskFactory.create_subtitle_task(
+            file_path=self.subtitle_path or ""
+        )
+        config = subtitle_task.subtitle_config
+        if not config:
+            return
+
+        self.start_button.setEnabled(False)
+        self.status_label.setText(self.tr("正在重新翻译..."))
+        self.progress_bar.resume()
+        self.progress_bar.reset()
+
+        file_name = Path(self.subtitle_path).name if self.subtitle_path else ""
+        self._retranslate_thread = RetranslateThread(selected_data, config, file_name)
+        self._retranslate_thread.finished.connect(self._on_retranslate_finished)
+        self._retranslate_thread.error.connect(self._on_retranslate_error)
+        self._retranslate_thread.start()
+
+    def _on_retranslate_finished(self, result: dict) -> None:
+        self.start_button.setEnabled(True)
+        self.model.update_data(result)
+        self.progress_bar.setValue(100)
+        self.status_label.setText(self.tr("重新翻译完成"))
+        InfoBar.success(
+            self.tr("翻译完成"),
+            self.tr("已更新选中行的翻译"),
+            duration=INFOBAR_DURATION_SUCCESS,
+            parent=self,
+        )
+
+    def _on_retranslate_error(self, error: str) -> None:
+        self.start_button.setEnabled(True)
+        self.progress_bar.error()
+        self.status_label.setText(self.tr("重新翻译失败"))
+        InfoBar.error(
+            self.tr("翻译失败"),
+            error,
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self,
+        )
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """处理键盘事件"""
@@ -851,6 +921,13 @@ class SubtitleInterface(QWidget):
             if indexes:
                 rows = sorted(set(index.row() for index in indexes))
                 self.delete_selected_rows(rows)
+            event.accept()
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_T:  # type: ignore
+            if cfg.need_translate.value and not self._is_processing():
+                indexes = self.subtitle_table.selectedIndexes()
+                if indexes:
+                    rows = sorted(set(index.row() for index in indexes))
+                    self.retranslate_selected_rows(rows)
             event.accept()
         else:
             super().keyPressEvent(event)

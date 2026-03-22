@@ -31,7 +31,12 @@ for file in os.listdir():
 # Now import the modules that depend on the setup above
 from PyQt5.QtCore import Qt, QTranslator  # noqa: E402
 from PyQt5.QtWidgets import QApplication  # noqa: E402
-from qfluentwidgets import FluentTranslator  # noqa: E402
+
+# 屏蔽 qfluentwidgets 导入时打印的广告
+with open(os.devnull, "w") as _devnull:
+    sys.stdout, _stdout = _devnull, sys.stdout
+    from qfluentwidgets import FluentTranslator  # noqa: E402
+    sys.stdout = _stdout
 
 from app.common.config import cfg  # noqa: E402
 from app.config import RESOURCE_PATH  # noqa: E402
