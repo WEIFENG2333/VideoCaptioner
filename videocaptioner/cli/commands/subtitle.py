@@ -131,11 +131,15 @@ def run(args: Namespace, config: dict) -> int:
         output.warn(f"Input file contains 0 subtitle segments: {input_path}")
 
     progress = None if quiet else output.ProgressLine("Processing subtitles").start()
+    _done_count = 0
+    _total_count = max(len(asr_data.segments), 1)
 
     def callback(result):
+        nonlocal _done_count
         if progress:
-            # Approximate progress from callback data
-            progress.update(50, "Processing...")
+            _done_count += len(result) if hasattr(result, '__len__') else 1
+            pct = min(int(_done_count / _total_count * 100), 95)
+            progress.update(pct)
 
     try:
         # 1. Split (if word-level timestamps available)
