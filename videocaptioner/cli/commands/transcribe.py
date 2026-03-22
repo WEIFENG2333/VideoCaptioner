@@ -111,8 +111,25 @@ def run(args: Namespace, config: dict) -> int:
             progress.update(pct, f"Transcribing [{asr_engine}] {msg}")
 
     try:
+        # Auto-convert video to audio if needed
+        audio_path = str(input_path)
+        temp_audio = None
+        audio_formats = {"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac", "wma"}
+        if input_path.suffix.lstrip(".").lower() not in audio_formats:
+            if verbose:
+                output.info("Input is a video file, extracting audio...")
+            import tempfile
+
+            from videocaptioner.core.utils.video_utils import video2audio
+            temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            temp_audio.close()
+            if not video2audio(str(input_path), output=temp_audio.name):
+                output.error("Failed to extract audio from video (is FFmpeg installed?)")
+                return EXIT.RUNTIME_ERROR
+            audio_path = temp_audio.name
+
         from videocaptioner.core.asr import transcribe
-        asr_data = transcribe(str(input_path), transcribe_config, callback=callback)
+        asr_data = transcribe(audio_path, transcribe_config, callback=callback)
 
         # Save output
         asr_data.save(save_path=output_path)
@@ -133,3 +150,9 @@ def run(args: Namespace, config: dict) -> int:
             import traceback
             traceback.print_exc()
         return EXIT.RUNTIME_ERROR
+    finally:
+        if temp_audio is not None:
+            try:
+                os.unlink(temp_audio.name)
+            except OSError:
+                pass
