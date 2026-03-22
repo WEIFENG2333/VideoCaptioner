@@ -43,6 +43,11 @@ SUBTITLE_STYLE_PATH = RESOURCE_PATH / "subtitle_style"
 TRANSLATIONS_PATH = RESOURCE_PATH / "translations"
 FONTS_PATH = RESOURCE_PATH / "fonts"
 
+# Fallback: bundled fonts inside the package (for pip install)
+_BUNDLED_FONTS = _PACKAGE_DIR / "resources" / "fonts"
+if not FONTS_PATH.exists() and _BUNDLED_FONTS.exists():
+    FONTS_PATH = _BUNDLED_FONTS
+
 LOG_PATH = APPDATA_PATH / "logs"
 LLM_LOG_FILE = LOG_PATH / "llm_requests.jsonl"
 SETTINGS_PATH = APPDATA_PATH / "settings.json"

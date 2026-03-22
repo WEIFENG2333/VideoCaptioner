@@ -29,7 +29,8 @@ def hint(msg: str) -> None:
 def clean_error(msg: str) -> str:
     """Strip internal noise (ffmpeg build info, stack traces) from error messages."""
     lines = msg.strip().splitlines()
-    noise_prefixes = ("configuration:", "--", "lib", "built with", "Copyright", "ffmpeg version", "[")
+    # Filter ffmpeg build noise but keep Python errors like [Errno]
+    noise_prefixes = ("configuration:", "--", "lib", "built with", "Copyright", "ffmpeg version", "[lib", "[swscaler", "[avist", "[mp3")
     meaningful = [line for line in lines if not line.strip().startswith(noise_prefixes)]
     if meaningful:
         # Take the last meaningful line — usually the actual error, not debug context

@@ -28,7 +28,11 @@ def run(args: Namespace, config: dict) -> int:
             out.mkdir(parents=True, exist_ok=True)
             output_path = str(out / f"{input_path.stem}.{out_fmt}")
         else:
-            output_path = args.output
+            # Auto-append format extension if no extension given
+            if not out.suffix:
+                output_path = f"{args.output}.{out_fmt}"
+            else:
+                output_path = args.output
     else:
         output_path = str(input_path.with_suffix(f".{out_fmt}"))
 
@@ -103,6 +107,11 @@ def run(args: Namespace, config: dict) -> int:
         whisper_api_prompt=get(config, "whisper_api.prompt", ""),
     )
 
+    # Suppress internal logger noise in quiet mode
+    if quiet:
+        import logging
+        logging.getLogger().setLevel(logging.WARNING)
+
     # Progress callback
     progress = None if quiet else output.ProgressLine(f"Transcribing [{asr_engine}]").start()
 
@@ -115,7 +124,16 @@ def run(args: Namespace, config: dict) -> int:
         audio_path = str(input_path)
         temp_audio = None
         audio_formats = {"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac", "wma"}
-        if input_path.suffix.lstrip(".").lower() not in audio_formats:
+        video_formats = {"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"}
+        ext = input_path.suffix.lstrip(".").lower()
+
+        if ext not in audio_formats:
+            if ext not in video_formats:
+                output.error(f"Unsupported file format: .{ext}")
+                output.hint("Supported audio: " + ", ".join(sorted(audio_formats)))
+                output.hint("Supported video: " + ", ".join(sorted(video_formats)))
+                return EXIT.FILE_NOT_FOUND
+
             if verbose:
                 output.info("Input is a video file, extracting audio...")
             import tempfile
@@ -124,7 +142,11 @@ def run(args: Namespace, config: dict) -> int:
             temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             temp_audio.close()
             if not video2audio(str(input_path), output=temp_audio.name):
-                output.error("Failed to extract audio from video (is FFmpeg installed?)")
+                # Check if the temp file is empty (no audio track)
+                if os.path.getsize(temp_audio.name) == 0:
+                    output.error("Input video has no audio track")
+                else:
+                    output.error("Failed to extract audio from video. Is FFmpeg installed?")
                 return EXIT.RUNTIME_ERROR
             audio_path = temp_audio.name
 

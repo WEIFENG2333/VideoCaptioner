@@ -112,6 +112,10 @@ def run(args: Namespace, config: dict) -> int:
     if prompt_file:
         custom_prompt = Path(prompt_file).read_text(encoding="utf-8")
 
+    if quiet:
+        import logging
+        logging.getLogger().setLevel(logging.WARNING)
+
     if verbose:
         output.info(f"Optimize: {need_optimize}, Translate: {need_translate}")
         if need_translate:
