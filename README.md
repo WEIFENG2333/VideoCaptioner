@@ -74,7 +74,7 @@ videocaptioner                      # 无参数时自动打开桌面版
 
 **macOS**：
 ```bash
-curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/main/scripts/run.sh | bash
+curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/master/scripts/run.sh | bash
 ```
 
 </details>
