@@ -87,9 +87,7 @@ class LogDetailDialog(MessageBoxBase):
         self.request_edit = PlainTextEdit()
         self.request_edit.setReadOnly(True)
         self.request_edit.setMinimumHeight(180)
-        request_text = json.dumps(
-            self.log_entry.get("request", {}), indent=2, ensure_ascii=False
-        )
+        request_text = json.dumps(self.log_entry.get("request", {}), indent=2, ensure_ascii=False)
         self.request_edit.setPlainText(request_text)
         self.viewLayout.addWidget(self.request_edit)
 
@@ -98,9 +96,7 @@ class LogDetailDialog(MessageBoxBase):
         self.response_edit = PlainTextEdit()
         self.response_edit.setReadOnly(True)
         self.response_edit.setMinimumHeight(180)
-        response_text = json.dumps(
-            self.log_entry.get("response", {}), indent=2, ensure_ascii=False
-        )
+        response_text = json.dumps(self.log_entry.get("response", {}), indent=2, ensure_ascii=False)
         self.response_edit.setPlainText(response_text)
         self.viewLayout.addWidget(self.response_edit)
 
@@ -119,9 +115,7 @@ class LogDetailDialog(MessageBoxBase):
         self.widget.setMinimumWidth(700)
 
     def _copy_request(self):
-        text = json.dumps(
-            self.log_entry.get("request", {}), indent=2, ensure_ascii=False
-        )
+        text = json.dumps(self.log_entry.get("request", {}), indent=2, ensure_ascii=False)
         clipboard = QApplication.clipboard()
         if clipboard:
             clipboard.setText(text)
@@ -134,9 +128,7 @@ class LogDetailDialog(MessageBoxBase):
         )
 
     def _copy_response(self):
-        text = json.dumps(
-            self.log_entry.get("response", {}), indent=2, ensure_ascii=False
-        )
+        text = json.dumps(self.log_entry.get("response", {}), indent=2, ensure_ascii=False)
         clipboard = QApplication.clipboard()
         if clipboard:
             clipboard.setText(text)
@@ -411,12 +403,10 @@ class LLMLogsInterface(QWidget):
             self.table.setItem(row, 5, self._create_item(f"{duration:.1f}s"))
 
             # 总 Tokens
-            usage = log.get("response", {}).get("usage", {})
+            usage = log.get("response", {}).get("usage") or {}
             total_tokens = usage.get("total_tokens", 0)
             if not total_tokens:
-                total_tokens = usage.get("prompt_tokens", 0) + usage.get(
-                    "completion_tokens", 0
-                )
+                total_tokens = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
             self.table.setItem(row, 6, self._create_item(str(total_tokens)))
 
         # 更新分页和统计
