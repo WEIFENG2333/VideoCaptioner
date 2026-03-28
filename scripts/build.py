@@ -126,6 +126,42 @@ def copy_writable_resources_to_dist():
         print("  Copied subtitle_style/ to dist")
 
 
+def ensure_version_file():
+    """Generate videocaptioner/_version.py if it doesn't exist.
+
+    hatch-vcs generates this file during pip install, but it may not exist
+    when building directly with PyInstaller.
+    """
+    version_file = ROOT_DIR / "videocaptioner" / "_version.py"
+    if version_file.exists():
+        print(f"Version file exists: {version_file}")
+        return
+
+    # Try to get version from git tags via hatch-vcs
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "hatchling", "version"],
+            capture_output=True, text=True, cwd=str(ROOT_DIR),
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+        else:
+            # Fallback: get version from git describe
+            result = subprocess.run(
+                ["git", "describe", "--tags", "--always"],
+                capture_output=True, text=True, cwd=str(ROOT_DIR),
+            )
+            version = result.stdout.strip().lstrip("v") if result.returncode == 0 else "0.0.0"
+    except Exception:
+        version = "0.0.0"
+
+    version_file.write_text(
+        f'__version__ = "{version}"\n',
+        encoding="utf-8",
+    )
+    print(f"Generated {version_file} with version {version}")
+
+
 def build():
     """Run PyInstaller with the spec file."""
     if not SPEC_FILE.exists():
@@ -236,7 +272,8 @@ def main():
     if args.clean:
         clean()
 
-    # Download platform-specific binaries before building
+    # Pre-build steps
+    ensure_version_file()
     download_windows_binaries()
 
     build()
