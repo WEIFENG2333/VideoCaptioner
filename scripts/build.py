@@ -16,6 +16,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import time
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -38,6 +39,20 @@ def clean():
             shutil.rmtree(d)
 
 
+def _download_with_retry(url: str, max_retries: int = 3) -> bytes:
+    """Download a URL with retry logic."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            return urllib.request.urlopen(url, timeout=60).read()
+        except Exception as e:
+            if attempt < max_retries:
+                wait = attempt * 5
+                print(f"  Attempt {attempt} failed: {e}, retrying in {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
+
+
 def download_windows_binaries():
     """Download ffmpeg and 7z binaries for Windows builds."""
     if platform.system() != "Windows":
@@ -50,15 +65,18 @@ def download_windows_binaries():
     ffmpeg_exe = bin_dir / "ffmpeg.exe"
     if not ffmpeg_exe.exists():
         print("Downloading ffmpeg...")
-        data = urllib.request.urlopen(FFMPEG_URL).read()
-        with zipfile.ZipFile(io.BytesIO(data)) as zf:
-            for member in zf.namelist():
-                name = Path(member).name
-                if name in ("ffmpeg.exe", "ffprobe.exe"):
-                    print(f"  Extracting {name}")
-                    with zf.open(member) as src, open(bin_dir / name, "wb") as dst:
-                        dst.write(src.read())
-        print("  ffmpeg ready")
+        try:
+            data = _download_with_retry(FFMPEG_URL)
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                for member in zf.namelist():
+                    name = Path(member).name
+                    if name in ("ffmpeg.exe", "ffprobe.exe"):
+                        print(f"  Extracting {name}")
+                        with zf.open(member) as src, open(bin_dir / name, "wb") as dst:
+                            dst.write(src.read())
+            print("  ffmpeg ready")
+        except Exception as e:
+            print(f"  WARNING: Failed to download ffmpeg: {e}")
     else:
         print("ffmpeg already exists, skipping download")
 
@@ -66,9 +84,12 @@ def download_windows_binaries():
     sevenzip_exe = bin_dir / "7z.exe"
     if not sevenzip_exe.exists():
         print("Downloading 7z...")
-        data = urllib.request.urlopen(SEVENZIP_URL).read()
-        (bin_dir / "7z.exe").write_bytes(data)
-        print("  7z ready")
+        try:
+            data = _download_with_retry(SEVENZIP_URL)
+            (bin_dir / "7z.exe").write_bytes(data)
+            print("  7z ready")
+        except Exception as e:
+            print(f"  WARNING: Failed to download 7z: {e}")
     else:
         print("7z already exists, skipping download")
 
