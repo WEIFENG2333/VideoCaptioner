@@ -27,7 +27,8 @@ DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
 
 # Windows binary download URLs
-FFMPEG_URL = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+# essentials build: includes libx264, libvpx, libass — enough for this project (~80MB vs ~190MB full)
+FFMPEG_URL = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
 SEVENZIP_URL = "https://7-zip.org/a/7zr.exe"
 
 
