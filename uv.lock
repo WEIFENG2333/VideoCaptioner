@@ -3419,7 +3419,6 @@ wheels = [
 
 [[package]]
 name = "videocaptioner"
-version = "1.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "diskcache", marker = "sys_platform == 'darwin' or sys_platform == 'linux' or sys_platform == 'win32'" },

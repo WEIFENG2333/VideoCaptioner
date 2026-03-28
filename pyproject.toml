@@ -1,6 +1,6 @@
 [project]
 name = "videocaptioner"
-version = "1.4.0"
+dynamic = ["version"]
 description = "AI-powered video captioning tool — ASR, subtitle optimization, translation, and synthesis"
 readme = "README.md"
 license = { text = "GPL-3.0" }
@@ -56,8 +56,15 @@ videocaptioner = "videocaptioner.cli.main:main"
 # videocaptioner (no args) auto-launches GUI if [gui] extras are installed
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0-dev"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "videocaptioner/_version.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
