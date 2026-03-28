@@ -87,7 +87,7 @@ excludes = [
 ]
 
 a = Analysis(
-    [str(ROOT / "videocaptioner" / "ui" / "main.py")],
+    [str(ROOT / "videocaptioner" / "__main__.py")],
     pathex=[str(ROOT)],
     binaries=[],
     datas=datas,
