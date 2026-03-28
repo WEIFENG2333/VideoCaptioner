@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from pathlib import Path
 
 try:
@@ -21,10 +22,16 @@ FEEDBACK_URL = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 _PACKAGE_DIR = Path(__file__).parent
 _PROJECT_ROOT = _PACKAGE_DIR.parent
 
-# Development mode: resource/ exists next to the package
-_IS_DEV = (_PROJECT_ROOT / "resource").is_dir()
-
-if _IS_DEV:
+if getattr(sys, "frozen", False):
+    # PyInstaller frozen mode
+    _MEIPASS = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+    _EXE_DIR = Path(sys.executable).parent
+    ROOT_PATH = _EXE_DIR
+    RESOURCE_PATH = _MEIPASS / "resource"  # Read-only bundled resources
+    APPDATA_PATH = _EXE_DIR / "AppData"
+    WORK_PATH = _EXE_DIR / "work-dir"
+elif (_PROJECT_ROOT / "resource").is_dir():
+    # Development mode: resource/ exists next to the package
     ROOT_PATH = _PROJECT_ROOT
     RESOURCE_PATH = ROOT_PATH / "resource"
     APPDATA_PATH = ROOT_PATH / "AppData"
@@ -43,6 +50,11 @@ ASSETS_PATH = RESOURCE_PATH / "assets"
 SUBTITLE_STYLE_PATH = RESOURCE_PATH / "subtitle_style"
 TRANSLATIONS_PATH = RESOURCE_PATH / "translations"
 FONTS_PATH = RESOURCE_PATH / "fonts"
+
+# Frozen mode: writable paths (bin, subtitle_style) should be in exe dir, not _MEIPASS
+if getattr(sys, "frozen", False):
+    BIN_PATH = _EXE_DIR / "resource" / "bin"
+    SUBTITLE_STYLE_PATH = _EXE_DIR / "resource" / "subtitle_style"
 
 # Fallback: bundled fonts inside the package (for pip install)
 _BUNDLED_FONTS = _PACKAGE_DIR / "resources" / "fonts"
@@ -72,3 +84,14 @@ if (BIN_PATH / "vlc").exists():
 # Create data directories
 for p in [CACHE_PATH, LOG_PATH, WORK_PATH, MODEL_PATH]:
     p.mkdir(parents=True, exist_ok=True)
+
+# PyInstaller frozen mode: copy writable preset resources from _MEIPASS to exe dir (first run)
+if getattr(sys, "frozen", False):
+    import shutil
+
+    _bundled_resource = Path(sys._MEIPASS) / "resource"  # type: ignore[attr-defined]
+    for _dir_name in ("subtitle_style",):
+        _src = _bundled_resource / _dir_name
+        _dst = _EXE_DIR / "resource" / _dir_name
+        if _src.exists() and not _dst.exists():
+            shutil.copytree(_src, _dst)

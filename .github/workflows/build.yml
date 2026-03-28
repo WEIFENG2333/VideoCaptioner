@@ -1,0 +1,135 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "videocaptioner/**"
+      - "resource/**"
+      - "VideoCaptioner.spec"
+      - "scripts/build.py"
+      - "pyproject.toml"
+      - ".github/workflows/build.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "videocaptioner/**"
+      - "resource/**"
+      - "VideoCaptioner.spec"
+      - "scripts/build.py"
+      - "pyproject.toml"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: VideoCaptioner-windows
+          - os: macos-latest
+            artifact: VideoCaptioner-macos
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          python -c "
+          import tomllib, subprocess, sys
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+          deps = data['project']['dependencies']
+          gui_deps = data['project']['optional-dependencies']['gui']
+          subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + deps + gui_deps)
+          "
+
+      - name: Build with PyInstaller
+        run: python scripts/build.py --clean
+
+      - name: Verify build (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $exe = "dist\VideoCaptioner\VideoCaptioner.exe"
+          if (Test-Path $exe) {
+            Write-Host "Executable found: $exe"
+            Write-Host "Size: $([math]::Round((Get-Item $exe).Length / 1MB, 1)) MB"
+          } else {
+            Write-Host "ERROR: Executable not found"
+            exit 1
+          }
+          # Verify ffmpeg and 7z are present
+          $binDir = "dist\VideoCaptioner\resource\bin"
+          foreach ($bin in @("ffmpeg.exe", "7z.exe")) {
+            $p = Join-Path $binDir $bin
+            if (Test-Path $p) {
+              Write-Host "  $bin found ($([math]::Round((Get-Item $p).Length / 1MB, 1)) MB)"
+            } else {
+              Write-Host "  WARNING: $bin not found"
+            }
+          }
+        shell: pwsh
+
+      - name: Verify build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          EXE="dist/VideoCaptioner/VideoCaptioner"
+          if [ -f "$EXE" ]; then
+            echo "Executable found: $EXE"
+            echo "Size: $(du -h "$EXE" | cut -f1)"
+          else
+            echo "ERROR: Executable not found"
+            exit 1
+          fi
+          if [ -d "dist/VideoCaptioner.app" ]; then
+            echo "App bundle found: dist/VideoCaptioner.app"
+          fi
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $proc = Start-Process -FilePath "dist\VideoCaptioner\VideoCaptioner.exe" -PassThru
+          Start-Sleep -Seconds 8
+          if (!$proc.HasExited) {
+            Write-Host "App started successfully (PID: $($proc.Id))"
+            Stop-Process -Id $proc.Id -Force
+          } else {
+            Write-Host "WARNING: App exited with code $($proc.ExitCode)"
+            if ($proc.ExitCode -ne 0) { exit 1 }
+          }
+        shell: pwsh
+
+      - name: Smoke test (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          dist/VideoCaptioner/VideoCaptioner &
+          APP_PID=$!
+          sleep 8
+          if kill -0 $APP_PID 2>/dev/null; then
+            echo "App started successfully (PID: $APP_PID)"
+            kill $APP_PID
+          else
+            wait $APP_PID
+            EXIT_CODE=$?
+            echo "WARNING: App exited with code $EXIT_CODE"
+            if [ $EXIT_CODE -ne 0 ]; then exit 1; fi
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/VideoCaptioner/
+          retention-days: 7
