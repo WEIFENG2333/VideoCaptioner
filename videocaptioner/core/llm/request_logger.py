@@ -49,7 +49,7 @@ def _write_log(entry: Dict[str, Any]) -> None:
 
 
 def _on_request(request: httpx.Request) -> None:
-    """请求发送前：暂存请求信息"""
+    """请求发送前: 暂存请求信息"""
     if "/chat/completions" not in str(request.url):
         return
 
@@ -66,7 +66,7 @@ def _on_request(request: httpx.Request) -> None:
 
 
 def _on_response(response: httpx.Response) -> None:
-    """响应接收后：记录状态码和耗时"""
+    """响应接收后: 记录状态码和耗时"""
     request = response.request
     pending = _pending_requests.get(id(request))
     if not pending:

@@ -31,7 +31,7 @@ class ChunkedASR:
     为任何 BaseASR 子类添加音频分块能力。
     适用于长音频的分块转录，避免 API 超时或内存溢出。
 
-    工作流程：
+    工作流程:
         1. 将长音频切割为多个重叠的块
         2. 为每个块创建独立的 ASR 实例并发转录
         3. 使用 ChunkMerger 合并结果，消除重叠区域的重复内容
@@ -71,7 +71,7 @@ class ChunkedASR:
         self.chunk_overlap_ms = chunk_overlap * MS_PER_SECOND
         self.chunk_concurrency = chunk_concurrency
 
-        # 读取完整音频文件（用于分块）
+        # Reading完整音频文件（用于分块）
         with open(audio_path, "rb") as f:
             self.file_binary = f.read()
 
@@ -89,19 +89,19 @@ class ChunkedASR:
 
         # 2. 如果只有一块，直接创建单个 ASR 实例转录
         if len(chunks) == 1:
-            logger.info("音频短于分块长度，直接转录")
+            logger.debug("Audio shorter than chunk length, direct transcription")
             single_asr = self.asr_class(self.audio_path, **self.asr_kwargs)
             return single_asr.run(callback)
 
-        logger.info(f"音频分为 {len(chunks)} 块，开始并发转录")
+        logger.debug(f"Audio split into {len(chunks)}  chunks, starting parallel transcription")
 
-        # 3. 并发转录所有块
+        # 3. 并发转录All块
         chunk_results = self._transcribe_chunks(chunks, callback)
 
         # 4. 合并结果
         merged_result = self._merge_results(chunk_results, chunks)
 
-        logger.info(f"分块转录完成，共 {len(merged_result.segments)} 个片段")
+        logger.debug(f"Chunk transcription complete, {len(merged_result.segments)}  segments")
         return merged_result
 
     def _split_audio(self) -> List[Tuple[bytes, int]]:
@@ -118,7 +118,7 @@ class ChunkedASR:
         audio = AudioSegment.from_file(io.BytesIO(self.file_binary))
         total_duration_ms = len(audio)
 
-        logger.info(
+        logger.debug(
             f"音频总时长: {total_duration_ms/1000:.1f}s, "
             f"分块长度: {self.chunk_length_ms/1000:.1f}s, "
             f"重叠: {self.chunk_overlap_ms/1000:.1f}s"
@@ -148,7 +148,7 @@ class ChunkedASR:
             if end_ms >= total_duration_ms:
                 break
 
-        # logger.info(f"音频切割完成，共 {len(chunks)} 个块")
+        # logger.debug(f"音频切割完成，共 {len(chunks)} 个块")
         return chunks
 
     def _transcribe_chunks(
@@ -168,7 +168,7 @@ class ChunkedASR:
         results: List[Optional[ASRData]] = [None] * len(chunks)
         total_chunks = len(chunks)
 
-        # 进度追踪：记录每个 chunk 的进度，确保整体进度单调递增
+        # 进度追踪: 记录每个 chunk 的进度，确保整体进度单调递增
         chunk_progress = [0] * total_chunks
         last_overall = 0
         progress_lock = threading.Lock()
@@ -178,7 +178,7 @@ class ChunkedASR:
         ) -> Tuple[int, ASRData]:
             """转录单个音频块 - 为每个块创建独立的 ASR 实例"""
             nonlocal last_overall
-            logger.info(f"开始转录 chunk {idx+1}/{total_chunks} (offset={offset_ms}ms)")
+            logger.debug(f"Transcribing chunk {idx+1}/{total_chunks} (offset={offset_ms}ms)")
 
             def chunk_callback(progress: int, message: str):
                 nonlocal last_overall
@@ -199,9 +199,9 @@ class ChunkedASR:
             # 调用 ASR 的 run() 方法转录
             asr_data = chunk_asr.run(chunk_callback)
 
-            logger.info(
+            logger.debug(
                 f"Chunk {idx+1}/{total_chunks} 转录完成，"
-                f"获得 {len(asr_data.segments)} 个片段"
+                f"获得 {len(asr_data.segments)}  segments"
             )
             return idx, asr_data
 
@@ -216,7 +216,7 @@ class ChunkedASR:
                 idx, asr_data = future.result()
                 results[idx] = asr_data
 
-        logger.info(f"所有 {total_chunks} 个块转录完成")
+        logger.debug(f"All {total_chunks}  chunks transcription complete")
         return [r for r in results if r is not None]  # 过滤 None
 
     def _merge_results(

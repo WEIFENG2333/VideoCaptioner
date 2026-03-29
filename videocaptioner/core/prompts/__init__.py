@@ -1,6 +1,6 @@
 """提示词管理模块
 
-所有提示词以 Markdown 文件形式存储，支持模板变量替换。
+All提示词以 Markdown 文件形式存储，支持模板变量替换。
 
 使用示例:
     from videocaptioner.core.prompts import get_prompt
@@ -72,7 +72,7 @@ def get_prompt(prompt_path: str, **kwargs) -> str:
 
 
 def list_prompts() -> list[str]:
-    """列出所有可用的提示词路径
+    """列出All可用的提示词路径
 
     Returns:
         提示词路径列表，如 ["split/semantic", "optimize/subtitle"]

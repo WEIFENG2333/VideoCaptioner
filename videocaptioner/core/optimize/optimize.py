@@ -27,7 +27,7 @@ MAX_STEPS = 3
 class SubtitleOptimizer:
     """字幕优化器
 
-    使用LLM优化字幕内容，支持：
+    使用LLM优化字幕内容，支持:
     - Agent loop自动验证和修正
     - 并发批量处理
     - 自动对齐修复
@@ -76,7 +76,7 @@ class SubtitleOptimizer:
             优化后的ASRData对象
         """
         try:
-            # 读取字幕
+            # Reading字幕
             if isinstance(subtitle_data, str):
                 asr_data = ASRData.from_subtitle_file(subtitle_data)
             else:
@@ -99,8 +99,8 @@ class SubtitleOptimizer:
             return ASRData(new_segments)
 
         except Exception as e:
-            logger.error(f"优化失败：{str(e)}")
-            raise RuntimeError(f"优化失败：{str(e)}")
+            logger.error(f"Optimization failed: {str(e)}")
+            raise RuntimeError(f"Optimization failed: {str(e)}")
 
     def _split_chunks(self, subtitle_dict: Dict[str, str]) -> List[Dict[str, str]]:
         """将字幕字典分割成批次
@@ -118,7 +118,7 @@ class SubtitleOptimizer:
         ]
 
     def _parallel_optimize(self, chunks: List[Dict[str, str]]) -> Dict[str, str]:
-        """并行优化所有批次
+        """并行优化All批次
 
         Args:
             chunks: 字幕批次列表
@@ -127,12 +127,12 @@ class SubtitleOptimizer:
             优化后的字幕字典
         """
         if not self.executor:
-            raise ValueError("线程池未初始化")
+            raise ValueError("Thread pool not initialized")
 
         futures = []
         optimized_dict: Dict[str, str] = {}
 
-        # 提交所有任务
+        # 提交All任务
         for chunk in chunks:
             future = self.executor.submit(self._optimize_chunk, chunk)
             futures.append((future, chunk))
@@ -146,7 +146,7 @@ class SubtitleOptimizer:
                 result = future.result()
                 optimized_dict.update(result)
             except Exception as e:
-                logger.error(f"优化批次失败：{str(e)}")
+                logger.error(f"Optimization batch failed: {str(e)}")
                 optimized_dict.update(chunk)  # 失败时保留原文
 
         return optimized_dict
@@ -162,7 +162,7 @@ class SubtitleOptimizer:
         """
         start_idx = next(iter(subtitle_chunk))
         end_idx = next(reversed(subtitle_chunk))
-        logger.info(f"[+]正在优化字幕：{start_idx} - {end_idx}")
+        logger.debug(f"[+]Optimizing subtitles: {start_idx} - {end_idx}")
 
         try:
             result = self.agent_loop(subtitle_chunk)
@@ -181,7 +181,7 @@ class SubtitleOptimizer:
             return result
 
         except Exception as e:
-            logger.error(f"优化失败：{str(e)}")
+            logger.error(f"Optimization failed: {str(e)}")
             return subtitle_chunk
 
     def agent_loop(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:
@@ -196,7 +196,7 @@ class SubtitleOptimizer:
             优化后的字幕批次
 
         Raises:
-            ValueError: LLM返回空结果
+            ValueError: LLM returned empty result
         """
         # 构建提示词
         user_prompt = (
@@ -227,13 +227,13 @@ class SubtitleOptimizer:
 
             result_text = response.choices[0].message.content
             if not result_text:
-                raise ValueError("LLM返回空结果")
+                raise ValueError("LLM returned empty result")
 
             # 解析结果
             parsed_result = json_repair.loads(result_text)
             if not isinstance(parsed_result, dict):
                 raise ValueError(
-                    f"LLM返回结果类型错误，期望dict，实际{type(parsed_result)}"
+                    f"LLM返回结果类型Error，期望dict，实际{type(parsed_result)}"
                 )
 
             result_dict: Dict[str, str] = parsed_result
@@ -263,7 +263,7 @@ class SubtitleOptimizer:
             )
 
         # 达到最大步数
-        logger.warning(f"达到最大尝试次数({MAX_STEPS})，返回最后结果")
+        logger.warning(f"Max attempts reached({MAX_STEPS})，returning last result")
         return (
             self._repair_subtitle(subtitle_chunk, last_result)
             if last_result
@@ -275,7 +275,7 @@ class SubtitleOptimizer:
     ) -> Tuple[bool, str]:
         """验证优化结果
 
-        检查：
+        检查:
         1. 键是否完全匹配
         2. 改动是否过大（相似度 < 0.7）
 
@@ -284,7 +284,7 @@ class SubtitleOptimizer:
             optimized_chunk: 优化后字幕批次
 
         Returns:
-            (是否有效, 错误反馈)
+            (是否有效, Error反馈)
         """
         expected_keys = set(original_chunk.keys())
         actual_keys = set(optimized_chunk.keys())
@@ -366,7 +366,7 @@ class SubtitleOptimizer:
             )
 
             if len(aligned_source) != len(aligned_target):
-                logger.warning("对齐后长度不一致，返回原优化结果")
+                logger.warning("Alignment length mismatch，returning original")
                 return optimized
 
             # 重建字典，保持原有索引
@@ -376,7 +376,7 @@ class SubtitleOptimizer:
             }
 
         except Exception as e:
-            logger.error(f"对齐失败：{str(e)}，返回原优化结果")
+            logger.error(f"Alignment failed: {str(e)}，returning original")
             return optimized
 
     @staticmethod
@@ -387,11 +387,11 @@ class SubtitleOptimizer:
         """从优化字典创建新的ASRDataSeg列表
 
         Args:
-            original_segments: 原始字幕段列表
+            original_segments: 原始Subtitle segment列表
             optimized_dict: 优化后字幕字典
 
         Returns:
-            新的字幕段列表
+            新的Subtitle segment列表
         """
         return [
             ASRDataSeg(

@@ -24,6 +24,7 @@ from videocaptioner.config import ASSETS_PATH, SUBTITLE_STYLE_PATH
 from videocaptioner.core.constant import INFOBAR_DURATION_SUCCESS, INFOBAR_DURATION_WARNING
 from videocaptioner.core.entities import SubtitleLayoutEnum, SubtitleRenderModeEnum
 from videocaptioner.core.subtitle import get_builtin_fonts, render_ass_preview, render_preview
+from videocaptioner.core.subtitle.style_manager import StyleMode
 from videocaptioner.core.subtitle.styles import RoundedBgStyle
 from videocaptioner.core.utils.platform_utils import open_folder
 from videocaptioner.ui.common.config import cfg
@@ -767,14 +768,13 @@ class SubtitleStyleInterface(QWidget):
         self.roundedBgGroup.setVisible(not is_ass_mode)
 
     def _getStyleFileExtension(self) -> str:
-        """获取当前模式的样式文件扩展名"""
-        mode = self._getCurrentRenderMode()
-        return ".txt" if mode == SubtitleRenderModeEnum.ASS_STYLE else ".json"
+        """获取当前模式的样式文件扩展名 (统一使用 .json)"""
+        return ".json"
 
     def _refreshStyleList(self):
         """根据当前渲染模式刷新样式列表"""
-        ext = self._getStyleFileExtension()
-        pattern = f"*{ext}"
+        is_rounded = self._getCurrentRenderMode() == SubtitleRenderModeEnum.ROUNDED_BG
+        target_mode = "rounded" if is_rounded else "ass"
 
         # 阻断信号，避免 addItems/setCurrentText 重复触发 loadStyle
         self.styleNameComboBox.comboBox.blockSignals(True)
@@ -782,8 +782,17 @@ class SubtitleStyleInterface(QWidget):
         # 清空现有列表
         self.styleNameComboBox.comboBox.clear()
 
-        # 获取样式文件
-        style_files = [f.stem for f in SUBTITLE_STYLE_PATH.glob(pattern)]
+        # 获取匹配当前模式的 JSON 样式文件
+        from videocaptioner.core.subtitle.style_manager import style_id_from_filename
+        style_files = []
+        for f in sorted(SUBTITLE_STYLE_PATH.glob("*.json")):
+            try:
+                data = json.loads(f.read_text(encoding="utf-8"))
+                if data.get("mode", "ass") == target_mode:
+                    style_id = style_id_from_filename(f.name)
+                    style_files.append(style_id)
+            except (json.JSONDecodeError, OSError):
+                pass
 
         # 确保有默认样式
         if "default" not in style_files:
@@ -987,10 +996,20 @@ class SubtitleStyleInterface(QWidget):
         super().showEvent(event)
         self.updatePreviewImage()
 
+    def _resolve_style_path(self, style_name: str) -> Path:
+        """Resolve style name to file path, trying prefixed names."""
+        mode = self._getCurrentRenderMode()
+        prefix = "rounded-" if mode == SubtitleRenderModeEnum.ROUNDED_BG else "ass-"
+        # Try prefixed first, then exact
+        prefixed = SUBTITLE_STYLE_PATH / f"{prefix}{style_name}.json"
+        if prefixed.exists():
+            return prefixed
+        exact = SUBTITLE_STYLE_PATH / f"{style_name}.json"
+        return exact
+
     def loadStyle(self, style_name):
         """加载指定样式（根据当前渲染模式加载对应格式）"""
-        ext = self._getStyleFileExtension()
-        style_path = SUBTITLE_STYLE_PATH / f"{style_name}{ext}"
+        style_path = self._resolve_style_path(style_name)
 
         if not style_path.exists():
             return
@@ -1018,72 +1037,29 @@ class SubtitleStyleInterface(QWidget):
         )
 
     def _loadAssStyle(self, style_path: Path):
-        """加载 ASS 样式 (.txt)"""
-        with open(style_path, "r", encoding="utf-8") as f:
-            style_content = f.read()
+        """加载 ASS 样式 (.json)"""
+        from videocaptioner.core.subtitle.style_manager import SubtitleStyle
 
-        for line in style_content.split("\n"):
-            if line.startswith("Style: Default"):
-                parts = line.split(",")
-                self.assPrimaryFontCard.setCurrentText(parts[1])
-                self.assPrimarySizeCard.spinBox.setValue(int(parts[2]))
-                self.assVerticalSpacingCard.spinBox.setValue(int(parts[21]))
+        style = SubtitleStyle.from_file(style_path)
 
-                primary_color = parts[3].strip()
-                if primary_color.startswith("&H"):
-                    color_hex = primary_color[2:]
-                    a, b, g, r = (
-                        int(color_hex[0:2], 16),
-                        int(color_hex[2:4], 16),
-                        int(color_hex[4:6], 16),
-                        int(color_hex[6:8], 16),
-                    )
-                    self.assPrimaryColorCard.setColor(QColor(r, g, b, a))
+        # Primary style
+        self.assPrimaryFontCard.setCurrentText(style.font_name)
+        self.assPrimarySizeCard.spinBox.setValue(style.font_size)
+        self.assVerticalSpacingCard.spinBox.setValue(style.margin_bottom)
+        self.assPrimaryColorCard.setColor(QColor(style.primary_color))
+        self.assPrimaryOutlineColorCard.setColor(QColor(style.outline_color))
+        self.assPrimarySpacingCard.spinBox.setValue(style.spacing)
+        self.assPrimaryOutlineSizeCard.spinBox.setValue(style.outline_width)
 
-                outline_color = parts[5].strip()
-                if outline_color.startswith("&H"):
-                    color_hex = outline_color[2:]
-                    a, b, g, r = (
-                        int(color_hex[0:2], 16),
-                        int(color_hex[2:4], 16),
-                        int(color_hex[4:6], 16),
-                        int(color_hex[6:8], 16),
-                    )
-                    self.assPrimaryOutlineColorCard.setColor(QColor(r, g, b, a))
-
-                self.assPrimarySpacingCard.spinBox.setValue(float(parts[13]))
-                self.assPrimaryOutlineSizeCard.spinBox.setValue(float(parts[16]))
-
-            elif line.startswith("Style: Secondary"):
-                parts = line.split(",")
-
-                self.assSecondaryFontCard.setCurrentText(parts[1])
-                self.assSecondarySizeCard.spinBox.setValue(int(parts[2]))
-
-                secondary_color = parts[3].strip()
-                if secondary_color.startswith("&H"):
-                    color_hex = secondary_color[2:]
-                    a, b, g, r = (
-                        int(color_hex[0:2], 16),
-                        int(color_hex[2:4], 16),
-                        int(color_hex[4:6], 16),
-                        int(color_hex[6:8], 16),
-                    )
-                    self.assSecondaryColorCard.setColor(QColor(r, g, b, a))
-
-                outline_color = parts[5].strip()
-                if outline_color.startswith("&H"):
-                    color_hex = outline_color[2:]
-                    a, b, g, r = (
-                        int(color_hex[0:2], 16),
-                        int(color_hex[2:4], 16),
-                        int(color_hex[4:6], 16),
-                        int(color_hex[6:8], 16),
-                    )
-                    self.assSecondaryOutlineColorCard.setColor(QColor(r, g, b, a))
-
-                self.assSecondarySpacingCard.spinBox.setValue(float(parts[13]))
-                self.assSecondaryOutlineSizeCard.spinBox.setValue(float(parts[16]))
+        # Secondary style
+        sec = style.secondary
+        if sec:
+            self.assSecondaryFontCard.setCurrentText(sec.font_name)
+            self.assSecondarySizeCard.spinBox.setValue(sec.font_size)
+            self.assSecondaryColorCard.setColor(QColor(sec.color))
+            self.assSecondaryOutlineColorCard.setColor(QColor(sec.outline_color))
+            self.assSecondarySpacingCard.spinBox.setValue(sec.spacing)
+            self.assSecondaryOutlineSizeCard.spinBox.setValue(sec.outline_width)
 
     def _loadRoundedBgStyle(self, style_path: Path):
         """加载圆角背景样式 (.json)"""
@@ -1119,9 +1095,8 @@ class SubtitleStyleInterface(QWidget):
             if not style_name:
                 return
 
-            # 检查是否已存在同名样式
-            ext = self._getStyleFileExtension()
-            if (SUBTITLE_STYLE_PATH / f"{style_name}{ext}").exists():
+            # 检查是否已存在同名样式（使用带前缀的实际路径）
+            if self._resolve_style_path(style_name).exists():
                 InfoBar.warning(
                     title=self.tr("警告"),
                     content=self.tr("样式 ") + style_name + self.tr(" 已存在"),
@@ -1155,8 +1130,8 @@ class SubtitleStyleInterface(QWidget):
         SUBTITLE_STYLE_PATH.mkdir(parents=True, exist_ok=True)
 
         mode = self._getCurrentRenderMode()
-        ext = self._getStyleFileExtension()
-        style_path = SUBTITLE_STYLE_PATH / f"{style_name}{ext}"
+        prefix = "rounded-" if mode == SubtitleRenderModeEnum.ROUNDED_BG else "ass-"
+        style_path = SUBTITLE_STYLE_PATH / f"{prefix}{style_name}.json"
 
         if mode == SubtitleRenderModeEnum.ROUNDED_BG:
             self._saveRoundedBgStyle(style_path)
@@ -1164,17 +1139,45 @@ class SubtitleStyleInterface(QWidget):
             self._saveAssStyle(style_path)
 
     def _saveAssStyle(self, style_path: Path):
-        """保存 ASS 样式 (.txt)"""
-        style_content = self.generateAssStyles()
+        """保存 ASS 样式 (.json)"""
+        from videocaptioner.core.subtitle.style_manager import (
+            SecondaryStyle,
+            SubtitleStyle,
+            style_id_from_filename,
+        )
+        style = SubtitleStyle(
+            name=style_id_from_filename(style_path.name),
+            mode=StyleMode.ASS,
+            font_name=self.assPrimaryFontCard.comboBox.currentText(),
+            font_size=self.assPrimarySizeCard.spinBox.value(),
+            primary_color=self.assPrimaryColorCard.colorPicker.color.name(),
+            outline_color=self.assPrimaryOutlineColorCard.colorPicker.color.name(),
+            outline_width=self.assPrimaryOutlineSizeCard.spinBox.value(),
+            bold=True,
+            spacing=self.assPrimarySpacingCard.spinBox.value(),
+            margin_bottom=self.assVerticalSpacingCard.spinBox.value(),
+            secondary=SecondaryStyle(
+                font_name=self.assSecondaryFontCard.comboBox.currentText(),
+                font_size=self.assSecondarySizeCard.spinBox.value(),
+                color=self.assSecondaryColorCard.colorPicker.color.name(),
+                outline_color=self.assSecondaryOutlineColorCard.colorPicker.color.name(),
+                outline_width=self.assSecondaryOutlineSizeCard.spinBox.value(),
+                spacing=self.assSecondarySpacingCard.spinBox.value(),
+            ),
+        )
         with open(style_path, "w", encoding="utf-8") as f:
-            f.write(style_content)
+            json.dump(style.to_json_dict(), f, ensure_ascii=False, indent=2)
 
     def _saveRoundedBgStyle(self, style_path: Path):
         """保存圆角背景样式 (.json)"""
         bg_color = self.roundedBgColorCard.colorPicker.color
         bg_color_hex = f"#{bg_color.red():02x}{bg_color.green():02x}{bg_color.blue():02x}{bg_color.alpha():02x}"
 
+        from videocaptioner.core.subtitle.style_manager import style_id_from_filename
         data = {
+            "name": style_id_from_filename(style_path.name),
+            "description": "",
+            "mode": "rounded",
             "font_name": self.roundedFontCard.comboBox.currentText(),
             "font_size": self.roundedFontSizeCard.spinBox.value(),
             "text_color": self.roundedTextColorCard.colorPicker.color.name(),

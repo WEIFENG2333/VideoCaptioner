@@ -59,11 +59,13 @@ class ProgressLine:
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._frame = 0
+        self._is_tty = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
 
     def start(self) -> "ProgressLine":
         self._stop.clear()
-        self._thread = threading.Thread(target=self._spin, daemon=True)
-        self._thread.start()
+        if self._is_tty:
+            self._thread = threading.Thread(target=self._spin, daemon=True)
+            self._thread.start()
         return self
 
     def update(self, percent: int, message: str = "") -> None:
@@ -71,20 +73,20 @@ class ProgressLine:
         if message:
             self.message = message
 
-    def finish(self, message: str = "") -> None:
+    def _cleanup(self) -> None:
         self._stop.set()
         if self._thread:
             self._thread.join(timeout=1)
-        # Clear the spinner line
-        sys.stderr.write("\r\033[K")
+        if self._is_tty:
+            sys.stderr.write("\r\033[K")
+
+    def finish(self, message: str = "") -> None:
+        self._cleanup()
         if message:
             success(message)
 
     def fail(self, message: str = "") -> None:
-        self._stop.set()
-        if self._thread:
-            self._thread.join(timeout=1)
-        sys.stderr.write("\r\033[K")
+        self._cleanup()
         if message:
             error(message)
 

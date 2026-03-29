@@ -105,7 +105,7 @@ class FasterWhisperASR(BaseASR):
                 self.faster_whisper_program = "faster-whisper-xxl"
             else:
                 if not shutil.which("faster-whisper"):
-                    raise EnvironmentError("faster-whisper程序未找到，请确保已经下载。")
+                    raise EnvironmentError("faster-whisper program not found，请确保已经下载。")
                 self.faster_whisper_program = "faster-whisper"
                 self.vad_method = ""
         elif self.device == "cuda":
@@ -248,7 +248,7 @@ class FasterWhisperASR(BaseASR):
 
             cmd = self._build_command(str(wav_path))
 
-            logger.info("Faster Whisper command: %s", " ".join(cmd))
+            logger.debug("Faster Whisper command: %s", " ".join(cmd))
             callback(*ASRStatus.TRANSCRIBING.with_progress(5))
 
             self.process = subprocess.Popen(
@@ -273,17 +273,17 @@ class FasterWhisperASR(BaseASR):
             while True:
                 # 检查进程状态
                 if self.process.poll() is not None:
-                    # 进程已结束，读取剩余输出
+                    # 进程已ended，Reading剩余输出
                     for stream_name, line in reader.get_remaining_output():
                         line = line.strip()
                         if line:
                             if "error" in line:
                                 error_msg += line
                             else:
-                                logger.info(line)
+                                logger.debug(line)
                     break
 
-                # 读取输出
+                # Reading输出
                 output = reader.get_output(timeout=0.1)
                 if output:
                     stream_name, line = output
@@ -306,18 +306,18 @@ class FasterWhisperASR(BaseASR):
                             error_msg += line
                             logger.error(line)
                         else:
-                            logger.info(line)
+                            logger.debug(line)
 
             if not is_finish:
-                logger.error("Faster Whisper 错误: %s", error_msg)
+                logger.error("Faster Whisper Error: %s", error_msg)
                 raise RuntimeError(error_msg)
 
             # 判断是否识别成功
             if not output_path.exists():
-                logger.info("Faster Whisper 返回值: %s", self.process.returncode)
+                logger.debug("Faster Whisper 返回值: %s", self.process.returncode)
                 raise RuntimeError(f"Faster Whisper 输出文件不存在: {output_path}")
 
-            logger.info("Faster Whisper ASR completed")
+            logger.debug("Faster Whisper ASR completed")
 
             callback(*ASRStatus.COMPLETED.callback_tuple())
 
@@ -341,7 +341,7 @@ def is_rtx_50_series() -> bool:
             gpu_name = gpu.name.lower()
             # 检测是否包含 50 系列标识，如 RTX 5090, RTX 5080 等
             if re.search(r"rtx\s*50\d{2}", gpu_name):
-                logger.info(f"检测到 RTX 50 系显卡: {gpu.name}")
+                logger.debug(f"Detected RTX 50 系显卡: {gpu.name}")
                 return True
     except Exception as e:
         logger.debug(f"无法检测 GPU 型号: {e}")

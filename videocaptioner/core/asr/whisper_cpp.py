@@ -54,7 +54,7 @@ class WhisperCppASR(BaseASR):
                     f"Model file not found in {models_dir} for: {whisper_model}"
                 )
             model_path = str(model_files[0])
-            logger.info(f"Model found: {model_path}")
+            logger.debug(f"Model found: {model_path}")
         else:
             raise ValueError("whisper_model cannot be empty")
 
@@ -141,11 +141,11 @@ class WhisperCppASR(BaseASR):
                 whisper_params = self._build_command(
                     wav_path, output_path, is_const_me_version
                 )
-                logger.info("Whisper.cpp command: %s", " ".join(whisper_params))
+                logger.debug("Whisper.cpp command: %s", " ".join(whisper_params))
 
                 # Get audio duration
                 total_duration = self.audio_duration
-                logger.info("Audio duration: %d seconds", total_duration)
+                logger.debug("Audio duration: %d seconds", total_duration)
 
                 # Start process
                 self.process = subprocess.Popen(
@@ -157,7 +157,7 @@ class WhisperCppASR(BaseASR):
                     bufsize=1,
                 )
 
-                logger.info(f"Whisper.cpp process started, PID: {self.process.pid}")
+                logger.debug(f"Whisper.cpp process started, PID: {self.process.pid}")
 
                 # Process output with StreamReader
                 reader = StreamReader(self.process)
@@ -212,7 +212,7 @@ class WhisperCppASR(BaseASR):
                     )
 
                 callback(*ASRStatus.COMPLETED.callback_tuple())
-                logger.info("Whisper.cpp ASR completed")
+                logger.debug("Whisper.cpp ASR completed")
 
                 # Read result file
                 srt_path = output_path

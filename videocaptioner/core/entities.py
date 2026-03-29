@@ -474,7 +474,7 @@ class ASRLanguageCapability:
 
 
 def _get_all_languages_except_auto() -> list[TranscribeLanguageEnum]:
-    """获取除 AUTO 外的所有语言"""
+    """获取除 AUTO 外的All语言"""
     return [lang for lang in TranscribeLanguageEnum if lang != TranscribeLanguageEnum.AUTO]
 
 

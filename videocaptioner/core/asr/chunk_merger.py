@@ -3,7 +3,7 @@
 基于精确/模糊文本匹配的音频分块合并算法（参考 Groq API Cookbook）。
 使用滑动窗口找到最佳对齐位置，在重叠区域中点切分。
 
-匹配策略：
+匹配策略:
 - 词级时间戳（字级）: 精确文本匹配
 - 句子级时间戳（非字级）: difflib 模糊匹配（相似度 > 0.7）
 """
@@ -54,32 +54,32 @@ class ChunkMerger:
             ValueError: 如果 chunks 为空或 chunk_offsets 长度不匹配
         """
         if not chunks:
-            raise ValueError("chunks 不能为空")
+            raise ValueError("chunks must not be empty")
 
         if len(chunks) == 1:
-            logger.info("只有一个 chunk，直接返回")
+            logger.debug("只有一个 chunk，直接返回")
             return chunks[0]
 
         # 判断是否为词级时间戳（用于选择匹配策略）
         self._is_word_level = any(chunk.is_word_timestamp() for chunk in chunks)
         if self._is_word_level:
-            logger.info("检测到词级时间戳，使用精确文本匹配")
+            logger.debug("Detected词级时间戳，使用精确文本匹配")
         else:
-            logger.info(
-                f"检测到句子级时间戳，使用模糊匹配（阈值={self.fuzzy_threshold}）"
+            logger.debug(
+                f"Detected句子级时间戳，使用模糊匹配（阈值={self.fuzzy_threshold}）"
             )
 
         # 自动推断 offsets
         if chunk_offsets is None:
             chunk_offsets = self._infer_chunk_offsets(chunks, overlap_duration)
-            logger.info(f"自动推断 chunk_offsets: {chunk_offsets}")
+            logger.debug(f"自动推断 chunk_offsets: {chunk_offsets}")
 
         if len(chunks) != len(chunk_offsets):
             raise ValueError(
                 f"chunks 数量 ({len(chunks)}) 与 chunk_offsets 数量 ({len(chunk_offsets)}) 不匹配"
             )
 
-        # 调整所有 chunk 的时间戳到绝对时间
+        # 调整All chunk 的时间戳到绝对时间
         adjusted_chunks = [
             self._adjust_timestamps(chunk.segments, offset)
             for chunk, offset in zip(chunks, chunk_offsets)
@@ -88,14 +88,14 @@ class ChunkMerger:
         # 逐对合并
         merged_segments = adjusted_chunks[0]
         for i in range(1, len(adjusted_chunks)):
-            logger.info(f"合并 chunk {i-1} 和 chunk {i}")
+            logger.debug(f"合并 chunk {i-1} 和 chunk {i}")
             merged_segments = self._merge_two_sequences(
                 merged_segments,
                 adjusted_chunks[i],
                 overlap_duration,
             )
 
-        logger.info(f"合并完成，总片段数: {len(merged_segments)}")
+        logger.debug(f"合并完成，总片段数: {len(merged_segments)}")
         return ASRData(merged_segments)
 
     def _merge_two_sequences(
@@ -131,7 +131,7 @@ class ChunkMerger:
 
         if not left_overlap or not right_overlap:
             # 无重叠，直接拼接
-            logger.info("未检测到重叠区域，直接拼接")
+            logger.debug("未Detected重叠区域，直接拼接")
             return left + right
 
         # 滑动窗口找最佳对齐位置
@@ -140,14 +140,14 @@ class ChunkMerger:
         if best_match is None:
             # 未找到有效匹配，使用时间边界切分
             logger.warning("未找到有效文本匹配，使用时间边界切分")
-            # 找到 left 中最后一个在 right[0].start_time 之前结束的 segment
+            # 找到 left 中最后一个在 right[0].start_time 之前ended的 segment
             split_idx = left_len
             right_start = right[0].start_time
             for i in range(left_len - 1, -1, -1):
                 if left[i].end_time <= right_start:
                     split_idx = i + 1
                     break
-            logger.info(f"时间边界切分: left[:{split_idx}] + right")
+            logger.debug(f"时间边界切分: left[:{split_idx}] + right")
             return left[:split_idx] + right
 
         # 使用最佳匹配结果
@@ -155,7 +155,7 @@ class ChunkMerger:
             best_match
         )
 
-        # 计算中点：在重叠区域取中间��置
+        # 计算中点: 在重叠区域取中间��置
         left_mid = (left_start_idx + left_end_idx) // 2
         right_mid = (right_start_idx + right_end_idx) // 2
 
@@ -163,13 +163,13 @@ class ChunkMerger:
         left_overlap_offset = left_len - len(left_overlap)
         left_cut = left_overlap_offset + left_mid
 
-        logger.info(
+        logger.debug(
             f"找到最佳匹配: {matches} 个词, "
             f"重叠区域=[{left_start_idx}:{left_end_idx}] vs [{right_start_idx}:{right_end_idx}], "
             f"切分点: left[:{left_cut}] + right[{right_mid}:]"
         )
 
-        # 合并：左边取到中点，右边从中点开始
+        # 合并: 左边取到中点，右边从中点开始
         return left[:left_cut] + right[right_mid:]
 
     def _find_best_alignment(
@@ -195,7 +195,7 @@ class ChunkMerger:
         best_score = 0.0
         best_result = None
 
-        # 滑动窗口：尝试所有对齐位置
+        # 滑动窗口: 尝试All对齐位置
         for i in range(1, left_len + right_len + 1):
             # epsilon: 偏好更长的匹配
             epsilon = float(i) / 10000.0
@@ -213,20 +213,20 @@ class ChunkMerger:
 
             if len(left_slice) != len(right_slice):
                 raise RuntimeError(
-                    f"对齐错误: left[{left_start}:{left_end}]={len(left_slice)} "
+                    f"对齐Error: left[{left_start}:{left_end}]={len(left_slice)} "
                     f"vs right[{right_start}:{right_end}]={len(right_slice)}"
                 )
 
             # 计算匹配数（词级用精确匹配，句子级用模糊匹配）
             if self._is_word_level:
-                # 词级：精确匹配
+                # 词级: 精确匹配
                 matches = sum(
                     1
                     for left_seg, right_seg in zip(left_slice, right_slice)
                     if left_seg.text == right_seg.text
                 )
             else:
-                # 句子级：模糊匹配（difflib 相似度 > threshold）
+                # 句子级: 模糊匹配（difflib 相似度 > threshold）
                 matches = sum(
                     1
                     for left_seg, right_seg in zip(left_slice, right_slice)
@@ -322,7 +322,7 @@ class ChunkMerger:
         for i in range(1, len(chunks)):
             prev_chunk = chunks[i - 1]
             if prev_chunk.segments:
-                # 下一个 chunk 的起始 = 上一个 chunk 结束 - 重叠时长
+                # 下一个 chunk 的起始 = 上一个 chunk ended - 重叠时长
                 prev_end = prev_chunk.segments[-1].end_time
                 next_offset = offsets[-1] + prev_end - overlap_duration
                 offsets.append(max(next_offset, offsets[-1]))

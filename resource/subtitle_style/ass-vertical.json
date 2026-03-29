@@ -1,0 +1,21 @@
+{
+  "name": "vertical",
+  "description": "Vertical/portrait video layout with high bottom margin",
+  "mode": "ass",
+  "font_name": "Noto Sans SC",
+  "font_size": 34,
+  "primary_color": "#65ff5a",
+  "outline_color": "#000000",
+  "outline_width": 2.0,
+  "bold": true,
+  "spacing": 4.0,
+  "margin_bottom": 182,
+  "secondary": {
+    "font_name": "Noto Sans SC",
+    "font_size": 18,
+    "color": "#ffffff",
+    "outline_color": "#000000",
+    "outline_width": 2.0,
+    "spacing": 0.8
+  }
+}

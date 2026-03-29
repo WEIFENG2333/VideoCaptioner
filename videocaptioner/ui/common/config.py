@@ -272,7 +272,7 @@ class Config(QConfig):
     )
 
     # 圆角背景模式配置
-    rounded_bg_font_name = ConfigItem("RoundedBgStyle", "FontName", "LXGW WenKai")
+    rounded_bg_font_name = ConfigItem("RoundedBgStyle", "FontName", "Noto Sans SC")
     rounded_bg_font_size = RangeConfigItem(
         "RoundedBgStyle", "FontSize", 52, RangeValidator(16, 120)
     )

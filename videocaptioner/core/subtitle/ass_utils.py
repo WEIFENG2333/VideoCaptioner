@@ -272,7 +272,7 @@ def auto_wrap_ass_file(
 
         return full_line.replace(text_part, wrapped_text)
 
-    # 匹配所有对话行的文本部分（第10个字段）
+    # 匹配All对话行的文本部分（第10个字段）
     # Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
     pattern = r"Dialogue:[^,]*(?:,[^,]*){8},(.*?)$"
     processed_content = re.sub(

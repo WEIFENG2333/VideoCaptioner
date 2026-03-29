@@ -2,8 +2,6 @@
 
 from typing import Optional
 
-from videocaptioner.config import SUBTITLE_STYLE_PATH
-
 from .ass_renderer import render_ass_preview, render_ass_video
 from .ass_utils import (
     AssInfo,
@@ -20,16 +18,27 @@ from .font_utils import (
     get_font,
 )
 from .rounded_renderer import render_preview, render_rounded_video
+from .style_manager import (
+    SecondaryStyle,
+    StyleMode,
+    SubtitleStyle,
+    available_style_names,
+    list_styles,
+    load_style,
+)
 from .styles import RoundedBgStyle
 from .text_utils import hex_to_rgba, is_mainly_cjk, wrap_text
 
 
 def get_subtitle_style(style_name: str) -> Optional[str]:
-    """Get subtitle style content"""
-    style_path = SUBTITLE_STYLE_PATH / f"{style_name}.txt"
-    if style_path.exists():
-        return style_path.read_text(encoding="utf-8")
-    return None
+    """Get subtitle style as ASS string.
+
+    Uses the unified style_manager (JSON-first, .txt fallback).
+    """
+    style = load_style(style_name)
+    if style is None:
+        return None
+    return style.to_ass_string()
 
 
 __all__ = [
@@ -44,6 +53,12 @@ __all__ = [
     "render_rounded_video",
     "RoundedBgStyle",
     "get_subtitle_style",
+    "SubtitleStyle",
+    "SecondaryStyle",
+    "StyleMode",
+    "load_style",
+    "list_styles",
+    "available_style_names",
     "FontType",
     "get_font",
     "get_ass_to_pil_ratio",

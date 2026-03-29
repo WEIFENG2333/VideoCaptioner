@@ -43,8 +43,8 @@ class LLMTranslator(BaseTranslator):
         self, subtitle_chunk: List[SubtitleProcessData]
     ) -> List[SubtitleProcessData]:
         """翻译字幕块"""
-        logger.info(
-            f"[+]正在翻译字幕：{subtitle_chunk[0].index} - {subtitle_chunk[-1].index}"
+        logger.debug(
+            f"[+]正在翻译字幕: {subtitle_chunk[0].index} - {subtitle_chunk[-1].index}"
         )
 
         # 转换为字典格式用于API调用
@@ -93,7 +93,8 @@ class LLMTranslator(BaseTranslator):
             logger.error(f"OpenAI NotFound Error: {str(e)}")
             raise
         except Exception as e:
-            logger.exception(f"Error: {str(e)}")
+            logger.error(f"LLM translation error: {e}")
+            raise
             return self._translate_chunk_single(subtitle_chunk)
 
     def _agent_loop(
@@ -138,7 +139,7 @@ class LLMTranslator(BaseTranslator):
     ) -> Tuple[bool, str]:
         """验证LLM翻译结果（支持普通和反思模式）
 
-        返回: (是否有效, 错误反馈)
+        Returns: (is_valid, error_feedback)
         """
         if not isinstance(response_dict, dict):
             return (
@@ -208,7 +209,7 @@ class LLMTranslator(BaseTranslator):
                 translated_text = response.choices[0].message.content.strip()
                 data.translated_text = translated_text
             except Exception as e:
-                logger.error(f"单条翻译失败 {data.index}: {str(e)}")
+                logger.error(f"Single item translation failed {data.index}: {str(e)}")
 
         return subtitle_chunk
 

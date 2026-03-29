@@ -18,7 +18,7 @@ def split_by_llm(
     max_word_count_cjk: int = 18,
     max_word_count_english: int = 12,
 ) -> List[str]:
-    """使用LLM进行文本断句（固定使用句子分段）
+    """使用LLM进行文本断句（固定使用句子Segments）
 
     Args:
         text: 待断句的文本
@@ -34,7 +34,7 @@ def split_by_llm(
             text, model, max_word_count_cjk, max_word_count_english
         )
     except Exception as e:
-        logger.error(f"断句失败: {e}")
+        logger.error(f"Sentence splitting failed: {e}")
         return [text]
 
 
@@ -94,7 +94,7 @@ def _split_with_agent_loop(
 
         # 添加反馈到对话
         logger.warning(
-            f"模型输出错误，断句验证失败，频繁出现建议更换更智能的模型或者调整最大字数限制。开始反馈循环 (第{step + 1}次尝试):\n {error_message}\n\n"
+            f"Split validation failed. Feedback loop (第{step + 1}次尝试):\n {error_message}\n\n"
         )
         messages.append({"role": "assistant", "content": result_text})
         messages.append(
@@ -113,9 +113,9 @@ def _validate_split_result(
     max_word_count_cjk: int,
     max_word_count_english: int,
 ) -> Tuple[bool, str]:
-    """验证断句结果：内容一致性、分段数量、长度限制
+    """验证断句结果: 内容一致性、Segments数量、长度限制
 
-    返回: (是否有效, 错误反馈)
+    Returns: (is_valid, error_feedback)
     """
     # 检查是否为空
     if not split_result:

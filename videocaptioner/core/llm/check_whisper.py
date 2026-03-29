@@ -25,7 +25,7 @@ def check_whisper_connection(
         model: 模型名称
 
     返回:
-        (是否成功, 转录结果文本或错误信息)
+        (是否成功, 转录结果文本或Error output)
     """
     try:
         # 检查测试音频文件是否存在
@@ -37,7 +37,7 @@ def check_whisper_connection(
         api_key = api_key.strip()
         client = openai.OpenAI(base_url=base_url, api_key=api_key, timeout=60)
 
-        # 读取音频文件
+        # Reading音频文件
         with open(TEST_AUDIO_PATH, "rb") as audio_file:
             # 调用 Whisper API 进行转录
             response = client.audio.transcriptions.create(

@@ -2,7 +2,7 @@ import datetime
 from pathlib import Path
 from typing import Optional
 
-from videocaptioner.config import MODEL_PATH, SUBTITLE_STYLE_PATH
+from videocaptioner.config import MODEL_PATH
 from videocaptioner.core.entities import (
     LANGUAGES,
     FullProcessTask,
@@ -23,15 +23,17 @@ class TaskFactory:
 
     @staticmethod
     def get_ass_style(style_name: str) -> str:
-        """获取 ASS 字幕样式内容"""
-        style_path = SUBTITLE_STYLE_PATH / f"{style_name}.txt"
-        if style_path.exists():
-            return style_path.read_text(encoding="utf-8")
+        """获取 ASS 字幕样式内容 (via style_manager, JSON-first with .txt fallback)"""
+        from videocaptioner.core.subtitle.style_manager import load_style
+
+        style = load_style(style_name)
+        if style is not None:
+            return style.to_ass_string()
         return ""
 
     @staticmethod
     def get_rounded_style() -> dict:
-        """获取圆角背景样式配置"""
+        """获取圆角背景样式配置 (from UI cfg overrides)"""
         return {
             "font_name": cfg.rounded_bg_font_name.value,
             "font_size": cfg.rounded_bg_font_size.value,

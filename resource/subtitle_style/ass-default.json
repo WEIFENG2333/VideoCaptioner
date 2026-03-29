@@ -1,0 +1,21 @@
+{
+  "name": "default",
+  "description": "",
+  "mode": "ass",
+  "font_name": "Noto Sans SC",
+  "font_size": 40,
+  "primary_color": "#ffffff",
+  "outline_color": "#000000",
+  "outline_width": 2.0,
+  "bold": true,
+  "spacing": 3.2,
+  "margin_bottom": 30,
+  "secondary": {
+    "font_name": "Noto Sans SC",
+    "font_size": 30,
+    "color": "#ffffff",
+    "outline_color": "#000000",
+    "outline_width": 2.0,
+    "spacing": 0.8
+  }
+}
