@@ -222,8 +222,9 @@ def verify():
     # Check resource directories are bundled
     expected_resources = [
         "resource/assets/logo.png",
-        "resource/fonts/LXGWWenKai-Regular.ttf",
-        "resource/subtitle_style/default.json",
+        "resource/fonts/NotoSansSC-Regular.ttf",
+        "resource/subtitle_style/ass-default.json",
+        "resource/subtitle_style/rounded-default.json",
         "resource/translations",
         "videocaptioner/core/prompts/split/semantic.md",
     ]
