@@ -46,8 +46,8 @@ class BingTranslator(BaseTranslator):
             self.auth_token = response.text
             self.headers["authorization"] = f"Bearer {self.auth_token}"
         except Exception as e:
-            logger.error(f"初始化必应翻译会话失败: {str(e)}")
-            raise RuntimeError(f"初始化必应翻译会话失败: {str(e)}")
+            logger.error(f"Failed to init Bing session: {str(e)}")
+            raise RuntimeError(f"Failed to init Bing session: {str(e)}")
 
     def _translate_chunk(
         self, subtitle_chunk: List[SubtitleProcessData]
@@ -85,7 +85,7 @@ class BingTranslator(BaseTranslator):
                     ]
 
             except Exception as e:
-                logger.error(f"必应翻译失败: {str(e)}")
+                logger.error(f"Bing translation failed: {str(e)}")
                 resp = locals().get("response")
                 if "token" in str(e).lower() or (
                     resp is not None
@@ -94,7 +94,7 @@ class BingTranslator(BaseTranslator):
                     try:
                         self._init_session()
                     except Exception as e:
-                        logger.error(f"重新初始化必应翻译会话失败: {str(e)}")
+                        logger.error(f"重新Failed to init Bing session: {str(e)}")
 
         return subtitle_chunk
 

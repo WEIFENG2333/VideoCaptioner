@@ -1,7 +1,7 @@
 """
 翻译模块
 
-提供多种翻译服务：OpenAI LLM、Google、Bing、DeepLX
+提供多种翻译服务: OpenAI LLM、Google、Bing、DeepLX
 """
 
 from videocaptioner.core.entities import SubtitleProcessData

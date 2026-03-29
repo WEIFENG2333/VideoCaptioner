@@ -70,5 +70,5 @@ class TranslatorFactory:
                     update_callback=update_callback,
                 )
         except Exception as e:
-            logger.error(f"创建翻译器失败：{str(e)}")
+            logger.error(f"Failed to create translator: {str(e)}")
             raise

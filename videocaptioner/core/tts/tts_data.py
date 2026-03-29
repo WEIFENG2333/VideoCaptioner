@@ -25,7 +25,7 @@ class TTSConfig:
     stream: bool = False  # 是否流式传输
     cache_ttl: int = 86400 * 2  # 缓存过期时间（秒），默认2天
     timeout: int = 60  # 超时时间（秒）
-    use_cache: bool = True  # 是否使用缓存
+    use_cache: bool = True  # 是否Using cache
 
 
 @dataclass
@@ -34,7 +34,7 @@ class TTSDataSeg:
 
     text: str  # 要合成的文本
     start_time: float = 0.0  # 开始时间（秒）
-    end_time: float = 0.0  # 结束时间（秒）
+    end_time: float = 0.0  # ended时间（秒）
     audio_path: str = ""  # 生成的音频文件路径
     audio_duration: float = 0.0  # 实际音频时长（秒）
     voice: Optional[str] = None  # 使用的音色

@@ -38,12 +38,12 @@ class OpenAITTS(BaseTTS):
             segment: TTS 数据段
             output_path: 输出音频路径
         """
-        logger.info(f"调用 OpenAI TTS API: {segment.text[:50]}...")
+        logger.debug(f"Calling OpenAI TTS API: {segment.text[:50]}...")
 
         # 音色选择
         voice_to_use = segment.voice or self.config.voice or "alloy"
 
-        # 调用 OpenAI TTS API（流式响应）
+        # Calling OpenAI TTS API（流式响应）
         with self.client.audio.speech.with_streaming_response.create(
             model=self.config.model,
             voice=voice_to_use,
@@ -53,7 +53,7 @@ class OpenAITTS(BaseTTS):
         ) as response:
             response.stream_to_file(output_path)
 
-        logger.info(f"TTS 成功: {output_path}")
+        logger.debug(f"TTS success: {output_path}")
 
         # 更新 segment
         segment.audio_path = output_path

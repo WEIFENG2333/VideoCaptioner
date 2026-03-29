@@ -35,7 +35,7 @@ def open_folder(path):
         try:
             subprocess.Popen(["xdg-open", path])
         except (OSError, subprocess.SubprocessError):
-            logger.warning(f"无法在当前系统打开文件夹: {path}")
+            logger.warning(f"Cannot open folder on current system: {path}")
 
 
 def reveal_in_explorer(file_path):
@@ -76,7 +76,7 @@ def open_file(path):
         try:
             subprocess.Popen(["xdg-open", path])
         except (OSError, subprocess.SubprocessError):
-            logger.warning(f"无法在当前系统打开文件: {path}")
+            logger.warning(f"Cannot open file on current system: {path}")
 
 
 def get_subprocess_kwargs():

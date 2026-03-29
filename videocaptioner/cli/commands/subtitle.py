@@ -25,10 +25,12 @@ _LANG_MAP = {
 
 
 def _resolve_target_language(code: str):
-    """Resolve a BCP 47 code to a TargetLanguage enum value."""
+    """Resolve a BCP 47 code to a TargetLanguage enum value (case-insensitive)."""
     from videocaptioner.core.translate.types import TargetLanguage
 
-    label = _LANG_MAP.get(code)
+    # Case-insensitive lookup in _LANG_MAP
+    code_lower = code.lower()
+    label = next((v for k, v in _LANG_MAP.items() if k.lower() == code_lower), None)
     if label:
         for lang in TargetLanguage:
             if lang.value == label:
@@ -49,6 +51,11 @@ def run(args: Namespace, config: dict) -> int:
     if not input_path.exists():
         output.error(f"Input file not found: {input_path}")
         return EXIT.FILE_NOT_FOUND
+
+    from videocaptioner.cli.validators import validate_subtitle_input
+    err = validate_subtitle_input(input_path)
+    if err is not None:
+        return err
 
     need_optimize = get(config, "subtitle.optimize", True)
     need_translate = get(config, "subtitle.translate", False)
@@ -71,10 +78,33 @@ def run(args: Namespace, config: dict) -> int:
             return EXIT.USAGE_ERROR
     target_lang_code = get(config, "translate.target_language", "zh-Hans")
     need_reflect = get(config, "translate.reflect", False)
+    if need_reflect and translator_service in ("bing", "google"):
+        output.warn("--reflect only works with LLM translator, ignored for " + translator_service)
+        need_reflect = False
+
+    # Warn on conflicting/ignored options
+    if not need_translate and getattr(args, "layout", None):
+        output.warn("--layout has no effect without translation (no bilingual output)")
+    prompt_arg = getattr(args, "prompt", None)
+    prompt_file_arg = getattr(args, "prompt_file", None)
+    if (prompt_arg or prompt_file_arg) and not needs_llm:
+        output.warn("--prompt/--prompt-file only works with LLM optimizer/translator")
+
     thread_num = get(config, "subtitle.thread_num", 4)
-    batch_size = get(config, "subtitle.batch_size", 10)
+    batch_size = get(config, "subtitle.batch_size", 20)
     max_cjk = get(config, "subtitle.max_word_count_cjk", 18)
     max_english = get(config, "subtitle.max_word_count_english", 12)
+
+    # Validate numeric ranges
+    if thread_num < 1:
+        output.error("--thread-num must be at least 1")
+        return EXIT.USAGE_ERROR
+    if batch_size < 1:
+        output.error("--batch-size must be at least 1")
+        return EXIT.USAGE_ERROR
+    if max_cjk < 1 or max_english < 1:
+        output.error("--max-cjk and --max-english must be at least 1")
+        return EXIT.USAGE_ERROR
     out_fmt = get(config, "output.format", "srt")
     layout_str = get(config, "synthesize.layout", "target-above")
     verbose = getattr(args, "verbose", False)
@@ -88,14 +118,23 @@ def run(args: Namespace, config: dict) -> int:
             suffix = f"_{target_lang_code}" if need_translate else "_optimized"
             output_path = str(out / f"{input_path.stem}{suffix}.{out_fmt}")
         else:
-            output_path = args.output
-            if out_fmt != "srt":
+            # If -o has no extension, auto-append from --format
+            if not out.suffix:
+                output_path = f"{args.output}.{out_fmt}"
+            else:
+                output_path = args.output
                 ext = out.suffix.lstrip(".")
-                if ext and ext != out_fmt:
+                if ext != out_fmt and out_fmt != "srt":
                     output.warn(f"--format {out_fmt} ignored; output format determined by -o extension (.{ext})")
     else:
         suffix = f"_{target_lang_code}" if need_translate else "_optimized"
         output_path = str(input_path.with_stem(input_path.stem + suffix).with_suffix(f".{out_fmt}"))
+
+    # Validate output format
+    from videocaptioner.cli.validators import validate_output_format
+    err = validate_output_format(Path(output_path))
+    if err is not None:
+        return err
 
     # Setup LLM environment
     llm_api_key = get(config, "llm.api_key", "")
@@ -106,15 +145,16 @@ def run(args: Namespace, config: dict) -> int:
     if llm_api_base:
         os.environ["OPENAI_BASE_URL"] = llm_api_base
 
-    # Load custom prompt
+    # Load custom prompt (only if LLM features are needed)
     custom_prompt = getattr(args, "prompt", None) or ""
     prompt_file = getattr(args, "prompt_file", None)
-    if prompt_file:
-        custom_prompt = Path(prompt_file).read_text(encoding="utf-8")
+    if prompt_file and needs_llm:
+        p = Path(prompt_file)
+        if not p.exists():
+            output.error(f"Prompt file not found: {prompt_file}")
+            return EXIT.FILE_NOT_FOUND
+        custom_prompt = p.read_text(encoding="utf-8")
 
-    if quiet:
-        import logging
-        logging.getLogger().setLevel(logging.WARNING)
 
     if verbose:
         output.info(f"Optimize: {need_optimize}, Translate: {need_translate}")
@@ -127,7 +167,7 @@ def run(args: Namespace, config: dict) -> int:
     from videocaptioner.core.asr.asr_data import ASRData
     asr_data = ASRData.from_subtitle_file(str(input_path))
 
-    if len(asr_data.segments) == 0:
+    if len(asr_data.segments) == 0 and not quiet:
         output.warn(f"Input file contains 0 subtitle segments: {input_path}")
 
     progress = None if quiet else output.ProgressLine("Processing subtitles").start()
@@ -199,27 +239,22 @@ def run(args: Namespace, config: dict) -> int:
             asr_data.remove_punctuation()
 
         # 4. Save
-        from videocaptioner.core.entities import SubtitleLayoutEnum
-        layout_map = {
-            "target-above": SubtitleLayoutEnum.TRANSLATE_ON_TOP,
-            "source-above": SubtitleLayoutEnum.ORIGINAL_ON_TOP,
-            "target-only": SubtitleLayoutEnum.ONLY_TRANSLATE,
-            "source-only": SubtitleLayoutEnum.ONLY_ORIGINAL,
-        }
-        layout = layout_map.get(layout_str, SubtitleLayoutEnum.TRANSLATE_ON_TOP)
+        from videocaptioner.cli.validators import resolve_layout
+        layout = resolve_layout(layout_str)
         asr_data.save(save_path=output_path, layout=layout)
 
         if progress:
-            progress.finish(f"Done -> {output_path} ({len(asr_data.segments)} segments)")
+            n = len(asr_data.segments)
+            progress.finish(f"Done -> {output_path} ({n} segment{'' if n == 1 else 's'})")
         if quiet:
             print(output_path)
         return EXIT.SUCCESS
 
     except Exception as e:
         if progress:
-            progress.fail(str(e))
+            progress.fail(output.clean_error(str(e)))
         else:
-            output.error(str(e))
+            output.error(output.clean_error(str(e)))
         if verbose:
             import traceback
             traceback.print_exc()

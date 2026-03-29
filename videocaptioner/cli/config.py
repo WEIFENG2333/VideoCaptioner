@@ -28,18 +28,21 @@ APP_NAME = "videocaptioner"
 CONFIG_DIR = Path(user_config_dir(APP_NAME))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 
-# Environment variable prefix
-ENV_PREFIX = "VIDEOCAPTIONER_"
-
-# Flat env var → nested TOML key mapping
+# Environment variable mappings: env var name → config dotted key
+# Supports both OpenAI standard names and VIDEOCAPTIONER_ prefixed names
 ENV_MAP: Dict[str, str] = {
-    "LLM_API_KEY": "llm.api_key",
-    "LLM_API_BASE": "llm.api_base",
-    "LLM_MODEL": "llm.model",
-    "WHISPER_API_KEY": "whisper_api.api_key",
-    "WHISPER_API_BASE": "whisper_api.api_base",
-    "DEEPLX_ENDPOINT": "translate.deeplx_endpoint",
-    "TARGET_LANG": "translate.target_language",
+    # OpenAI standard (most tools recognize these)
+    "OPENAI_API_KEY": "llm.api_key",
+    "OPENAI_BASE_URL": "llm.api_base",
+    "OPENAI_MODEL": "llm.model",
+    # VIDEOCAPTIONER_ prefixed (take precedence over standard)
+    "VIDEOCAPTIONER_LLM_API_KEY": "llm.api_key",
+    "VIDEOCAPTIONER_LLM_API_BASE": "llm.api_base",
+    "VIDEOCAPTIONER_LLM_MODEL": "llm.model",
+    "VIDEOCAPTIONER_WHISPER_API_KEY": "whisper_api.api_key",
+    "VIDEOCAPTIONER_WHISPER_API_BASE": "whisper_api.api_base",
+    "VIDEOCAPTIONER_DEEPLX_ENDPOINT": "translate.deeplx_endpoint",
+    "VIDEOCAPTIONER_TARGET_LANG": "translate.target_language",
 }
 
 DEFAULTS: Dict[str, Any] = {
@@ -55,7 +58,7 @@ DEFAULTS: Dict[str, Any] = {
         "prompt": "",
     },
     "transcribe": {
-        "asr": "faster-whisper",
+        "asr": "bijian",
         "language": "auto",
         "faster_whisper": {
             "model": "large-v3",
@@ -77,7 +80,7 @@ DEFAULTS: Dict[str, Any] = {
         "max_word_count_cjk": 18,
         "max_word_count_english": 12,
         "thread_num": 4,
-        "batch_size": 10,
+        "batch_size": 20,
     },
     "translate": {
         "service": "llm",
@@ -89,6 +92,7 @@ DEFAULTS: Dict[str, Any] = {
         "subtitle_mode": "soft",
         "quality": "medium",
         "layout": "target-above",
+        "render_mode": "ass",
         "style": "default",
     },
     "output": {
@@ -144,10 +148,13 @@ def load_config_file(path: Optional[Path] = None) -> dict:
 
 
 def load_env_overrides() -> dict:
-    """Read VIDEOCAPTIONER_* environment variables and map them to config keys."""
+    """Read environment variables and map them to config keys.
+
+    Supports both OpenAI standard names (OPENAI_API_KEY) and
+    VIDEOCAPTIONER_ prefixed names. Prefixed names take precedence.
+    """
     overrides: Dict[str, Any] = {}
-    for env_suffix, dotted_key in ENV_MAP.items():
-        env_var = ENV_PREFIX + env_suffix
+    for env_var, dotted_key in ENV_MAP.items():
         value = os.environ.get(env_var)
         if value is not None:
             _set_nested(overrides, dotted_key, value)

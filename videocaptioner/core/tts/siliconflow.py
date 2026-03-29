@@ -44,22 +44,22 @@ class VoiceCloneManager:
             voice_uri: 形如 speech:your-voice-name:xxx:xxx 的 URI
 
         Raises:
-            FileNotFoundError: 音频文件不存在
-            ValueError: API 返回错误
+            FileNotFoundError: Audio file not found
+            ValueError: API 返回Error
         """
         # 检查文件是否存在
         audio_file = Path(audio_path)
         if not audio_file.exists():
-            raise FileNotFoundError(f"音频文件不存在: {audio_path}")
+            raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
         # 检查缓存（避免重复上传）
         cache_key = self._generate_cache_key(audio_path, text, model)
         cached_uri = self.cache.get(cache_key)
         if cached_uri:
-            logger.info(f"使用缓存的声音克隆 URI: {cached_uri}")
+            logger.debug(f"Using cache的声音克隆 URI: {cached_uri}")
             return cached_uri
 
-        logger.info(f"上传声音克隆音频: {audio_path}, 对应文本: {text[:50]}...")
+        logger.debug(f"上传声音克隆音频: {audio_path}, 对应文本: {text[:50]}...")
 
         custom_name = "video_captioner"
         url = f"{self.base_url}/uploads/audio/voice"
@@ -76,9 +76,9 @@ class VoiceCloneManager:
                 response.raise_for_status()
             except requests.HTTPError as e:
                 if e.response.status_code == 400:
-                    raise ValueError(f"音频上传失败（参数错误）: {e.response.text}")
+                    raise ValueError(f"音频上传失败（参数Error）: {e.response.text}")
                 elif e.response.status_code == 401:
-                    raise ValueError("API Key 无效")
+                    raise ValueError("API Key is invalid")
                 else:
                     raise ValueError(f"音频上传失败: {e.response.text}")
 
@@ -87,7 +87,7 @@ class VoiceCloneManager:
         if not voice_uri:
             raise ValueError(f"API 未返回 URI: {result}")
 
-        logger.info(f"获得声音克隆 URI: {voice_uri}")
+        logger.debug(f"获得声音克隆 URI: {voice_uri}")
 
         # 缓存 URI
         self.cache.set(cache_key, voice_uri, expire=86400 * 2)
@@ -145,12 +145,12 @@ class SiliconFlowTTS(BaseTTS):
             "gain": self.config.gain,
         }
 
-        # 音色选择（优先级：声音克隆 > segment指定 > 全局配置）
+        # 音色选择（优先级: 声音克隆 > segment指定 > 全局配置）
         voice_to_use = None
 
         if segment.clone_audio_path and segment.clone_audio_text:
             # 使用声音克隆
-            logger.info(f"上传声音克隆音频: {segment.clone_audio_path}")
+            logger.debug(f"上传声音克隆音频: {segment.clone_audio_path}")
             voice_uri = self.voice_manager.upload_voice(
                 audio_path=segment.clone_audio_path,
                 text=segment.clone_audio_text,
@@ -158,7 +158,7 @@ class SiliconFlowTTS(BaseTTS):
             )
             voice_to_use = voice_uri
             segment.clone_voice_uri = voice_uri
-            logger.info(f"使用克隆音色: {voice_uri}")
+            logger.debug(f"使用克隆音色: {voice_uri}")
 
         elif segment.voice:
             # segment 指定了音色
@@ -187,7 +187,7 @@ class SiliconFlowTTS(BaseTTS):
         with open(output_path, "wb") as f:
             f.write(response.content)
 
-        logger.info(f"TTS 成功: {output_path}")
+        logger.debug(f"TTS success: {output_path}")
 
         # 更新 segment
         segment.audio_path = output_path

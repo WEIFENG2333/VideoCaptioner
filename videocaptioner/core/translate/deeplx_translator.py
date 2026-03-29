@@ -51,7 +51,7 @@ class DeepLXTranslator(BaseTranslator):
                 response.raise_for_status()
                 data.translated_text = response.json()["data"]
             except Exception as e:
-                logger.error(f"DeepLX翻译失败 {data.index}: {str(e)}")
+                logger.error(f"DeepLXTranslation failed {data.index}: {str(e)}")
 
         return subtitle_chunk
 

@@ -5,9 +5,79 @@ BEFORE starting the actual task, so users get clear error messages upfront.
 """
 
 import shutil
+from pathlib import Path
 
 from videocaptioner.cli import output
 from videocaptioner.cli.config import get
+
+# Shared file format constants
+AUDIO_EXTENSIONS = frozenset({"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac", "wma"})
+VIDEO_EXTENSIONS = frozenset({"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"})
+SUBTITLE_EXTENSIONS = frozenset({".srt", ".ass", ".vtt"})
+OUTPUT_EXTENSIONS = frozenset({".srt", ".ass", ".txt", ".json"})
+
+
+def resolve_layout(cli_name: str):
+    """Convert CLI layout name to SubtitleLayoutEnum."""
+    from videocaptioner.core.entities import SubtitleLayoutEnum
+    mapping = {
+        "target-above": SubtitleLayoutEnum.TRANSLATE_ON_TOP,
+        "source-above": SubtitleLayoutEnum.ORIGINAL_ON_TOP,
+        "target-only": SubtitleLayoutEnum.ONLY_TRANSLATE,
+        "source-only": SubtitleLayoutEnum.ONLY_ORIGINAL,
+    }
+    return mapping.get(cli_name, SubtitleLayoutEnum.TRANSLATE_ON_TOP)
+
+
+def validate_media_input(path: Path) -> int | None:
+    """Validate input is a supported audio/video file. Returns exit code on failure, None on success."""
+    from videocaptioner.cli import exit_codes as EXIT
+    if not path.is_file():
+        output.error(f"Input is not a file: {path}")
+        return EXIT.FILE_NOT_FOUND
+    ext = path.suffix.lstrip(".").lower()
+    if not ext or (ext not in AUDIO_EXTENSIONS and ext not in VIDEO_EXTENSIONS):
+        output.error(f"Unsupported file format: {path.suffix or '(no extension)'}")
+        output.hint("Supported audio: " + ", ".join(sorted(AUDIO_EXTENSIONS)))
+        output.hint("Supported video: " + ", ".join(sorted(VIDEO_EXTENSIONS)))
+        return EXIT.FILE_NOT_FOUND
+    return None
+
+
+def validate_subtitle_input(path: Path) -> int | None:
+    """Validate input is a supported subtitle file. Returns exit code on failure, None on success."""
+    from videocaptioner.cli import exit_codes as EXIT
+    if path.suffix.lower() not in SUBTITLE_EXTENSIONS:
+        output.error(f"Unsupported subtitle format: {path.suffix}")
+        output.hint(f"Supported formats: {', '.join(sorted(SUBTITLE_EXTENSIONS))}")
+        return EXIT.FILE_NOT_FOUND
+    return None
+
+
+def validate_video_input(path: Path) -> int | None:
+    """Validate input is a video file (not audio or other). Returns exit code on failure."""
+    from videocaptioner.cli import exit_codes as EXIT
+    ext = path.suffix.lower()
+    if ext.lstrip(".") in AUDIO_EXTENSIONS:
+        output.error(f"Input is an audio file ({ext}), not a video. Cannot burn subtitles into audio.")
+        output.hint("Use a video file (mp4, mkv, etc.) as input.")
+        return EXIT.USAGE_ERROR
+    if ext and ext.lstrip(".") not in VIDEO_EXTENSIONS:
+        output.error(f"Unsupported video format: {ext}")
+        output.hint(f"Supported: {', '.join(sorted(VIDEO_EXTENSIONS))}")
+        return EXIT.USAGE_ERROR
+    return None
+
+
+def validate_output_format(path: Path) -> int | None:
+    """Validate output file extension is supported. Returns exit code on failure."""
+    from videocaptioner.cli import exit_codes as EXIT
+    ext = Path(path).suffix.lower()
+    if ext and ext not in OUTPUT_EXTENSIONS:
+        output.error(f"Unsupported output format: {ext}")
+        output.hint(f"Supported: {', '.join(sorted(OUTPUT_EXTENSIONS))}")
+        return EXIT.USAGE_ERROR
+    return None
 
 
 def validate_llm(config: dict) -> bool:
@@ -19,7 +89,7 @@ def validate_llm(config: dict) -> bool:
         output.config_missing_error(
             "LLM API key",
             "llm.api_key",
-            "VIDEOCAPTIONER_LLM_API_KEY",
+            "OPENAI_API_KEY",
             "--api-key",
         )
         return False
@@ -27,7 +97,7 @@ def validate_llm(config: dict) -> bool:
         output.config_missing_error(
             "LLM model",
             "llm.model",
-            "VIDEOCAPTIONER_LLM_MODEL",
+            "OPENAI_MODEL",
             "--model",
         )
         return False

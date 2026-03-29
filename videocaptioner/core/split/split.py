@@ -21,17 +21,17 @@ logger = setup_logger("subtitle_splitter")
 MAX_WORD_COUNT_CJK = 25  # CJK文本单行最大字数
 MAX_WORD_COUNT_ENGLISH = 18  # 英文文本单行最大单词数
 
-# 分段阈值
-SEGMENT_WORD_THRESHOLD = 500  # 长文本分段阈值(字数)
+# Segments阈值
+SEGMENT_WORD_THRESHOLD = 500  # 长文本Segments阈值(字数)
 
 # 时间间隔
 MAX_GAP = 1500  # 允许的最大时间间隔(毫秒)
-MERGE_SHORT_GAP = 200  # 短分段合并时间阈值(毫秒)
-MERGE_VERY_SHORT_GAP = 500  # 极短分段合并时间阈值(毫秒)
+MERGE_SHORT_GAP = 200  # 短Segments合并时间阈值(毫秒)
+MERGE_VERY_SHORT_GAP = 500  # 极短Segments合并时间阈值(毫秒)
 
-# 短分段合并阈值
-MERGE_MIN_WORDS = 5  # 短分段最小字数阈值
-MERGE_VERY_SHORT_WORDS = 3  # 极短分段字数阈值
+# 短Segments合并阈值
+MERGE_MIN_WORDS = 5  # 短Segments最小字数阈值
+MERGE_VERY_SHORT_WORDS = 3  # 极短Segments字数阈值
 
 # 分割相关
 SPLIT_SEARCH_RANGE = 30  # 分割点前后搜索范围
@@ -41,7 +41,7 @@ MIN_GROUP_SIZE = 5  # 最小分组大小
 
 # 规则分割
 RULE_SPLIT_GAP = 500  # 规则分割时间间隔阈值(毫秒)
-RULE_MIN_SEGMENT_SIZE = 4  # 规则分割最小分段大小
+RULE_MIN_SEGMENT_SIZE = 4  # 规则分割最小Segments大小
 
 # 常见词分割
 PREFIX_WORD_RATIO = 0.6  # 前缀词分割比例
@@ -57,17 +57,17 @@ MATCH_LARGE_SHIFT = 100  # 未匹配时的大偏移量
 def preprocess_segments(
     segments: List[ASRDataSeg], need_lower: bool = True
 ) -> List[ASRDataSeg]:
-    """预处理ASR分段
+    """预处理ASRSegments
 
-    1. 移除纯标点符号的分段
+    1. 移除纯标点符号的Segments
     2. 为需要空格分隔的语言添加空格（英语、俄语、阿拉伯语等，不包括CJK）
 
     Args:
-        segments: ASR数据分段列表
+        segments: ASR数据Segments列表
         need_lower: 是否转小写（仅对拉丁和西里尔字母有效）
 
     Returns:
-        处理后的分段列表
+        处理后的Segments列表
     """
     new_segments = []
     for seg in segments:
@@ -85,7 +85,7 @@ def preprocess_segments(
 class SubtitleSplitter:
     """字幕智能分割器
 
-    使用LLM进行语义分段,支持缓存、并发处理和规则降级。
+    使用LLM进行语义Segments,支持缓存、并发处理和规则降级。
     """
 
     def __init__(
@@ -119,8 +119,8 @@ class SubtitleSplitter:
         """分割字幕(主入口)
 
         处理流程:
-        1. 读取并预处理字幕
-        2. 按字数分段
+        1. Reading并预处理字幕
+        2. 按字数Segments
         3. 并发调用LLM处理
         4. 合并结果并优化
 
@@ -131,10 +131,10 @@ class SubtitleSplitter:
             分割后的ASRData对象
 
         Raises:
-            RuntimeError: 分割失败时抛出
+            RuntimeError: Raised on split failure
         """
         try:
-            # 1. 读取字幕
+            # 1. Reading字幕
             if isinstance(subtitle_data, str):
                 asr_data = ASRData.from_subtitle_file(subtitle_data)
             else:
@@ -147,10 +147,10 @@ class SubtitleSplitter:
             asr_data.segments = preprocess_segments(asr_data.segments, need_lower=False)
             txt = asr_data.to_txt().replace("\n", "")
 
-            # 3. 确定分段数并分割
+            # 3. 确定Segments数并分割
             total_word_count = count_words(txt)
             num_segments = self._determine_num_segments(total_word_count)
-            logger.info(f"根据字数 {total_word_count},确定断句分段数: {num_segments}")
+            logger.debug(f"Based on word count {total_word_count},determined segment count: {num_segments}")
 
             asr_data_list = self._split_asr_data(asr_data, num_segments)
 
@@ -163,20 +163,20 @@ class SubtitleSplitter:
             return ASRData(final_segments)
 
         except Exception as e:
-            logger.error(f"分割失败:{str(e)}")
-            raise RuntimeError(f"分割失败:{str(e)}")
+            logger.error(f"Split failed:{str(e)}")
+            raise RuntimeError(f"Split failed:{str(e)}")
 
     def _determine_num_segments(
         self, word_count: int, threshold: int = SEGMENT_WORD_THRESHOLD
     ) -> int:
-        """根据字数确定分段数
+        """Based on word count确定Segments数
 
         Args:
             word_count: 总字数
             threshold: 每段目标字数
 
         Returns:
-            分段数(最小为1)
+            Segments数(最小为1)
         """
         num_segments = word_count // threshold
         if word_count % threshold > 0:
@@ -193,7 +193,7 @@ class SubtitleSplitter:
 
         Args:
             asr_data: ASR数据对象
-            num_segments: 目标分段数
+            num_segments: 目标Segments数
 
         Returns:
             分割后的ASRData列表
@@ -246,11 +246,11 @@ class SubtitleSplitter:
         return segments
 
     def _process_segments(self, asr_data_list: List[ASRData]) -> List[List[ASRDataSeg]]:
-        """并发处理所有分段"""
+        """并发处理AllSegments"""
         futures = []
         for asr_data in asr_data_list:
             if not self.executor:
-                raise ValueError("线程池未初始化")
+                raise ValueError("Thread pool not initialized")
             future = self.executor.submit(self._process_single_segment, asr_data)
             futures.append(future)
 
@@ -262,31 +262,31 @@ class SubtitleSplitter:
                 result = future.result()
                 processed_segments.append(result)
             except Exception as e:
-                logger.error(f"处理分段失败:{str(e)}")
+                logger.error(f"Segment processing failed:{str(e)}")
 
         return processed_segments
 
     def _process_single_segment(self, asr_data_part: ASRData) -> List[ASRDataSeg]:
-        """处理单个分段(带重试和降级)"""
+        """处理单个Segments(带重试和降级)"""
         if not asr_data_part.segments:
             return []
         try:
             return self._process_by_llm(asr_data_part.segments)
         except Exception as e:
-            logger.warning(f"LLM处理失败,使用规则降级: {str(e)}")
+            logger.warning(f"LLM processing failed, falling back to rules: {str(e)}")
             return self._process_by_rules(asr_data_part.segments)
 
     def _process_by_llm(self, segments: List[ASRDataSeg]) -> List[ASRDataSeg]:
-        """使用LLM进行智能分段
+        """使用LLM进行智能Segments
 
         Args:
-            segments: ASR分段列表
+            segments: ASRSegments列表
 
         Returns:
-            处理后的分段列表
+            处理后的Segments列表
         """
         txt = "".join([seg.text for seg in segments])
-        logger.info(f"开始调用API进行分段,文本长度: {count_words(txt)}")
+        logger.debug(f"Calling API for segmentation,text length: {count_words(txt)}")
 
         sentences = split_by_llm(
             text=txt,
@@ -301,23 +301,23 @@ class SubtitleSplitter:
         """使用规则进行基础分割(LLM降级方案)
 
         规则:
-        1. 按时间间隔分组
+        1. Grouped by time gaps
         2. 按常见词分割长句
-        3. 拆分超长分段
+        3. 拆分超长Segments
 
         Args:
-            segments: ASR分段列表
+            segments: ASRSegments列表
 
         Returns:
-            处理后的分段列表
+            处理后的Segments列表
         """
-        logger.info(f"分段: {len(segments)}")
+        logger.debug(f"Segments: {len(segments)}")
 
-        # 1. 按时间间隔分组
+        # 1. Grouped by time gaps
         segment_groups = self._group_by_time_gaps(
             segments, max_gap=RULE_SPLIT_GAP, check_large_gaps=True
         )
-        logger.info(f"按时间间隔分组: {len(segment_groups)}")
+        logger.debug(f"Grouped by time gaps: {len(segment_groups)}")
 
         # 2. 按常见词分割长句
         common_result_groups = []
@@ -333,7 +333,7 @@ class SubtitleSplitter:
             else:
                 common_result_groups.append(group)
 
-        # 3. 拆分超长分段
+        # 3. 拆分超长Segments
         result_segments = []
         for group in common_result_groups:
             result_segments.extend(self._split_long_segment(group))
@@ -346,10 +346,10 @@ class SubtitleSplitter:
         max_gap: int = MAX_GAP,
         check_large_gaps: bool = False,
     ) -> List[List[ASRDataSeg]]:
-        """按时间间隔分组
+        """Grouped by time gaps
 
         Args:
-            segments: 分段列表
+            segments: Segments列表
             max_gap: 最大允许间隔(ms)
             check_large_gaps: 是否检查异常大间隔
 
@@ -400,7 +400,7 @@ class SubtitleSplitter:
         """在常见连接词处分割
 
         Args:
-            segments: ASR分段列表
+            segments: ASRSegments列表
 
         Returns:
             分割后的分组列表
@@ -495,7 +495,7 @@ class SubtitleSplitter:
                 seg.text.lower().startswith(word) for word in prefix_split_words
             ) and len(current_group) >= int(max_word_count * PREFIX_WORD_RATIO):
                 result.append(current_group)
-                logger.debug(f"在前缀词 {seg.text} 前分割")
+                logger.debug(f"Split before prefix word {seg.text} ")
                 current_group = []
 
             # 后缀词分割
@@ -508,7 +508,7 @@ class SubtitleSplitter:
                 and len(current_group) >= int(max_word_count * SUFFIX_WORD_RATIO)
             ):
                 result.append(current_group)
-                logger.debug(f"在后缀词 {segments[i - 1].text} 后分割")
+                logger.debug(f"Split after suffix word {segments[i - 1].text} ")
                 current_group = []
 
             current_group.append(seg)
@@ -519,15 +519,15 @@ class SubtitleSplitter:
         return result
 
     def _split_long_segment(self, segments: List[ASRDataSeg]) -> List[ASRDataSeg]:
-        """拆分超长分段
+        """拆分超长Segments
 
         策略:寻找最大时间间隔点进行拆分
 
         Args:
-            segments: 分段列表
+            segments: Segments列表
 
         Returns:
-            拆分后的分段列表
+            拆分后的Segments列表
         """
         result_segs = []
         segments_to_process = [segments]
@@ -546,7 +546,7 @@ class SubtitleSplitter:
             )
             n = len(current_segments)
 
-            # 分段足够短或无法继续拆分
+            # Segments足够短或无法继续拆分
             if count_words(merged_text) <= max_word_count or n < RULE_MIN_SEGMENT_SIZE:
                 merged_seg = ASRDataSeg(
                     merged_text.strip(),
@@ -591,7 +591,7 @@ class SubtitleSplitter:
     def _merge_processed_segments(
         self, processed_segments: List[List[ASRDataSeg]]
     ) -> List[ASRDataSeg]:
-        """合并所有处理后的分段并排序"""
+        """合并All处理后的Segments并排序"""
         final_segments = []
         for segments in processed_segments:
             final_segments.extend(segments)
@@ -601,14 +601,14 @@ class SubtitleSplitter:
 
     def merge_short_segment(self, segments: List[ASRDataSeg]) -> None:
         """deprecated
-        合并短分段优化
+        合并短Segments优化
 
         合并条件:
         1. 时间间隔小 + 字数少
         2. 合并后不超过最大字数限制
 
         Args:
-            segments: 分段列表(原地修改)
+            segments: Segments列表(原地修改)
         """
         if not segments:
             return
@@ -644,7 +644,7 @@ class SubtitleSplitter:
 
             if should_merge:
                 logger.debug(
-                    f"合并短分段: {current_seg.text} + {next_seg.text} (间隔:{time_gap}ms)"
+                    f"合并短Segments: {current_seg.text} + {next_seg.text} (间隔:{time_gap}ms)"
                 )
 
                 # 合并文本
@@ -664,23 +664,23 @@ class SubtitleSplitter:
         sentences: List[str],
         max_unmatched: int = MATCH_MAX_UNMATCHED,
     ) -> List[ASRDataSeg]:
-        """基于LLM返回的句子列表合并ASR分段
+        """基于LLM返回的句子列表合并ASRSegments
 
         使用滑动窗口匹配算法:
-        1. 对每个LLM句子,寻找最佳匹配的ASR分段序列
+        1. 对每个LLM句子,寻找最佳匹配的ASRSegments序列
         2. 使用相似度算法进行匹配
-        3. 合并匹配的分段
+        3. 合并匹配的Segments
 
         Args:
-            segments: ASR分段列表
+            segments: ASRSegments列表
             sentences: LLM返回的句子列表
             max_unmatched: 允许的最大未匹配句子数
 
         Returns:
-            合并后的分段列表
+            合并后的Segments列表
 
         Raises:
-            ValueError: 未匹配句子数超过阈值时
+            ValueError: Unmatched sentences exceeded threshold时
         """
 
         def preprocess_text(s: str) -> str:
@@ -698,8 +698,8 @@ class SubtitleSplitter:
 
         for sentence in sentences:
             logger.debug("==========")
-            logger.debug(f"处理句子: {sentence}")
-            logger.debug("后续句子:" + "".join(asr_texts[asr_index : asr_index + 10]))
+            logger.debug(f"Processing sentence: {sentence}")
+            logger.debug("Next sentences: :" + "".join(asr_texts[asr_index : asr_index + 10]))
 
             sentence_proc = preprocess_text(sentence)
             word_count = count_words(sentence_proc)
@@ -752,19 +752,19 @@ class SubtitleSplitter:
                         merged_text, merged_start_time, merged_end_time
                     )
 
-                    logger.debug(f"合并分段: {merged_seg.text}")
+                    logger.debug(f"Merged segments: {merged_seg.text}")
 
-                    # 拆分超长分段
+                    # 拆分超长Segments
                     split_segs = self._split_long_segment(group)
                     new_segments.extend(split_segs)
 
                 max_shift = MATCH_MAX_SHIFT
                 asr_index = end_seg_index + 1
             else:
-                logger.warning(f"无法匹配句子: {sentence}")
+                logger.warning(f"Cannot match sentence: {sentence}")
                 unmatched_count += 1
                 if unmatched_count > max_unmatched:
-                    raise ValueError(f"未匹配句子数超过阈值 {max_unmatched},处理终止")
+                    raise ValueError(f"Unmatched sentences exceeded threshold {max_unmatched},processing aborted")
                 max_shift = MATCH_LARGE_SHIFT
                 asr_index = min(asr_index + 1, asr_len - 1)
 
@@ -779,6 +779,6 @@ class SubtitleSplitter:
             try:
                 self.executor.shutdown(wait=False, cancel_futures=True)
             except Exception as e:
-                logger.error(f"关闭线程池时出错:{str(e)}")
+                logger.error(f"Error closing thread pool:{str(e)}")
             finally:
                 self.executor = None

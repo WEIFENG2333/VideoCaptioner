@@ -53,7 +53,7 @@ class GoogleTranslator(BaseTranslator):
                 )
 
                 if response.status_code == 400:
-                    logger.warning(f"Google翻译返回400错误 {data.index}")
+                    logger.warning(f"Google Translate returned 400 error {data.index}")
                     continue
 
                 response.raise_for_status()
@@ -63,9 +63,9 @@ class GoogleTranslator(BaseTranslator):
                 if re_result:
                     data.translated_text = html.unescape(re_result[0])
                 else:
-                    logger.warning(f"无法从Google翻译响应中提取翻译结果: {data.index}")
+                    logger.warning(f"Cannot extract translation from Google response: {data.index}")
             except Exception as e:
-                logger.error(f"Google翻译失败 {data.index}: {str(e)}")
+                logger.error(f"Google translation failed {data.index}: {str(e)}")
 
         return subtitle_chunk
 

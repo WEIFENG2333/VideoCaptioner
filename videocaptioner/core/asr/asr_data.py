@@ -120,7 +120,7 @@ class ASRData:
         return len(self.segments) > 0
 
     def _is_word_level_segment(self, segment: ASRDataSeg) -> bool:
-        """判断单个片段是否为词级
+        """判断单 segments是否为词级
 
         Args:
             segment: 待判断的字幕片段
@@ -130,11 +130,11 @@ class ASRData:
         """
         text = segment.text.strip()
 
-        # CJK语言：1-2个字符
+        # CJK语言: 1-2个字符
         if is_mainly_cjk(text):
             return len(text) <= 2
 
-        # 非CJK语言（如英文）：单个单词
+        # 非CJK语言（如英文）: 单个单词
         words = text.split()
         return len(words) == 1
 
@@ -239,7 +239,7 @@ class ASRData:
             self.to_txt(save_path=save_path, layout=layout)
         elif save_path.endswith(".json"):
             with open(save_path, "w", encoding="utf-8") as f:
-                json.dump(self.to_json(), f, ensure_ascii=False)
+                json.dump(self.to_json(), f, ensure_ascii=False, indent=2)
         elif save_path.endswith(".ass"):
             self.to_ass(save_path=save_path, style_str=ass_style, layout=layout)
         else:
@@ -364,18 +364,19 @@ class ASRData:
         dialogue_template = "Dialogue: 0,{},{},{},,0,0,0,,{}\n"
         for seg in self.segments:
             start_time, end_time = seg.to_ass_ts()
-            original = seg.text
-            translated = seg.translated_text
+            # ASS uses \N for line breaks within dialogue
+            original = seg.text.replace("\n", "\\N") if seg.text else ""
+            translated = seg.translated_text.replace("\n", "\\N") if seg.translated_text else ""
             has_translation = bool(translated and translated.strip())
 
             if layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 if has_translation:
-                    # 先写译文(Default)显示在上，后写原文(Secondary)显示在下
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Default", translated
-                    )
+                    # Secondary(原文)先写(渲染在下)，Default(译文)后写(渲染在上)
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Secondary", original
+                    )
+                    ass_content += dialogue_template.format(
+                        start_time, end_time, "Default", translated
                     )
                 else:
                     ass_content += dialogue_template.format(
@@ -383,12 +384,12 @@ class ASRData:
                     )
             elif layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 if has_translation:
-                    # 先写原文(Default)显示在上，后写译文(Secondary)显示在下
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Default", original
-                    )
+                    # Secondary(译文)先写(渲染在下)，Default(原文)后写(渲染在上)
                     ass_content += dialogue_template.format(
                         start_time, end_time, "Secondary", translated
+                    )
+                    ass_content += dialogue_template.format(
+                        start_time, end_time, "Default", original
                     )
                 else:
                     ass_content += dialogue_template.format(
@@ -625,10 +626,15 @@ class ASRData:
                 ]
             )
 
-            if is_bilingual and len(lines) == 4:
-                segments.append(ASRDataSeg(lines[2], start_time, end_time, lines[3]))
+            text_lines = lines[2:]
+            if is_bilingual and len(text_lines) >= 2:
+                # First line = original, second line = translation
+                segments.append(ASRDataSeg(text_lines[0], start_time, end_time, text_lines[1]))
+            elif len(text_lines) == 1:
+                segments.append(ASRDataSeg(text_lines[0], start_time, end_time))
             else:
-                segments.append(ASRDataSeg(" ".join(lines[2:]), start_time, end_time))
+                # Multi-line subtitle: preserve line breaks with \n
+                segments.append(ASRDataSeg("\n".join(text_lines), start_time, end_time))
 
         return ASRData(segments)
 
@@ -643,43 +649,60 @@ class ASRData:
             ASRData instance
         """
         segments = []
-        content = vtt_str.split("\n\n")[2:]
+        # Split by blank lines, skip the WEBVTT header block
+        blocks = vtt_str.strip().split("\n\n")
+        # Find first block after header (skip WEBVTT line and any NOTE/STYLE blocks)
+        content = []
+        header_done = False
+        for block in blocks:
+            stripped = block.strip()
+            if not header_done:
+                if stripped.startswith("WEBVTT") or stripped.startswith("NOTE") or stripped.startswith("STYLE"):
+                    continue
+                header_done = True
+            if stripped:
+                content.append(stripped)
 
+        # Support both HH:MM:SS.mmm and MM:SS.mmm (VTT allows omitting hours)
         timestamp_pattern = re.compile(
-            r"(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})"
+            r"(?:(\d{2}):)?(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(?:(\d{2}):)?(\d{2}):(\d{2})\.(\d{3})"
         )
 
         for block in content:
-            lines = block.strip().split("\n")
-            if len(lines) < 2:
+            lines = block.split("\n")
+            if not lines:
                 continue
 
-            timestamp_line = lines[1]
-            match = timestamp_pattern.match(timestamp_line)
+            # Find the timestamp line (could be first line or second if cue ID present)
+            timestamp_line = None
+            text_start = 0
+            for i, line in enumerate(lines):
+                if "-->" in line:
+                    timestamp_line = line
+                    text_start = i + 1
+                    break
+
+            if not timestamp_line:
+                continue
+            match = timestamp_pattern.match(timestamp_line.strip())
             if not match:
                 continue
 
-            time_parts = list(map(int, match.groups()))
-            start_time = sum(
-                [
-                    time_parts[0] * 3600000,
-                    time_parts[1] * 60000,
-                    time_parts[2] * 1000,
-                    time_parts[3],
-                ]
+            groups = match.groups()
+            time_parts = [int(g) if g is not None else 0 for g in groups]
+            start_time = (
+                time_parts[0] * 3600000 + time_parts[1] * 60000 +
+                time_parts[2] * 1000 + time_parts[3]
             )
-            end_time = sum(
-                [
-                    time_parts[4] * 3600000,
-                    time_parts[5] * 60000,
-                    time_parts[6] * 1000,
-                    time_parts[7],
-                ]
+            end_time = (
+                time_parts[4] * 3600000 + time_parts[5] * 60000 +
+                time_parts[6] * 1000 + time_parts[7]
             )
 
-            text_line = " ".join(lines[2:])
+            text_line = "\n".join(lines[text_start:])
+            # Remove VTT inline tags: timestamps, <c>, <b>, <i>, <u>, <ruby>, etc.
             cleaned_text = re.sub(r"<\d{2}:\d{2}:\d{2}\.\d{3}>", "", text_line)
-            cleaned_text = re.sub(r"</?c>", "", cleaned_text)
+            cleaned_text = re.sub(r"</?[a-zA-Z][^>]*>", "", cleaned_text)
             cleaned_text = cleaned_text.strip()
 
             if cleaned_text and cleaned_text != " ":
@@ -781,7 +804,7 @@ class ASRData:
                 + int(centiseconds) * 10
             )
 
-        # 检查是否有翻译：同时存在Default和Secondary样式
+        # 检查是否有翻译: 同时存在Default和Secondary样式
         has_default = "Dialogue:" in ass_str and ",Default," in ass_str
         has_secondary = ",Secondary," in ass_str
         has_translation = has_default and has_secondary
@@ -806,10 +829,11 @@ class ASRData:
                     if has_translation:
                         time_key = f"{start_time}-{end_time}"
                         if time_key in temp_segments:
+                            # Default style = original text, Secondary = translated
                             if style == "Default":
-                                temp_segments[time_key].translated_text = text
-                            else:
                                 temp_segments[time_key].text = text
+                            else:
+                                temp_segments[time_key].translated_text = text
                             segments.append(temp_segments[time_key])
                             del temp_segments[time_key]
                         else:
@@ -817,9 +841,9 @@ class ASRData:
                                 text="", start_time=start_time, end_time=end_time
                             )
                             if style == "Default":
-                                segment.translated_text = text
-                            else:
                                 segment.text = text
+                            else:
+                                segment.translated_text = text
                             temp_segments[time_key] = segment
                     else:
                         segments.append(ASRDataSeg(text, start_time, end_time))

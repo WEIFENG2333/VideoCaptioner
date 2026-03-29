@@ -104,7 +104,7 @@ class BaseASR:
                 Optional[dict], self._cache.get(cache_key, default=None)
             )
             if cached_result is not None:
-                logger.info("找到缓存，直接返回")
+                logger.debug("找到缓存，直接返回")
                 segments = self._make_segments(cached_result)
                 return ASRData(segments)
 

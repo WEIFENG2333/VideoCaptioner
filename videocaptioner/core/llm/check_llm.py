@@ -20,7 +20,7 @@ def check_llm_connection(
         model: 模型名称
 
     返回:
-        (是否成功, 错误信息或AI助手的回复)
+        (是否成功, Error output或AI助手的回复)
     """
     try:
         # 创建OpenAI客户端并发送请求到API

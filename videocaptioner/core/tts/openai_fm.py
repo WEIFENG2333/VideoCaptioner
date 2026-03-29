@@ -76,7 +76,7 @@ class OpenAIFmTTS(BaseTTS):
             "voice": voice_to_use,
         }
 
-        logger.info(
+        logger.debug(
             f"调用 OpenAI.fm TTS API: {segment.text[:50]}... (voice={voice_to_use})"
         )
 
@@ -92,7 +92,7 @@ class OpenAIFmTTS(BaseTTS):
         with open(output_path, "wb") as f:
             f.write(response.content)
 
-        logger.info(f"TTS 成功: {output_path}")
+        logger.debug(f"TTS success: {output_path}")
 
         # 更新 segment
         segment.audio_path = output_path

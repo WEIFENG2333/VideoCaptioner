@@ -16,7 +16,7 @@ logger = setup_logger("tts")
 class BaseTTS(ABC):
     """TTS 基类
 
-    提供通用功能：
+    提供通用功能:
     - 缓存机制（二进制数据缓存）
     - 批量处理（统一接口）
     - 配置管理
@@ -59,10 +59,10 @@ class BaseTTS(ABC):
 
         total = len(tts_data.segments)
         if total == 0:
-            logger.warning("TTS 数据为空，无需合成")
+            logger.warning("TTS data empty, nothing to synthesize")
             return tts_data
 
-        logger.info(f"开始批量合成 {total} 条语音")
+        logger.debug(f"Starting batch synthesis of {total}  utterances")
 
         for idx, segment in enumerate(tts_data.segments):
             try:
@@ -74,7 +74,7 @@ class BaseTTS(ABC):
                 audio_filename = self._generate_filename(segment.text, idx)
                 audio_path = output_path / audio_filename
 
-                # 合成单条语音（带缓存）
+                # 合成单 utterances（带缓存）
                 self._synthesize_segment(segment, str(audio_path))
 
             except Exception as e:
@@ -85,11 +85,11 @@ class BaseTTS(ABC):
 
         callback(*TTSStatus.COMPLETED.callback_tuple())
         success_count = sum(1 for seg in tts_data.segments if seg.audio_path)
-        logger.info(f"批量 TTS 完成: 成功 {success_count}/{total}")
+        logger.debug(f"Batch TTS done: success {success_count}/{total}")
         return tts_data
 
     def _synthesize_segment(self, segment: TTSDataSeg, output_path: str) -> None:
-        """合成单个片段的语音（带缓存）
+        """合成单 segments的语音（带缓存）
 
         Args:
             segment: TTS 数据段（会被修改，填充 audio_path 等）
@@ -103,7 +103,7 @@ class BaseTTS(ABC):
             cached_audio_data = cast(Optional[bytes], self.cache.get(cache_key))
 
             if cached_audio_data:
-                logger.info(f"使用缓存: {segment.text[:50]}...")
+                logger.debug(f"Using cache: {segment.text[:50]}...")
                 # 将缓存的二进制数据写入文件
                 Path(output_path).parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, "wb") as f:
@@ -124,7 +124,7 @@ class BaseTTS(ABC):
                     audio_data = f.read()
                 self.cache.set(cache_key, audio_data, expire=self.config.cache_ttl)
             except Exception as e:
-                logger.warning(f"缓存保存失败: {str(e)}")
+                logger.warning(f"Cache save failed: {str(e)}")
 
     @abstractmethod
     def _synthesize(self, segment: TTSDataSeg, output_path: str) -> None:
@@ -147,7 +147,7 @@ class BaseTTS(ABC):
 
         # 音色信息
         if segment.clone_audio_path and segment.clone_audio_text:
-            # 声音克隆：使用参考音频的哈希
+            # 声音克隆: 使用参考音频的哈希
             try:
                 with open(segment.clone_audio_path, "rb") as f:
                     audio_hash = hashlib.md5(f.read()).hexdigest()[:12]

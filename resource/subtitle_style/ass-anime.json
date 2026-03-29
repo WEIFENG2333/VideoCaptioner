@@ -1,0 +1,21 @@
+{
+  "name": "anime",
+  "description": "",
+  "mode": "ass",
+  "font_name": "Noto Sans SC",
+  "font_size": 46,
+  "primary_color": "#fff5f3",
+  "outline_color": "#f58709",
+  "outline_width": 2.6,
+  "bold": true,
+  "spacing": 2.6,
+  "margin_bottom": 20,
+  "secondary": {
+    "font_name": "Noto Sans SC",
+    "font_size": 26,
+    "color": "#ffffff",
+    "outline_color": "#f58709",
+    "outline_width": 2.0,
+    "spacing": 0.0
+  }
+}

@@ -11,10 +11,16 @@ from videocaptioner.cli.validators import validate_transcribe
 
 
 def run(args: Namespace, config: dict) -> int:
+    from videocaptioner.cli.validators import validate_media_input
+
     input_path = Path(args.input)
     if not input_path.exists():
         output.error(f"Input file not found: {input_path}")
         return EXIT.FILE_NOT_FOUND
+
+    err = validate_media_input(input_path)
+    if err is not None:
+        return err
 
     if not validate_transcribe(config):
         return EXIT.USAGE_ERROR
@@ -35,6 +41,12 @@ def run(args: Namespace, config: dict) -> int:
                 output_path = args.output
     else:
         output_path = str(input_path.with_suffix(f".{out_fmt}"))
+
+    # Validate output format
+    from videocaptioner.cli.validators import validate_output_format
+    err = validate_output_format(Path(output_path))
+    if err is not None:
+        return err
 
     asr_engine = get(config, "transcribe.asr", "faster-whisper")
     language = get(config, "transcribe.language", "auto")
@@ -107,10 +119,6 @@ def run(args: Namespace, config: dict) -> int:
         whisper_api_prompt=get(config, "whisper_api.prompt", ""),
     )
 
-    # Suppress internal logger noise in quiet mode
-    if quiet:
-        import logging
-        logging.getLogger().setLevel(logging.WARNING)
 
     # Progress callback
     progress = None if quiet else output.ProgressLine(f"Transcribing [{asr_engine}]").start()
@@ -121,21 +129,19 @@ def run(args: Namespace, config: dict) -> int:
 
     try:
         # Auto-convert video to audio if needed
+        from videocaptioner.cli.validators import AUDIO_EXTENSIONS
         audio_path = str(input_path)
         temp_audio = None
-        audio_formats = {"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac", "wma"}
-        video_formats = {"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"}
-        ext = input_path.suffix.lstrip(".").lower()
 
-        if ext not in audio_formats:
-            if ext not in video_formats:
-                output.error(f"Unsupported file format: .{ext}")
-                output.hint("Supported audio: " + ", ".join(sorted(audio_formats)))
-                output.hint("Supported video: " + ", ".join(sorted(video_formats)))
-                return EXIT.FILE_NOT_FOUND
+        ext_lower = input_path.suffix.lstrip(".").lower()
+        needs_conversion = ext_lower not in AUDIO_EXTENSIONS
+        # whisper-cpp requires WAV format specifically
+        if not needs_conversion and asr_engine == "whisper-cpp" and ext_lower != "wav":
+            needs_conversion = True
 
+        if needs_conversion:
             if verbose:
-                output.info("Input is a video file, extracting audio...")
+                output.info("Converting input to WAV audio...")
             import tempfile
 
             from videocaptioner.core.utils.video_utils import video2audio
@@ -157,7 +163,8 @@ def run(args: Namespace, config: dict) -> int:
         asr_data.save(save_path=output_path)
 
         if progress:
-            progress.finish(f"Transcription complete -> {output_path} ({len(asr_data.segments)} segments)")
+            n = len(asr_data.segments)
+            progress.finish(f"Transcription complete -> {output_path} ({n} segment{'' if n == 1 else 's'})")
         if quiet:
             print(output_path)
         return EXIT.SUCCESS

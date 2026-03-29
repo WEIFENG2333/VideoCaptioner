@@ -108,7 +108,7 @@ def get_font(size: int, font_name: str = "") -> FontType:
     for fallback in fallback_fonts:
         try:
             font = ImageFont.truetype(fallback, size)
-            logger.info(f"Using fallback font: '{fallback}'")
+            logger.debug(f"Using fallback font: '{fallback}'")
             return font
         except Exception:
             continue
@@ -167,4 +167,4 @@ def clear_font_cache():
     get_builtin_fonts.cache_clear()
     get_font.cache_clear()
     get_ass_to_pil_ratio.cache_clear()
-    logger.info("Font cache cleared")
+    logger.debug("Font cache cleared")

@@ -39,7 +39,7 @@ def _get_video_info(video_path: str) -> Tuple[int, int, float]:
     if match := re.search(r"Stream.*Video:.* (\d{2,5})x(\d{2,5})", result.stderr):
         width, height = int(match.group(1)), int(match.group(2))
     else:
-        raise ValueError(f"无法获取视频分辨率: {video_path}")
+        raise ValueError(f"Cannot get video resolution: {video_path}")
 
     # 解析时长
     duration = 0.0
@@ -78,7 +78,7 @@ def render_text_block(
     bg_color = hex_to_rgba(style.bg_color)
     text_color = hex_to_rgba(style.text_color)
 
-    # 计算所有行的尺寸和垂直偏移
+    # 计算All行的尺寸和垂直偏移
     line_sizes = []
     line_offsets = []
     for text in texts:
@@ -279,7 +279,7 @@ def render_rounded_video(
     """
     渲染圆角背景字幕到视频（分批overlay方案）
 
-    核心流程：直接分批overlay字幕PNG到原视频
+    核心流程: 直接分批overlay字幕PNG到原视频
     每批50个字幕，避免FFmpeg文件数量限制
 
     Args:
@@ -295,7 +295,7 @@ def render_rounded_video(
     """
     # 检查字幕数据
     if not asr_data or not asr_data.segments:
-        raise ValueError("字幕数据为空，无法渲染视频")
+        raise ValueError("Empty subtitle data, cannot render video")
 
     # 检查布局合理性
     if layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
@@ -338,8 +338,8 @@ def render_rounded_video(
     with tempfile.TemporaryDirectory(prefix="rounded_subtitle_") as temp_dir:
         temp_path = Path(temp_dir)
 
-        # 步骤1: 生成所有字幕PNG (0-30%)
-        logger.info(f"生成字幕PNG图片（共{len(asr_data.segments)}个，布局：{layout.value}）")
+        # 步骤1: 生成All字幕PNG (0-30%)
+        logger.debug(f"Generating subtitle PNGs图片（共{len(asr_data.segments)}个，布局: {layout.value}）")
         subtitle_frames = []
 
         for i, seg in enumerate(asr_data.segments):
@@ -369,10 +369,10 @@ def render_rounded_video(
                 progress_callback(progress, f"生成字幕图片 {i + 1}/{len(asr_data.segments)}")
 
         if not subtitle_frames:
-            raise ValueError("没有生成任何有效的字幕图片")
+            raise ValueError("No valid subtitle images generated")
 
         # 步骤2: 分批overlay到视频 (30-100%)
-        logger.info("分批叠加字幕到视频")
+        logger.debug("Overlaying subtitle batches onto video")
         BATCH_SIZE = 50
         current_video = video_path
         total_batches = (len(subtitle_frames) + BATCH_SIZE - 1) // BATCH_SIZE
@@ -404,9 +404,9 @@ def render_rounded_video(
                 output_path if is_last_batch else temp_path / f"batch_{batch_idx:03d}.mp4"
             )
 
-            logger.info(f"处理批次 {batch_idx + 1}/{total_batches}（{len(batch_frames)}个字幕）")
-            # 构建 ffmpeg 命令
-            # -t 参数强制保持原视频时长，防止因 overlay 结束而截断视频
+            logger.debug(f"Processing batch {batch_idx + 1}/{total_batches}（{len(batch_frames)}个字幕）")
+            # 构建 ffmpeg Command
+            # -t 参数强制保持原视频时长，防止因 overlay ended而截断视频
             cmd = [
                 "ffmpeg",
                 "-y",
@@ -434,7 +434,7 @@ def render_rounded_video(
 
             if batch_idx == 0 or is_last_batch:
                 cmd_str = subprocess.list2cmdline(cmd)
-                logger.info(f"执行命令: {cmd_str}")
+                logger.debug(f"FFmpeg cmd: {cmd_str}")
 
             result = subprocess.run(
                 cmd,
@@ -449,7 +449,7 @@ def render_rounded_video(
 
             if result.returncode != 0:
                 logger.error(f"批次 {batch_idx + 1} 失败: {result.stderr}")
-                raise RuntimeError(f"字幕处理失败（批次 {batch_idx + 1}）")
+                raise RuntimeError(f"Subtitle processing failed（批次 {batch_idx + 1}）")
 
             # 更新进度 (30-100%)
             if progress_callback:
@@ -459,4 +459,4 @@ def render_rounded_video(
             # 更新当前视频
             current_video = str(batch_output)
 
-        logger.info("视频合成完成")
+        logger.debug("Video synthesis complete")

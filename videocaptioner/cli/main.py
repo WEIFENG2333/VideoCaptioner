@@ -23,8 +23,10 @@ from videocaptioner.cli import exit_codes as EXIT
 def _add_llm_options(parser: argparse.ArgumentParser) -> None:
     """Add LLM-related options shared across commands."""
     group = parser.add_argument_group("LLM options")
-    group.add_argument("--api-key", metavar="KEY", help="LLM API key")
-    group.add_argument("--api-base", metavar="URL", help="LLM API base URL")
+    group.add_argument("--api-key", metavar="KEY",
+                       help="LLM API key (or set OPENAI_API_KEY env var)")
+    group.add_argument("--api-base", metavar="URL",
+                       help="LLM API base URL (or set OPENAI_BASE_URL env var)")
     group.add_argument("--model", metavar="NAME", help="LLM model name (e.g. gpt-4o-mini)")
 
 
@@ -37,6 +39,36 @@ def _add_output_options(parser: argparse.ArgumentParser) -> None:
         choices=["srt", "ass", "txt", "json"],
         help="Output subtitle format (default: srt)",
     )
+
+
+def _add_style_options(parser: argparse.ArgumentParser) -> None:
+    """Add subtitle style options (for hard subtitle mode)."""
+    grp = parser.add_argument_group(
+        "Subtitle style (--subtitle-mode hard only)",
+        description="Style options only take effect with hard subtitles. "
+                    "Soft subtitles are rendered by the video player.\n"
+                    "Use 'videocaptioner style' to see available presets.",
+    )
+    grp.add_argument(
+        "--render-mode",
+        choices=["ass", "rounded"],
+        help="Rendering mode (default: ass)\n"
+             "  ass:     Traditional subtitle with outline/shadow (supports presets)\n"
+             "  rounded: Modern rounded background boxes (customizable colors/size)",
+    )
+    grp.add_argument(
+        "--style",
+        metavar="NAME",
+        help="Style preset name (default: default). "
+             "Run 'videocaptioner style' to see options",
+    )
+    grp.add_argument(
+        "--style-override",
+        metavar="JSON",
+        help='Inline JSON to override style fields, e.g. \'{"outline_color": "#ff0000", "font_size": 48}\'. '
+             "Run 'videocaptioner style' to see available fields.",
+    )
+    grp.add_argument("--font-file", metavar="PATH", help="Custom font file (.ttf/.otf), overrides style font")
 
 
 def _add_common_options(parser: argparse.ArgumentParser) -> None:
@@ -60,37 +92,29 @@ def _build_transcribe_parser(subparsers) -> None:
     asr = p.add_argument_group("ASR options")
     asr.add_argument(
         "--asr",
-        choices=["faster-whisper", "whisper-api", "bijian", "jianying", "whisper-cpp"],
-        help="ASR engine (default: faster-whisper)",
+        choices=["bijian", "jianying", "whisper-api", "whisper-cpp"],
+        help="ASR engine (default: bijian). "
+             "bijian/jianying: free, no setup, Chinese & English only. "
+             "For other languages use whisper-api or whisper-cpp",
     )
-    asr.add_argument(
-        "--language",
-        metavar="CODE",
-        help="Source language as ISO 639-1 code, or 'auto' (default: auto)",
-    )
-    asr.add_argument("--word-timestamps", action="store_true", help="Include word-level timestamps")
+    asr.add_argument("--language", metavar="CODE",
+                     help="Source language as ISO 639-1 code, or 'auto' (default: auto)")
+    asr.add_argument("--word-timestamps", action="store_true",
+                     help="Include word-level timestamps (for subtitle splitting)")
+    asr.add_argument("--whisper-api-key", metavar="KEY",
+                     help="Whisper API key (for --asr whisper-api)")
+    asr.add_argument("--whisper-api-base", metavar="URL",
+                     help="Whisper API base URL")
 
-    fw = p.add_argument_group("FasterWhisper options (--asr faster-whisper)")
-    fw.add_argument(
-        "--fw-model",
-        choices=["tiny", "base", "small", "medium", "large-v1", "large-v2", "large-v3", "large-v3-turbo"],
-        help="Whisper model size (default: large-v3)",
-    )
-    fw.add_argument("--fw-device", choices=["auto", "cuda", "cpu"], help="Compute device (default: auto)")
-    fw.add_argument(
-        "--fw-vad-method",
-        choices=["silero-v3", "silero-v4", "silero-v5", "silero-v4-fw", "pyannote-v3", "pyannote-onnx-v3", "webrtc", "auditok"],
-        help="Voice activity detection method (default: silero-v4-fw)",
-    )
-    fw.add_argument("--fw-vad-threshold", type=float, metavar="N", help="VAD threshold 0.0-1.0 (default: 0.5)")
-    fw.add_argument("--fw-voice-extraction", action="store_true", help="Enable vocal extraction before transcription")
-    fw.add_argument("--fw-prompt", metavar="TEXT", help="Initial prompt for FasterWhisper")
+    asr.add_argument("--whisper-model", metavar="NAME",
+                     help="Model name for whisper-api (default: whisper-1) "
+                          "or whisper-cpp (default: large-v2)")
 
-    wa = p.add_argument_group("Whisper API options (--asr whisper-api)")
-    wa.add_argument("--whisper-api-key", metavar="KEY", help="Whisper API key (separate from LLM)")
-    wa.add_argument("--whisper-api-base", metavar="URL", help="Whisper API base URL")
-    wa.add_argument("--whisper-model", metavar="NAME", help="Whisper model name (default: whisper-1)")
-    wa.add_argument("--whisper-prompt", metavar="TEXT", help="Transcription prompt")
+    # Advanced options (configurable via 'config set', hidden from --help)
+    for arg in ["--fw-model", "--fw-device", "--fw-vad-method", "--fw-prompt", "--whisper-prompt"]:
+        p.add_argument(arg, help=argparse.SUPPRESS)
+    p.add_argument("--fw-vad-threshold", type=float, help=argparse.SUPPRESS)
+    p.add_argument("--fw-voice-extraction", action="store_true", help=argparse.SUPPRESS)
 
     p.set_defaults(func=_run_transcribe)
 
@@ -99,11 +123,27 @@ def _build_subtitle_parser(subparsers) -> None:
     p = subparsers.add_parser(
         "subtitle",
         help="Optimize and/or translate subtitles",
-        description="Process subtitle files — optimize text with LLM, translate to another language, or both.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "Process subtitle files with up to 3 steps:\n"
+            "  1. Split — Re-segment subtitles by semantic boundaries (LLM)\n"
+            "  2. Optimize — Fix ASR errors, punctuation, formatting (LLM)\n"
+            "  3. Translate — Translate to another language (LLM, Bing, or Google)\n\n"
+            "By default, optimize and split are enabled, translation is disabled.\n"
+            "Use --translator or --target-language to enable translation.\n"
+            "Bing and Google translators are free, LLM requires an API key."
+        ),
     )
     p.add_argument("input", help="Subtitle file path (.srt, .ass, .vtt)")
     _add_common_options(p)
-    _add_llm_options(p)
+
+    llm = p.add_argument_group("LLM options")
+    llm.add_argument("--api-key", metavar="KEY",
+                     help="LLM API key (or set OPENAI_API_KEY env var)")
+    llm.add_argument("--api-base", metavar="URL",
+                     help="LLM API base URL (or set OPENAI_BASE_URL env var)")
+    llm.add_argument("--model", metavar="NAME", help="LLM model name (e.g. gpt-4o-mini)")
+
     _add_output_options(p)
 
     proc = p.add_argument_group("Processing options")
@@ -115,33 +155,32 @@ def _build_subtitle_parser(subparsers) -> None:
     trans.add_argument(
         "--translator",
         choices=["llm", "bing", "google"],
-        help="Translation service (default: llm)",
+        help="Translation service (default: llm). bing and google are free",
     )
     trans.add_argument(
         "--target-language",
         metavar="CODE",
         help="Target language as BCP 47 code, e.g. zh-Hans, en, ja (default: zh-Hans)",
     )
-    trans.add_argument("--reflect", action="store_true", help="Enable reflective translation (LLM only, slower but more accurate)")
+    trans.add_argument("--reflect", action="store_true",
+                       help="Enable reflective translation (LLM only, higher quality)")
 
     sub = p.add_argument_group("Subtitle options")
     sub.add_argument("--max-cjk", type=int, metavar="N", help="Max characters per line for CJK text (default: 18)")
     sub.add_argument("--max-english", type=int, metavar="N", help="Max words per line for English text (default: 12)")
     sub.add_argument("--prompt", metavar="TEXT", help="Custom prompt for LLM optimization/translation")
-    sub.add_argument("--prompt-file", metavar="FILE", help="Read custom prompt from file")
     sub.add_argument("--thread-num", type=int, metavar="N", help="Number of concurrent threads (default: 4)")
-    sub.add_argument("--batch-size", type=int, metavar="N", help="Batch size for processing (default: 10)")
+    sub.add_argument("--batch-size", type=int, metavar="N", help="Batch size for processing (default: 20)")
 
     layout = p.add_argument_group("Layout options")
     layout.add_argument(
         "--layout",
         choices=["target-above", "source-above", "target-only", "source-only"],
-        help="Subtitle layout for bilingual output (default: target-above)\n"
-             "  target-above: Translation on top, original below\n"
-             "  source-above: Original on top, translation below\n"
-             "  target-only:  Translation only\n"
-             "  source-only:  Original only",
+        help="Subtitle layout for bilingual output (default: target-above)",
     )
+
+    # Hidden: --prompt-file (use --prompt instead)
+    p.add_argument("--prompt-file", metavar="FILE", help=argparse.SUPPRESS)
 
     p.set_defaults(func=_run_subtitle)
 
@@ -175,6 +214,13 @@ def _build_synthesize_parser(subparsers) -> None:
              "  medium: CRF 28, medium preset — balanced\n"
              "  low:    CRF 32, fast preset — smallest file",
     )
+    opt.add_argument(
+        "--layout",
+        choices=["target-above", "source-above", "target-only", "source-only"],
+        help="Subtitle layout for bilingual output (default: target-above)",
+    )
+
+    _add_style_options(p)
     p.add_argument("-o", "--output", metavar="PATH", help="Output video file path")
 
     p.set_defaults(func=_run_synthesize)
@@ -195,24 +241,48 @@ def _build_process_parser(subparsers) -> None:
     pipe = p.add_argument_group("Pipeline options")
     pipe.add_argument("--no-optimize", action="store_true", help="Skip subtitle optimization")
     pipe.add_argument("--no-translate", action="store_true", help="Skip translation")
+    pipe.add_argument("--no-split", action="store_true", help="Skip subtitle re-segmentation")
     pipe.add_argument("--no-synthesize", action="store_true", help="Skip video synthesis (output subtitles only)")
 
-    pipe.add_argument("--asr", choices=["faster-whisper", "whisper-api", "bijian", "jianying", "whisper-cpp"],
-                      help="ASR engine (default: faster-whisper)")
-    pipe.add_argument("--language", metavar="CODE", help="Source language ISO 639-1 code (default: auto)")
-    pipe.add_argument("--translator", choices=["llm", "bing", "google"], help="Translation service (default: llm)")
+    pipe.add_argument("--asr", choices=["bijian", "jianying", "whisper-api", "whisper-cpp"],
+                      help="ASR engine (default: bijian)")
+    pipe.add_argument("--language", metavar="CODE",
+                      help="Source language as ISO 639-1 code, or 'auto' (default: auto)")
+    pipe.add_argument("--whisper-api-key", metavar="KEY", help="Whisper API key (for --asr whisper-api)")
+    pipe.add_argument("--translator", choices=["llm", "bing", "google"],
+                      help="Translation service (default: llm). bing and google are free")
     pipe.add_argument("--target-language", metavar="CODE", help="Target language BCP 47 code (default: zh-Hans)")
-    pipe.add_argument("--reflect", action="store_true", help="Reflective translation")
+    pipe.add_argument("--reflect", action="store_true", help="Reflective translation (LLM only)")
     pipe.add_argument("--quality", choices=["ultra", "high", "medium", "low"], help="Video quality (default: medium)")
     pipe.add_argument("--subtitle-mode", choices=["soft", "hard"], help="Subtitle mode (default: soft)")
     pipe.add_argument("--layout", choices=["target-above", "source-above", "target-only", "source-only"],
                       help="Subtitle layout (default: target-above)")
-    pipe.add_argument("--prompt", metavar="TEXT", help="Custom prompt")
-    pipe.add_argument("--prompt-file", metavar="FILE", help="Read prompt from file")
+    pipe.add_argument("--prompt", metavar="TEXT", help="Custom prompt for LLM optimization/translation")
     pipe.add_argument("--thread-num", type=int, metavar="N", help="Concurrent threads (default: 4)")
-    pipe.add_argument("--batch-size", type=int, metavar="N", help="Batch size (default: 10)")
+    pipe.add_argument("--batch-size", type=int, metavar="N", help="Batch size (default: 20)")
+    # Hidden options
+    p.add_argument("--prompt-file", metavar="FILE", help=argparse.SUPPRESS)
+    p.add_argument("--whisper-api-base", help=argparse.SUPPRESS)
+    p.add_argument("--whisper-model", help=argparse.SUPPRESS)
+
+    _add_style_options(p)
 
     p.set_defaults(func=_run_process)
+
+
+def _build_style_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "style",
+        help="List subtitle style presets",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Show all available subtitle style presets with their configurations.\n\n"
+                    "Two rendering modes are supported:\n"
+                    "  ass:     Traditional subtitle with outline/shadow\n"
+                    "  rounded: Modern rounded background boxes\n\n"
+                    "Use --style <name> in synthesize/process to apply a preset.\n"
+                    "Use --style-override '{...}' to customize fields inline.",
+    )
+    p.set_defaults(func=_run_style, style_action="list")
 
 
 def _build_download_parser(subparsers) -> None:
@@ -253,7 +323,8 @@ def _build_config_parser(subparsers) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="videocaptioner",
-        description="AI-powered video captioning — transcribe, optimize, translate, and synthesize subtitles.",
+        description="AI-powered video captioning — transcribe speech, optimize and translate subtitles, "
+                    "then burn them into video with customizable styles (ASS or rounded background).",
         epilog="Run 'videocaptioner <command> --help' for details on each command.",
     )
     parser.add_argument("--version", action="version", version=_get_version())
@@ -266,6 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
     _build_process_parser(subparsers)
     _build_download_parser(subparsers)
     _build_config_parser(subparsers)
+    _build_style_parser(subparsers)
 
     return parser
 
@@ -335,10 +407,14 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
     if getattr(args, "reflect", False):
         _set("translate.reflect", True)
 
-    # Synthesize / Layout
+    # Synthesize / Layout / Style
     _set("synthesize.subtitle_mode", getattr(args, "subtitle_mode", None))
     _set("synthesize.quality", getattr(args, "quality", None))
     _set("synthesize.layout", getattr(args, "layout", None))
+    _set("synthesize.render_mode", getattr(args, "render_mode", None))
+    _set("synthesize.style", getattr(args, "style", None))
+    _set("synthesize.style_override", getattr(args, "style_override", None))
+    _set("synthesize.font_file", getattr(args, "font_file", None))
 
     # Output
     _set("output.format", getattr(args, "format", None))
@@ -349,7 +425,13 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
 def _load_config(args: argparse.Namespace) -> dict:
     """Load config with all layers merged."""
     from videocaptioner.cli.config import build_config
-    config_path = Path(args.config) if getattr(args, "config", None) else None
+    config_path = None
+    if getattr(args, "config", None):
+        config_path = Path(args.config)
+        if not config_path.exists():
+            from videocaptioner.cli import output
+            output.warn(f"Config file not found: {config_path}, using defaults")
+            config_path = None
     cli_overrides = _build_cli_overrides(args)
     return build_config(cli_overrides=cli_overrides, config_path=config_path)
 
@@ -390,6 +472,12 @@ def _run_config(args: argparse.Namespace) -> int:
     return run(args, config)
 
 
+def _run_style(args: argparse.Namespace) -> int:
+    from videocaptioner.cli.commands.style_cmd import run
+    config = _load_config(args)
+    return run(args, config)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -407,6 +495,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not hasattr(args, "func"):
         parser.print_help()
         return EXIT.USAGE_ERROR
+
+    # Control core logger output for CLI: quiet=CRITICAL, default=WARNING, verbose=DEBUG
+    import logging
+    quiet = getattr(args, "quiet", False)
+    verbose = getattr(args, "verbose", False)
+    if quiet:
+        logging.getLogger().setLevel(logging.CRITICAL)
+    elif verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.WARNING)
 
     try:
         return args.func(args) or 0

@@ -70,7 +70,7 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
     Args:
         input_file: 输入视频文件路径
         output: 输出音频文件路径
-        audio_track_index: 要提取的音轨索引，默认为 0（第一条音轨）
+        audio_track_index: 要提取的音轨索引，默认为 0（第一 audio tracks）
 
     Returns:
         转换是否成功
@@ -79,7 +79,7 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output = str(output_path)
 
-    logger.info(f"提取音轨索引 {audio_track_index}")
+    logger.debug(f"Extracting audio track {audio_track_index}")
     cmd = [
         "ffmpeg",
         "-i",
@@ -95,7 +95,7 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
         output,
     ]
 
-    logger.info(f"转换为音频执行命令: {' '.join(cmd)}")
+    logger.debug(f"Audio conversion cmd: {' '.join(cmd)}")
 
     try:
         result = subprocess.run(
@@ -109,19 +109,19 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
             ),
         )
         if result.returncode == 0 and Path(output).is_file():
-            logger.info("音频转换成功")
+            logger.debug("Audio conversion complete")
             return True
         else:
-            logger.error("音频转换失败")
+            logger.error("Audio conversion failed")
             return False
     except subprocess.CalledProcessError as e:
-        logger.error("== ffmpeg 执行失败 ==")
-        logger.error(f"返回码: {e.returncode}")
-        logger.error(f"命令: {' '.join(e.cmd)}")
+        logger.error("FFmpeg execution failed")
+        logger.error(f"Return code: {e.returncode}")
+        logger.error(f"Command: {' '.join(e.cmd)}")
         if e.stdout:
-            logger.error(f"标准输出: {e.stdout}")
+            logger.error(f"stdout: {e.stdout}")
         if e.stderr:
-            logger.error(f"标准错误: {e.stderr}")
+            logger.error(f"stderr: {e.stderr}")
         return False
     except Exception as e:
         logger.exception(f"音频转换出错: {str(e)}")
@@ -129,8 +129,7 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
 
 
 def check_cuda_available() -> bool:
-    """检查CUDA是否可用"""
-    logger.info("检查CUDA是否可用")
+    """Check if CUDA hardware acceleration is available via FFmpeg."""
     try:
         # 首先检查ffmpeg是否支持cuda
         result = subprocess.run(
@@ -142,7 +141,7 @@ def check_cuda_available() -> bool:
             ),
         )
         if "cuda" not in result.stdout.lower():
-            logger.info("CUDA不在支持的硬件加速器列表中")
+            logger.debug("CUDA not in FFmpeg hwaccels list")
             return False
 
         # 进一步检查CUDA设备信息
@@ -155,19 +154,19 @@ def check_cuda_available() -> bool:
             ),
         )
 
-        # 如果stderr中包含"Cannot load cuda" 或 "Failed to load"等错误信息，说明CUDA不可用
+        # 如果stderr中包含"Cannot load cuda" 或 "Failed to load"等Error output，说明CUDA不可用
         if any(
             error in result.stderr.lower()
             for error in ["cannot load cuda", "failed to load", "error"]
         ):
-            logger.info("CUDA设备初始化失败")
+            logger.debug("CUDA device init failed")
             return False
 
-        logger.info("CUDA可用")
+        logger.debug("CUDA available")
         return True
 
     except Exception as e:
-        logger.exception(f"检查CUDA出错: {str(e)}")
+        logger.exception(f"CUDA check error: {str(e)}")
         return False
 
 
@@ -205,7 +204,7 @@ def add_subtitles(
         # 如果是WebM格式，强制使用硬字幕
         if Path(output).suffix.lower() == ".webm":
             soft_subtitle = False
-            logger.info("WebM格式视频，强制使用硬字幕")
+            logger.debug("WebM format, forcing hard subtitles")
 
         if soft_subtitle:
             # 添加软字幕
@@ -224,7 +223,7 @@ def add_subtitles(
                 "-y",
                 output,
             ]
-            logger.info(f"添加软字幕执行命令: {' '.join(cmd)}")
+            logger.debug(f"FFmpeg soft subtitle cmd: {' '.join(cmd)}")
             try:
                 subprocess.run(
                     cmd,
@@ -239,15 +238,15 @@ def add_subtitles(
                         else 0
                     ),
                 )
-                logger.info("软字幕添加成功")
+                logger.debug("Soft subtitle added")
             except subprocess.CalledProcessError as e:
-                logger.error("== ffmpeg 添加软字幕失败 ==")
-                logger.error(f"返回码: {e.returncode}")
-                logger.error(f"命令: {' '.join(e.cmd)}")
+                logger.error("FFmpeg soft subtitle failed")
+                logger.error(f"Return code: {e.returncode}")
+                logger.error(f"Command: {' '.join(e.cmd)}")
                 if e.stdout:
-                    logger.error(f"标准输出: {e.stdout}")
+                    logger.error(f"stdout: {e.stdout}")
                 if e.stderr:
-                    logger.error(f"标准错误: {e.stderr}")
+                    logger.error(f"stderr: {e.stderr}")
                 raise
         else:
             # 使用硬字幕
@@ -263,13 +262,13 @@ def add_subtitles(
 
             if Path(output).suffix.lower() == ".webm":
                 vcodec = "libvpx-vp9"
-                logger.info("WebM格式视频，使用libvpx-vp9编码器")
+                logger.debug("WebM format, using libvpx-vp9")
 
             # 检查CUDA是否可用
             use_cuda = check_cuda_available()
             cmd = ["ffmpeg"]
             if use_cuda:
-                logger.info("使用CUDA加速")
+                logger.debug("Using CUDA acceleration")
                 cmd.extend(["-hwaccel", "cuda"])
             cmd.extend(
                 [
@@ -291,7 +290,7 @@ def add_subtitles(
             )
 
             cmd_str = subprocess.list2cmdline(cmd)
-            logger.info(f"添加硬字幕执行命令: {cmd_str}")
+            logger.debug(f"FFmpeg hard subtitle cmd: {cmd_str}")
 
             process = None
             try:
@@ -309,7 +308,7 @@ def add_subtitles(
                     ),
                 )
 
-                # 实时读取输出并调用回调函数
+                # 实时Reading输出并调用回调函数
                 total_duration = None
                 current_time = 0
 
@@ -327,7 +326,7 @@ def add_subtitles(
                         if duration_match:
                             h, m, s = map(float, duration_match.groups())
                             total_duration = h * 3600 + m * 60 + s
-                            logger.info(f"视频总时长: {total_duration}秒")
+                            logger.debug(f"Video duration: {total_duration}秒")
 
                     # 解析当前处理时间
                     time_match = re.search(
@@ -345,21 +344,21 @@ def add_subtitles(
                 if progress_callback:
                     progress_callback("100", "合成完成")
 
-                # 检查进程的返回码
+                # 检查进程的Return code
                 return_code = process.wait()
                 if return_code != 0:
                     error_info = process.stderr.read()
-                    logger.error("== ffmpeg 添加硬字幕失败 ==")
-                    logger.error(f"返回码: {return_code}")
-                    logger.error(f"命令: {cmd_str}")
+                    logger.error("FFmpeg hard subtitle failed")
+                    logger.error(f"Return code: {return_code}")
+                    logger.error(f"Command: {cmd_str}")
                     if error_info:
-                        logger.error(f"错误信息: {error_info}")
-                    raise Exception(f"FFmpeg 返回码: {return_code}")
-                logger.info("视频合成完成")
+                        logger.error(f"Error output: {error_info}")
+                    raise Exception(f"FFmpeg Return code: {return_code}")
+                logger.debug("Video synthesis complete")
 
             except subprocess.SubprocessError as e:
-                logger.error("== ffmpeg 进程执行异常 ==")
-                logger.error(f"错误: {str(e)}")
+                logger.error("FFmpeg process error")
+                logger.error(f"Error: {str(e)}")
                 if process and process.poll() is None:
                     process.kill()
                 raise
@@ -430,7 +429,7 @@ def get_video_info(
             audio_codec = audio_stream_match.group(1)
             audio_sampling_rate = int(audio_stream_match.group(2))
 
-        # 提取所有音频流信息（用于多音轨选择）
+        # 提取All音频流信息（用于多音轨选择）
         audio_streams: list[AudioStreamInfo] = []
         for match in re.finditer(
             r"Stream #\d+:(\d+)(?:\[0x[0-9a-fA-F]+\])?(?:\(([a-z]{3})\))?: Audio: (\w+)",
@@ -445,11 +444,11 @@ def get_video_info(
             )
 
         if audio_streams:
-            logger.info(f"检测到 {len(audio_streams)} 条音轨")
+            logger.debug(f"Detected {len(audio_streams)}  audio tracks")
 
         # 验证文件是否包含有效的媒体流
         if not has_video_stream and not audio_streams:
-            logger.error("文件既没有视频流也没有音频流，可能不是有效的媒体文件")
+            logger.error("File has no video or audio streams")
             return None
 
         # 提取缩略图（如果指定了路径且有视频流）

@@ -211,7 +211,7 @@ def render_ass_preview(
         )
 
         if result.returncode != 0:
-            logger.error(f"FFmpeg 预览生成失败: {result.stderr}")
+            logger.error(f"FFmpeg preview generation failed: {result.stderr}")
 
         return str(output_path)
 
@@ -268,7 +268,7 @@ def render_ass_video(
     """
     # 检查字幕数据是否为空
     if not asr_data or not asr_data.segments:
-        raise ValueError("字幕数据为空，无法渲染视频")
+        raise ValueError("Empty subtitle data, cannot render video")
 
     # 获取视频分辨率
     width, height = _get_video_resolution(video_path)
@@ -299,11 +299,11 @@ def render_ass_video(
         # 转义字幕路径
         subtitle_path_escaped = Path(processed_subtitle).as_posix().replace(":", r"\:")
 
-        # 构建 FFmpeg 命令
+        # 构建 FFmpeg Command
         vcodec = "libx264"
         if Path(output_path).suffix.lower() == ".webm":
             vcodec = "libvpx-vp9"
-            logger.info("WebM 格式视频，使用 libvpx-vp9 编码器")
+            logger.debug("WebM format, using libvpx-vp9")
 
         # 添加内置字体目录支持
         fonts_dir_escaped = FONTS_PATH.as_posix().replace(":", r"\:")
@@ -315,7 +315,7 @@ def render_ass_video(
         use_cuda = _check_cuda_available()
         cmd = ["ffmpeg"]
         if use_cuda:
-            logger.info("使用 CUDA 加速")
+            logger.debug("Using CUDA acceleration")
             cmd.extend(["-hwaccel", "cuda"])
 
         cmd.extend(
@@ -338,7 +338,7 @@ def render_ass_video(
         )
 
         cmd_str = subprocess.list2cmdline(cmd)
-        logger.info(f"添加字幕执行命令: {cmd_str}")
+        logger.debug(f"FFmpeg ASS render cmd: {cmd_str}")
 
         # 执行 FFmpeg
         process = None
@@ -355,7 +355,7 @@ def render_ass_video(
                 ),
             )
 
-            # 实时读取输出并调用回调
+            # 实时Reading输出并调用回调
             total_duration = None
             current_time = 0
 
@@ -391,27 +391,27 @@ def render_ass_video(
             if progress_callback:
                 progress_callback("100", "合成完成")
 
-            # 检查返回码
+            # 检查Return code
             return_code = process.wait()
             if return_code != 0:
                 error_info = process.stderr.read()
-                logger.error("== ffmpeg 渲染 ASS 字幕失败 ==")
-                logger.error(f"返回码: {return_code}")
-                logger.error(f"命令: {cmd_str}")
+                logger.error("FFmpeg ASS rendering failed")
+                logger.error(f"Return code: {return_code}")
+                logger.error(f"Command: {cmd_str}")
                 if error_info:
-                    logger.error(f"错误信息: {error_info}")
-                raise Exception(f"FFmpeg 返回码: {return_code}")
+                    logger.error(f"Error output: {error_info}")
+                raise Exception(f"FFmpeg Return code: {return_code}")
 
-            logger.info("ASS 字幕渲染完成")
+            logger.debug("ASS subtitle rendering complete")
 
         except subprocess.SubprocessError as e:
-            logger.error("== ffmpeg 进程执行异常 ==")
-            logger.error(f"错误: {str(e)}")
+            logger.error("FFmpeg process error")
+            logger.error(f"Error: {str(e)}")
             if process and process.poll() is None:
                 process.kill()
             raise
         except Exception as e:
-            logger.error(f"ASS 字幕渲染出错: {str(e)}")
+            logger.error(f"ASS subtitle rendering error: {str(e)}")
             if process and process.poll() is None:
                 process.kill()
             raise

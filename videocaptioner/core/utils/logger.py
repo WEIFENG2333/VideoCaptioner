@@ -17,7 +17,7 @@ def setup_logger(
     """
     创建并配置一个日志记录器，INFO级别使用简化格式。
 
-    参数：
+    参数:
     - name: 日志记录器的名称
     - level: 日志级别
     - info_fmt: INFO级别的日志格式字符串

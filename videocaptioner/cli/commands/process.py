@@ -15,6 +15,7 @@ def run(args: Namespace, config: dict) -> int:
 
     no_optimize = not get(config, "subtitle.optimize", True)
     no_translate = not get(config, "subtitle.translate", False)
+    no_split = not get(config, "subtitle.split", True)
     no_synthesize = getattr(args, "no_synthesize", False)
 
     # If user specified --translator or --target-language, enable translation
@@ -47,15 +48,23 @@ def run(args: Namespace, config: dict) -> int:
     if not validate_process(config, no_synthesize=no_synthesize):
         return EXIT.USAGE_ERROR
 
-    out_dir = Path(getattr(args, "output", None) or path.parent)
+    out_arg = getattr(args, "output", None)
+    if out_arg:
+        out_path = Path(out_arg)
+        # If it looks like a file path (has extension), use its parent as dir
+        out_dir = out_path.parent if out_path.suffix else out_path
+    else:
+        out_dir = path.parent
 
     # Step 1: Transcribe
     if not quiet:
         output.info("Step 1/3: Transcribing...")
     subtitle_path = str(out_dir / f"{path.stem}.srt")
 
+    # Only use word timestamps if subtitle processing (split/optimize) will run
+    need_word_ts = not (no_optimize and no_translate and no_split)
     tr_args = Namespace(
-        input=str(path), output=subtitle_path, format="srt", word_timestamps=True,
+        input=str(path), output=subtitle_path, format="srt", word_timestamps=need_word_ts,
         verbose=verbose, quiet=quiet, config=getattr(args, "config", None),
         asr=getattr(args, "asr", None), language=getattr(args, "language", None),
         fw_model=None, fw_device=None, fw_vad_method=None, fw_vad_threshold=None,
@@ -78,7 +87,7 @@ def run(args: Namespace, config: dict) -> int:
         sub_args = Namespace(
             input=subtitle_path, output=processed_path,
             format=get(config, "output.format", "srt"),
-            no_optimize=no_optimize, no_translate=no_translate, no_split=False,
+            no_optimize=no_optimize, no_translate=no_translate, no_split=no_split,
             verbose=verbose, quiet=quiet, config=getattr(args, "config", None),
             api_key=getattr(args, "api_key", None),
             api_base=getattr(args, "api_base", None),
