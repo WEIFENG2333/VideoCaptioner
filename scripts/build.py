@@ -98,9 +98,8 @@ def download_windows_binaries():
 def copy_writable_resources_to_dist():
     """Copy writable resource dirs to dist output (alongside the exe).
 
-    These directories need to be writable at runtime:
-    - resource/bin/: ffmpeg, 7z, Faster-Whisper downloads (Windows only)
-    - resource/subtitle_style/: user-created subtitle styles (all platforms)
+    Only resource/bin/ (Windows) needs to be in the program directory.
+    User data (settings, models, subtitle styles) goes to system data dir.
     """
     output_dir = DIST_DIR / "VideoCaptioner"
 
@@ -117,14 +116,8 @@ def copy_writable_resources_to_dist():
         else:
             print("WARNING: resource/bin/ not found, skipping")
 
-    # subtitle_style/ — all platforms (preset + user styles)
-    src = ROOT_DIR / "resource" / "subtitle_style"
-    dst = output_dir / "resource" / "subtitle_style"
-    if src.exists():
-        if dst.exists():
-            shutil.rmtree(dst)
-        shutil.copytree(src, dst)
-        print("  Copied subtitle_style/ to dist")
+    # subtitle_style is bundled inside _internal/ and copied to user data dir
+    # on first run by config.py — no need to copy to dist/
 
 
 def ensure_version_file():
