@@ -7,11 +7,10 @@ VideoCaptioner 路径与配置模块
   3. pip 安装模式 (通过 platformdirs 定位数据目录)
 
 目录职责划分:
-  程序目录 (_EXE_DIR / _PROJECT_ROOT):
-    - resource/bin/     → ffmpeg, 7z, Faster-Whisper 等二进制工具
-    - work-dir/         → 默认视频处理工作目录
+  程序目录 (frozen: exe 旁, 开发: 项目根):
+    - resource/bin/     → ffmpeg, 7z, Faster-Whisper 等二进制工具 (仅 frozen/开发)
 
-  只读资源 (RESOURCE_PATH, 打包时来自 _MEIPASS):
+  只读资源 (RESOURCE_PATH):
     - assets/           → logo、背景图、QSS 样式
     - fonts/            → 内置字体
     - translations/     → 国际化 .qm 文件
@@ -22,6 +21,11 @@ VideoCaptioner 路径与配置模块
     - cache/            → LLM/ASR/翻译缓存
     - models/           → ASR 模型 (默认位置, 可在设置中自定义)
     - resource/subtitle_style/ → 用户自定义字幕样式
+
+  工作目录 (WORK_PATH):
+    - frozen: exe 旁的 work-dir/
+    - 开发:   项目根下 work-dir/
+    - pip:    ~/VideoCaptioner/
 """
 
 import logging
@@ -49,40 +53,43 @@ FEEDBACK_URL = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 # ── 基础路径检测 ────────────────────────────────────────────────────────────
 _PACKAGE_DIR = Path(__file__).parent        # videocaptioner/
 _PROJECT_ROOT = _PACKAGE_DIR.parent         # 项目根目录
+_IS_DEV = (_PROJECT_ROOT / "resource").is_dir() and not getattr(sys, "frozen", False)
 
-if getattr(sys, "frozen", False):
-    # ── PyInstaller 打包模式 ──
-    _MEIPASS = Path(sys._MEIPASS)           # type: ignore[attr-defined]
-    _EXE_DIR = Path(sys.executable).parent
-
-    # 程序目录: 二进制工具 + 默认工作目录
-    ROOT_PATH = _EXE_DIR
-    WORK_PATH = _EXE_DIR / "work-dir"
-    BIN_PATH = _EXE_DIR / "resource" / "bin"
-
-    # 只读资源: 打包在 _MEIPASS 里
-    RESOURCE_PATH = _MEIPASS / "resource"
-
-    # 用户数据: 系统标准目录 (升级程序不影响)
+# ── 用户数据目录 (三种模式统一逻辑) ────────────────────────────────────────
+# 开发模式: 项目根/AppData (方便调试, 不污染系统目录)
+# frozen + pip: 系统标准目录 (升级不受影响)
+#   Windows:  %LOCALAPPDATA%/VideoCaptioner/
+#   macOS:    ~/Library/Application Support/VideoCaptioner/
+#   Linux:    ~/.local/share/VideoCaptioner/
+if _IS_DEV:
+    APPDATA_PATH = _PROJECT_ROOT / "AppData"
+else:
     from platformdirs import user_data_path
     APPDATA_PATH = user_data_path(APP_NAME)
 
-elif (_PROJECT_ROOT / "resource").is_dir():
-    # ── 源码开发模式 ──
+# ── 程序目录 + 只读资源 (因模式而异) ───────────────────────────────────────
+if getattr(sys, "frozen", False):
+    # ── PyInstaller 打包 ──
+    _MEIPASS = Path(sys._MEIPASS)           # type: ignore[attr-defined]
+    _EXE_DIR = Path(sys.executable).parent
+    ROOT_PATH = _EXE_DIR
+    WORK_PATH = _EXE_DIR / "work-dir"
+    BIN_PATH = _EXE_DIR / "resource" / "bin"
+    RESOURCE_PATH = _MEIPASS / "resource"
+
+elif _IS_DEV:
+    # ── 源码开发 ──
     ROOT_PATH = _PROJECT_ROOT
     WORK_PATH = ROOT_PATH / "work-dir"
     BIN_PATH = ROOT_PATH / "resource" / "bin"
     RESOURCE_PATH = ROOT_PATH / "resource"
-    APPDATA_PATH = ROOT_PATH / "AppData"
 
 else:
-    # ── pip 安装模式 ──
-    from platformdirs import user_data_path
-    ROOT_PATH = user_data_path(APP_NAME)
+    # ── pip 安装 ──
+    ROOT_PATH = APPDATA_PATH
     WORK_PATH = Path.home() / "VideoCaptioner"
-    BIN_PATH = ROOT_PATH / "resource" / "bin"
-    RESOURCE_PATH = ROOT_PATH / "resource"
-    APPDATA_PATH = ROOT_PATH
+    BIN_PATH = APPDATA_PATH / "bin"
+    RESOURCE_PATH = APPDATA_PATH / "resource"
 
 # ── 只读资源路径 ────────────────────────────────────────────────────────────
 ASSETS_PATH = RESOURCE_PATH / "assets"
@@ -102,7 +109,7 @@ CACHE_PATH = APPDATA_PATH / "cache"
 MODEL_PATH = APPDATA_PATH / "models"
 
 # 字幕样式: 开发模式直接用 resource/ 下的，其他模式放在用户数据目录
-if (_PROJECT_ROOT / "resource").is_dir() and not getattr(sys, "frozen", False):
+if _IS_DEV:
     SUBTITLE_STYLE_PATH = _PROJECT_ROOT / "resource" / "subtitle_style"
 else:
     SUBTITLE_STYLE_PATH = APPDATA_PATH / "resource" / "subtitle_style"
