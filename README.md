@@ -6,6 +6,12 @@
   [在线文档](https://weifeng2333.github.io/VideoCaptioner/) · [CLI 使用](#cli-命令行) · [GUI 桌面版](#gui-桌面版) · [Claude Code Skill](#claude-code-skill)
 </div>
 
+## 🌐 Translations
+
+[English](./translations/en/README.md) | [한국어](./translations/ko/README.md) | [日本語](./translations/ja/README.md)
+
+---
+
 ## 安装
 
 ```bash
