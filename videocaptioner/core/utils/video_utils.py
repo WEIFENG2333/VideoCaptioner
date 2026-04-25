@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import shutil
 import subprocess
 import tempfile
@@ -311,6 +312,7 @@ def add_subtitles(
                 # 实时Reading输出并调用回调函数
                 total_duration = None
                 current_time = 0
+                start_time = time.time()
 
                 while True:
                     output_line = process.stderr.readline()
@@ -339,7 +341,14 @@ def add_subtitles(
                     # 计算进度百分比
                     if total_duration:
                         progress = (current_time / total_duration) * 100
-                        progress_callback(f"{round(progress)}", "正在合成")
+                        etc = (
+                            (time.time() - start_time)
+                            * (total_duration - current_time)
+                            / current_time
+                        )
+                        progress_callback(
+                            f"{round(progress, 2)} | etc: {round(etc, 2)}秒", "正在合成"
+                        )
 
                 if progress_callback:
                     progress_callback("100", "合成完成")
