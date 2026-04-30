@@ -92,8 +92,10 @@ def run(args: Namespace, config: dict) -> int:
     vad_map = {v.value.replace("_", "-"): v for v in VadMethodEnum}
     vad_enum = vad_map.get(vad_str.replace("_", "-"))
 
-    # WhisperCpp model enum
-    wcpp_model_str = get(config, "transcribe.whisper_cpp.model", "large-v2")
+    # Prefer explicit CLI override for whisper-cpp model selection.
+    wcpp_model_str = getattr(args, "whisper_model", None) or get(
+        config, "transcribe.whisper_cpp.model", "large-v2"
+    )
     wcpp_model_enum = next((m for m in WhisperModelEnum if m.value == wcpp_model_str), None)
 
     transcribe_config = TranscribeConfig(
