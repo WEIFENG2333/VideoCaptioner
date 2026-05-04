@@ -43,7 +43,7 @@ def handle_long_path(path: str) -> str:
     if (
         platform.system() == "Windows"
         and len(path) > 260
-        and not path.startswith(r"\\?\\")
+        and not path.startswith("\\\\?\\")
     ):
         return rf"\\?\{os.path.abspath(path)}"
     return path
