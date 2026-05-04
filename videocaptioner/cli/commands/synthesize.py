@@ -198,7 +198,11 @@ def run(args: Namespace, config: dict) -> int:
     def progress_callback(*cb_args) -> None:
         if progress and cb_args:
             try:
-                progress.update(int(float(cb_args[0])), f"Encoding [{subtitle_mode}]")
+                percent = int(float(cb_args[0]))
+                message = cb_args[1] if len(cb_args) > 1 else ""
+                current_time = cb_args[2] if len(cb_args) > 2 else None
+                total_duration = cb_args[3] if len(cb_args) > 3 else None
+                progress.update(percent, message, current_time, total_duration)
             except (ValueError, TypeError):
                 pass
 
