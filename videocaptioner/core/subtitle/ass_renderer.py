@@ -196,7 +196,7 @@ def render_ass_preview(
             "-i",
             str(bg_path_obj),
             "-vf",
-            f"ass={ass_file_escaped}:fontsdir={fonts_dir_escaped}",
+            f"ass='{ass_file_escaped}':fontsdir='{fonts_dir_escaped}'",
             "-frames:v",
             "1",
             str(output_path),
