@@ -10,6 +10,7 @@ from typing import Any, Callable, List, Optional, Union
 
 from ...config import MODEL_PATH
 from ..utils.logger import setup_logger
+from ..utils.platform_utils import get_subprocess_kwargs
 from ..utils.subprocess_helper import StreamReader
 from .asr_data import ASRData, ASRDataSeg
 from .base import BaseASR
@@ -155,6 +156,7 @@ class WhisperCppASR(BaseASR):
                     text=True,
                     encoding="utf-8",
                     bufsize=1,
+                    **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
                 )
 
                 logger.debug(f"Whisper.cpp process started, PID: {self.process.pid}")
@@ -247,7 +249,7 @@ class WhisperCppASR(BaseASR):
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
             )
             info = result.stderr
             if duration_match := re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info):

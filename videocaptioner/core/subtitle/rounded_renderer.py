@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw
 
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.platform_utils import get_subprocess_kwargs
 
 from .font_utils import FontType, get_font
 from .styles import RoundedBgStyle
@@ -31,7 +32,7 @@ def _get_video_info(video_path: str) -> Tuple[int, int, float]:
         text=True,
         encoding="utf-8",
         errors="replace",
-        creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
+        **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
     )
 
     # 解析分辨率
@@ -442,9 +443,7 @@ def render_rounded_video(
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-                ),
+                **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
             )
 
             if result.returncode != 0:
