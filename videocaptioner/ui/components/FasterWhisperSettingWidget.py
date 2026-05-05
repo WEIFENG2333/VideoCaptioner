@@ -37,7 +37,7 @@ from videocaptioner.core.entities import (
     TranscribeLanguageEnum,
     VadMethodEnum,
 )
-from videocaptioner.core.utils.platform_utils import open_folder
+from videocaptioner.core.utils.platform_utils import get_subprocess_kwargs, open_folder
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.components.LineEditSettingCard import LineEditSettingCard
 from videocaptioner.ui.components.SpinBoxSettingCard import DoubleSpinBoxSettingCard
@@ -166,7 +166,7 @@ class UnzipThread(QThread):
             subprocess.run(
                 ["7z", "x", self.zip_file, f"-o{self.extract_path}", "-y"],
                 check=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
             )
             # 删除压缩包
             os.remove(self.zip_file)
