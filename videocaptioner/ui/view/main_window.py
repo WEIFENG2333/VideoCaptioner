@@ -62,6 +62,9 @@ class MainWindow(FluentWindow):
         # 注册退出处理， 清理进程
         atexit.register(self.stop)
 
+        # 启用拖放支持
+        self.setAcceptDrops(True)
+
     def initNavigation(self):
         """初始化导航栏"""
         # 添加导航项
@@ -118,6 +121,20 @@ class MainWindow(FluentWindow):
 
         self.show()
         QApplication.processEvents()
+
+    def dragEnterEvent(self, event):
+        """窗口拖放进入事件，接受文件 URL"""
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """窗口拖放放下事件，转发文件给当前子界面处理"""
+        current = self.stackedWidget.currentWidget()
+        if hasattr(current, "add_files"):
+            files = [url.toLocalFile() for url in event.mimeData().urls()]
+            current.add_files(files)
 
     def onGithubDialog(self):
         """打开GitHub"""

@@ -50,7 +50,10 @@ class BatchProcessInterface(QWidget):
         super().__init__(parent=parent)
         self.setObjectName("batchProcessInterface")
         self.setWindowTitle(self.tr("批量处理"))
+
+        # 启用拖放支持，窗口级拖放由 MainWindow 统一处理
         self.setAcceptDrops(True)
+
         self.batch_thread = BatchProcessThread()
 
         self.init_ui()
@@ -162,16 +165,6 @@ class BatchProcessInterface(QWidget):
         files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", file_filter)
         if files:
             self.add_files(files)
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-        files = [url.toLocalFile() for url in event.mimeData().urls()]
-        self.add_files(files)
 
     def add_files(self, file_paths):
         task_type = BatchTaskType(self.task_type_combo.currentText())
