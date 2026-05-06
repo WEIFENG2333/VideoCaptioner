@@ -43,6 +43,7 @@ gui = [
     "modelscope>=1.32.0",
     "psutil>=7.0.0",
     "GPUtil>=1.4.0",
+    "py7zr>=0.21.0",
 ]
 
 [project.urls]
@@ -102,6 +103,7 @@ dev-dependencies = [
     "modelscope>=1.32.0",
     "psutil>=7.0.0",
     "GPUtil>=1.4.0",
+    "py7zr>=0.21.0",
 ]
 
 [tool.pyright]
