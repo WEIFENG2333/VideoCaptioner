@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -37,12 +38,15 @@ from videocaptioner.core.entities import (
     TranscribeLanguageEnum,
     VadMethodEnum,
 )
-from videocaptioner.core.utils.platform_utils import open_folder
+from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.platform_utils import get_subprocess_kwargs, open_folder
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.components.LineEditSettingCard import LineEditSettingCard
 from videocaptioner.ui.components.SpinBoxSettingCard import DoubleSpinBoxSettingCard
 from videocaptioner.ui.thread.file_download_thread import FileDownloadThread
 from videocaptioner.ui.thread.modelscope_download_thread import ModelscopeDownloadThread
+
+logger = setup_logger("faster_whisper_setting")
 
 # 在文件开头添加常量定义
 FASTER_WHISPER_PROGRAMS = [
@@ -149,12 +153,22 @@ def check_faster_whisper_exists() -> tuple[bool, list[str]]:
     return bool(installed_versions), installed_versions
 
 
-# 添加新的解压线程类
-class UnzipThread(QThread):
-    """7z解压线程"""
+_MISSING_EXTRACTOR_MSG = (
+    "无法解压 7z 压缩包：未检测到可用的解压工具。\n"
+    'pip install --upgrade "videocaptioner[gui]" 或安装 7-Zip 并加入 PATH'
+)
 
-    finished = pyqtSignal()  # 解压完成信号
-    error = pyqtSignal(str)  # 解压错误信号
+
+def _find_7z_exe() -> str | None:
+    for name in ("7z", "7za", "7zr"):
+        if exe := shutil.which(name):
+            return exe
+    return None
+
+
+class UnzipThread(QThread):
+    finished = pyqtSignal()
+    error = pyqtSignal(str)
 
     def __init__(self, zip_file, extract_path):
         super().__init__()
@@ -163,18 +177,38 @@ class UnzipThread(QThread):
 
     def run(self):
         try:
-            subprocess.run(
-                ["7z", "x", self.zip_file, f"-o{self.extract_path}", "-y"],
-                check=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-            )
-            # 删除压缩包
-            os.remove(self.zip_file)
+            if not (self._extract_py7zr() or self._extract_cli()):
+                self.error.emit(_MISSING_EXTRACTOR_MSG)
+                return
+            try:
+                os.remove(self.zip_file)
+            except OSError as e:
+                logger.warning(f"删除压缩包失败 ({self.zip_file}): {e}")
             self.finished.emit()
-        except subprocess.CalledProcessError as e:
-            self.error.emit(f"解压失败: {str(e)}")
         except Exception as e:
-            self.error.emit(str(e))
+            logger.exception("解压失败")
+            self.error.emit(f"解压失败: {e}")
+
+    def _extract_py7zr(self) -> bool:
+        try:
+            import py7zr
+        except ImportError:
+            return False
+        os.makedirs(self.extract_path, exist_ok=True)
+        with py7zr.SevenZipFile(self.zip_file, mode="r") as archive:
+            archive.extractall(path=self.extract_path)
+        return True
+
+    def _extract_cli(self) -> bool:
+        exe = _find_7z_exe()
+        if exe is None:
+            return False
+        subprocess.run(
+            [exe, "x", self.zip_file, f"-o{self.extract_path}", "-y"],
+            check=True,
+            **get_subprocess_kwargs(),
+        )
+        return True
 
 
 class FasterWhisperDownloadDialog(MessageBoxBase):
@@ -644,7 +678,8 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
 
     def _on_unzip_error(self, error_msg):
         """处理解压错误"""
-        InfoBar.error(self.tr("安装失败"), error_msg, duration=3000, parent=self)
+        # 错误信息可能含多行可操作指引，停留时间需要更长以便阅读
+        InfoBar.error(self.tr("安装失败"), error_msg, duration=10000, parent=self)
         self._cleanup_installation()
 
     def _cleanup_installation(self):
