@@ -25,10 +25,15 @@ def main():
     from videocaptioner.ui.view.main_window import MainWindow
 
     # Qt platform plugin path
-    lib_folder = "Lib" if platform.system() == "Windows" else "lib"
-    plugin_path = os.path.join(
-        sys.prefix, lib_folder, "site-packages", "PyQt5", "Qt5", "plugins"
-    )
+    if getattr(sys, "frozen", False):
+        # PyInstaller: Qt plugins are bundled inside _internal/PyQt5/Qt5/plugins
+        _internal = os.path.join(os.path.dirname(sys.executable), "_internal")
+        plugin_path = os.path.join(_internal, "PyQt5", "Qt5", "plugins")
+    else:
+        lib_folder = "Lib" if platform.system() == "Windows" else "lib"
+        plugin_path = os.path.join(
+            sys.prefix, lib_folder, "site-packages", "PyQt5", "Qt5", "plugins"
+        )
     os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = plugin_path
 
     # Logger + global exception hook
