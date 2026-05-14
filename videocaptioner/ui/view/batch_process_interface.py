@@ -51,8 +51,8 @@ class BatchProcessInterface(QWidget):
         self.setObjectName("batchProcessInterface")
         self.setWindowTitle(self.tr("批量处理"))
 
-        # 启用拖放支持，窗口级拖放由 MainWindow 统一处理
-        self.setAcceptDrops(True)
+        # 由 MainWindow 统一处理拖放，避免子界面抢占拖放目标
+        self.setAcceptDrops(False)
 
         self.batch_thread = BatchProcessThread()
 
