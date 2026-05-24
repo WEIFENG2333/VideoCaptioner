@@ -91,7 +91,9 @@ override-dependencies = [
     "PyQt5-Qt5==5.15.2; sys_platform == 'win32'",
     "PyQt5-Qt5>=5.15.11; sys_platform != 'win32'",
 ]
-dev-dependencies = [
+
+[dependency-groups]
+dev = [
     "pyright>=1.1.0",
     "ruff>=0.4.0",
     "pytest>=8.0.0",
