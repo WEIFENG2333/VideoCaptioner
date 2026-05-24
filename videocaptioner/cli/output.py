@@ -68,10 +68,22 @@ class ProgressLine:
             self._thread.start()
         return self
 
-    def update(self, percent: int, message: str = "") -> None:
+    def update(
+        self,
+        percent: int,
+        message: str = "",
+        current_time: Optional[float] = None,
+        total_duration: Optional[float] = None,
+    ) -> None:
         self.percent = percent
         if message:
             self.message = message
+        if current_time is not None and total_duration is not None:
+            self._time_display = f" {format_time(current_time)} / {format_time(total_duration)}"
+        elif total_duration is not None:
+            self._time_display = f" / {format_time(total_duration)}"
+        else:
+            self._time_display = ""
 
     def _cleanup(self) -> None:
         self._stop.set()
@@ -93,11 +105,26 @@ class ProgressLine:
     def _spin(self) -> None:
         while not self._stop.is_set():
             char = self.SPINNER[self._frame % len(self.SPINNER)]
+            time_display = getattr(self, "_time_display", "")
             if self.percent is not None:
                 line = f"\r{char} {self.message} [{self.percent}%]"
+                if time_display:
+                    line += time_display
             else:
                 line = f"\r{char} {self.message}"
             sys.stderr.write(f"{line}\033[K")
             sys.stderr.flush()
             self._frame += 1
             self._stop.wait(0.1)
+
+
+def format_time(seconds: float) -> str:
+    """Format seconds to MM:SS or HH:MM:SS format."""
+    if seconds < 0:
+        seconds = 0
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes}:{secs:02d}"

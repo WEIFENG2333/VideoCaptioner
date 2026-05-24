@@ -339,7 +339,9 @@ def add_subtitles(
                     # 计算进度百分比
                     if total_duration:
                         progress = (current_time / total_duration) * 100
-                        progress_callback(f"{round(progress)}", "正在合成")
+                        progress_callback(
+                            f"{round(progress)}", "正在合成", current_time, total_duration
+                        )
 
                 if progress_callback:
                     progress_callback("100", "合成完成")
