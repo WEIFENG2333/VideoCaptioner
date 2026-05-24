@@ -83,15 +83,35 @@ def get_subprocess_kwargs():
     """
     获取跨平台的subprocess参数
 
+    在 Windows GUI 应用中，子进程（如 ffmpeg、ASR 解码器等）启动时会弹出控制台窗口，
+    这会干扰用户体验。本函数返回 Windows 下用于隐藏控制台窗口的参数：
+      - creationflags = CREATE_NO_WINDOW：最常用的隐藏方式
+      - startupinfo.wShowWindow = SW_HIDE：备用方案，确保窗口完全不可见
+
+    非 Windows 系统返回空字典，不影响正常行为。
+
+    Usage:
+        subprocess.run(cmd, **get_subprocess_kwargs())
+        subprocess.Popen(cmd, **get_subprocess_kwargs())
+
     Returns:
-        dict: subprocess参数字典
+        dict: subprocess参数字典，Windows 下包含 creationflags/startupinfo，其他系统为空
     """
     kwargs = {}
 
-    # 仅在Windows上添加CREATE_NO_WINDOW标志
+    # 仅在Windows上添加静默启动参数
     if platform.system() == "Windows":
         if hasattr(subprocess, "CREATE_NO_WINDOW"):
             kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+        if hasattr(subprocess, "STARTUPINFO") and hasattr(
+            subprocess, "STARTF_USESHOWWINDOW"
+        ):
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            if hasattr(subprocess, "SW_HIDE"):
+                startupinfo.wShowWindow = subprocess.SW_HIDE
+            kwargs["startupinfo"] = startupinfo
 
     return kwargs
 
