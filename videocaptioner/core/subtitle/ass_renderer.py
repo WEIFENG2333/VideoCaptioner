@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from PIL import Image
 
-from videocaptioner.config import CACHE_PATH, FONTS_PATH, RESOURCE_PATH
+from videocaptioner.config import CACHE_PATH, FONTS_PATH
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
 
@@ -155,8 +155,8 @@ def render_ass_preview(
         # 确保背景图片存在
         bg_path_obj = Path(bg_image_path)
         if not bg_path_obj.exists():
-            # 使用默认黑色背景
-            default_bg = RESOURCE_PATH / "assets" / "default_bg.png"
+            # 使用默认黑色背景（生成到可写的 CACHE_PATH）
+            default_bg = CACHE_PATH / "default_bg.png"
             if not default_bg.exists():
                 default_bg.parent.mkdir(parents=True, exist_ok=True)
                 # 生成黑色背景
