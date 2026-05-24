@@ -115,7 +115,11 @@ class ChunkedASR:
         if self.file_binary is None:
             raise ValueError("file_binary is None, cannot split audio")
 
-        audio = AudioSegment.from_file(io.BytesIO(self.file_binary))
+        try:
+            audio = AudioSegment.from_file(self.audio_path)
+        except Exception:
+            logger.warning("Failed to load audio by path, falling back to in-memory bytes")
+            audio = AudioSegment.from_file(io.BytesIO(self.file_binary))
         total_duration_ms = len(audio)
 
         logger.debug(

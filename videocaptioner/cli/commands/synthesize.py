@@ -3,7 +3,7 @@
 import json
 from argparse import Namespace
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
@@ -16,15 +16,25 @@ from videocaptioner.core.subtitle.style_manager import (
     load_style,
 )
 
-# Quality presets: name -> (crf, preset)
-_QUALITY_MAP = {
+EncodePreset = Literal[
+    "ultrafast",
+    "superfast",
+    "veryfast",
+    "faster",
+    "fast",
+    "medium",
+    "slow",
+    "slower",
+    "veryslow",
+]
+
+# Quality presets: name -> (crf, ffmpeg preset)
+_QUALITY_MAP: dict[str, tuple[int, EncodePreset]] = {
     "ultra": (18, "slow"),
     "high": (23, "medium"),
     "medium": (28, "medium"),
     "low": (32, "fast"),
 }
-
-
 
 def _resolve_style(config: dict, verbose: bool) -> tuple:
     """Resolve style settings from config.

@@ -4,8 +4,10 @@ Usage:
     videocaptioner <command> [options]
 
 Commands:
+    gui          Launch the desktop app
     transcribe   Transcribe audio/video to subtitles
     subtitle     Optimize and/or translate subtitle files
+    dub          Generate dubbed audio/video from subtitles
     synthesize   Burn subtitles into video
     process      Full pipeline (transcribe → optimize → translate → synthesize)
     download     Download online video (YouTube, Bilibili, etc.)
@@ -28,6 +30,13 @@ def _add_llm_options(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--api-base", metavar="URL",
                        help="LLM API base URL (or set OPENAI_BASE_URL env var)")
     group.add_argument("--model", metavar="NAME", help="LLM model name (e.g. gpt-4o-mini)")
+
+
+def _add_hidden_llm_options(parser: argparse.ArgumentParser) -> None:
+    """Keep script-compatible LLM overrides without showing them in task-first help."""
+    parser.add_argument("--api-key", metavar="KEY", help=argparse.SUPPRESS)
+    parser.add_argument("--api-base", metavar="URL", help=argparse.SUPPRESS)
+    parser.add_argument("--model", metavar="NAME", help=argparse.SUPPRESS)
 
 
 def _add_output_options(parser: argparse.ArgumentParser) -> None:
@@ -119,6 +128,15 @@ def _build_transcribe_parser(subparsers) -> None:
     p.set_defaults(func=_run_transcribe)
 
 
+def _build_gui_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "gui",
+        help="Launch the desktop app",
+        description="Launch the VideoCaptioner desktop app.",
+    )
+    p.set_defaults(func=_run_gui)
+
+
 def _build_subtitle_parser(subparsers) -> None:
     p = subparsers.add_parser(
         "subtitle",
@@ -155,7 +173,7 @@ def _build_subtitle_parser(subparsers) -> None:
     trans.add_argument(
         "--translator",
         choices=["llm", "bing", "google"],
-        help="Translation service (default: llm). bing and google are free",
+        help="Translation service (default: bing). bing and google are free",
     )
     trans.add_argument(
         "--target-language",
@@ -226,7 +244,85 @@ def _build_synthesize_parser(subparsers) -> None:
     p.set_defaults(func=_run_synthesize)
 
 
+def _build_dub_parser(subparsers) -> None:
+    from videocaptioner.core.dubbing.presets import available_dubbing_presets
+
+    p = subparsers.add_parser(
+        "dub",
+        help="Generate dubbed audio or video from subtitles",
+        description=(
+            "Generate a timed dubbing track from SRT/ASS/VTT/JSON subtitles. "
+            "Speaker labels may be embedded as '[Alice] text' or 'Alice: text'."
+        ),
+    )
+    p.add_argument("subtitle", help="Subtitle file path (.srt, .ass, .vtt, .json)")
+    _add_common_options(p)
+
+    p.add_argument("--video", metavar="FILE", help="Optional video file to mux with dubbed audio")
+    p.add_argument("-o", "--output", metavar="PATH", help="Output audio/video path")
+    p.add_argument("--audio-output", metavar="PATH", help="Output dubbed audio path")
+
+    tts = p.add_argument_group("Dubbing options")
+    tts.add_argument("--preset", dest="dub_preset", choices=available_dubbing_presets(), help="Voice preset")
+    p.add_argument("--dub-preset", dest="dub_preset", choices=available_dubbing_presets(), help=argparse.SUPPRESS)
+    tts.add_argument("--tts-api-key", metavar="KEY", help="TTS API key. Prefer config set dubbing.api_key")
+    tts.add_argument("--voice", metavar="VOICE", help="Default voice, e.g. anna, alex, benjamin, Kore")
+    tts.add_argument("--speak", dest="text_track", choices=["auto", "first", "second"], help="Subtitle line to speak for bilingual subtitles")
+    p.add_argument("--text-track", dest="text_track", choices=["auto", "first", "second", "source", "target", "original", "translated"], help=argparse.SUPPRESS)
+    tts.add_argument("--timing", choices=["balanced", "strict", "natural", "none"], help="Timing strategy")
+    tts.add_argument("--adapt-length", dest="rewrite_too_long", action="store_true", help="Shorten lines that are too long for their subtitle slot")
+    p.add_argument("--rewrite-too-long", dest="rewrite_too_long", action="store_true", help=argparse.SUPPRESS)
+    tts.add_argument("--audio-mode", choices=["replace", "mix", "duck"], help="How to handle original video audio")
+
+    speaker = p.add_argument_group("Speaker options")
+    speaker.add_argument(
+        "--speaker-voice",
+        action="append",
+        default=[],
+        metavar="NAME=VOICE",
+        help="Map subtitle speaker to a voice; repeatable",
+    )
+    speaker.add_argument(
+        "--speaker-style",
+        action="append",
+        default=[],
+        metavar="NAME=PROMPT",
+        help=argparse.SUPPRESS,
+    )
+    speaker.add_argument(
+        "--speaker-clone",
+        action="append",
+        default=[],
+        metavar="NAME=AUDIO|TEXT",
+        help="Map speaker to SiliconFlow clone reference audio and exact transcript; repeatable",
+    )
+    speaker.add_argument("--clone-audio", metavar="FILE", help="Default speaker clone reference audio")
+    speaker.add_argument("--clone-text", metavar="TEXT", help="Exact transcript for --clone-audio")
+
+    # Hidden advanced/provider options. They remain available for scripts and debugging.
+    p.add_argument("--provider", choices=["siliconflow", "gemini"], help=argparse.SUPPRESS)
+    p.add_argument("--tts-api-base", metavar="URL", help=argparse.SUPPRESS)
+    p.add_argument("--tts-model", metavar="NAME", help=argparse.SUPPRESS)
+    p.add_argument("--style-prompt", metavar="TEXT", help=argparse.SUPPRESS)
+    p.add_argument("--tts-workers", type=int, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--sample-rate", type=int, metavar="HZ", help=argparse.SUPPRESS)
+    p.add_argument("--speed", type=float, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--gain", type=float, metavar="DB", help=argparse.SUPPRESS)
+    p.add_argument("--fit-mode", choices=["tempo", "none"], help=argparse.SUPPRESS)
+    p.add_argument("--max-speed", type=float, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--target-padding-ms", type=int, metavar="MS", help=argparse.SUPPRESS)
+    p.add_argument("--rewrite-threshold", type=float, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--mix-original-audio", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--original-audio-volume", type=float, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--dubbed-audio-volume", type=float, metavar="N", help=argparse.SUPPRESS)
+
+    _add_hidden_llm_options(p)
+    p.set_defaults(func=_run_dub)
+
+
 def _build_process_parser(subparsers) -> None:
+    from videocaptioner.core.dubbing.presets import available_dubbing_presets
+
     p = subparsers.add_parser(
         "process",
         help="Full pipeline: transcribe → optimize → translate → synthesize",
@@ -239,10 +335,12 @@ def _build_process_parser(subparsers) -> None:
     _add_output_options(p)
 
     pipe = p.add_argument_group("Pipeline options")
-    pipe.add_argument("--no-optimize", action="store_true", help="Skip subtitle optimization")
+    pipe.add_argument("--no-optimize", action="store_true", help="Skip AI subtitle polish")
     pipe.add_argument("--no-translate", action="store_true", help="Skip translation")
     pipe.add_argument("--no-split", action="store_true", help="Skip subtitle re-segmentation")
     pipe.add_argument("--no-synthesize", action="store_true", help="Skip video synthesis (output subtitles only)")
+    pipe.add_argument("--dub", action="store_true", help="Generate dubbed audio/video after subtitle processing")
+    pipe.add_argument("--dub-only", action="store_true", help="Output only the dubbed result, skipping subtitle burn/embedding")
 
     pipe.add_argument("--asr", choices=["bijian", "jianying", "whisper-api", "whisper-cpp"],
                       help="ASR engine (default: bijian)")
@@ -250,20 +348,44 @@ def _build_process_parser(subparsers) -> None:
                       help="Source language as ISO 639-1 code, or 'auto' (default: auto)")
     pipe.add_argument("--whisper-api-key", metavar="KEY", help="Whisper API key (for --asr whisper-api)")
     pipe.add_argument("--translator", choices=["llm", "bing", "google"],
-                      help="Translation service (default: llm). bing and google are free")
-    pipe.add_argument("--target-language", metavar="CODE", help="Target language BCP 47 code (default: zh-Hans)")
+                      help="Translation service (default: bing). bing and google are free")
+    pipe.add_argument("--to", dest="target_language", metavar="CODE", help="Target language BCP 47 code")
+    p.add_argument("--target-language", dest="target_language", metavar="CODE", help=argparse.SUPPRESS)
     pipe.add_argument("--reflect", action="store_true", help="Reflective translation (LLM only)")
     pipe.add_argument("--quality", choices=["ultra", "high", "medium", "low"], help="Video quality (default: medium)")
     pipe.add_argument("--subtitle-mode", choices=["soft", "hard"], help="Subtitle mode (default: soft)")
     pipe.add_argument("--layout", choices=["target-above", "source-above", "target-only", "source-only"],
                       help="Subtitle layout (default: target-above)")
-    pipe.add_argument("--prompt", metavar="TEXT", help="Custom prompt for LLM optimization/translation")
-    pipe.add_argument("--thread-num", type=int, metavar="N", help="Concurrent threads (default: 4)")
-    pipe.add_argument("--batch-size", type=int, metavar="N", help="Batch size (default: 20)")
+    pipe.add_argument("--preset", dest="dub_preset", choices=available_dubbing_presets(), help="Dubbing voice preset")
+    p.add_argument("--dub-preset", dest="dub_preset", choices=available_dubbing_presets(), help=argparse.SUPPRESS)
+    pipe.add_argument("--tts-api-key", metavar="KEY", help="Dubbing TTS API key")
+    pipe.add_argument("--voice", metavar="VOICE", help="Default dubbing voice")
+    pipe.add_argument("--timing", choices=["balanced", "strict", "natural", "none"], help="Dubbing timing strategy")
+    pipe.add_argument("--adapt-length", dest="rewrite_too_long", action="store_true", help="Shorten lines that are too long for their subtitle slot")
+    pipe.add_argument("--audio-mode", choices=["replace", "mix", "duck"], help="How to handle original video audio")
+    pipe.add_argument("--speaker-voice", action="append", default=[], metavar="NAME=VOICE",
+                      help="Map subtitle speaker to a voice; repeatable")
+    pipe.add_argument("--speaker-clone", action="append", default=[], metavar="NAME=AUDIO|TEXT",
+                      help="Map speaker to clone reference audio and transcript; repeatable")
+    pipe.add_argument("--clone-audio", metavar="FILE", help="Default speaker clone reference audio")
+    pipe.add_argument("--clone-text", metavar="TEXT", help="Exact transcript for --clone-audio")
     # Hidden options
     p.add_argument("--prompt-file", metavar="FILE", help=argparse.SUPPRESS)
+    p.add_argument("--prompt", metavar="TEXT", help=argparse.SUPPRESS)
+    p.add_argument("--thread-num", type=int, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--batch-size", type=int, metavar="N", help=argparse.SUPPRESS)
     p.add_argument("--whisper-api-base", help=argparse.SUPPRESS)
     p.add_argument("--whisper-model", help=argparse.SUPPRESS)
+    p.add_argument("--dub-provider", choices=["siliconflow", "gemini"], help=argparse.SUPPRESS)
+    p.add_argument("--tts-api-base", metavar="URL", help=argparse.SUPPRESS)
+    p.add_argument("--tts-model", metavar="NAME", help=argparse.SUPPRESS)
+    p.add_argument("--style-prompt", metavar="TEXT", help=argparse.SUPPRESS)
+    p.add_argument("--tts-workers", type=int, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--speaker-style", action="append", default=[], metavar="NAME=PROMPT", help=argparse.SUPPRESS)
+    p.add_argument("--fit-mode", choices=["tempo", "none"], help=argparse.SUPPRESS)
+    p.add_argument("--max-speed", type=float, metavar="N", help=argparse.SUPPRESS)
+    p.add_argument("--mix-original-audio", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--rewrite-too-long", dest="rewrite_too_long", action="store_true", help=argparse.SUPPRESS)
 
     _add_style_options(p)
 
@@ -307,7 +429,31 @@ def _build_config_parser(subparsers) -> None:
 
     config_sub.add_parser("show", help="Display current configuration")
     config_sub.add_parser("path", help="Show config file path")
-    config_sub.add_parser("init", help="Interactive configuration setup")
+    init_p = config_sub.add_parser(
+        "init",
+        help="Create an onboarding config file",
+        description=(
+            "Create a VideoCaptioner config file. By default this starts an interactive setup. "
+            "Use --non-interactive for Agent/CI-friendly setup."
+        ),
+    )
+    init_p.add_argument("--non-interactive", action="store_true", help="Write config without prompts")
+    init_p.add_argument("--force", action="store_true", help="Overwrite existing config file")
+    init_p.add_argument("--print-template", action="store_true", help="Print a commented template instead of writing")
+    init_p.add_argument("--profile", choices=["basic", "dubbing"], default="basic", help="Configuration profile")
+    init_p.add_argument("--llm-api-key", metavar="KEY", help="LLM API key")
+    init_p.add_argument("--llm-api-base", metavar="URL", help="LLM API base URL")
+    init_p.add_argument("--llm-model", metavar="NAME", help="LLM model")
+    init_p.add_argument("--asr", choices=["bijian", "jianying", "whisper-api", "whisper-cpp"], help="Default ASR engine")
+    init_p.add_argument("--translator", choices=["llm", "bing", "google"], help="Default translation service")
+    init_p.add_argument("--target-language", "--to", dest="target_language", metavar="CODE", help=argparse.SUPPRESS)
+    init_p.add_argument("--no-optimize", action="store_true", help="Disable AI subtitle polish by default")
+    init_p.add_argument("--no-split", action="store_true", help="Disable subtitle re-segmentation by default")
+    init_p.add_argument("--tts-api-key", metavar="KEY", help="Dubbing TTS API key")
+    init_p.add_argument("--dub-preset", "--preset", dest="dub_preset", help="Dubbing voice preset")
+    init_p.add_argument("--voice", metavar="VOICE", help="Default dubbing voice")
+    init_p.add_argument("--timing", choices=["balanced", "strict", "natural", "none"], help="Dubbing timing strategy")
+    init_p.add_argument("--audio-mode", choices=["replace", "mix", "duck"], help="Original audio handling for dubbing")
     config_sub.add_parser("edit", help="Open config file in $EDITOR")
 
     set_p = config_sub.add_parser("set", help="Set a configuration value")
@@ -318,6 +464,18 @@ def _build_config_parser(subparsers) -> None:
     get_p.add_argument("key", help="Config key in dotted notation")
 
     p.set_defaults(func=_run_config)
+
+
+def _build_doctor_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "doctor",
+        help="Diagnose dependencies and configuration",
+        description="Check local tools, config, and common workflow readiness.",
+    )
+    _add_common_options(p)
+    p.add_argument("--json", action="store_true", help="Output machine-readable JSON")
+    p.add_argument("--check-api", action="store_true", help="Also perform lightweight provider API checks")
+    p.set_defaults(func=_run_doctor)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -332,11 +490,14 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", metavar="command")
 
     _build_transcribe_parser(subparsers)
+    _build_gui_parser(subparsers)
     _build_subtitle_parser(subparsers)
+    _build_dub_parser(subparsers)
     _build_synthesize_parser(subparsers)
     _build_process_parser(subparsers)
     _build_download_parser(subparsers)
     _build_config_parser(subparsers)
+    _build_doctor_parser(subparsers)
     _build_style_parser(subparsers)
 
     return parser
@@ -416,6 +577,40 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
     _set("synthesize.style_override", getattr(args, "style_override", None))
     _set("synthesize.font_file", getattr(args, "font_file", None))
 
+    # Dubbing
+    _set("dubbing.preset", getattr(args, "dub_preset", None))
+    _set("dubbing.provider", getattr(args, "provider", None) or getattr(args, "dub_provider", None))
+    _set("dubbing.api_key", getattr(args, "tts_api_key", None))
+    _set("dubbing.api_base", getattr(args, "tts_api_base", None))
+    _set("dubbing.model", getattr(args, "tts_model", None))
+    _set("dubbing.voice", getattr(args, "voice", None))
+    _set("dubbing.style_prompt", getattr(args, "style_prompt", None))
+    _set("dubbing.tts_workers", getattr(args, "tts_workers", None))
+    _set("dubbing.timing", getattr(args, "timing", None))
+    _set("dubbing.audio_mode", getattr(args, "audio_mode", None))
+    _set("dubbing.sample_rate", getattr(args, "sample_rate", None))
+    _set("dubbing.speed", getattr(args, "speed", None))
+    _set("dubbing.gain", getattr(args, "gain", None))
+    _set("dubbing.fit_mode", getattr(args, "fit_mode", None))
+    _set("dubbing.max_speed", getattr(args, "max_speed", None))
+    _set("dubbing.target_padding_ms", getattr(args, "target_padding_ms", None))
+    _set("dubbing.rewrite_threshold", getattr(args, "rewrite_threshold", None))
+    _set("dubbing.original_audio_volume", getattr(args, "original_audio_volume", None))
+    _set("dubbing.dubbed_audio_volume", getattr(args, "dubbed_audio_volume", None))
+    if getattr(args, "rewrite_too_long", False):
+        _set("dubbing.rewrite_too_long", True)
+    if getattr(args, "mix_original_audio", False):
+        _set("dubbing.mix_original_audio", True)
+    audio_mode = getattr(args, "audio_mode", None)
+    if audio_mode == "replace":
+        _set("dubbing.mix_original_audio", False)
+    elif audio_mode == "mix":
+        _set("dubbing.mix_original_audio", True)
+        _set("dubbing.original_audio_volume", 0.25)
+    elif audio_mode == "duck":
+        _set("dubbing.mix_original_audio", True)
+        _set("dubbing.original_audio_volume", 0.12)
+
     # Output
     _set("output.format", getattr(args, "format", None))
 
@@ -442,6 +637,17 @@ def _run_transcribe(args: argparse.Namespace) -> int:
     return run(args, config)
 
 
+def _run_gui(_args: argparse.Namespace) -> int:
+    try:
+        from videocaptioner.ui.main import main as gui_main
+    except ImportError as exc:
+        print(f"GUI dependencies are not available: {exc}")
+        print("Install the official package with: pip install videocaptioner")
+        return EXIT.DEPENDENCY_MISSING
+    gui_main()
+    return EXIT.SUCCESS
+
+
 def _run_subtitle(args: argparse.Namespace) -> int:
     from videocaptioner.cli.commands.subtitle import run
     config = _load_config(args)
@@ -450,6 +656,12 @@ def _run_subtitle(args: argparse.Namespace) -> int:
 
 def _run_synthesize(args: argparse.Namespace) -> int:
     from videocaptioner.cli.commands.synthesize import run
+    config = _load_config(args)
+    return run(args, config)
+
+
+def _run_dub(args: argparse.Namespace) -> int:
+    from videocaptioner.cli.commands.dub import run
     config = _load_config(args)
     return run(args, config)
 
@@ -472,6 +684,12 @@ def _run_config(args: argparse.Namespace) -> int:
     return run(args, config)
 
 
+def _run_doctor(args: argparse.Namespace) -> int:
+    from videocaptioner.cli.commands.doctor import run
+    config = _load_config(args)
+    return run(args, config)
+
+
 def _run_style(args: argparse.Namespace) -> int:
     from videocaptioner.cli.commands.style_cmd import run
     config = _load_config(args)
@@ -483,14 +701,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.command:
-        # No subcommand: try launching GUI if installed, otherwise show CLI help
-        try:
-            from videocaptioner.ui.main import main as gui_main
-            gui_main()
-            return EXIT.SUCCESS
-        except ImportError:
-            parser.print_help()
-            return EXIT.USAGE_ERROR
+        return _run_gui(args)
 
     if not hasattr(args, "func"):
         parser.print_help()

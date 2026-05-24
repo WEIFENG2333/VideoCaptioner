@@ -68,7 +68,7 @@ def run(args: Namespace, config: dict) -> int:
         output.warn("--no-translate conflicts with --translator/--target-language; translation will be skipped")
     elif explicitly_wants_translate:
         need_translate = True
-    translator_service = get(config, "translate.service", "llm")
+    translator_service = get(config, "translate.service", "bing")
 
     # Validate AFTER resolving the actual need_translate / need_optimize state
     needs_llm = need_optimize or (need_translate and translator_service == "llm")

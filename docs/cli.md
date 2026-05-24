@@ -3,11 +3,11 @@
 ## 安装
 
 ```bash
-pip install videocaptioner          # CLI（轻量，无 GUI 依赖）
-pip install videocaptioner[gui]     # CLI + GUI 桌面版
+pip install videocaptioner          # CLI + GUI 桌面版
 ```
 
 免费功能（转录、必应/谷歌翻译）无需任何配置，安装后直接使用。
+需要桌面版时运行 `videocaptioner-gui`、`videocaptioner gui`，或直接运行无参数的 `videocaptioner`。
 
 ---
 
@@ -25,6 +25,13 @@ videocaptioner process video.mp4 --asr bijian --translator bing --target-languag
 
 # 给视频加字幕
 videocaptioner synthesize video.mp4 -s subtitle.srt --subtitle-mode hard
+
+# 根据字幕生成配音音轨
+videocaptioner dub subtitle.srt --preset siliconflow-cn-female -o dub.wav
+
+# 全流程：视频 → 转录 → 翻译 → 配音视频
+videocaptioner process video.mp4 --translator bing --to zh-Hans \
+  --dub-only --preset siliconflow-cn-female
 ```
 
 ---
@@ -129,6 +136,52 @@ videocaptioner synthesize video.mp4 -s sub.srt --subtitle-mode hard \
 
 ---
 
+### `dub` — 字幕配音
+
+根据字幕时间轴生成配音音轨，可选把音轨写回视频。普通 SRT 可直接使用；多说话人可在字幕文本里写：
+
+```text
+[Alice] 你好，今天开始测试。
+Bob: This line uses another voice.
+```
+
+```bash
+# SiliconFlow CosyVoice2
+videocaptioner dub input.srt \
+  --preset siliconflow-cn-female \
+  --tts-api-key "$VIDEOCAPTIONER_TTS_API_KEY" \
+  -o output.wav
+
+# Gemini TTS
+videocaptioner dub input.srt \
+  --preset gemini-en-friendly \
+  --tts-api-key "$VIDEOCAPTIONER_TTS_API_KEY" \
+  -o output.wav
+
+# 多说话人音色映射，并输出视频
+videocaptioner dub input.srt --video video.mp4 \
+  --speaker-voice Alice=anna \
+  --speaker-voice Bob=benjamin \
+  -o video_dubbed.mp4
+```
+
+| 选项 | 说明 |
+|------|------|
+| `--preset` | 配音预设：如 `siliconflow-cn-female`、`siliconflow-cn-male`、`gemini-en-friendly` |
+| `--tts-api-key` | TTS API key。更推荐写入 `config set dubbing.api_key ...` |
+| `--voice` | 默认音色。SiliconFlow 可用 `anna`、`alex`、`benjamin` 短名；Gemini 使用 `Kore`、`Achird` 等内置名 |
+| `--speak auto/first/second` | 双语字幕时选择朗读第一行还是第二行 |
+| `--speaker-voice NAME=VOICE` | 给字幕中的说话人指定音色，可重复 |
+| `--speaker-clone NAME=AUDIO\|TEXT` | SiliconFlow 音色克隆参考音频与对应文本 |
+| `--clone-audio` / `--clone-text` | 给默认说话人使用 SiliconFlow 音色克隆 |
+| `--timing balanced/strict/natural/none` | 时间轴策略：默认平衡；`strict` 更贴字幕；`natural` 更保留自然语速 |
+| `--adapt-length` | 使用 LLM 缩短明显过长的台词 |
+| `--audio-mode replace/mix/duck` | 输出视频时替换原声、混合原声，或压低原声作为背景 |
+
+命令会额外生成 `*.dubbing.json` 报告，记录每句使用的说话人、音色、生成时长、变速倍数和时间轴 warning。
+
+---
+
 ### `process` — 全流程处理
 
 一键完成：转录 → 断句 → 优化 → 翻译 → 合成。支持上述所有命令的参数。
@@ -142,6 +195,28 @@ videocaptioner process <音视频文件> [选项]
 | 选项 | 说明 |
 |------|------|
 | `--no-synthesize` | 跳过视频合成（只输出字幕） |
+| `--dub` | 在转录/处理字幕后生成配音音轨或配音视频 |
+| `--dub-only` | 只输出配音结果，跳过字幕烧录/嵌入 |
+
+示例：
+
+```bash
+# 英文视频配成中文视频
+videocaptioner process talk.mp4 \
+  --asr bijian \
+  --translator bing --to zh-Hans \
+  --dub-only \
+  --preset siliconflow-cn-female \
+  --tts-api-key "$VIDEOCAPTIONER_TTS_API_KEY" \
+  --timing strict
+
+# 中文视频配成英文视频
+videocaptioner process input.mp4 \
+  --translator bing --to en \
+  --dub-only \
+  --preset gemini-en-friendly \
+  --tts-api-key "$VIDEOCAPTIONER_TTS_API_KEY"
+```
 
 音频文件自动跳过合成步骤。
 
@@ -175,7 +250,20 @@ videocaptioner config set <key> <value> # 设置配置项
 videocaptioner config get <key>         # 获取配置项
 videocaptioner config path              # 配置文件路径
 videocaptioner config init              # 交互式初始化
+videocaptioner config init --non-interactive --profile dubbing
+videocaptioner config init --print-template
 ```
+
+---
+
+### `doctor` — 环境诊断
+
+```bash
+videocaptioner doctor          # 检查依赖和配置
+videocaptioner doctor --json   # Agent/CI 友好的 JSON 输出
+```
+
+会检查 Python、FFmpeg/FFprobe、yt-dlp、配置文件、ASR、LLM、翻译和配音关键配置。缺失项会给出对应修复命令。
 
 ---
 
@@ -190,10 +278,36 @@ videocaptioner config init              # 交互式初始化
 | `OPENAI_API_KEY` | LLM API 密钥 |
 | `OPENAI_BASE_URL` | LLM API 地址 |
 | `OPENAI_MODEL` | LLM 模型名 |
+| `VIDEOCAPTIONER_DUB_PRESET` | 配音预设 |
+| `VIDEOCAPTIONER_TTS_API_KEY` | 配音 TTS API 密钥 |
+| `VIDEOCAPTIONER_TTS_API_BASE` | 配音 TTS API 地址 |
+| `VIDEOCAPTIONER_TTS_MODEL` | 配音 TTS 模型 |
+| `VIDEOCAPTIONER_TTS_VOICE` | 配音默认音色 |
+| `VIDEOCAPTIONER_TTS_WORKERS` | 并发 TTS 请求数 |
+| `VIDEOCAPTIONER_DUB_TIMING` | 配音时间轴策略 |
+| `VIDEOCAPTIONER_DUB_AUDIO_MODE` | 原声处理方式 |
+| `VIDEOCAPTIONER_TTS_MAX_SPEED` | 配音最大变速倍数 |
+| `VIDEOCAPTIONER_TTS_REWRITE_TOO_LONG` | 是否启用 LLM 缩短过长台词 |
 
 ### 配置文件
 
 位置：`~/.config/videocaptioner/config.toml`（macOS/Linux）
+
+推荐先运行：
+
+```bash
+videocaptioner config init
+videocaptioner doctor
+```
+
+非交互环境可以这样初始化：
+
+```bash
+videocaptioner config init --non-interactive --profile dubbing \
+  --translator bing \
+  --dub-preset siliconflow-cn-female \
+  --timing balanced --audio-mode replace
+```
 
 ```toml
 [llm]
@@ -203,15 +317,21 @@ model = "gpt-4o-mini"
 
 [transcribe]
 asr = "bijian"
-language = "auto"
 
 [subtitle]
 optimize = true
-translate = false
+split = true
 
 [translate]
-service = "llm"
-target_language = "zh-Hans"
+service = "bing"
+
+[dubbing]
+preset = "siliconflow-cn-female"
+api_key = ""
+voice = "anna"
+timing = "balanced"
+audio_mode = "replace"
+tts_workers = 5
 ```
 
 运行 `videocaptioner config show` 查看完整配置项。

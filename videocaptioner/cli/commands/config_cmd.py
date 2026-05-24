@@ -4,15 +4,19 @@ import os
 import subprocess
 import sys
 from argparse import Namespace
+from copy import deepcopy
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
 from videocaptioner.cli.config import (
     CONFIG_FILE,
     DEFAULTS,
+    _set_nested,
+    _write_toml,
     ensure_config_dir,
     format_config,
     get,
+    load_config_file,
     save_config_value,
 )
 
@@ -29,7 +33,7 @@ def run(args: Namespace, config: dict) -> int:
     elif action == "get":
         return _get(args.key, config)
     elif action == "init":
-        return _init()
+        return _init(args)
     elif action == "edit":
         return _edit()
     else:
@@ -87,43 +91,188 @@ def _get(key: str, config: dict) -> int:
     return EXIT.SUCCESS
 
 
-def _init() -> int:
+def _init(args: Namespace) -> int:
+    """Create an onboarding config file."""
+    config_data = _build_onboarding_config(args)
+    template = _render_onboarding_template(config_data)
+    if getattr(args, "print_template", False):
+        print(template)
+        return EXIT.SUCCESS
+    if getattr(args, "non_interactive", False):
+        return _write_onboarding_config(template, force=getattr(args, "force", False))
+    return _interactive_init(args, config_data)
+
+
+def _interactive_init(args: Namespace, config_data: dict) -> int:
     """Interactive configuration setup."""
     ensure_config_dir()
 
-    def _prompt(msg: str) -> str:
+    if CONFIG_FILE.exists() and not getattr(args, "force", False):
+        output.warn(f"Config file already exists: {CONFIG_FILE}")
+        output.hint("Use 'videocaptioner config init --force' to overwrite it.")
+        output.hint("Use 'videocaptioner config edit' to modify the existing file.")
+        return EXIT.USAGE_ERROR
+
+    def _prompt(msg: str, default: str = "") -> str:
         try:
-            return input(msg).strip()
+            raw = input(msg).strip()
+            return raw or default
         except (EOFError, KeyboardInterrupt):
             print()
-            output.hint("Non-interactive mode. Use 'videocaptioner config set <key> <value>' instead.")
-            return ""
+            output.hint("Non-interactive mode detected. Use 'videocaptioner config init --non-interactive'.")
+            raise
 
-    print("VideoCaptioner Configuration Setup")
+    print("VideoCaptioner Onboarding")
     print("=" * 40)
     print()
-
-    print("LLM Configuration (required for subtitle optimization and LLM translation)")
-    api_key = _prompt("  LLM API Key [skip]: ")
-    if api_key:
-        save_config_value("llm.api_key", api_key)
-
-    api_base = _prompt(f"  LLM API Base URL [{DEFAULTS['llm']['api_base']}]: ")
-    if api_base:
-        save_config_value("llm.api_base", api_base)
-
-    model = _prompt(f"  LLM Model [{DEFAULTS['llm']['model']}]: ")
-    if model:
-        save_config_value("llm.model", model)
-
+    print("Press Enter to keep the shown default. API keys can be skipped and added later.")
     print()
-    print("Whisper API Configuration (only needed for --asr whisper-api)")
-    whisper_key = _prompt("  Whisper API Key [skip]: ")
-    if whisper_key:
-        save_config_value("whisper_api.api_key", whisper_key)
 
-    print()
+    try:
+        _set_nested(config_data, "transcribe.asr", _prompt("ASR engine [bijian]: ", "bijian"))
+        _set_nested(config_data, "subtitle.optimize", _yes_no("Enable AI subtitle polish? It fixes obvious ASR errors and punctuation. [Y/n]: ", True))
+        _set_nested(config_data, "subtitle.split", _yes_no("Enable subtitle re-segmentation? [Y/n]: ", True))
+        translator = _prompt("Translator [bing] (bing/google/llm): ", "bing")
+        _set_nested(config_data, "translate.service", translator)
+        print()
+        print("LLM config is used for AI subtitle polish, LLM translation, and --adapt-length.")
+        _set_nested(config_data, "llm.api_key", _prompt("LLM API key [skip]: "))
+        _set_nested(config_data, "llm.api_base", _prompt(f"LLM API base [{DEFAULTS['llm']['api_base']}]: ", DEFAULTS["llm"]["api_base"]))
+        _set_nested(config_data, "llm.model", _prompt(f"LLM model [{DEFAULTS['llm']['model']}]: ", DEFAULTS["llm"]["model"]))
+        print()
+        print("Dubbing config is used by 'dub' and 'process --dub-only'.")
+        _set_nested(config_data, "dubbing.preset", _prompt("Dubbing preset [siliconflow-cn-female]: ", "siliconflow-cn-female"))
+        _set_nested(config_data, "dubbing.api_key", _prompt("TTS API key [skip]: "))
+        _set_nested(config_data, "dubbing.voice", _prompt("Default voice [anna]: ", "anna"))
+        _set_nested(config_data, "dubbing.timing", _prompt("Timing [balanced] (balanced/strict/natural/none): ", "balanced"))
+        _set_nested(config_data, "dubbing.audio_mode", _prompt("Audio mode [replace] (replace/mix/duck): ", "replace"))
+    except (EOFError, KeyboardInterrupt):
+        return EXIT.USAGE_ERROR
+
+    template = _render_onboarding_template(config_data)
+    return _write_onboarding_config(template, force=True)
+
+
+def _yes_no(prompt: str, default: bool) -> bool:
+    raw = input(prompt).strip().lower()
+    if not raw:
+        return default
+    return raw in {"y", "yes", "true", "1"}
+
+
+def _build_onboarding_config(args: Namespace) -> dict:
+    config_data = deepcopy(DEFAULTS)
+    profile = getattr(args, "profile", "basic")
+    _set_nested(config_data, "translate.service", "bing")
+    _set_nested(config_data, "dubbing.preset", "siliconflow-cn-female" if profile == "dubbing" else "")
+    _set_nested(config_data, "dubbing.voice", "anna")
+    _set_nested(config_data, "dubbing.timing", "balanced")
+    _set_nested(config_data, "dubbing.audio_mode", "replace")
+
+    mappings = {
+        "llm_api_key": "llm.api_key",
+        "llm_api_base": "llm.api_base",
+        "llm_model": "llm.model",
+        "asr": "transcribe.asr",
+        "translator": "translate.service",
+        "tts_api_key": "dubbing.api_key",
+        "dub_preset": "dubbing.preset",
+        "voice": "dubbing.voice",
+        "timing": "dubbing.timing",
+        "audio_mode": "dubbing.audio_mode",
+    }
+    for attr, key in mappings.items():
+        value = getattr(args, attr, None)
+        if value is not None:
+            _set_nested(config_data, key, value)
+    if getattr(args, "no_optimize", False):
+        _set_nested(config_data, "subtitle.optimize", False)
+    if getattr(args, "no_split", False):
+        _set_nested(config_data, "subtitle.split", False)
+    return config_data
+
+
+def _render_onboarding_template(config_data: dict) -> str:
+    """Human-readable, commented TOML template."""
+    from io import StringIO
+
+    template_data = _user_facing_config(config_data)
+    f = StringIO()
+    f.write("# VideoCaptioner configuration\n")
+    f.write("# Priority: CLI flags > environment variables > this file > built-in defaults.\n")
+    f.write("# Keep API keys private. This file is written with 0600 permissions on Unix.\n\n")
+    f.write("# [llm] is used for AI subtitle polish, LLM translation, reflective translation, and dubbing length adaptation.\n")
+    f.write("# [whisper_api] is only needed when transcribe.asr = \"whisper-api\".\n")
+    f.write("# [transcribe] controls speech-to-text. bijian/jianying need no key; whisper-cpp needs a local binary/model.\n")
+    f.write("# [subtitle] split and AI polish use LLM; [translate] can use bing/google/llm.\n")
+    f.write("# [synthesize] controls subtitle embedding/burning.\n")
+    f.write("# [dubbing] preset selects provider/model/voice defaults; timing controls speech fitting; audio_mode controls original audio.\n\n")
+    _write_toml(f, template_data)
+    f.write("\n# Optional multi-speaker example:\n")
+    f.write("# [dubbing.speakers.Alice]\n# voice = \"anna\"\n# [dubbing.speakers.Bob]\n# voice = \"benjamin\"\n# clone_audio = \"bob-reference.wav\"\n# clone_text = \"Exact words spoken in the reference audio.\"\n\n")
+    return f.getvalue()
+
+
+def _user_facing_config(config_data: dict) -> dict:
+    """Keep onboarding config focused on settings users actually choose."""
+    return {
+        "llm": {
+            "api_key": config_data["llm"]["api_key"],
+            "api_base": config_data["llm"]["api_base"],
+            "model": config_data["llm"]["model"],
+        },
+        "whisper_api": {
+            "api_key": config_data["whisper_api"]["api_key"],
+            "api_base": config_data["whisper_api"]["api_base"],
+            "model": config_data["whisper_api"]["model"],
+        },
+        "transcribe": {
+            "asr": config_data["transcribe"]["asr"],
+        },
+        "subtitle": {
+            "optimize": config_data["subtitle"]["optimize"],
+            "split": config_data["subtitle"]["split"],
+            "thread_num": config_data["subtitle"]["thread_num"],
+            "batch_size": config_data["subtitle"]["batch_size"],
+        },
+        "translate": {
+            "service": config_data["translate"]["service"],
+            "reflect": config_data["translate"]["reflect"],
+        },
+        "synthesize": {
+            "subtitle_mode": config_data["synthesize"]["subtitle_mode"],
+            "quality": config_data["synthesize"]["quality"],
+            "layout": config_data["synthesize"]["layout"],
+            "style": config_data["synthesize"]["style"],
+        },
+        "dubbing": {
+            "preset": config_data["dubbing"]["preset"],
+            "api_key": config_data["dubbing"]["api_key"],
+            "voice": config_data["dubbing"]["voice"],
+            "tts_workers": config_data["dubbing"]["tts_workers"],
+            "timing": config_data["dubbing"]["timing"],
+            "audio_mode": config_data["dubbing"]["audio_mode"],
+            "rewrite_too_long": config_data["dubbing"]["rewrite_too_long"],
+        },
+        "output": config_data["output"],
+    }
+
+
+def _write_onboarding_config(template: str, *, force: bool) -> int:
+    ensure_config_dir()
+    if CONFIG_FILE.exists() and not force:
+        output.warn(f"Config file already exists: {CONFIG_FILE}")
+        output.hint("Use --force to overwrite, or 'videocaptioner config edit' to modify it.")
+        return EXIT.USAGE_ERROR
+    CONFIG_FILE.write_text(template, encoding="utf-8")
+    try:
+        os.chmod(CONFIG_FILE, 0o600)
+    except OSError:
+        pass
+    # Validate parseability before reporting success.
+    load_config_file(CONFIG_FILE)
     output.success(f"Configuration saved to {CONFIG_FILE}")
+    output.hint("Run 'videocaptioner doctor' to check dependencies and missing keys.")
     return EXIT.SUCCESS
 
 

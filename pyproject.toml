@@ -20,7 +20,6 @@ classifiers = [
     "Topic :: Multimedia :: Video",
 ]
 
-# Base dependencies (CLI-only, no PyQt)
 dependencies = [
     "requests>=2.32.4",
     "openai>=1.97.1",
@@ -34,16 +33,15 @@ dependencies = [
     "fonttools>=4.61.1",
     "platformdirs>=4.0.0",
     "tomli>=2.0.0; python_version < '3.11'",
-]
-
-[project.optional-dependencies]
-gui = [
     "PyQt5==5.15.11",
     "PyQt-Fluent-Widgets==1.8.4",
     "modelscope>=1.32.0",
     "psutil>=7.0.0",
     "GPUtil>=1.4.0",
 ]
+
+[project.optional-dependencies]
+gui = []
 
 [project.urls]
 Homepage = "https://github.com/WEIFENG2333/VideoCaptioner"
@@ -52,8 +50,9 @@ Issues = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 
 [project.scripts]
 videocaptioner = "videocaptioner.cli.main:main"
+videocaptioner-gui = "videocaptioner.ui.main:main"
 
-# videocaptioner (no args) auto-launches GUI if [gui] extras are installed
+# videocaptioner (no args), videocaptioner gui, and videocaptioner-gui launch the GUI.
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
