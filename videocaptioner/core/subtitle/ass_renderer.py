@@ -12,6 +12,7 @@ from PIL import Image
 from videocaptioner.config import CACHE_PATH, FONTS_PATH, RESOURCE_PATH
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.platform_utils import get_subprocess_kwargs
 
 from .ass_utils import auto_wrap_ass_file
 
@@ -172,11 +173,7 @@ def render_ass_preview(
                         str(default_bg),
                     ],
                     capture_output=True,
-                    creationflags=(
-                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
-                        if os.name == "nt"
-                        else 0
-                    ),
+                    **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
                 )
             bg_path_obj = default_bg
 
@@ -205,9 +202,7 @@ def render_ass_preview(
         result = subprocess.run(
             cmd,
             capture_output=True,
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
         )
 
         if result.returncode != 0:
@@ -228,9 +223,7 @@ def _get_video_resolution(video_path: str) -> Tuple[int, int]:
         ["ffmpeg", "-i", video_path],
         capture_output=True,
         text=True,
-        creationflags=(
-            getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-        ),
+        **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
     )
 
     # 从 ffmpeg 输出中解析分辨率
@@ -350,9 +343,7 @@ def render_ass_video(
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-                ),
+                **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
             )
 
             # 实时Reading输出并调用回调

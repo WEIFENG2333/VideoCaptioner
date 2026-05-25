@@ -17,6 +17,7 @@ from ..subtitle.ass_renderer import render_ass_video
 from ..subtitle.ass_utils import auto_wrap_ass_file
 from ..subtitle.rounded_renderer import render_rounded_video
 from ..utils.logger import setup_logger
+from ..utils.platform_utils import get_subprocess_kwargs
 
 if TYPE_CHECKING:
     from videocaptioner.core.asr.asr_data import ASRData
@@ -104,9 +105,7 @@ def video2audio(input_file: str, output: str = "", audio_track_index: int = 0) -
             check=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
         )
         if result.returncode == 0 and Path(output).is_file():
             logger.debug("Audio conversion complete")
@@ -136,9 +135,7 @@ def check_cuda_available() -> bool:
             ["ffmpeg", "-hwaccels"],
             capture_output=True,
             text=True,
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
         )
         if "cuda" not in result.stdout.lower():
             logger.debug("CUDA not in FFmpeg hwaccels list")
@@ -149,9 +146,7 @@ def check_cuda_available() -> bool:
             ["ffmpeg", "-hide_banner", "-init_hw_device", "cuda"],
             capture_output=True,
             text=True,
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
         )
 
         # 如果stderr中包含"Cannot load cuda" 或 "Failed to load"等Error output，说明CUDA不可用
@@ -232,11 +227,7 @@ def add_subtitles(
                     text=True,
                     encoding="utf-8",
                     errors="replace",
-                    creationflags=(
-                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
-                        if os.name == "nt"
-                        else 0
-                    ),
+                    **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
                 )
                 logger.debug("Soft subtitle added")
             except subprocess.CalledProcessError as e:
@@ -301,11 +292,7 @@ def add_subtitles(
                     text=True,
                     encoding="utf-8",
                     errors="replace",
-                    creationflags=(
-                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
-                        if os.name == "nt"
-                        else 0
-                    ),
+                    **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
                 )
 
                 # 实时Reading输出并调用回调函数
@@ -390,9 +377,7 @@ def get_video_info(
             text=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
         )
         info = result.stderr
 
@@ -514,9 +499,7 @@ def _extract_thumbnail(video_path: str, seek_time: float, thumbnail_path: str) -
             text=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            **get_subprocess_kwargs(),  # Windows 隐藏控制台窗口
         )
         return result.returncode == 0
 
