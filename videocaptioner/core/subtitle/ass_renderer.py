@@ -224,20 +224,41 @@ def render_ass_preview(
 
 def _get_video_resolution(video_path: str) -> Tuple[int, int]:
     """获取视频分辨率"""
-    result = subprocess.run(
-        ["ffmpeg", "-i", video_path],
-        capture_output=True,
-        text=True,
-        creationflags=(
-            getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-        ),
-    )
-
+    try:
+        # 使用 bytes 输出避免编码问题
+        result = subprocess.run(
+            ["ffmpeg", "-i", video_path],
+            capture_output=True,
+            text=False,  # 禁用自动文本解码
+            creationflags=(
+                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+            ),
+        )
+        
+        # 处理编码问题：尝试多种编码
+        if result.stderr:
+            raw_stderr = result.stderr
+            
+            # 优先尝试 UTF-8，失败时使用错误替换模式
+            try:
+                decoded_content = raw_stderr.decode('utf-8')
+            except UnicodeDecodeError:
+                # UTF-8 失败时使用错误替换模式
+                decoded_content = raw_stderr.decode('utf-8', errors='replace')
+        else:
+            decoded_content = ""
+    
+    except Exception as e:
+        logger.error(f"获取视频分辨率时发生异常: {e}")
+        return 1920, 1080
+    
     # 从 ffmpeg 输出中解析分辨率
     pattern = r"(\d{2,5})x(\d{2,5})"
-    match = re.search(pattern, result.stderr)
+    match = re.search(pattern, decoded_content)
     if match:
         return int(match.group(1)), int(match.group(2))
+    
+    logger.warning(f"无法解析分辨率，使用默认值 1920x1080")
     return 1920, 1080  # 默认返回 1080P
 
 
