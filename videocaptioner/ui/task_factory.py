@@ -55,7 +55,7 @@ class TaskFactory:
     ) -> TranscribeTask:
         """创建转录任务"""
         # 获取文件名
-        file_name = Path(file_path).stem
+        file_name = Path(file_path).stem.strip()
 
         # 构建输出路径
         if need_next_task:
