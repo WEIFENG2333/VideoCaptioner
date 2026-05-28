@@ -40,7 +40,7 @@ head:
 ```bash
 # 1. 克隆项目
 git clone https://github.com/WEIFENG2333/VideoCaptioner.git
-cd VideoCaptioner
+cd VideoCaptioner/scripts
 
 # 2. 运行安装脚本
 chmod +x run.sh
