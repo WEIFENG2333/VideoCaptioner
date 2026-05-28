@@ -23,6 +23,13 @@ if TYPE_CHECKING:
 logger = setup_logger("subtitle.rounded")
 
 
+def _tail_text(text: str, limit: int = 6000) -> str:
+    """Keep FFmpeg errors useful without dumping minutes of progress output."""
+    if len(text) <= limit:
+        return text
+    return f"...(truncated, showing last {limit} chars)\n{text[-limit:]}"
+
+
 def _get_video_info(video_path: str) -> Tuple[int, int, float]:
     """获取视频分辨率和时长"""
     result = subprocess.run(
@@ -375,7 +382,11 @@ def render_rounded_video(
         logger.debug("Overlaying subtitle batches onto video")
         BATCH_SIZE = 50
         current_video = video_path
+        current_intermediate: Optional[Path] = None
         total_batches = (len(subtitle_frames) + BATCH_SIZE - 1) // BATCH_SIZE
+        # Keep intermediate files bounded; the final batch still uses requested quality.
+        intermediate_crf = "18"
+        intermediate_preset = "ultrafast"
 
         for batch_idx in range(total_batches):
             start_idx = batch_idx * BATCH_SIZE
@@ -403,12 +414,16 @@ def render_rounded_video(
             batch_output = (
                 output_path if is_last_batch else temp_path / f"batch_{batch_idx:03d}.mp4"
             )
+            previous_intermediate = current_intermediate
 
             logger.debug(f"Processing batch {batch_idx + 1}/{total_batches}（{len(batch_frames)}个字幕）")
             # 构建 ffmpeg Command
             # -t 参数强制保持原视频时长，防止因 overlay ended而截断视频
             cmd = [
                 "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
                 "-y",
                 *input_args,
                 "-filter_complex",
@@ -422,9 +437,9 @@ def render_rounded_video(
                 "-c:v",
                 "libx264",
                 "-preset",
-                "ultrafast" if not is_last_batch else preset,
+                intermediate_preset if not is_last_batch else preset,
                 "-crf",
-                "0" if not is_last_batch else str(crf),
+                intermediate_crf if not is_last_batch else str(crf),
                 "-pix_fmt",
                 "yuv420p",
                 "-c:a",
@@ -448,8 +463,14 @@ def render_rounded_video(
             )
 
             if result.returncode != 0:
-                logger.error(f"批次 {batch_idx + 1} 失败: {result.stderr}")
+                logger.error(f"批次 {batch_idx + 1} 失败: {_tail_text(result.stderr)}")
                 raise RuntimeError(f"Subtitle processing failed（批次 {batch_idx + 1}）")
+
+            if previous_intermediate:
+                previous_intermediate.unlink(missing_ok=True)
+
+            for _, _, png_path in batch_frames:
+                png_path.unlink(missing_ok=True)
 
             # 更新进度 (30-100%)
             if progress_callback:
@@ -458,5 +479,6 @@ def render_rounded_video(
 
             # 更新当前视频
             current_video = str(batch_output)
+            current_intermediate = None if is_last_batch else Path(batch_output)
 
         logger.debug("Video synthesis complete")
