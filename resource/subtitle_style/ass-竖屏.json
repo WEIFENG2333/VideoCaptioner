@@ -1,0 +1,21 @@
+{
+  "name": "竖屏",
+  "description": "",
+  "mode": "ass",
+  "font_name": "Noto Sans SC",
+  "font_size": 24,
+  "primary_color": "#fffbf9",
+  "outline_color": "#000000",
+  "outline_width": 1.4,
+  "bold": true,
+  "spacing": 0.8,
+  "margin_bottom": 150,
+  "secondary": {
+    "font_name": "Candara",
+    "font_size": 18,
+    "color": "#ffffff",
+    "outline_color": "#000000",
+    "outline_width": 1.6,
+    "spacing": 0.8
+  }
+}
