@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from videocaptioner.core.asr.asr_data import ASRData
+
 # ============================================================================
 # ASR-Specific Fixtures
 # ============================================================================
@@ -85,7 +87,7 @@ def test_audio_path_en() -> Path:
     return audio_path
 
 
-def assert_asr_result_valid(result, min_segments: int = 0) -> None:
+def assert_asr_result_valid(result: ASRData, min_segments: int = 0) -> None:
     """Validate ASR result structure and content.
 
     Checks that:
