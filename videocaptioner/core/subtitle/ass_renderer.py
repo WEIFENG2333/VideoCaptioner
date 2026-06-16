@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from PIL import Image
 
-from videocaptioner.config import CACHE_PATH, FONTS_PATH, RESOURCE_PATH
+from videocaptioner.config import FONTS_PATH, RESOURCE_PATH
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
 
 from .ass_utils import auto_wrap_ass_file
+from .preview_cache import preview_path
+from .preview_cache import prune as prune_preview_cache
 
 if TYPE_CHECKING:
     from videocaptioner.core.asr.asr_data import ASRData
@@ -174,6 +176,14 @@ def render_ass_preview(
 
     original_text, translate_text = preview_text
 
+    # 内容寻址缓存：同样的样式 + 文字 + 背景 + 尺寸只渲染一次，来回切换/重复编辑直接命中
+    output_path = preview_path(
+        f"ass|{style_str}|{original_text}|{translate_text}|{bg_image_path}"
+        f"|{width}x{height}|ref{reference_height}|gap{line_gap}"
+    )
+    if output_path.exists():
+        return str(output_path)
+
     # 先按图片高度缩放样式，主副间距也同比缩放，再据此构建对话行
     scale_factor = height / reference_height
     style_str = _scale_ass_style(style_str, scale_factor)
@@ -241,8 +251,6 @@ def render_ass_preview(
                 )
             bg_path_obj = default_bg
 
-        # 生成预览图
-        output_path = CACHE_PATH / "ass_preview.png"
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # 处理 ASS 文件路径（Windows 兼容）
@@ -281,6 +289,8 @@ def render_ass_preview(
 
         if result.returncode != 0:
             logger.error("FFmpeg preview generation failed: %s", result.stderr.strip())
+        else:
+            prune_preview_cache()
 
         return str(output_path)
 

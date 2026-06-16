@@ -356,10 +356,10 @@ class Config(SettingsState):
     # 预览示例文字（原文 / 译文），可自定义
     subtitle_preview_source = SettingField(
         "SubtitleStyle", "PreviewSource",
-        "Welcome to apply for the prestigious South China Normal University!",
+        "Mathematics is the language in which the laws of the universe are written.",
     )
     subtitle_preview_target = SettingField(
-        "SubtitleStyle", "PreviewTarget", "欢迎报考百年名校华南师范大学",
+        "SubtitleStyle", "PreviewTarget", "数学，是书写宇宙规律的语言。",
     )
 
     # 字幕渲染模式

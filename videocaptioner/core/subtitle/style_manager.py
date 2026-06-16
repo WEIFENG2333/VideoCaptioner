@@ -64,6 +64,7 @@ class AssSecondaryStyle:
     outline_color: str = "#000000"
     outline_width: float = 2.0
     spacing: float = 0.8
+    bold: bool = True
 
 
 SecondaryStyle = AssSecondaryStyle
@@ -95,7 +96,9 @@ class AssSubtitleStyle:
         secondary = self.secondary or AssSecondaryStyle(
             font_name=self.font_name,
             font_size=max(8, int(self.font_size * 0.72)),
+            bold=self.bold,
         )
+        sec_bold_flag = -1 if secondary.bold else 0
         sec_color = _hex_to_ass(secondary.color)
         sec_outline = _hex_to_ass(secondary.outline_color)
         header = (
@@ -114,7 +117,7 @@ class AssSubtitleStyle:
         secondary_line = (
             f"Style: Secondary,{secondary.font_name},{secondary.font_size},"
             f"{sec_color},&H000000FF,{sec_outline},&H00000000,"
-            f"{bold_flag},0,0,0,100,100,{secondary.spacing},0,1,"
+            f"{sec_bold_flag},0,0,0,100,100,{secondary.spacing},0,1,"
             f"{secondary.outline_width},0,{align},{margin_lr},{margin_lr},{self.margin_bottom},1,\\q1"
         )
         return f"{header}\n{default_line}\n{secondary_line}"
@@ -449,19 +452,22 @@ def preset_from_json(
             align=str(data.get("align") or "center"),
         )
     else:
+        primary_bold = bool(data.get("bold", True))
         secondary_data = data.get("secondary")
-        secondary = (
-            AssSecondaryStyle(**secondary_data)
-            if isinstance(secondary_data, dict)
-            else None
-        )
+        if isinstance(secondary_data, dict):
+            # 旧样式只存主字幕 bold（当时主副共用），副字幕缺省时沿用主字幕加粗，
+            # 保证历史样式渲染不变；新样式可独立设置副字幕加粗。
+            secondary_data = {"bold": primary_bold, **secondary_data}
+            secondary = AssSecondaryStyle(**secondary_data)
+        else:
+            secondary = None
         style = AssSubtitleStyle(
             font_name=str(data.get("font_name") or "Noto Sans SC"),
             font_size=int(data.get("font_size") or 42),
             primary_color=str(data.get("primary_color") or "#ffffff"),
             outline_color=str(data.get("outline_color") or "#000000"),
             outline_width=float(data.get("outline_width") or 2.0),
-            bold=bool(data.get("bold", True)),
+            bold=primary_bold,
             spacing=float(data.get("spacing") or 0.0),
             margin_bottom=int(data.get("margin_bottom") or 30),
             max_width=int(data.get("max_width") or 100),
@@ -595,6 +601,7 @@ def _parse_ass_txt(content: str) -> AssSubtitleStyle:
             secondary_kwargs["font_size"] = int(parts[2])
             secondary_kwargs["color"] = _ass_color_to_hex(parts[3])
             secondary_kwargs["outline_color"] = _ass_color_to_hex(parts[5])
+            secondary_kwargs["bold"] = parts[7].strip() == "-1"
             secondary_kwargs["spacing"] = float(parts[13])
             secondary_kwargs["outline_width"] = float(parts[16])
 

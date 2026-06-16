@@ -466,6 +466,34 @@ LANGUAGES = {
 }
 
 
+# 各转录接口支持的源语言（唯一真源，CLI 与 GUI 共用）。
+# B 接口（必剪）/ J 接口（剪映）是国内剪辑工具的云端 ASR，只识别中文与英文，
+# 且实际由服务端自动判别、忽略显式语言；其余接口（Whisper / Fun-ASR）支持多语种。
+# 不在表内的接口视为「不限制」，可选全部 TranscribeLanguageEnum。
+TRANSCRIBE_MODEL_LANGUAGES: dict[
+    TranscribeModelEnum, tuple[TranscribeLanguageEnum, ...]
+] = {
+    TranscribeModelEnum.BIJIAN: (
+        TranscribeLanguageEnum.AUTO,
+        TranscribeLanguageEnum.CHINESE,
+        TranscribeLanguageEnum.ENGLISH,
+    ),
+    TranscribeModelEnum.JIANYING: (
+        TranscribeLanguageEnum.AUTO,
+        TranscribeLanguageEnum.CHINESE,
+        TranscribeLanguageEnum.ENGLISH,
+    ),
+}
+
+
+def transcribe_languages_for(
+    model: TranscribeModelEnum,
+) -> list[TranscribeLanguageEnum]:
+    """该转录接口可选的源语言；未在限制表中的接口返回全部语言。"""
+    restricted = TRANSCRIBE_MODEL_LANGUAGES.get(model)
+    return list(restricted) if restricted is not None else list(TranscribeLanguageEnum)
+
+
 @dataclass
 class AudioStreamInfo:
     """音频流信息"""

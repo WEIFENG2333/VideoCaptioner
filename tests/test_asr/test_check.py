@@ -8,7 +8,12 @@ from pathlib import Path
 
 from videocaptioner.core.asr.check import TEST_AUDIO_PATH, check_transcribe
 from videocaptioner.core.asr.transcribe import _create_asr_instance
-from videocaptioner.core.entities import TranscribeConfig, TranscribeModelEnum
+from videocaptioner.core.entities import (
+    TranscribeConfig,
+    TranscribeLanguageEnum,
+    TranscribeModelEnum,
+    transcribe_languages_for,
+)
 
 
 def _config(model=TranscribeModelEnum.BIJIAN) -> TranscribeConfig:
@@ -66,3 +71,33 @@ class TestUseCachePassthrough:
             assert asr.asr_kwargs["use_cache"] is False, config.transcribe_model
             asr = _create_asr_instance(str(audio), config)
             assert asr.asr_kwargs["use_cache"] is True, config.transcribe_model
+
+
+class TestTranscribeLanguageSupport:
+    """各接口支持的源语言（唯一真源，GUI 据此收窄下拉）。"""
+
+    def test_bijian_jianying_only_zh_en(self):
+        expected = [
+            TranscribeLanguageEnum.AUTO,
+            TranscribeLanguageEnum.CHINESE,
+            TranscribeLanguageEnum.ENGLISH,
+        ]
+        assert transcribe_languages_for(TranscribeModelEnum.BIJIAN) == expected
+        assert transcribe_languages_for(TranscribeModelEnum.JIANYING) == expected
+
+    def test_whisper_and_fun_asr_support_all_languages(self):
+        full = list(TranscribeLanguageEnum)
+        for model in (
+            TranscribeModelEnum.WHISPER_API,
+            TranscribeModelEnum.WHISPER_CPP,
+            TranscribeModelEnum.FASTER_WHISPER,
+            TranscribeModelEnum.BAILIAN_FUN_ASR,
+        ):
+            assert transcribe_languages_for(model) == full
+
+    def test_bijian_jianying_do_not_receive_language(self):
+        # B/J 接口忽略源语言（服务端自动判别中英），不应把 language 透传给它们
+        audio = str(TEST_AUDIO_PATH)
+        for model in (TranscribeModelEnum.BIJIAN, TranscribeModelEnum.JIANYING):
+            asr = _create_asr_instance(audio, _config(model), use_cache=False)
+            assert "language" not in asr.asr_kwargs, model

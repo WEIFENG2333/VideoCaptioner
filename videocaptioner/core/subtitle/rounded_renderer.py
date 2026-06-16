@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 from PIL import Image, ImageDraw
 
 from videocaptioner.core.entities import SubtitleLayoutEnum
+from videocaptioner.core.subtitle.preview_cache import preview_path
+from videocaptioner.core.subtitle.preview_cache import prune as prune_preview_cache
 from videocaptioner.core.utils.logger import setup_logger
 
 from .font_utils import FontType, get_font
@@ -233,22 +235,32 @@ def render_preview(
     if style is None:
         style = RoundedBgStyle()
 
-    # 加载或创建背景
-    if bg_image_path and Path(bg_image_path).exists():
-        background = Image.open(bg_image_path).convert("RGB")
-        # 如果未提供尺寸，从图片获取
-        if width is None or height is None:
-            width, height = background.size
-    else:
-        # 没有背景图片，使用默认尺寸或提供的尺寸
-        if width is None:
-            width = 1920
-        if height is None:
-            height = 1080
-        background = Image.new("RGB", (width, height), (20, 20, 20))
-
-    # 确保 width 和 height 不为 None（类型收窄）
+    # 先解析尺寸（懒探测，不解码像素）以构建缓存签名
+    has_bg = bool(bg_image_path) and Path(bg_image_path).exists()
+    if width is None or height is None:
+        if has_bg:
+            with Image.open(bg_image_path) as probe:
+                bw, bh = probe.size
+            width = width or bw
+            height = height or bh
+        else:
+            width = width or 1920
+            height = height or 1080
     assert width is not None and height is not None
+
+    # 内容寻址缓存：同样的样式 + 文字 + 背景 + 尺寸只渲染一次，命中即直接返回
+    output_path = preview_path(
+        f"rounded|{primary_text}|{secondary_text}|{width}x{height}"
+        f"|{bg_image_path}|ref{reference_height}|{style!r}"
+    )
+    if output_path.exists():
+        return str(output_path)
+
+    # 加载或创建背景
+    if has_bg:
+        background = Image.open(bg_image_path).convert("RGB")
+    else:
+        background = Image.new("RGB", (width, height), (20, 20, 20))
 
     # 从样式中获取参考高度，根据图片高度自动缩放样式
     scale_factor = height / reference_height
@@ -269,10 +281,9 @@ def render_preview(
     subtitle_img = render_subtitle_image(primary_text, secondary_text, width, height, style)
     background.paste(subtitle_img, (0, 0), subtitle_img)
 
-    # 保存到临时目录
-    with tempfile.NamedTemporaryFile(mode="wb", suffix=".png", delete=False) as tmp_file:
-        background.save(tmp_file, "PNG")
-        return tmp_file.name
+    background.save(output_path, "PNG")
+    prune_preview_cache()
+    return str(output_path)
 
 
 def render_rounded_video(

@@ -51,8 +51,10 @@ from videocaptioner.core.download import (
 from videocaptioner.core.dubbing import build_dubbing_config, get_dubbing_preset
 from videocaptioner.core.entities import (
     LLMServiceEnum,
+    TranscribeLanguageEnum,
     TranscribeModelEnum,
     TranslatorServiceEnum,
+    transcribe_languages_for,
 )
 from videocaptioner.core.llm.check_llm import check_llm_connection, get_available_models
 from videocaptioner.core.speech import (
@@ -206,15 +208,16 @@ class SettingInterface(SettingsShell):
                 group,
             )
         )
+        self.transcribeLanguageControl = BoundComboBox(
+            cfg.transcribe_language,
+            options_from(cfg.transcribe_language.validator.options),
+            group,
+        )
         self.transcribeLanguageRow = group.addRow(
             SettingRow(
                 self.tr("源语言"),
                 self.tr("音视频中说话的语言，不确定时保持自动检测。"),
-                BoundComboBox(
-                    cfg.transcribe_language,
-                    options_from(cfg.transcribe_language.validator.options),
-                    group,
-                ),
+                self.transcribeLanguageControl,
                 group,
             )
         )
@@ -1010,6 +1013,15 @@ class SettingInterface(SettingsShell):
             row.setVisible(is_fun_asr)
         if is_fun_asr and cfg.fun_asr_api_base.value.strip() != "https://dashscope.aliyuncs.com":
             cfg.set(cfg.fun_asr_api_base, "https://dashscope.aliyuncs.com")
+        # 源语言按接口能力收窄：B/J 接口只识别中英，其余接口提供全语种。
+        # 当前选择若不在新接口的支持集内，回落到自动检测。
+        languages = transcribe_languages_for(value)
+        if cfg.transcribe_language.value in languages:
+            self.transcribeLanguageControl.setOptions(options_from(languages))
+        else:
+            self.transcribeLanguageControl.setOptions(
+                options_from(languages), keep_value=TranscribeLanguageEnum.AUTO
+            )
         # 模型行的最终可见性还取决于"有没有已下载的模型"
         self._refresh_model_choices()
 

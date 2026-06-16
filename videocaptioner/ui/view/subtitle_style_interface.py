@@ -8,10 +8,11 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Optional, Tuple
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt5.QtGui import QColor, QFontDatabase
 from PyQt5.QtWidgets import (
     QFileDialog,
@@ -67,8 +68,12 @@ from videocaptioner.ui.components.workbench import (
     draw_rounded_surface,
 )
 
-# 预览示例文本（原文, 译文）——只用于样式预览，不进配置。
-PREVIEW_TEXT = ("Welcome to apply for the prestigious South China Normal University!", "欢迎报考百年名校华南师范大学")
+# 预览示例文本（原文, 译文）的兜底：用户清空自定义时回落到配置里的默认值，
+# 直接取 SettingField 默认，避免再硬编码一份导致与 config 漂移。
+PREVIEW_TEXT = (
+    cfg.subtitle_preview_source.defaultValue,
+    cfg.subtitle_preview_target.defaultValue,
+)
 
 DEFAULT_BG_LANDSCAPE = ASSETS_PATH / "default_bg_landscape.png"
 DEFAULT_BG_PORTRAIT = ASSETS_PATH / "default_bg_portrait.png"
@@ -211,6 +216,13 @@ class SubtitleStyleInterface(QWidget):
         self._preview_threads: list[QThread] = []
         self._preview_generation = 0
         self._cards: list[StyleCard] = []
+        # 预览防抖（前沿触发）：空闲后第一次调用立即渲染（首屏/切换不闪空），
+        # 紧接着的连拍（连点步进器等）合并到末尾再渲一次，避免 ASS(ffmpeg) 渲染堆积。
+        self._last_preview_ts = 0.0
+        self._preview_timer = QTimer(self)
+        self._preview_timer.setSingleShot(True)
+        self._preview_timer.setInterval(120)
+        self._preview_timer.timeout.connect(self._render_preview_now)
         # 渲染模式专属控件引用（重建参数面板时刷新）
         self._ass: dict = {}
         self._rounded: dict = {}
@@ -543,6 +555,8 @@ class SubtitleStyleInterface(QWidget):
             secondary.addRow(InspectorRow(AppIcon.BRUSH, self.tr("描边宽度"), a["sec_outline"]))
             a["sec_spacing"] = self._stepper(0.8, 0, 12, 0.2, decimals=1, suffix="px")
             secondary.addRow(InspectorRow(AppIcon.FONT, self.tr("字间距"), a["sec_spacing"]))
+            a["sec_bold"] = self._toggle(True)
+            secondary.addRow(InspectorRow(AppIcon.FONT, self.tr("加粗"), a["sec_bold"]))
             groups.append(secondary)
 
             position = InspectorGroup(self.tr("位置"))
@@ -707,8 +721,6 @@ class SubtitleStyleInterface(QWidget):
             if c in self._cards:
                 self.trackScroll.ensureWidgetVisible(c, 24, 0)
 
-        from PyQt5.QtCore import QTimer
-
         QTimer.singleShot(0, _do)
 
     # ---------------------------------------------------------------- 控件 ↔ 样式
@@ -751,8 +763,10 @@ class SubtitleStyleInterface(QWidget):
                 a["sec_outline_color"].setColor(QColor(sec.outline_color))
                 a["sec_outline"].setValue(sec.outline_width)
                 a["sec_spacing"].setValue(sec.spacing)
+                a["sec_bold"].setChecked(sec.bold)
             else:
                 self._set_font(a["sec_font"], s.font_name)
+                a["sec_bold"].setChecked(s.bold)  # 无副字幕样式时沿用主字幕加粗
         self._loading = False
 
     def _preset_from_controls(self, style_id: str, name: Optional[str] = None) -> SubtitleStylePreset:
@@ -795,6 +809,7 @@ class SubtitleStyleInterface(QWidget):
                     outline_color=a["sec_outline_color"].color().name(QColor.HexRgb),
                     outline_width=a["sec_outline"].value(),
                     spacing=a["sec_spacing"].value(),
+                    bold=a["sec_bold"].isChecked(),
                 ),
             )
             renderer = SubtitleRenderer.ASS
@@ -973,6 +988,15 @@ class SubtitleStyleInterface(QWidget):
         return str(DEFAULT_BG_LANDSCAPE if self._orientation == "横屏" else DEFAULT_BG_PORTRAIT)
 
     def update_preview(self):
+        """预览刷新入口：空闲后首次立即渲染，连拍则防抖合并到末尾。"""
+        if time.monotonic() - self._last_preview_ts > 0.15:
+            self._preview_timer.stop()
+            self._render_preview_now()
+        else:
+            self._preview_timer.start()
+
+    def _render_preview_now(self):
+        self._last_preview_ts = time.monotonic()
         if not (self._ass or self._rounded):
             return
         main, sub = self._preview_pair()
