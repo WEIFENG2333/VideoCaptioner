@@ -183,7 +183,10 @@ def run(args: Namespace, config: dict) -> int:
 
     try:
         # 1. Split (if word-level timestamps available)
-        if need_split and asr_data.is_word_timestamp():
+        if (
+            need_split
+            #and asr_data.is_word_timestamp()
+        ):
             if progress:
                 progress.update(5, "Splitting subtitles...")
             from videocaptioner.core.split.split import SubtitleSplitter

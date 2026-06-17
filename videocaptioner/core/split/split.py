@@ -251,7 +251,7 @@ class SubtitleSplitter:
         for asr_data in asr_data_list:
             if not self.executor:
                 raise ValueError("Thread pool not initialized")
-            future = self.executor.submit(self._process_single_segment, asr_data)
+            future = self.executor.submit(self._process_single_segment, asr_data.segments)
             futures.append(future)
 
         processed_segments = []
@@ -266,15 +266,15 @@ class SubtitleSplitter:
 
         return processed_segments
 
-    def _process_single_segment(self, asr_data_part: ASRData) -> List[ASRDataSeg]:
+    def _process_single_segment(self, asr_data_part_segments: List[ASRDataSeg]) -> List[ASRDataSeg]:
         """处理单个Segments(带重试和降级)"""
-        if not asr_data_part.segments:
+        if not asr_data_part_segments:
             return []
         try:
-            return self._process_by_llm(asr_data_part.segments)
+            return self._process_by_llm(asr_data_part_segments)
         except Exception as e:
             logger.warning(f"LLM processing failed, falling back to rules: {str(e)}")
-            return self._process_by_rules(asr_data_part.segments)
+            return self._process_by_rules(asr_data_part_segments)
 
     def _process_by_llm(self, segments: List[ASRDataSeg]) -> List[ASRDataSeg]:
         """使用LLM进行智能Segments
@@ -592,9 +592,34 @@ class SubtitleSplitter:
         self, processed_segments: List[List[ASRDataSeg]]
     ) -> List[ASRDataSeg]:
         """合并All处理后的Segments并排序"""
+        # 按每个 List[ASRDataSeg] 的第一个元素的开始时间进行排序
+        processed_segments.sort(key=lambda s: s[0].start_time if s else 0)
+
         final_segments = []
         for segments in processed_segments:
-            final_segments.extend(segments)
+            if not segments:
+                continue
+
+            if not final_segments:
+                final_segments.extend(segments)
+            else:
+                # 1. 处理边界问题：
+                # 上一个 chunk 的末尾和当前 chunk 的开头很大可能是同一个 sentence 的前后两部分
+                # 将这两个边界的 ASRDataSeg 组成一个新的 List[ASRDataSeg] 再处理一次
+                tail_seg_of_cur: ASRDataSeg = final_segments.pop()
+                head_seg_of_next: ASRDataSeg = segments.pop(0)
+                boundary_pair = [tail_seg_of_cur, head_seg_of_next]
+                asr_data_of_boundary_pair = ASRData(boundary_pair)
+                if not asr_data_of_boundary_pair.is_word_timestamp():
+                    asr_data_of_boundary_pair = asr_data_of_boundary_pair.split_to_word_segments()
+
+                # 2. 预处理
+                asr_data_of_boundary_pair.segments = preprocess_segments(asr_data_of_boundary_pair.segments, need_lower=False)
+
+                reprocessed = self._process_single_segment(asr_data_of_boundary_pair.segments)
+
+                final_segments.extend(reprocessed)
+                final_segments.extend(segments)
 
         final_segments.sort(key=lambda seg: seg.start_time)
         return final_segments
