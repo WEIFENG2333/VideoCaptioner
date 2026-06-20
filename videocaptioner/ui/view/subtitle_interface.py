@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """字幕优化与翻译页：两栏审校工作台。
 
-布局与状态对应 docs/dev/design-subtitle.html（版本 B）：
 左侧是字幕表格面板（文件行 + 可编辑表格 + 底部状态条），
 右侧是固定 340px 的处理设置栏（选项卡片 + 主操作按钮）。
 
@@ -114,7 +113,7 @@ class PageState(Enum):
 
 
 def _format_table_clock(ms: int) -> str:
-    """表格时间戳（设计稿短格式）：00:01.12，超过 1 小时带小时位。"""
+    """表格时间戳短格式：00:01.12，超过 1 小时带小时位。"""
     centis = (max(0, int(ms)) % 1000) // 10
     total = max(0, int(ms)) // 1000
     hours, rest = divmod(total, 3600)
@@ -242,7 +241,7 @@ class SubtitleTableModel(QAbstractTableModel):
             )
 
     def set_dim_from(self, row: Optional[int]) -> None:
-        """处理中：row 之后的行变暗（设计稿 running 态的 dim 行）。"""
+        """处理中：row 之后的行变暗（running 态的未处理行）。"""
         if row != self._dim_from:
             self._dim_from = row
             if self.rowCount():
@@ -475,7 +474,7 @@ class SubtitleEditDelegate(QStyledItemDelegate):
 
 
 class TableBottomBar(QFrame):
-    """表格底部状态条（.bottom）：按状态展示条数 / 进度 / 输出信息。"""
+    """表格底部状态条：按状态展示条数 / 进度 / 输出信息。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)

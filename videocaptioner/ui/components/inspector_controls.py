@@ -1,9 +1,9 @@
 # coding:utf-8
 """检查器/参数面板通用控件：参数行 + 参数分组 + 取色控件 + 省略标签 + 样式卡。
 
-这里放的是「带标签的参数行、可分组的参数面板、取色控件、省略标签」等可复用组合
-（对应设计稿 .setting-row / .setting-group / .color-control），以及样式库卡片
-StyleCard。数值步进器、胶囊下拉、分段、状态胶囊等更底层的原子复用 workbench。
+这里放的是「带标签的参数行、可分组的参数面板、取色控件、省略标签」等可复用组合，
+以及样式库卡片 StyleCard。数值步进器、胶囊下拉、分段、状态胶囊等更底层的原子复用
+workbench。
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ class ElideLabel(QLabel):
 
 
 class ColorValueControl(QFrame):
-    """取色控件（.color-control）：色点 + 取值文本，点击弹系统取色盘。
+    """取色控件：色点 + 取值文本，点击弹系统取色盘。
 
     ``alpha=True`` 时显示透明度百分比并允许调整 alpha（圆角背景色用）。
     """
@@ -181,7 +181,7 @@ class ColorValueControl(QFrame):
 
 
 class InspectorRow(QFrame):
-    """参数行（.setting-row）：[图标] 名称 ……… [控件]，右侧控件由调用方提供。"""
+    """参数行：[图标] 名称 ……… [控件]，右侧控件由调用方提供。"""
 
     def __init__(self, icon: AppIcon, label: str, control: QWidget, hint: str = "", parent=None):
         super().__init__(parent)
@@ -235,7 +235,7 @@ class InspectorRow(QFrame):
 
 
 class InspectorGroup(QWidget):
-    """参数分组（.setting-group）：标题 + 侧注 + 若干参数行。"""
+    """参数分组：标题 + 侧注 + 若干参数行。"""
 
     def __init__(self, title: str, side: str = "", parent=None):
         super().__init__(parent)
@@ -280,7 +280,7 @@ class InspectorGroup(QWidget):
 
 
 class StyleCard(QFrame):
-    """样式库卡片（.style-card）：图标 + 名称 + 状态胶囊 + 色块 + 分隔线 + 动作按钮。
+    """样式库卡片：图标 + 名称 + 状态胶囊 + 色块 + 分隔线 + 动作按钮。
 
     动作按钮常驻（不再选中才展开）：用户样式给「复制 / 重命名 / 删除」，内置样式给
     「复制」一键 fork。选中态主题色描边 + 胶囊显「当前」。点击卡片主体发 clicked。

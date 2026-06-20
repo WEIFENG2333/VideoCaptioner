@@ -27,6 +27,7 @@ from videocaptioner.ui.view.batch_process_interface import BatchProcessInterface
 from videocaptioner.ui.view.doctor_interface import DoctorInterface
 from videocaptioner.ui.view.dubbing_interface import DubbingInterface
 from videocaptioner.ui.view.home_interface import HomeInterface
+from videocaptioner.ui.view.live_caption_interface import LiveCaptionInterface
 from videocaptioner.ui.view.llm_logs_interface import LLMLogsInterface
 from videocaptioner.ui.view.setting_interface import SettingsDialog
 from videocaptioner.ui.view.subtitle_style_interface import SubtitleStyleInterface
@@ -54,6 +55,7 @@ class MainWindow(FluentWindow):
         self.settingInterface = self.settingsDialog.settingInterface
         self.subtitleStyleInterface = SubtitleStyleInterface(self)
         self.dubbingInterface = DubbingInterface(self)
+        self.liveCaptionInterface = LiveCaptionInterface(self)
         self.doctorInterface = DoctorInterface(self)
         self.batchProcessInterface = BatchProcessInterface(self)
         self.llmLogsInterface = LLMLogsInterface(self)
@@ -90,6 +92,9 @@ class MainWindow(FluentWindow):
             self.subtitleStyleInterface, AppFluentIcon(AppIcon.SUBTITLE), self.tr("字幕样式")
         )
         self.addSubInterface(self.dubbingInterface, FIF.VOLUME, self.tr("配音"))
+        self.addSubInterface(
+            self.liveCaptionInterface, AppFluentIcon(AppIcon.MICROPHONE), self.tr("实时字幕")
+        )
         self.addSubInterface(
             self.llmLogsInterface, AppFluentIcon(AppIcon.HISTORY), self.tr("请求日志")
         )
@@ -133,8 +138,15 @@ class MainWindow(FluentWindow):
 
     def initWindow(self):
         """初始化窗口"""
-        self.resize(1050, 800)
+        # 初始尺寸自适应屏幕：默认 1050x760，但绝不超过可用屏幕（留出菜单栏/Dock/标题栏余量）。
+        # 否则在小屏笔记本上窗口会被「撑」到比屏幕还高，底部内容（如播放条/按钮）看不全。
+        avail = QApplication.desktop().availableGeometry()
+        win_w = max(WINDOW_MINIMUM_WIDTH, min(1050, avail.width() - 80))
+        win_h = max(560, min(760, avail.height() - 100))
+        self.resize(win_w, win_h)
         self.setMinimumWidth(WINDOW_MINIMUM_WIDTH)
+        # 防御：任何页面的最小高度都不能把窗口顶出屏幕（否则底部播放条/按钮看不到）。
+        self.setMaximumHeight(avail.height() - 40)
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
         self.setWindowTitle(self.tr("卡卡字幕助手 -- VideoCaptioner"))
 
@@ -145,10 +157,11 @@ class MainWindow(FluentWindow):
         self.splashScreen.setIconSize(QSize(106, 106))
         self.splashScreen.raise_()
 
-        # 设置窗口位置, 居中
-        desktop = QApplication.desktop().availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        # 设置窗口位置, 居中（用可用区原点偏移，避开菜单栏/任务栏，多屏也正确）
+        self.move(
+            avail.x() + (avail.width() - self.width()) // 2,
+            avail.y() + (avail.height() - self.height()) // 2,
+        )
 
         self.show()
         QApplication.processEvents()
@@ -235,6 +248,7 @@ class MainWindow(FluentWindow):
             self.batchProcessInterface,
             self.subtitleStyleInterface,
             self.dubbingInterface,
+            self.liveCaptionInterface,
             self.doctorInterface,
             self.settingInterface,
         ):

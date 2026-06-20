@@ -6,6 +6,19 @@
 - source_check: 下载源连通性检查（YouTube / 哔哩哔哩 真实解析）
 """
 
+from videocaptioner.core.download.dependencies import (
+    DEPENDENCIES,
+    DependencyAsset,
+    DependencySpec,
+    DependencyUnsupported,
+    asset_for,
+    current_platform,
+    dependency_for,
+    install_dependency,
+    installed_path,
+    is_installed,
+    iter_dependencies,
+)
 from videocaptioner.core.download.downloader import (
     DownloadCancelled,
     DownloadError,
@@ -80,4 +93,15 @@ __all__ = [
     "detect_program",
     "program_install_plan",
     "program_variants",
+    "DEPENDENCIES",
+    "DependencyAsset",
+    "DependencySpec",
+    "DependencyUnsupported",
+    "asset_for",
+    "current_platform",
+    "dependency_for",
+    "install_dependency",
+    "installed_path",
+    "is_installed",
+    "iter_dependencies",
 ]

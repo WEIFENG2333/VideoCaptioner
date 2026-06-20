@@ -37,6 +37,7 @@ from videocaptioner.core.entities import (
     VideoQualityEnum,
     WhisperModelEnum,
 )
+from videocaptioner.core.realtime.backends.languages import all_source_lang_codes, source_lang_codes
 from videocaptioner.core.translate.types import BING_LANG_MAP, TargetLanguage
 from videocaptioner.core.utils.platform_utils import get_available_transcribe_models
 from videocaptioner.ui.common.settings_state import (
@@ -96,6 +97,28 @@ class PlatformAwareTranscribeModelValidator(ChoiceValidator):
 
     def correct(self, value):
         return value if self.validate(value) else self._options[0]
+
+
+# 实时字幕识别语言：哪个 provider 支持哪些 code 是后端事实，单一来源在
+# core/realtime/backends/languages.py（voxgate=中/英、fun-asr=多语种 7、qwen-asr=27，三家都含「自动识别」）。
+# 这里只维护 code → 中文显示名（UI 文案），按 provider 取子集组装下拉，避免标签/选项漂移。
+_SOURCE_LANG_LABELS = {
+    "auto": "自动识别", "zh": "中文", "yue": "粤语", "en": "英语", "es": "西班牙语",
+    "ja": "日语", "ko": "韩语", "fr": "法语", "de": "德语", "pt": "葡萄牙语",
+    "ru": "俄语", "it": "意大利语", "ar": "阿拉伯语", "hi": "印地语", "id": "印尼语",
+    "th": "泰语", "vi": "越南语", "tr": "土耳其语", "uk": "乌克兰语", "ms": "马来语",
+    "fil": "菲律宾语", "pl": "波兰语", "cs": "捷克语", "sv": "瑞典语", "da": "丹麦语",
+    "no": "挪威语", "fi": "芬兰语", "is": "冰岛语",
+}
+
+
+def source_language_options(provider: str) -> list[tuple[str, str]]:
+    """该 provider 的识别语言下拉项 (code, 中文标签)；第一项总是「自动识别」。"""
+    return [(code, _SOURCE_LANG_LABELS.get(code, code)) for code in source_lang_codes(provider)]
+
+
+# 校验器接受所有 provider 支持语言的并集（任一 provider 的选择都能持久化）；UI 按当前 provider 取子集。
+_LIVE_CAPTION_LANG_CODES = all_source_lang_codes()
 
 
 class Config(SettingsState):
@@ -342,6 +365,60 @@ class Config(SettingsState):
     dubbing_tts_workers = RangeSettingField("Dubbing", "Workers", 5, RangeValidator(1, 20))
     dubbing_clone_audio = SettingField("Dubbing", "CloneAudio", "")
     dubbing_clone_text = SettingField("Dubbing", "CloneText", "")
+
+    # ------------------- 实时字幕配置 -------------------
+    # 转录引擎（Provider）：voxgate 本地免费无密钥；fun-asr 阿里云实时（中/粤/英/日/泰/越/印尼）；
+    # qwen-asr 阿里云实时（27 语言含西语等，看外语视频选它）。fun-asr/qwen-asr 共用百炼 Key。
+    live_caption_provider = ChoiceSettingField(
+        "LiveCaption", "Provider", "voxgate",
+        ChoiceValidator(["voxgate", "fun-asr", "qwen-asr"]),
+    )
+    # Fun-ASR 实时模型与识别语言（仅 fun-asr provider 用；API Key 复用 fun_asr_api_key）
+    live_caption_fun_asr_model = ChoiceSettingField(
+        "LiveCaption", "FunAsrModel", "fun-asr-mtl-realtime",
+        ChoiceValidator(["fun-asr-mtl-realtime", "fun-asr-realtime"]),
+    )
+    live_caption_source_language = ChoiceSettingField(
+        "LiveCaption", "SourceLanguage", "auto",
+        ChoiceValidator(_LIVE_CAPTION_LANG_CODES),  # 接受 Fun-ASR/Qwen 两套并集
+    )
+    live_caption_translate = SettingField("LiveCaption", "TranslateEnabled", True, BoolValidator())
+    live_caption_translator_service = ChoiceSettingField(
+        "LiveCaption",
+        "TranslatorServiceEnum",
+        TranslatorServiceEnum.BING,
+        ChoiceValidator(TranslatorServiceEnum),
+        EnumSettingSerializer(TranslatorServiceEnum),
+    )
+    live_caption_target_language = ChoiceSettingField(
+        "LiveCaption",
+        "TargetLanguage",
+        TargetLanguage.SIMPLIFIED_CHINESE,
+        ChoiceValidator(TargetLanguage),
+        EnumSettingSerializer(TargetLanguage),
+    )
+    live_caption_source = ChoiceSettingField(
+        "LiveCaption", "Source", "microphone", ChoiceValidator(["microphone", "system"])
+    )
+    live_caption_device_index = SettingField("LiveCaption", "DeviceIndex", -1)
+    live_caption_voxgate_binary = SettingField("LiveCaption", "VoxgateBinary", "")
+    live_caption_show_overlay = SettingField("LiveCaption", "ShowOverlay", True)
+    live_caption_display_mode = ChoiceSettingField(
+        "LiveCaption", "DisplayMode", "bilingual",
+        ChoiceValidator(["bilingual", "target", "source"]),
+    )
+    live_caption_bg_style = ChoiceSettingField(
+        "LiveCaption", "BgStyle", "translucent",
+        ChoiceValidator(["translucent", "black"]),
+    )
+    live_caption_font_scale = RangeSettingField("LiveCaption", "FontScale", 60, RangeValidator(0, 100))
+    # 浮窗形态与用户拖边尺寸：展开/收纳 + 自己拖的大小，跨会话保持（0=未设，用预设/自适应）
+    live_caption_overlay_mode = ChoiceSettingField(
+        "LiveCaption", "OverlayMode", "standard",
+        ChoiceValidator(["standard", "tall"]),
+    )
+    live_caption_overlay_w = SettingField("LiveCaption", "OverlayWidth", 0)
+    live_caption_overlay_h = SettingField("LiveCaption", "OverlayHeight", 0)
 
     # ------------------- 字幕样式配置 -------------------
     subtitle_style_name = SettingField("SubtitleStyle", "StyleName", "rounded/default")
@@ -786,6 +863,32 @@ def _bindings() -> list[SharedConfigBinding]:
         # 与 config_store DEFAULTS、cli/config_adapter 的读取保持闭环。
         SharedConfigBinding(cfg.dubbing_clone_audio, "dubbing.clone_audio"),
         SharedConfigBinding(cfg.dubbing_clone_text, "dubbing.clone_text"),
+        SharedConfigBinding(cfg.live_caption_provider, "live_caption.backend"),
+        SharedConfigBinding(cfg.live_caption_fun_asr_model, "live_caption.fun_asr_model"),
+        SharedConfigBinding(cfg.live_caption_source_language, "live_caption.source_language"),
+        SharedConfigBinding(cfg.live_caption_translate, "live_caption.translate_enabled"),
+        SharedConfigBinding(
+            cfg.live_caption_translator_service,
+            "live_caption.translator_service",
+            _translator_to_key,
+            translator_from_cli,
+        ),
+        SharedConfigBinding(
+            cfg.live_caption_target_language,
+            "live_caption.target_language",
+            _target_language_to_key,
+            target_language_from_code,
+        ),
+        SharedConfigBinding(cfg.live_caption_source, "live_caption.source"),
+        SharedConfigBinding(cfg.live_caption_device_index, "live_caption.device_index"),
+        SharedConfigBinding(cfg.live_caption_voxgate_binary, "live_caption.voxgate_binary"),
+        SharedConfigBinding(cfg.live_caption_show_overlay, "live_caption.show_overlay"),
+        SharedConfigBinding(cfg.live_caption_display_mode, "live_caption.display_mode"),
+        SharedConfigBinding(cfg.live_caption_bg_style, "live_caption.bg_style"),
+        SharedConfigBinding(cfg.live_caption_font_scale, "live_caption.font_scale"),
+        SharedConfigBinding(cfg.live_caption_overlay_mode, "live_caption.overlay_mode"),
+        SharedConfigBinding(cfg.live_caption_overlay_w, "live_caption.overlay_w"),
+        SharedConfigBinding(cfg.live_caption_overlay_h, "live_caption.overlay_h"),
     ]
 
 

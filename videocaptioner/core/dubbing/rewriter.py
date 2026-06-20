@@ -65,7 +65,6 @@ def rewrite_segments_if_needed(segments: Iterable[DubbingSegment], config: Dubbi
     response = client.chat.completions.create(
         model=config.llm_model,
         messages=messages,  # type: ignore[arg-type]
-        temperature=0.2,
         response_format={"type": "json_object"},
     )
     content = response.choices[0].message.content or "{}"

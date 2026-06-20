@@ -57,6 +57,8 @@ from videocaptioner.core.entities import (
     transcribe_languages_for,
 )
 from videocaptioner.core.llm.check_llm import check_llm_connection, get_available_models
+from videocaptioner.core.realtime.check import check_live_caption
+from videocaptioner.core.realtime.config import LiveCaptionConfig
 from videocaptioner.core.speech import (
     SpeechProviderConfig,
     SynthesisRequest,
@@ -64,7 +66,12 @@ from videocaptioner.core.speech import (
 )
 from videocaptioner.core.utils.cache import disable_cache, enable_cache
 from videocaptioner.ui.common.app_icons import AppIcon
-from videocaptioner.ui.common.config import DEFAULT_THEME_COLOR, ThemeMode, cfg
+from videocaptioner.ui.common.config import (
+    DEFAULT_THEME_COLOR,
+    ThemeMode,
+    cfg,
+    source_language_options,
+)
 from videocaptioner.ui.common.dubbing_options import (
     get_provider_option,
     get_provider_voices,
@@ -93,7 +100,7 @@ from videocaptioner.ui.components.settings_controls import (
     make_button,
     options_from,
 )
-from videocaptioner.ui.components.workbench import RoundIconButton
+from videocaptioner.ui.components.workbench import CompactButton, RoundIconButton
 
 SETTINGS_PAGE_ALIASES = {
     "asr": "transcribe",
@@ -153,6 +160,7 @@ class SettingInterface(SettingsShell):
         self._refresh_llm_rows(cfg.llm_service.value)
         self._refresh_translate_rows(cfg.translator_service.value)
         self._refresh_dubbing_rows(cfg.dubbing_provider.value)
+        self._refresh_lc_rows(cfg.live_caption_provider.value)
         self._sync_theme_color_swatch(cfg.themeColor.value)
         self.setCurrentPage("transcribe")
 
@@ -163,6 +171,7 @@ class SettingInterface(SettingsShell):
         self.translatePage = self.addPage("translate", "翻译与优化")
         self.subtitlePage = self.addPage("subtitle", "字幕合成配置")
         self.dubbingPage = self.addPage("dubbing", "配音配置")
+        self.liveCaptionPage = self.addPage("live-caption", "实时字幕配置")
         self.savePage = self.addPage("save", "保存配置")
         self.personalPage = self.addPage("personal", "个性化")
         self.aboutPage = self.addPage("about", "关于")
@@ -173,6 +182,7 @@ class SettingInterface(SettingsShell):
         self._build_translate_page()
         self._build_subtitle_page()
         self._build_dubbing_page()
+        self._build_live_caption_page()
         self._build_save_page()
         self._build_personal_page()
         self._build_about_page()
@@ -790,6 +800,193 @@ class SettingInterface(SettingsShell):
         )
         self.dubbingPage.addGroup(group)
 
+    def _build_live_caption_page(self) -> None:
+        display_labels = {"bilingual": "双语", "target": "仅译文", "source": "仅原文"}
+        bg_labels = {"translucent": "半透明", "black": "纯黑"}
+        # 下拉项只显引擎名 / 模型名，不带括号解释（说明留给行副标题）。
+        provider_labels = {"voxgate": "voxgate", "fun-asr": "Fun-ASR", "qwen-asr": "Qwen-ASR"}
+
+        # 1) 转录引擎（Provider）：voxgate 本地免费无密钥；fun-asr 阿里云实时（需 Key，中英日更准）
+        engine_group = SettingsGroup(self.tr("转录引擎"), self.liveCaptionPage.container)
+        engine_group.addRow(
+            SettingRow(
+                self.tr("转录引擎"),
+                self.tr("实时语音转文字所用的识别引擎。"),
+                BoundComboBox(
+                    cfg.live_caption_provider,
+                    options_from(
+                        cfg.live_caption_provider.validator.options,
+                        lambda v: provider_labels.get(v, v),
+                    ),
+                    engine_group,
+                ),
+                engine_group,
+            )
+        )
+        # voxgate：下载/检测本地程序
+        deps_button = CompactButton(self.tr("下载 / 检测"), AppIcon.DOWNLOAD, engine_group)
+        deps_button.clicked.connect(self._open_live_caption_deps)
+        self.lcVoxgateRow = engine_group.addRow(
+            SettingRow(
+                self.tr("转录程序"),
+                self.tr("voxgate 本地转录程序，未安装时点此下载或检测。"),
+                deps_button,
+                engine_group,
+            )
+        )
+        # fun-asr / qwen-asr：API Key（复用百炼 Key）/ 模型 / 识别语言
+        self.lcFunKeyRow = engine_group.addRow(
+            SettingRow(
+                self.tr("百炼 API Key"),
+                self.tr("Fun-ASR / Qwen-ASR 调用阿里云百炼所需的密钥，与转录配置共用同一个。"),
+                BoundLineEdit(cfg.fun_asr_api_key, "sk-", engine_group, password=True),
+                engine_group,
+            )
+        )
+        self.lcFunModelRow = engine_group.addRow(
+            SettingRow(
+                self.tr("识别模型"),
+                self.tr("Fun-ASR 识别模型；多语种模型可自动识别多种语言。"),
+                BoundComboBox(
+                    cfg.live_caption_fun_asr_model,
+                    options_from(cfg.live_caption_fun_asr_model.validator.options),
+                    engine_group,
+                ),
+                engine_group,
+            )
+        )
+        # 识别语言列表随引擎不同（voxgate 中/英、Fun-ASR 7 种、Qwen-ASR 27 种），由 _refresh_lc_rows
+        # 按 provider 重填；这里按当前 provider 给初始项。三家都含 auto = 自动识别。
+        langs = source_language_options(cfg.live_caption_provider.value)
+        self.lcSourceLangCombo = BoundComboBox(
+            cfg.live_caption_source_language,
+            options_from([c for c, _ in langs], lambda v: dict(langs).get(v, v)),
+            engine_group,
+        )
+        self.lcSourceLangRow = engine_group.addRow(
+            SettingRow(
+                self.tr("识别语言"),
+                self.tr("你说话所用的语言；识别引擎据此进行转写。自动识别可让引擎按音频判定语言。"),
+                self.lcSourceLangCombo,
+                engine_group,
+            )
+        )
+        # 统一的真实转录测试：对所选引擎（voxgate / Fun-ASR）用内置短音频真实跑一次，
+        # 与转录配置页的「测试转录」同思路，但走实时后端（core.realtime.check）。
+        self.checkLiveCaptionButton = make_button(self.tr("测试转录"), parent=engine_group)
+        engine_group.addRow(
+            SettingRow(
+                self.tr("测试转录"),
+                self.tr("用内置短音频真实转录一次，验证当前引擎能跑通。"),
+                self.checkLiveCaptionButton,
+                engine_group,
+            )
+        )
+        self.liveCaptionPage.addGroup(engine_group)
+
+        # 2) 翻译
+        translate_group = SettingsGroup(self.tr("翻译"), self.liveCaptionPage.container)
+        translate_group.addRow(
+            SettingRow(
+                self.tr("实时翻译"),
+                self.tr("开启后对转录文本即时翻译；关闭则只显示原文。"),
+                BoundSwitch(cfg.live_caption_translate, translate_group),
+                translate_group,
+            )
+        )
+        translate_group.addRow(
+            SettingRow(
+                self.tr("目标语言"),
+                self.tr("译文翻译成的语言。"),
+                BoundComboBox(
+                    cfg.live_caption_target_language,
+                    options_from(cfg.live_caption_target_language.validator.options),
+                    translate_group,
+                ),
+                translate_group,
+            )
+        )
+        translate_group.addRow(
+            SettingRow(
+                self.tr("翻译引擎"),
+                self.tr("生成译文所用的翻译服务。"),
+                BoundComboBox(
+                    cfg.live_caption_translator_service,
+                    options_from(cfg.live_caption_translator_service.validator.options),
+                    translate_group,
+                ),
+                translate_group,
+            )
+        )
+        self.liveCaptionPage.addGroup(translate_group)
+
+        # 3) 浮窗显示
+        overlay_group = SettingsGroup(self.tr("浮窗显示"), self.liveCaptionPage.container)
+        overlay_group.addRow(
+            SettingRow(
+                self.tr("显示内容"),
+                self.tr("浮窗默认显示的内容"),
+                BoundComboBox(
+                    cfg.live_caption_display_mode,
+                    options_from(
+                        cfg.live_caption_display_mode.validator.options,
+                        lambda v: display_labels.get(v, v),
+                    ),
+                    overlay_group,
+                ),
+                overlay_group,
+            )
+        )
+        overlay_group.addRow(
+            SettingRow(
+                self.tr("底色样式"),
+                self.tr("浮窗底色风格"),
+                BoundComboBox(
+                    cfg.live_caption_bg_style,
+                    options_from(
+                        cfg.live_caption_bg_style.validator.options,
+                        lambda v: bg_labels.get(v, v),
+                    ),
+                    overlay_group,
+                ),
+                overlay_group,
+            )
+        )
+        overlay_group.addRow(
+            SettingRow(
+                self.tr("字号"),
+                self.tr("浮窗译文字号"),
+                BoundSlider(cfg.live_caption_font_scale, overlay_group),
+                overlay_group,
+            )
+        )
+        self.liveCaptionPage.addGroup(overlay_group)
+
+    def _open_live_caption_deps(self) -> None:
+        from videocaptioner.ui.components.dependency_download_dialog import (
+            DependencyDownloadDialog,
+        )
+
+        DependencyDownloadDialog(parent=self._toast_parent()).exec()
+
+    def _refresh_lc_rows(self, value: Any) -> None:
+        """实时字幕转录引擎切换：voxgate 显本地程序行；fun-asr/qwen-asr 显 Key（共用百炼）；
+        识别模型行仅 fun-asr（qwen 单模型）。识别语言三家都有（voxgate 中/英、Fun-ASR 7、
+        Qwen-ASR 27），故该行恒显，列表随引擎重填。"""
+        is_cloud = value in ("fun-asr", "qwen-asr")
+        self.lcVoxgateRow.setVisible(not is_cloud)
+        self.lcFunKeyRow.setVisible(is_cloud)
+        self.lcFunModelRow.setVisible(value == "fun-asr")
+        self.lcSourceLangRow.setVisible(True)
+        # 识别语言随引擎重填；当前选择若不在新列表里则退回「自动识别」。
+        langs = source_language_options(value)
+        codes = {c for c, _ in langs}
+        cur = cfg.live_caption_source_language.value
+        self.lcSourceLangCombo.setOptions(
+            options_from([c for c, _ in langs], lambda v: dict(langs).get(v, v)),
+            keep_value=cur if cur in codes else "auto",
+        )
+
     def _build_save_page(self) -> None:
         save_group = SettingsGroup("", self.savePage.container)
         self.workDirControl = FolderPickerControl(save_group)
@@ -950,6 +1147,8 @@ class SettingInterface(SettingsShell):
 
         self.dubbingProviderControl.currentValueChanged.connect(self._refresh_dubbing_rows)
         cfg.dubbing_provider.valueChanged.connect(self._refresh_dubbing_rows)
+        cfg.live_caption_provider.valueChanged.connect(self._refresh_lc_rows)
+        self.checkLiveCaptionButton.clicked.connect(self.check_live_caption_connection)
         self.dubbingPresetControl.currentValueChanged.connect(self._on_dubbing_preset_changed)
         self.checkDubbingButton.clicked.connect(self.check_dubbing_connection)
 
@@ -1186,7 +1385,7 @@ class SettingInterface(SettingsShell):
                 self.tr("缓存已启用"),
                 self.tr("后续任务会优先复用已有结果。"),
                 duration=INFOBAR_DURATION_SUCCESS,
-                parent=self,
+                parent=self._toast_parent(),
             )
         else:
             disable_cache()
@@ -1194,14 +1393,14 @@ class SettingInterface(SettingsShell):
                 self.tr("缓存已禁用"),
                 self.tr("后续任务会重新生成结果。"),
                 duration=INFOBAR_DURATION_WARNING,
-                parent=self,
+                parent=self._toast_parent(),
             )
 
     def _choose_theme_color(self) -> None:
         from videocaptioner.ui.components.color_picker import ColorPickerDialog
 
         color = ColorPickerDialog.get_color(
-            cfg.themeColor.value, parent=self, alpha=False, title=self.tr("选择主题颜色")
+            cfg.themeColor.value, parent=self._toast_parent(), alpha=False, title=self.tr("选择主题颜色")
         )
         if color is None or not color.isValid():
             return
@@ -1255,7 +1454,7 @@ class SettingInterface(SettingsShell):
             self.tr("更新成功"),
             self.tr("这项设置将在重启后生效。"),
             duration=INFOBAR_DURATION_SUCCESS,
-            parent=self,
+            parent=self._toast_parent(),
         )
 
     def check_llm_connection(self) -> None:
@@ -1271,7 +1470,7 @@ class SettingInterface(SettingsShell):
                 self.tr("配置不完整"),
                 self.tr("请先填写当前提供商的 Base URL、API Key 和模型。"),
                 duration=INFOBAR_DURATION_WARNING,
-                parent=self,
+                parent=self._toast_parent(),
             )
             return
         self._run_button_thread(
@@ -1295,7 +1494,7 @@ class SettingInterface(SettingsShell):
                 self.tr("配置不完整"),
                 self.tr("请先填写当前提供商的 Base URL 和 API Key。"),
                 duration=INFOBAR_DURATION_WARNING,
-                parent=self,
+                parent=self._toast_parent(),
             )
             return
         self._run_button_thread(
@@ -1313,14 +1512,14 @@ class SettingInterface(SettingsShell):
                 self.tr("LLM 连接成功"),
                 message,
                 duration=INFOBAR_DURATION_SUCCESS,
-                parent=self,
+                parent=self._toast_parent(),
             )
         else:
             InfoBar.error(
                 self.tr("LLM 连接失败"),
                 message,
                 duration=INFOBAR_DURATION_ERROR,
-                parent=self,
+                parent=self._toast_parent(),
             )
 
     def _on_llm_check_error(self, message: str) -> None:
@@ -1328,7 +1527,7 @@ class SettingInterface(SettingsShell):
             self.tr("LLM 连接错误"),
             message,
             duration=INFOBAR_DURATION_ERROR,
-            parent=self,
+            parent=self._toast_parent(),
         )
 
     def _on_llm_models_loaded(self, service: object, models: list[str]) -> None:
@@ -1342,7 +1541,7 @@ class SettingInterface(SettingsShell):
                 self.tr("没有可用模型"),
                 self.tr("没有从当前提供商获取到模型列表，请检查 Base URL 和 API Key。"),
                 duration=INFOBAR_DURATION_WARNING,
-                parent=self,
+                parent=self._toast_parent(),
             )
             return
         self._save_llm_model_options(service, models)
@@ -1352,7 +1551,7 @@ class SettingInterface(SettingsShell):
             self.tr("模型已加载"),
             self.tr("已加载 {count} 个模型。").format(count=len(models)),
             duration=INFOBAR_DURATION_SUCCESS,
-            parent=self,
+            parent=self._toast_parent(),
         )
 
     def _on_llm_models_load_error(self, message: str) -> None:
@@ -1360,7 +1559,7 @@ class SettingInterface(SettingsShell):
             self.tr("模型加载失败"),
             message,
             duration=INFOBAR_DURATION_ERROR,
-            parent=self,
+            parent=self._toast_parent(),
         )
 
     def check_transcribe_connection(self) -> None:
@@ -1371,7 +1570,7 @@ class SettingInterface(SettingsShell):
                 self.tr("配置不完整"),
                 missing,
                 duration=INFOBAR_DURATION_WARNING,
-                parent=self,
+                parent=self._toast_parent(),
             )
             return
         from videocaptioner.ui.config_adapter import app_config_from_ui
@@ -1416,19 +1615,45 @@ class SettingInterface(SettingsShell):
                 self.tr("转录测试成功"),
                 self.tr("识别结果：{}").format(text),
                 duration=INFOBAR_DURATION_SUCCESS,
-                parent=self,
+                parent=self._toast_parent(),
             )
         else:
             InfoBar.error(
                 self.tr("转录测试失败"),
                 detail,
                 duration=INFOBAR_DURATION_ERROR,
-                parent=self,
+                parent=self._toast_parent(),
             )
 
     def _on_transcribe_check_error(self, message: str) -> None:
         InfoBar.error(
-            self.tr("转录测试错误"), message, duration=INFOBAR_DURATION_ERROR, parent=self
+            self.tr("转录测试错误"), message, duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent()
+        )
+
+    def check_live_caption_connection(self) -> None:
+        if cfg.live_caption_provider.value in ("fun-asr", "qwen-asr") and not cfg.fun_asr_api_key.value.strip():
+            InfoBar.warning(
+                self.tr("配置不完整"),
+                self.tr("请先填写百炼 API Key。"),
+                duration=INFOBAR_DURATION_WARNING,
+                parent=self._toast_parent(),
+            )
+            return
+        config = LiveCaptionConfig(
+            backend=cfg.live_caption_provider.value,
+            voxgate_binary=cfg.live_caption_voxgate_binary.value,
+            api_key=str(cfg.fun_asr_api_key.value or "").strip(),
+            asr_model=cfg.live_caption_fun_asr_model.value,
+            source_language=cfg.live_caption_source_language.value,
+            translate_enabled=False,
+        )
+        self._run_button_thread(
+            self.checkLiveCaptionButton,
+            self.tr("测试转录"),
+            self.tr("正在转录..."),
+            LiveCaptionCheckThread(config),
+            self._on_transcribe_check_finished,
+            self._on_transcribe_check_error,
         )
 
     def check_dubbing_connection(self) -> None:
@@ -1436,7 +1661,7 @@ class SettingInterface(SettingsShell):
         try:
             preset = get_dubbing_preset(preset_name)
         except ValueError as exc:
-            InfoBar.error(self.tr("配音配置错误"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self)
+            InfoBar.error(self.tr("配音配置错误"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent())
             return
 
         api_key = cfg.dubbing_api_key.value.strip()
@@ -1447,7 +1672,7 @@ class SettingInterface(SettingsShell):
                 self.tr("配置不完整"),
                 self.tr("当前配音提供商需要 API Key。"),
                 duration=INFOBAR_DURATION_WARNING,
-                parent=self,
+                parent=self._toast_parent(),
             )
             return
 
@@ -1476,11 +1701,25 @@ class SettingInterface(SettingsShell):
             self.tr("配音测试成功"),
             self.tr("{provider} 已生成试听音频：{path}").format(provider=provider, path=audio_path),
             duration=INFOBAR_DURATION_SUCCESS,
-            parent=self,
+            parent=self._toast_parent(),
         )
 
     def _on_dubbing_check_error(self, message: str) -> None:
-        InfoBar.error(self.tr("配音测试失败"), message, duration=INFOBAR_DURATION_ERROR, parent=self)
+        InfoBar.error(self.tr("配音测试失败"), message, duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent())
+
+    def _toast_parent(self):
+        """toast / 弹窗的 parent。
+
+        设置页是覆盖主窗口的子级遮罩（MaskDialogBase，非顶层窗口）。toast 必须 parent
+        到这个遮罩才能盖在它之上、铺满整窗：parent 到主窗口会被遮罩盖住，parent 到内容
+        卡片（self）则被裁在卡片右上角（贴着关闭叉）。独立使用时回退到 window()/self。
+        """
+        node = self.parent()
+        while node is not None:
+            if isinstance(node, MaskDialogBase):
+                return node
+            node = node.parent()
+        return self.window() or self
 
     def _run_button_thread(
         self,
@@ -1735,6 +1974,24 @@ class TranscribeCheckThread(QThread):
     def run(self) -> None:
         try:
             result = check_transcribe(self.config)
+            self.finished.emit(result.success, result.detail)
+        except Exception as exc:
+            self.error.emit(str(exc))
+
+
+class LiveCaptionCheckThread(QThread):
+    """跑一次真实短音频实时转录（core.realtime.check.check_live_caption）。"""
+
+    finished = pyqtSignal(bool, str)
+    error = pyqtSignal(str)
+
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+
+    def run(self) -> None:
+        try:
+            result = check_live_caption(self.config)
             self.finished.emit(result.success, result.detail)
         except Exception as exc:
             self.error.emit(str(exc))

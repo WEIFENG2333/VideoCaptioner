@@ -1,6 +1,6 @@
 """LLM 请求日志页（排查工具）。
 
-对照 docs/dev/design-llm-logs.html：工具栏（搜索 + 刷新 + 清空）、一屏内的日志表格
+工具栏（搜索 + 刷新 + 清空）、一屏内的日志表格
 （时间/任务ID/文件/阶段/模型/耗时/Tokens）、底部统计 + 分页；空日志时表格换成空态面板。
 双击行打开完整 JSON 详情。全部用第一方 workbench 组件 + 主题 token，qfluent 仅作底层
 TableWidget/PlainTextEdit 来源。
@@ -58,8 +58,7 @@ class _LogTable(QTableWidget):
 class LogDetailDialog(AppDialog):
     """日志详情：标题副行 + 元信息条（时间/阶段/耗时/Tokens/结果）+ 请求体 / 响应体并排，
 
-    每块独立复制；请求失败时右侧切「错误响应」并染危险色。对照 design-llm-logs.html
-    状态 C/D，但用第一方 AppDialog + workbench 风格实现。"""
+    每块独立复制；请求失败时右侧切「错误响应」并染危险色。用第一方 AppDialog + workbench 风格实现。"""
 
     def __init__(self, log_entry: Dict[str, Any], parent=None):
         self.log_entry = log_entry
@@ -254,7 +253,7 @@ class LogDetailDialog(AppDialog):
 class LLMLogsInterface(QWidget):
     """LLM 请求日志界面。"""
 
-    # (列宽, 是否拉伸)；文件/模型两列自适应，其余定宽。对齐设计稿列布局。
+    # (列宽, 是否拉伸)；文件/模型两列自适应，其余定宽。
     # (label, fixed_width, mode)；mode ∈ {fixed, stretch, content}
     # 时间/阶段/模型 按内容自适应（绝不截断，时间是固定格式必须完整显示）；文件做唯一弹性列吸收余宽；
     # 耗时/Tokens 定宽数字列。任务ID 对用户无意义、且占宽，已移除（搜索仍可匹配 task_id）。

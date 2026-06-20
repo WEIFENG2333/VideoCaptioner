@@ -97,6 +97,44 @@ def prepare_ffmpeg() -> None:
         print(f"Bundled {dst.relative_to(ROOT)}")
 
 
+def prepare_macsysaudio() -> None:
+    """Build the macOS system-audio helper (ScreenCaptureKit) into runtime resources.
+
+    macOS only, ~91KB static Swift binary — small + unchanging, so it ships INSIDE the
+    bundle (no download step, no signing needed: an unsigned helper still works, the user
+    just grants「屏幕录制」once and the grant persists for a never-updated app).
+
+    Same staging pattern as ffmpeg: build → copy into RUNTIME_DIR/resource/bin with +x;
+    PyInstaller's onedir COLLECT preserves the mode bit, so find_macsysaudio_binary finds
+    an executable at BUNDLED_BIN_PATH (else os.access(X_OK) fails and 「系统声音」 hides).
+
+    Best-effort: without the Swift toolchain (Xcode CLT) it warns and continues — the app
+    still runs, system audio capture is just unavailable. Needs native/macsysaudio/ in the
+    repo (git-tracked) for the build.sh source to exist on a fresh checkout.
+    """
+    if platform.system() != "Darwin":
+        return
+    runtime_bin = RUNTIME_DIR / "resource" / "bin"
+    runtime_bin.mkdir(parents=True, exist_ok=True)
+    build_sh = ROOT / "native" / "macsysaudio" / "build.sh"
+    src = ROOT / "resource" / "bin" / "macsysaudio"
+    try:
+        if build_sh.exists():
+            _run(["bash", str(build_sh)])
+    except Exception as exc:
+        print(f"WARNING: macsysaudio build failed ({exc}); system audio will be unavailable")
+    if not src.exists():
+        print("WARNING: macsysaudio binary not found (native/macsysaudio not built); "
+              "system audio capture will be unavailable in this build")
+        return
+    dst = runtime_bin / "macsysaudio"
+    if dst.exists():
+        dst.chmod(dst.stat().st_mode | stat.S_IWUSR)
+    shutil.copy2(src, dst)
+    dst.chmod(dst.stat().st_mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    print(f"Bundled {dst.relative_to(ROOT)}")
+
+
 def build_pyinstaller() -> None:
     env = os.environ.copy()
     env["VIDEOCAPTIONER_DESKTOP_RUNTIME_DIR"] = str(RUNTIME_DIR)
@@ -152,6 +190,10 @@ def verify_bundle() -> None:
     missing = [str(path.relative_to(ROOT)) for path in required if not path.exists()]
     if missing:
         raise RuntimeError("Missing bundled resources:\n  - " + "\n  - ".join(missing))
+    if platform.system() == "Darwin":
+        # 软检查（不阻断构建）：缺它只是「系统声音」不可用，不是整包坏了。
+        helper = data_root / "resource" / "bin" / "macsysaudio"
+        print(f"  macsysaudio (系统声音): {'present' if helper.exists() else 'MISSING — system audio disabled'}")
     print(f"Verified desktop bundle: {bundle.relative_to(ROOT)}")
 
 
@@ -175,6 +217,7 @@ def main() -> int:
         clean()
     ensure_version_file(version)
     prepare_ffmpeg()
+    prepare_macsysaudio()
     build_pyinstaller()
     verify_bundle()
     if not args.no_archive:

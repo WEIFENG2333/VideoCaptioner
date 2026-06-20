@@ -171,21 +171,13 @@ Do not:
 - Add explanatory cards just to fill space. This project prefers compact,
   task-oriented pages.
 
-Adopted design anchors (one per page; superseded variants were removed —
-each page's module docstring states its source mock):
-
-- `docs/dev/design-transcription.html`
-- `docs/dev/design-subtitle.html`
-- `docs/dev/design-synthesis.html`
-- `docs/dev/design-batch.html`
-- `docs/dev/design-task-create.html`
-- `docs/dev/design-model-download.html`
-- `docs/dev/design-doctor.html`
-- `docs/dev/design-dubbing.html` / `design-dubbing-clone.html`
-- `docs/dev/design-home.html`
-- `docs/dev/design-settings.html`
-
-Take reference screenshots of a design HTML with
+Design mocks live in `docs/dev/design-*.html` (roughly one per page) as a
+development-time visual reference; superseded variants are archived under
+`design-archive/`. **Do NOT reference these HTML paths or their CSS class names
+from code comments / docstrings** — the mocks change and get deleted, so the
+references rot into dead links. A comment should describe what the widget IS, not
+which mock it came from. Use the mocks while building, then drop the reference.
+Take reference screenshots with
 `scripts/design_reference_shots.py <html> <out-dir> [selector]`.
 
 For visual work, follow this rhythm:
@@ -235,6 +227,166 @@ Dubbing providers currently include Edge, Gemini TTS, and SiliconFlow CosyVoice.
 Provider switching has historically caused stale base URL/model/voice state.
 Verify switching in the real app and in `scripts/ui_smoke_check.py`; do not
 patch only one page.
+
+## Live Caption (实时字幕)
+
+Real-time speech transcription + translation shown in a draggable desktop
+overlay (the "实时字幕" nav page). Backend-agnostic by design: three transcription
+backends ship today (voxgate / fun-asr / qwen-asr); adding another only means
+implementing the `LiveTranscriber` interface.
+
+```text
+core/realtime/            business logic, NO PyQt. Grouped into subpackages by role;
+                          top level keeps only protocol + orchestration + wiring.
+  events.py        TranscriptSegment / CaptionEntry  ← our own protocol (leaf, no deps)
+  config.py        LiveCaptionConfig / LiveCaptionSource
+  caption.py       CaptionAssembler: upsert by seg_id + dual-color + async translate
+                   (segmentation is the BACKEND's job, not here)
+  factory.py       config → backend / translate_fn (conditionally imports the chosen
+                   backend so unused backends don't pull websocket into startup)
+  session.py       orchestrates audio+backend+assembler+recorder (start/pump/stop)
+  check.py         diagnostics: real short transcription through a backend
+  backends/        transcription backends (import the specific submodule you need; the
+                   package __init__ does NOT re-export, to keep backends lazy)
+    base.py        LiveTranscriber ABC + audio contract consts (SAMPLE_RATE/CHANNELS/
+                   SAMPLE_WIDTH) + On* callback types + TranscriberState/LiveCaptionError +
+                   shared `_reconnect_with_backoff` (exp backoff + log throttle + give-up
+                   cap) reused by the WS backends
+    voxgate.py     `voxgate transcribe -` subprocess (stdio: stdin PCM16 → stdout
+                   `-f protocol` raw Doubao frames); own per-sentence seg_id (not raw `index`); also
+                   holds find_voxgate_binary. No server/WS. Doubao is a zh/en BILINGUAL
+                   model; `-l` is a hint not a limit, `auto` → factory passes `zh`
+                   (still recognizes English). Only zh/en + auto.
+    fun_asr.py     Alibaba DashScope realtime WS client; per-`sentence_id` seg_id; VAD
+                   segmentation (semantic off); reconnects on drop AND mid-session
+                   task-finished. `_language_hints` uses languages.FUN_ASR_MTL_LANGS /
+                   FUN_ASR_REALTIME_LANGS (model-aware). mtl model = zh/yue/en/ja/th/vi/id
+                   (NOT Spanish etc.); realtime model = zh/en/ja.
+    qwen_asr.py    DashScope `qwen3-asr-flash-realtime` WS (OpenAI-realtime style:
+                   session.update/input_audio_buffer.append; transcription in `.text`
+                   event's `stash` (text empty), final in `.completed.transcript`);
+                   per-`item_id` seg_id; 27 languages incl Spanish; `auto` omits language
+                   → server auto-detects. Reconnect治理 shared with fun-asr via base
+                   `_reconnect_with_backoff`; frequent "Connection lost" is the network,
+                   not a code bug (real-API soak: idle 130s / busy 117s both 0 drops).
+    languages.py   SINGLE SOURCE OF TRUTH for which source languages each provider
+                   supports (codes only, no Qt/labels): voxgate=zh/en, fun-asr=mtl 7,
+                   qwen-asr=27; all 3 include "auto" (always first). UI labels (中文) live
+                   in ui/common/config.py `source_language_options(provider)`; backends +
+                   the source-language validator import from here. Don't redefine lang sets.
+  audio/           capture sources, all → 16k/mono/s16le, drop-in start()/read()/stop()
+    capture.py     sounddevice/PortAudio input device (mic/loopback) + device enumeration.
+                   `_sd()` lazy-imports sounddevice (loads PortAudio) — KEEP lazy: it both
+                   defers PortAudio load and gracefully degrades if PortAudio is missing
+                   (realtime is imported at startup via main_window).
+    system_mac.py  macOS native system audio (ScreenCaptureKit subprocess), no BlackHole
+  recording/       session recording + history persistence
+    history.py     LiveCaptionStore + LiveCaptionRecord/CaptionSegment (persist/list/
+                   search/delete/export SRT,TXT); records live in APPDATA/live_captions/
+    recorder.py    SessionRecorder: tee PCM→WAV + collect paragraphs → LiveCaptionRecord
+    debug_tap.py   optional debug dump (raw events + fed PCM + assembler output;
+                   enabled by `VC_DEBUG=live`, the project-wide debug switch in
+                   core/utils/debug.py)
+ui/thread/live_caption_thread.py   WorkerThread shell; Qt signals (caption/level/state/
+                   error/recorded) + checkpoint cancel
+ui/components/caption_overlay.py   frameless translucent always-on-top overlay
+ui/components/caption_overlay_settings.py  in-overlay settings popover
+ui/components/live_caption/        in-app page widgets (app_palette, reuse workbench):
+  transcript.py    TranscriptEntry/TranscriptList (timeline bubbles, live + detail)
+  player.py        AudioPlayerBar (QMediaPlayer: seek, per-sentence marks, click-to-jump)
+  views.py         SessionView (ready/live/paused/ended/error) / HistoryView / DetailView
+ui/view/live_caption_interface.py  QStackedWidget host of the 3 views + thread/overlay/
+                   recording lifecycle; never builds business config from widgets directly
+```
+
+Protocol rules:
+
+- Our protocol is `TranscriptSegment(seg_id, text, is_final, start_time, end_time)`
+  → `CaptionEntry(seg_id, seq, source_text, source_stable_len, target_text,
+  is_final, started_at, start_time, end_time)`. UI upserts captions by `seg_id`.
+  The active paragraph and the history paragraph it settles into share one
+  `seg_id` — finalization is a state flip, not a new row. `text` is ONE cumulative
+  growing full text for that sentence (rewritten, not just appended).
+- **Segmentation is the BACKEND's job, NOT the assembler's.** Each backend assigns
+  a stable per-sentence `seg_id` and flips `is_final` on its own sentence-boundary
+  signal. The `CaptionAssembler` only upserts by `seg_id`, computes dual-color, runs
+  async translate, and guards finalized segments. There is no pause/over-length
+  splitting in the assembler anymore (`_PARAGRAPH_PAUSE_S`/`_para_cut` removed).
+- Audio contract is 16 kHz / mono / s16le PCM, fed in arbitrary chunks. Backends
+  re-frame internally; do not pre-chunk to 20 ms in the client.
+- Dual-color uses longest-common-prefix (`source_stable_len`) because backends
+  rewrite interim text, not just append: the common prefix is stable (bright), the
+  tail is "floaty" (dim); on `is_final` the whole line goes stable.
+- voxgate runs `voxgate transcribe - --input-format pcm16 --stream -f protocol -l
+  <lang>` as a subprocess (raw Doubao send/recv frames, one JSON per line; full
+  research in `docs/dev/voxgate-protocol.md`). Each `result_json.results[]` item
+  carries `index` (the sentence number), a cumulative full `text`, and sentence
+  `start/end_time`. **DO NOT use `index` directly as the seg_id.** Short/paused
+  audio increments `index` and emits `is_vad_finished` per sentence — but
+  **continuous speech (watching video / meetings, no clear pauses) keeps the same
+  `index` for the whole session, never fires VAD, and at the ~118-char per-sentence
+  cap "rolling-resets" `text` (sudden shrink, prefix fully replaced)**. Keying on
+  `index` alone overwrites the whole session down to the last fragment (real
+  evidence: a 118s video session stored only 1 sentence). So `_consume_results`
+  keeps its own global sentence counter `_sentence_no` and treats **`index` change
+  OR a rolling reset (`_is_reset`)** as a sentence boundary — finalize the in-flight
+  segment there, start a new one. `_is_reset(old,new)` is length-halving ONLY:
+  `bool(old) and len(new)*2 < len(old)` (e.g. 211→15, 118→1). NEVER add a
+  "common-prefix shrank" rule — twopass rewrites (whose fault→who spots, punctuation
+  edits) shorten by a char or two with a changed prefix and that rule splits one
+  growing sentence into repeated prefixes (the real cause of the "English opening 3
+  duplicate lines"; those were all vad=0 growth frames, not VAD-triggered).
+  **Finalize on `is_vad_finished` (real pause); `is_force_finished` is a twopass
+  mid-sentence flush — the same `index` keeps growing after it, never finalize on
+  it.** Skip the trailing empty `text:""` placeholder. `stop()` closes stdin (EOF)
+  and keeps the receive thread alive until voxgate flushes and exits — killing first
+  truncates the last sentence. No server, no port, no WS. (The old `-f ndjson` /
+  `snapshot` / `stream_asr_finish` / cover-count model is gone.)
+- fun-asr keys each sentence by `funasr#{sentence_id}` and finalizes the previous
+  sentence when the next `sentence_id` appears (`sentence_end` is unreliable).
+
+Hard rules:
+
+- `core/realtime` must not import PyQt; widgets only touch the overlay from the
+  GUI thread. The transcribe/translate callbacks fire on the backend receive
+  thread and translation executor — they reach the overlay ONLY through
+  `LiveCaptionThread`'s Qt signals (queued to the GUI thread). Calling
+  `overlay.upsert_caption` off-thread aborts with "Cannot create children for a
+  parent in a different thread".
+- The overlay is its own fixed dark-glass visual world — it uses the design
+  tokens in `caption_overlay.py`, NOT `app_palette()`, and does not recolor with
+  the app theme. Its translucency intentionally bleeds the video behind it; do
+  not "fix" the neutral card color to look bluer (that tint is the wallpaper
+  showing through in design screenshots).
+- Ship a `voxgate` binary per platform (CGO build; the repo's are arm64 macOS
+  only and gitignored). `VoxgateBackend` spawns it directly as a `voxgate
+  transcribe` subprocess (no `voxgate serve`); users override the path in
+  设置 → 实时字幕配置. Binary discovery is `find_voxgate_binary` in
+  `backends/voxgate.py` (configured path → bundled bin → user bin → PATH).
+- Translation reuses `TranslatorFactory` (default Bing: no key, low latency).
+  Per-sentence finalize translates once; the active sentence translates on a
+  debounce. Do not add a separate live-translation backend.
+- `LiveCaptionInterface` MUST be in `main_window.closeEvent`'s shutdown tuple and
+  stop its thread + overlay on close, or exit aborts on a running QThread. Before
+  deleting the overlay, disconnect BOTH `thread.caption` (→ host `_on_caption`) and
+  `thread.level` (→ `overlay.set_level`); a queued signal to a freed overlay aborts.
+- Every session auto-records: `SessionRecorder` tees PCM to `audio.wav` and collects
+  finalized paragraphs into a `LiveCaptionRecord` saved under
+  `APPDATA_PATH/live_captions/{YYYYMMDD-HHMMSS}/transcript.json`. Empty sessions are
+  discarded. Segment `start` = paragraph `started_at − session_start` (aligns with the
+  continuously-recorded WAV). The detail page plays that WAV with per-sentence marks;
+  clicking a sentence/mark seeks. Don't invent a new on-disk layout — go through
+  `LiveCaptionStore`.
+- The in-app page (`ui/components/live_caption/`) is the normal app visual world
+  (`app_palette()`, reuse `workbench`); only the floating `caption_overlay` is the
+  separate dark-glass world. Pixel-anchor the 3 views to
+  `docs/dev/design-live-caption-proposals.html` (render with Chrome via
+  `/opt/homebrew/bin/python3.11` + playwright; capture each `data-mode`).
+
+The overlay has two states — standard (compact current line, for overlaying video)
+and tall (full timeline) — plus the in-overlay settings popover and a paused state;
+WIDE / DOCK / COMPACT were removed. Verify overlay edits by rendering the card
+offscreen and diffing against `scripts/design_reference_shots.py`-style shots.
 
 ## Online Download And Diagnostics
 
@@ -408,6 +560,14 @@ remain in the worktree.
 - For provider model lists, separate "load available models" from "test this
   connection". Cache loaded model options per provider in shared config state
   only when they are safe to reuse.
+- Comments describe what the code IS now, not how it got there. Delete debugging
+  anecdotes ("实测 100ms", "线上 bug", "用户反馈…"), changelog-style narration,
+  line-number references, and "we chose NOT to do X" justifications for absent
+  features. Keep only non-obvious WHY: anti-regression constraints and domain rules.
+- When you change code, fix its comment/docstring in the SAME edit — a comment that
+  still describes the old behavior is a stale lie the next reader trusts.
+- Don't cite design-mock HTML files or their CSS class names in comments/docstrings
+  (see UI Direction); describe the widget, not the mock it came from.
 
 ## Workspace Hygiene
 

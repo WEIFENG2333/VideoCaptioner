@@ -27,6 +27,7 @@ class LLMTranslator(BaseTranslator):
         custom_prompt: str,
         is_reflect: bool,
         update_callback: Optional[Callable],
+        disable_thinking: bool = False,
     ):
         super().__init__(
             thread_num=thread_num,
@@ -38,6 +39,13 @@ class LLMTranslator(BaseTranslator):
         self.model = model
         self.custom_prompt = custom_prompt
         self.is_reflect = is_reflect
+        # 关思考求快（混合推理模型如 DeepSeek/Qwen3 默认开思考、单请求十几秒）：实时翻译尤其需要。
+        # 经 extra_body 传 enable_thinking=False；不支持该参数的端点（如 OpenAI 官方）由 call_llm 自动去掉。
+        self.disable_thinking = disable_thinking
+
+    @property
+    def _llm_extra(self) -> dict:
+        return {"extra_body": {"enable_thinking": False}} if self.disable_thinking else {}
 
     def _translate_chunk(
         self, subtitle_chunk: List[SubtitleProcessData]
@@ -108,7 +116,7 @@ class LLMTranslator(BaseTranslator):
         last_response_dict = None
         # llm 反馈循环
         for _ in range(self.MAX_STEPS):
-            response = call_llm(messages=messages, model=self.model)
+            response = call_llm(messages=messages, model=self.model, **self._llm_extra)
             response_dict = json_repair.loads(
                 response.choices[0].message.content.strip()
             )
@@ -204,7 +212,7 @@ class LLMTranslator(BaseTranslator):
                         {"role": "user", "content": data.original_text},
                     ],
                     model=self.model,
-                    temperature=0.7,
+                    **self._llm_extra,
                 )
                 translated_text = response.choices[0].message.content.strip()
                 data.translated_text = translated_text

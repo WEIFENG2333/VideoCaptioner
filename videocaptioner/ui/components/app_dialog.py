@@ -22,6 +22,7 @@ from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.theme_tokens import app_palette
 from videocaptioner.ui.components.workbench import (
     AccentButton,
+    AppLineEdit,
     CompactButton,
     DangerButton,
     IconBox,
@@ -166,3 +167,39 @@ class ConfirmDialog(AppDialog):
             confirm_text, kind="danger" if danger else "accent"
         )
         self.confirmButton.clicked.connect(lambda: self.done(1))
+
+
+class InputDialog(AppDialog):
+    """单行文本输入框：确认返回 1（``value()`` 取文本），取消/Esc/关闭返回 0。
+
+    回车即确认，打开即聚焦并全选既有文本（重命名场景方便直接改）。
+    """
+
+    def __init__(
+        self,
+        title: str,
+        *,
+        text: str = "",
+        placeholder: str = "",
+        parent: QWidget | None = None,
+        confirm_text: str = "确定",
+        cancel_text: str = "取消",
+        icon: AppIcon | None = None,
+        width: int = 430,
+    ):
+        super().__init__(title, icon=icon, parent=parent, width=width)
+        self.edit = AppLineEdit(text, self.widget)
+        if placeholder:
+            self.edit.setPlaceholderText(placeholder)
+        self.edit.returnPressed.connect(lambda: self.done(1))  # 回车=确认
+        self.bodyLayout.addWidget(self.edit)
+        self.addFooterStretch()
+        self.cancelButton = self.addFooterButton(cancel_text)
+        self.cancelButton.clicked.connect(lambda: self.done(0))
+        self.confirmButton = self.addFooterButton(confirm_text, kind="accent")
+        self.confirmButton.clicked.connect(lambda: self.done(1))
+        self.edit.setFocus()
+        self.edit.selectAll()
+
+    def value(self) -> str:
+        return self.edit.text().strip()

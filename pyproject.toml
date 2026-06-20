@@ -40,6 +40,10 @@ dependencies = [
     "edge-tts>=7.2.8",
     # request_logger 直接 import httpx；不能依赖 openai 的传递依赖兜底
     "httpx>=0.27.0",
+    # 实时字幕：本地麦克风/系统音频采集（PortAudio）、流式 ASR WebSocket、电平计算
+    "sounddevice>=0.4.6",
+    "websocket-client>=1.7.0",
+    "numpy>=1.26.0",
 ]
 
 [project.optional-dependencies]

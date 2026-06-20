@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """任务创建页（首页入口）。
 
-布局与状态对应 docs/dev/design-task-create.html（方案 A）：
+布局与状态：
 hero 标识 + 输入卡（链接/文件 + 主按钮 + 轻状态行）+ 详情区
 （文件就绪面板 / 下载进度盒 / 错误卡）+ 流程线 + 底部品牌行。
 
@@ -179,7 +179,7 @@ class DownloadController(QObject):
 
 
 class InputField(QFrame):
-    """输入框（.input-field）：58 高 12 圆角，左侧形态图标 + 内嵌输入框。"""
+    """输入框：58 高 12 圆角，左侧形态图标 + 内嵌输入框。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -251,7 +251,7 @@ class InputField(QFrame):
 
 
 class MediaReadyPanel(QFrame):
-    """文件就绪面板（.status-panel）：文件名 + 路径 + 元信息胶囊 + 已就绪。"""
+    """文件就绪面板：文件名 + 路径 + 元信息胶囊 + 已就绪。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -350,7 +350,7 @@ class DownloadPanel(QFrame):
         self.titleLabel.setObjectName("downloadTitle")
         apply_font(self.titleLabel, 15, 850)
         head.addWidget(self.titleLabel, 1)
-        # 设计稿盲区：下载必须可取消
+        # 下载必须可取消
         self.cancelButton = CompactButton("取消", AppIcon.CANCEL, self)
         self.cancelButton.clicked.connect(self.cancelRequested)
         head.addWidget(self.cancelButton)
@@ -527,7 +527,7 @@ class ConfirmPanel(QFrame):
 
 
 class FooterAction(QLabel):
-    """底部链接动作（.footer-action）：hover 点亮主题色。"""
+    """底部链接动作：hover 点亮主题色。"""
 
     clicked = pyqtSignal()
 

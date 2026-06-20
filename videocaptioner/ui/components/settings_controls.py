@@ -236,8 +236,11 @@ class SettingsPage(ScrollArea):
             self.layout.addItem(stretch)
 
     def _sync_group_width(self, group: "SettingsGroup") -> None:
-        width = max(640, min(940, self.viewport().width() - 104))
-        group.setFixedWidth(width)
+        # 关键：组宽绝不能超过可视宽度，否则内容横向溢出、整页能被左右拖动。
+        # 理想 640–940，但窄视口下以「可视宽-边距」为准（宁可窄也不溢出）。
+        avail = self.viewport().width() - 104
+        width = min(940, avail) if avail > 0 else self.viewport().width()
+        group.setFixedWidth(max(1, width))
 
     def _sync_group_widths(self) -> None:
         for group in self._groups:
@@ -351,7 +354,7 @@ class SettingRow(QFrame):
         super().__init__(parent)
         self.setObjectName("settingRow")
         self.setMinimumHeight(ROW_MIN_HEIGHT)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)  # 高度随描述换行增长，不裁字
         self._is_last = False
         self.rootLayout = QHBoxLayout(self)
         self.rootLayout.setContentsMargins(18, ROW_VERTICAL_PADDING, 18, ROW_VERTICAL_PADDING)
@@ -359,7 +362,7 @@ class SettingRow(QFrame):
 
         textBox = QWidget(self)
         textBox.setObjectName("settingRowTextBox")
-        textBox.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        textBox.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         textLayout = QVBoxLayout(textBox)
         textLayout.setContentsMargins(0, 0, 0, 0)
         textLayout.setSpacing(6)
@@ -367,9 +370,9 @@ class SettingRow(QFrame):
         self.titleLabel.setObjectName("settingRowTitle")
         self.descLabel = QLabel(description, textBox)
         self.descLabel.setObjectName("settingRowDescription")
-        self.descLabel.setWordWrap(False)
-        self.titleLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        self.descLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.descLabel.setWordWrap(True)  # 描述自动换行，不再被右侧控件挤出容器/截断
+        self.titleLabel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.descLabel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         apply_font(self.titleLabel, 15, 820)
         apply_font(self.descLabel, 13, 500)
         textLayout.addWidget(self.titleLabel)

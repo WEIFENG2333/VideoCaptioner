@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 """设计语言基础控件（workbench design language）。
 
-对应 docs/dev/*-designs.html 设计稿里的原子样式，尺寸、圆角、字号与设计稿
-CSS 一一对应；颜色一律取自 theme_tokens.app_palette()，不允许页面私造色值。
+页面通用的原子样式控件；颜色一律取自 theme_tokens.app_palette()，不允许
+页面私造色值。
 
-控件清单（括号内是设计稿里的 CSS class）：
+控件清单：
 
-- StatusPill        状态胶囊（.status，neutral/ok/warn/fail 四级）
-- InfoChip          信息胶囊（.pill，只读元数据标签）
-- HeaderLinkButton  面板头部的胶囊链接（.header-link）
+- StatusPill        状态胶囊（neutral/ok/warn/fail 四级）
+- InfoChip          信息胶囊（只读元数据标签）
+- HeaderLinkButton  面板头部的胶囊链接
 - RoundIconButton   圆形图标按钮（面板头部设置入口）
-- WorkbenchButton   按钮（.btn / .btn.primary，默认 44 高 9 圆角）
-- CompactButton     紧凑按钮（.btn.compact，32 高）
-- ToggleSwitch      开关（.switch，48x28 自绘）
-- PillSelect        胶囊下拉（option-card 右侧取值）
-- OptionCard        选项卡片（.option-card，左标签右控件）
+- WorkbenchButton   按钮（默认 44 高 9 圆角，可带图标）
+- CompactButton     紧凑按钮（32 高）
+- ToggleSwitch      开关（48x28 自绘）
+- PillSelect        胶囊下拉（取值胶囊，点击弹菜单换值）
+- OptionCard        选项卡片（左标签右控件）
 - DropZone          拖放导入空态（framed 虚线框 / 无框两种形态）
-- FilePickLink      “点击选择文件”链接（.file-pick-action）
-- ProgressBarLine   8px 进度条（.progress）
+- FilePickLink      “点击选择文件”链接
+- ProgressBarLine   8px 进度条
 - AdaptiveTitleLabel / ElidedLabel  自适应标题 / 单行省略标签
-- WorkbenchPanel    面板容器（.panel，14 圆角）
-- PanelHeader       面板标题行（.panel-head，inline / bar，可加 underline）
+- WorkbenchPanel    面板容器（14 圆角）
+- PanelHeader       面板标题行（inline / bar，可加 underline）
 
 所有圆角背景边框统一走 draw_rounded_surface 自绘（QSS 圆角无抗锯齿）。
 """
@@ -132,7 +132,7 @@ def draw_rounded_surface(
 
 
 def qt_font_weight(css_weight: int) -> int:
-    """把设计稿的 CSS font-weight（400-900）映射到 Qt5 字重（50-87）。"""
+    """把 CSS font-weight（400-900）映射到 Qt5 字重（50-87）。"""
     return max(1, min(99, round(50 + (css_weight - 400) * 37 / 500)))
 
 
@@ -249,7 +249,7 @@ class ElidedLabel(QLabel):
 
 
 class StatusPill(QLabel):
-    """状态胶囊（.status）：等待文件 / 转录中 / 转录失败 / 完成 等。"""
+    """状态胶囊：等待文件 / 转录中 / 转录失败 / 完成 等。"""
 
     LEVELS = ("neutral", "ok", "warn", "fail")
 
@@ -301,7 +301,7 @@ class StatusPill(QLabel):
 
 
 class InfoChip(QLabel):
-    """只读信息胶囊（.pill）：分辨率、时长、文件大小、格式等元数据。"""
+    """只读信息胶囊：分辨率、时长、文件大小、格式等元数据。"""
 
     def __init__(self, text: str = "", parent=None):
         super().__init__(text, parent)
@@ -332,7 +332,7 @@ class InfoChip(QLabel):
 
 
 class HeaderLinkButton(QFrame):
-    """面板头部的胶囊链接（.header-link）：更换文件、转录配置。"""
+    """面板头部的胶囊链接：更换文件、转录配置。"""
 
     clicked = pyqtSignal()
 
@@ -402,7 +402,7 @@ class HeaderLinkButton(QFrame):
 
 
 class WorkbenchButton(QFrame):
-    """按钮（.btn / .btn.primary）：44 高、9 圆角、可带 17px 图标。"""
+    """按钮：44 高、9 圆角、可带 17px 图标。"""
 
     clicked = pyqtSignal()
 
@@ -413,12 +413,15 @@ class WorkbenchButton(QFrame):
         primary: bool = False,
         height: int = 44,
         parent=None,
+        tone: str | None = None,
     ):
         super().__init__(parent)
         self.setObjectName("wbButton")
         self._icon = icon
         self._height = height
-        self._primary = primary
+        # tone: primary / default / danger / warn。不传时由 primary 推断，向后兼容。
+        self._tone = tone or ("primary" if primary else "default")
+        self._primary = self._tone == "primary"
         self.setFixedHeight(height)
         self.setMinimumWidth(126)
         self.setCursor(Qt.PointingHandCursor)  # type: ignore[arg-type]
@@ -428,6 +431,9 @@ class WorkbenchButton(QFrame):
         layout.setSpacing(10)
         layout.addStretch(1)
         self.iconLabel = QLabel(self)
+        # 自带透明底：父级 setStyleSheet 后，未声明背景的子 QLabel 会回退到调色板底色，
+        # 在按钮上糊出一块方块（与 CompactButton 同款修复）。
+        self.iconLabel.setStyleSheet("background: transparent; border: none;")
         self.iconLabel.setVisible(icon is not None)
         layout.addWidget(self.iconLabel)
         self.textLabel = QLabel(text, self)
@@ -448,7 +454,13 @@ class WorkbenchButton(QFrame):
         self.syncStyle()
 
     def setPrimary(self, primary: bool):
+        self._tone = "primary" if primary else "default"
         self._primary = primary
+        self.syncStyle()
+
+    def setTone(self, tone: str):
+        self._tone = tone
+        self._primary = tone == "primary"
         self.syncStyle()
 
     def setEnabled(self, enabled: bool):
@@ -472,20 +484,31 @@ class WorkbenchButton(QFrame):
 
     def syncStyle(self):
         palette = app_palette()
-        weight = 860 if self._primary else 780
+        tone = self._tone
+        weight = 860 if tone == "primary" else 780
         if not self.isEnabled():
-            # 设计稿 .btn.disabled 是整体 45% 透明度，QSS 做不到，按等效色近似。
-            bg = rgba(palette.accent, 0.30) if self._primary else palette.control
-            border = rgba(palette.accent, 0.30) if self._primary else palette.line
-            fg = rgba(palette.accent_fg, 0.55) if self._primary else palette.subtle
+            # disabled 态是整体 45% 透明度，QSS 做不到，按等效色近似。
+            if tone == "primary":
+                bg = border = rgba(palette.accent, 0.30)
+                fg = rgba(palette.accent_fg, 0.55)
+            else:
+                bg, border, fg = palette.control, palette.line, palette.subtle
             hover_bg, hover_border = bg, border
             icon_color = palette.subtle
-        elif self._primary:
+        elif tone == "primary":
             bg = border = palette.accent
             fg = palette.accent_fg
             # hover 提亮基于主题色派生，自定义主题色时跟随变化
             hover_bg = hover_border = to_qcolor(palette.accent).lighter(112).name()
             icon_color = palette.accent_fg
+        elif tone == "danger":
+            bg, border = rgba(palette.danger, 0.10), rgba(palette.danger, 0.55)
+            fg = icon_color = palette.danger_fg
+            hover_bg, hover_border = rgba(palette.danger, 0.16), rgba(palette.danger, 0.70)
+        elif tone == "warn":
+            bg, border = rgba(palette.warn, 0.12), rgba(palette.warn, 0.50)
+            fg = icon_color = palette.warn
+            hover_bg, hover_border = rgba(palette.warn, 0.18), rgba(palette.warn, 0.66)
         else:
             bg, border, fg = palette.control, palette.line, palette.text
             hover_bg, hover_border = _hover_colors()
@@ -527,7 +550,7 @@ class WorkbenchButton(QFrame):
 
 
 class ToggleSwitch(QFrame):
-    """开关（.switch）：48x28 自绘胶囊 + 20px 圆形滑块。"""
+    """开关：48x28 自绘胶囊 + 20px 圆形滑块。"""
 
     toggled = pyqtSignal(bool)
 
@@ -580,7 +603,7 @@ class ToggleSwitch(QFrame):
 
 
 class FilePickLink(QFrame):
-    """“点击选择文件”链接（.file-pick-action）：图标 + 文案 + 渐变下划线。"""
+    """“点击选择文件”链接：图标 + 文案 + 渐变下划线。"""
 
     clicked = pyqtSignal()
 
@@ -655,7 +678,7 @@ class FilePickLink(QFrame):
 
 
 class DropZone(QFrame):
-    """拖放导入空态（.drop-zone / .empty）。
+    """拖放导入空态。
 
     framed=True：虚线边框 + 顶部辉光（转录页样式）；
     framed=False：无边框，仅居中引导内容（字幕页表格空态样式）。
@@ -818,7 +841,7 @@ class DropZone(QFrame):
 
 
 class ProgressBarLine(QFrame):
-    """8px 进度条（.progress）。
+    """8px 进度条。
 
     tone 控制填充色：accent（默认）/ warn（处理中黄）/ fail（失败红）。
     """
@@ -956,7 +979,7 @@ class _FilterTab(QLabel):
 
 
 class FilterTabs(QFrame):
-    """分段筛选（.filter-tabs）：批量队列过滤、配音声线筛选等通用。"""
+    """分段筛选：批量队列过滤、配音声线筛选等通用。"""
 
     changed = pyqtSignal(str)
 
@@ -1005,7 +1028,7 @@ class FilterTabs(QFrame):
 
 
 class SelectableCard(QFrame):
-    """可选卡（.mode-card / provider-card）：左侧可选图标盒 + 标题/说明，
+    """可选卡：左侧可选图标盒 + 标题/说明，
     选中态主题色描边+底色，hover 轻描边。批量处理模式卡、配音提供商卡共用，
     全自绘圆角（QSS 圆角无抗锯齿）。点击发 clicked(key)。"""
 
@@ -1125,7 +1148,7 @@ class SelectableCard(QFrame):
 
 
 class ErrorCard(QFrame):
-    """错误卡（.error-panel）：danger_soft 底 + danger 描边 + 可选标题 + 可选中正文。
+    """错误卡：danger_soft 底 + danger 描边 + 可选标题 + 可选中正文。
 
     转录/字幕/合成/任务创建四页统一用它（过去各页一份 QSS 复制，边框透明度/
     内边距/字号各自漂移）。全自绘圆角；正文可选中复制，方便用户反馈。
@@ -1173,7 +1196,7 @@ class ErrorCard(QFrame):
 
 
 class SectionLabel(QLabel):
-    """小节标题（.section-label）：弱化色 + 12px/800，面板内分组小标题统一用它。"""
+    """小节标题：弱化色 + 12px/800，面板内分组小标题统一用它。"""
 
     def __init__(self, text: str = "", parent=None):
         super().__init__(text, parent)
@@ -1329,7 +1352,7 @@ class AppTextEdit(QPlainTextEdit):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore[attr-defined]
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[attr-defined]
         # 文本内边距走 documentMargin：QSS 的 padding 到不了 QPlainTextEdit 文本区
-        # （文字会贴边），documentMargin 才能稳定把文字从边缘推开。对齐设计稿 .textarea 的 ~14px。
+        # （文字会贴边），documentMargin 才能稳定把文字从边缘推开。
         self.document().setDocumentMargin(12)
         apply_font(self, 14, 720)  # 只设一次；调用方可在构造后用 apply_font 覆盖字号
         if text:
@@ -1362,7 +1385,7 @@ class AppTextEdit(QPlainTextEdit):
             border = palette.line_soft
         # 文本区背景/文字色走 QPalette：QSS 的 background 在某些父级样式表下到不了
         # QPlainTextEdit 的 viewport（会露出 Qt 默认白底），调色板直控更可靠。
-        # 用 panel_deep（比 panel 更暗）做下沉式输入框，对齐设计稿 .textarea 的深色底，
+        # 用 panel_deep（比 panel 更暗）做下沉式输入框的深色底，
         # 避免用 field（比面板更亮）时输入框显得「浮起/和面板分不清」。
         pal = self.palette()
         pal.setColor(QPalette.Base, QColor(palette.panel_deep))
@@ -1391,7 +1414,7 @@ class AppTextEdit(QPlainTextEdit):
 
 
 class CompactButton(QFrame):
-    """紧凑按钮（.btn.compact）：32 高、图标 + 文案，表格头部操作用。"""
+    """紧凑按钮：32 高、图标 + 文案，表格头部操作用。"""
 
     clicked = pyqtSignal()
 
@@ -1413,6 +1436,9 @@ class CompactButton(QFrame):
         layout.setContentsMargins(pad_h, 0, pad_h, 0)
         layout.setSpacing(6)
         self.iconLabel = QLabel(self)
+        # 自带透明底：父级一旦 setStyleSheet，未显式声明背景的子 QLabel 会回退到调色板
+        # 底色，在按钮上糊出一块深色方块（图标背后的黑块就是这么来的）。
+        self.iconLabel.setStyleSheet("background: transparent; border: none;")
         self.iconLabel.setVisible(icon is not None)
         layout.addWidget(self.iconLabel)
         self.textLabel = QLabel(text, self)
@@ -1489,7 +1515,7 @@ class CompactButton(QFrame):
 
 
 class AccentButton(CompactButton):
-    """主操作迷你按钮（设计稿 .mini.primary）：主题色描边与文字。"""
+    """主操作迷你按钮：主题色描边与文字。"""
 
     def paintEvent(self, event):
         palette = app_palette()
@@ -1516,7 +1542,7 @@ class AccentButton(CompactButton):
 
 
 class DangerButton(CompactButton):
-    """危险操作迷你按钮（设计稿 .mini.danger）：删除等不可逆操作。"""
+    """危险操作迷你按钮：删除等不可逆操作。"""
 
     def paintEvent(self, event):
         palette = app_palette()
@@ -1539,7 +1565,7 @@ class DangerButton(CompactButton):
 
 
 class IconBox(QFrame):
-    """图标盒（设计稿 .file-mark）：半透明圆角块内嵌图标。
+    """图标盒：半透明圆角块内嵌图标。
 
     tone 决定底色与图标色：
     - ``surface``（默认）：淡叠色底 + line_soft 边 + muted 图标；
@@ -1579,7 +1605,7 @@ class IconBox(QFrame):
 
 
 class PillSelect(QFrame):
-    """胶囊下拉（option-card 右侧的取值胶囊）：点击弹 RoundMenu 换值。"""
+    """胶囊下拉取值胶囊：点击弹 RoundMenu 换值。"""
 
     currentTextChanged = pyqtSignal(str)
 
@@ -1599,6 +1625,8 @@ class PillSelect(QFrame):
         layout.addWidget(self.textLabel)
         # 常驻下拉箭头：让取值胶囊一眼可辨「可点选」，区别于只读 InfoChip 元数据胶囊
         self.chevronLabel = QLabel(self)
+        # 自带透明底：父级 setStyleSheet 后未声明背景的子 QLabel 会回退调色板底色 → 箭头后糊一块方块
+        self.chevronLabel.setStyleSheet("background: transparent; border: none;")
         self.chevronLabel.setFixedSize(14, 14)
         layout.addWidget(self.chevronLabel, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
         self.syncStyle()
@@ -1749,7 +1777,7 @@ class _StepButton(QFrame):
 
 
 class StepperControl(QFrame):
-    """数值步进器（设计稿 .num-control）：[−] 值 单位 [+]。
+    """数值步进器：[−] 值 单位 [+]。
 
     参数面板里所有数值项统一用它（字号、描边、边距、圆角半径…），
     支持整数/小数（``decimals``）、范围与步长，全自绘圆角。
@@ -1845,7 +1873,7 @@ class StepperControl(QFrame):
 
 
 class ToggleCard(QFrame):
-    """输出内容卡（.target-row）：标题 + 说明 + 开关，开启时主题色描边。"""
+    """输出内容卡：标题 + 说明 + 开关，开启时主题色描边。"""
 
     toggled = pyqtSignal(bool)
 
@@ -1915,7 +1943,7 @@ class ToggleCard(QFrame):
 
 
 class OptionCard(QFrame):
-    """选项卡片（.option-card）：左标签 + 右控件（开关 / 取值胶囊等）。"""
+    """选项卡片：左标签 + 右控件（开关 / 取值胶囊等）。"""
 
     def __init__(self, label: str, control: QWidget, parent=None):
         super().__init__(parent)
@@ -1952,12 +1980,12 @@ class OptionCard(QFrame):
 
 
 class MediaThumb(QFrame):
-    """媒体缩略图（.thumb）：有封面画封面，没有就画音/视频占位图。
+    """媒体缩略图：有封面画封面，没有就画音/视频占位图。
 
     转录页媒体卡与合成页结果预览共用。
     """
 
-    # 设计稿音频波形 path 的折点（180x28 视图），绘制时按尺寸缩放。
+    # 音频波形折线的折点（180x28 坐标系），绘制时按尺寸缩放。
     _WAVE_POINTS = [
         (2, 15), (24, 6), (44, 22), (64, 9), (84, 18),
         (104, 4), (124, 23), (144, 10), (178, 16),
@@ -2061,7 +2089,7 @@ class MediaThumb(QFrame):
 
 
 class WorkbenchPanel(QFrame):
-    """面板容器（.panel）：14 圆角、1px 边框。布局由调用方自己放。"""
+    """面板容器：14 圆角、1px 边框。布局由调用方自己放。"""
 
     def __init__(self, parent=None, padded: bool = True):
         super().__init__(parent)
@@ -2170,7 +2198,7 @@ class CollapsibleSideHost(QFrame):
 
 
 class PanelHeader(QFrame):
-    """面板标题行（.panel-head）。
+    """面板标题行。
 
     inline=True：放在带内边距面板顶部（默认无分隔线，underline=True 加线）；
     inline=False：独立标题栏（56 高、左右 22 内边距、底部分隔线）。

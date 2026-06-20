@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """语音转录页：单文件转录工作台。
 
-布局与状态对应 docs/dev/design-transcription.html 的最终方案：
 左侧是预览与结果区，右侧是固定 330px 的参数 / 结果操作栏。
 
 页面状态机（PageState）：
@@ -100,7 +99,7 @@ from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.thread.transcript_thread import TranscriptThread
 from videocaptioner.ui.thread.video_info_thread import VideoInfoThread
 
-# 转录服务在页面上的短名（设计稿状态胶囊里的写法）。
+# 转录服务在页面上的短名（状态胶囊里的写法）。
 _PROVIDER_SHORT = {
     TranscribeModelEnum.BIJIAN: "B 接口",
     TranscribeModelEnum.JIANYING: "J 接口",
@@ -339,7 +338,7 @@ def _result_artifact(task: TranscribeTask) -> tuple[Path, bool]:
 
 
 class MediaCard(QFrame):
-    """当前文件卡片（.media-card）：缩略图 + 标题 + 信息胶囊。"""
+    """当前文件卡片：缩略图 + 标题 + 信息胶囊。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -396,7 +395,7 @@ class MediaCard(QFrame):
 
 
 class PendingResultArea(QFrame):
-    """“尚未开始转录”占位（.pending-result）。"""
+    """“尚未开始转录”占位。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -459,7 +458,7 @@ class PendingResultArea(QFrame):
         )
 
 class ProgressCard(QFrame):
-    """转录进度卡（.progress-card）：百分比 + 进度条 + 三个阶段行。"""
+    """转录进度卡：百分比 + 进度条 + 三个阶段行。"""
 
     _STAGES = ("读取音频", "识别语音", "生成字幕文件")
 
@@ -562,7 +561,7 @@ class ProgressCard(QFrame):
 
 
 class SubtitlePreviewPanel(WorkbenchPanel):
-    """SRT 结果表格（.table）：开始时间 / 结束时间 / 字幕内容。"""
+    """SRT 结果表格：开始时间 / 结束时间 / 字幕内容。"""
 
     replaceRequested = pyqtSignal()
 
@@ -571,7 +570,7 @@ class SubtitlePreviewPanel(WorkbenchPanel):
         self.header = PanelHeader(self.tr("原始字幕预览"), inline=False, parent=self)
         self.pill = StatusPill("", "ok", self)
         self.header.addRight(self.pill)
-        # 完成态也要能直接导入下一个文件（设计稿缺少该入口）。
+        # 完成态也要能直接导入下一个文件。
         self.replaceLink = HeaderLinkButton(self.tr("更换文件"), AppIcon.FOLDER_ADD, self)
         self.replaceLink.clicked.connect(self.replaceRequested)
         self.header.addRight(self.replaceLink)
@@ -845,7 +844,7 @@ class _ResultFileCard(ClickableFrame):
 
 
 class ResultTextLink(QFrame):
-    """结果区的文字链接（.text-link）：重新转录。"""
+    """结果区的文字链接：重新转录。"""
 
     clicked = pyqtSignal()
 
@@ -1146,7 +1145,7 @@ class TranscriptionInterface(QWidget):
         self.fileHeader.addRight(self.filePill)
         self.replaceLink = HeaderLinkButton(self.tr("更换文件"), AppIcon.FOLDER_ADD, self.filePanel)
         self.fileHeader.addRight(self.replaceLink)
-        # 设计稿未覆盖的真实需求：转录中必须可以取消。
+        # 转录中必须可以取消。
         self.cancelLink = HeaderLinkButton(self.tr("取消转录"), AppIcon.CANCEL, self.filePanel)
         self.fileHeader.addRight(self.cancelLink)
         self.cancelLink.hide()
@@ -1169,7 +1168,7 @@ class TranscriptionInterface(QWidget):
         file_body_layout.addWidget(self.errorBanner)
         file_body_layout.addStretch(0)
         # 初始即隐藏：QStackedWidget 的最小尺寸取所有页面之和，
-        # 三个互斥区块同时可见会把整页最小高度撑过设计稿的 702。
+        # 三个互斥区块同时可见会把整页最小高度撑得过高。
         self.progressCard.hide()
         self.errorBanner.hide()
         self.filePanel.bodyLayout.addWidget(file_body, 1)
@@ -1359,7 +1358,7 @@ class TranscriptionInterface(QWidget):
             self.pendingArea.setVisible(state == PageState.READY)
             self.progressCard.setVisible(state == PageState.RUNNING)
             self.errorBanner.setVisible(state == PageState.FAILED)
-            # 设计稿：就绪态用带分隔线的标题栏 + 190px 缩略图；
+            # 就绪态用带分隔线的标题栏 + 190px 缩略图；
             # 运行/失败态用无分隔线标题 + 210px 缩略图和运行上下文胶囊。
             self.fileHeader.setInline(state != PageState.READY)
             if state == PageState.READY:
@@ -1391,7 +1390,7 @@ class TranscriptionInterface(QWidget):
             self.paramsPanel.statusPill.hide()
             self._refresh_service_row()
 
-        # 音轨行只在文件就绪可调（与设计稿一致：运行/失败状态不显示）。
+        # 音轨行只在文件就绪可调（运行/失败状态不显示）。
         self.paramsPanel.trackRow.setVisible(
             state == PageState.READY and self.media_info is not None
         )

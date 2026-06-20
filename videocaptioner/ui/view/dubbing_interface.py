@@ -58,22 +58,22 @@ from videocaptioner.ui.thread.voice_preview_thread import (
 )
 
 CONTROL_RADIUS = 9   # 与 workbench CompactButton 一致
-PANEL_RADIUS = 18  # 对齐 design-dubbing.html 的 .panel（更圆润）
+PANEL_RADIUS = 18  # 面板圆角（更圆润）
 PAGE_MARGIN_X = 26  # 与批量/诊断等独立 nav 页根边距统一为 (26,20,26,22)
 SECTION_GAP = 14
 BODY_GAP = 18
 PROVIDER_HEIGHT = 88
 TABLE_HEADER_HEIGHT = 52
-VOICE_ROW_HEIGHT = 92  # 容纳 标题 + 描述 + 标签三行（对齐 design-dubbing.html voice-row）
-VOICE_LIST_PADDING = 12  # design-dubbing.html .voice-list padding
-VOICE_ROW_GAP = 8  # design-dubbing.html .voice-row margin-bottom（卡片之间留白）
-VOICE_ROW_RADIUS = 14  # design-dubbing.html .voice-row border-radius（圆角卡片，非直角行）
+VOICE_ROW_HEIGHT = 92  # 容纳 标题 + 描述 + 标签三行
+VOICE_LIST_PADDING = 12  # 音色列表内边距
+VOICE_ROW_GAP = 8  # 音色卡片之间的留白
+VOICE_ROW_RADIUS = 14  # 音色卡片圆角（圆角卡片，非直角行）
 SQUARE_BUTTON_SIZE = 40
 AUDITION_BUTTON_WIDTH = 92
 
 
 def _tag_chip(text: str, parent=None) -> QLabel:
-    """音色标签小药丸（design-dubbing.html .voice-meta .tag）：色值由页面 QSS 统一着色。"""
+    """音色标签小药丸：色值由页面 QSS 统一着色。"""
     chip = QLabel(text, parent)
     chip.setObjectName("voiceTag")
     apply_font(chip, 11, 760)
@@ -81,7 +81,7 @@ def _tag_chip(text: str, parent=None) -> QLabel:
 
 
 def _provider_badge(option) -> tuple[str, str]:
-    """提供商卡右侧状态胶囊（对齐 design-dubbing.html .provider .pill）：
+    """提供商卡右侧状态胶囊：
     免 Key（Edge）/ 可克隆（SiliconFlow）为 ok，其余需 Key 为 neutral。"""
     if not option.needs_api_key:
         return "免 Key", "ok"
@@ -288,7 +288,7 @@ class VoiceTable(QFrame):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self._add_header()  # 表头固定在顶部
-        # 音色卡列表区：内边距 + 卡间留白，每个音色是独立圆角卡片（design-dubbing.html .voice-list）。
+        # 音色卡列表区：内边距 + 卡间留白，每个音色是独立圆角卡片。
         # 放进内部 QScrollArea：表头不动，只有这块在长列表时滚动。
         self.listArea = QWidget()
         self.listArea.setObjectName("voiceListArea")
@@ -307,7 +307,7 @@ class VoiceTable(QFrame):
         self.layout.addWidget(self.listScroll, 1)  # 填满表头下方剩余高度
 
     def _add_header(self):
-        """表头：左「音色库 / 中文音色」标题 + 右分段筛选（对齐 design-dubbing.html panel-head）。"""
+        """表头：左「音色库 / 中文音色」标题 + 右分段筛选。"""
         self.header = QFrame(self)
         self.header.setObjectName("voiceHeader")
         self.header.setFixedHeight(TABLE_HEADER_HEIGHT)
@@ -392,7 +392,7 @@ class PreviewPanel(ThemedSimpleCard):
         layout.setContentsMargins(16, 15, 16, 15)
         layout.setSpacing(9)
 
-        # selected-top：标题 + 描述在左，当前音色 pill 在右。
+        # 标题 + 描述在左，当前音色 pill 在右。
         # 用透明容器而非带边框的子卡——子卡圆角(15)和外层面板圆角(18)在顶部只差 ~16px，
         # 会出现「两个圆角嵌套重叠」的观感。标题直接贴面板内边距即可，干净不重复。
         self.selectedCard = QFrame(self)
@@ -411,7 +411,7 @@ class PreviewPanel(ThemedSimpleCard):
         apply_font(self.descLabel, 13, 500)
         headText.addWidget(self.titleLabel)
         headText.addWidget(self.descLabel)
-        self.voicePill = StatusPill("", "ok", self.selectedCard)  # 当前音色（.selected-top .pill）
+        self.voicePill = StatusPill("", "ok", self.selectedCard)  # 当前音色
         self.voicePill.hide()
         header.addLayout(headText, 1)
         header.addWidget(self.voicePill, 0, Qt.AlignTop)
@@ -507,7 +507,7 @@ class PreviewPanel(ThemedSimpleCard):
         cloneLayout.addWidget(self.cloneTextInput)
         cloneLayout.addWidget(self.cloneHintLabel)
 
-        # 非克隆提供商：用「当前音色 / 生成类型」摘要替代克隆区（design-dubbing.html .form-list）
+        # 非克隆提供商：用「当前音色 / 生成类型」摘要替代克隆区
         self.formList = _RoundedPanel(
             14, lambda p: p.field, lambda p: p.line_soft, self
         )
@@ -539,7 +539,7 @@ class PreviewPanel(ThemedSimpleCard):
         self._update_count()
 
     def _form_row(self, label_text: str, value_label: QLabel) -> QHBoxLayout:
-        """form-list 一行：左键名 + 右值（design-dubbing.html .form-row）。"""
+        """form-list 一行：左键名 + 右值。"""
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         key = QLabel(label_text, self.formList)
@@ -562,7 +562,7 @@ class PreviewPanel(ThemedSimpleCard):
         return self.tr("生成试听音频")
 
     def setCurrentVoice(self, name: str):
-        """右栏「配音文案」标题旁显示当前音色名（design-dubbing.html selected-top .pill）。"""
+        """右栏「配音文案」标题旁显示当前音色名。"""
         if name:
             self.voicePill.setState(name, "ok")
             self.voicePill.show()
@@ -647,7 +647,7 @@ class PreviewPanel(ThemedSimpleCard):
         return bool(self._clone_audio_path) and Path(self._clone_audio_path).exists()
 
     def _format_file_line(self, path: str) -> str:
-        """file-line 文案：「文件名 · 时长s」（design-dubbing.html .file-line）。"""
+        """file-line 文案：「文件名 · 时长s」。"""
         if not path:
             return self.tr("未选择参考音频")
         name = Path(path).name
@@ -727,7 +727,7 @@ class DubbingInterface(ScrollArea):
         headText.addWidget(self.titleLabel)
         headText.addWidget(self.subtitleLabel)
         headRow.addLayout(headText, 1)
-        # 右侧：配音配置入口 + 当前提供商就绪状态（对齐 design-dubbing.html head-actions）
+        # 右侧：配音配置入口 + 当前提供商就绪状态
         self.configButton = CompactButton(self.tr("配音配置"), AppIcon.SETTING, self.headerWidget)
         self.configButton.clicked.connect(self._open_dubbing_config)
         self.readyPill = StatusPill("", "neutral", self.headerWidget)
@@ -757,8 +757,7 @@ class DubbingInterface(ScrollArea):
         bodyLayout = QHBoxLayout(self.bodyPanel)
         bodyLayout.setContentsMargins(0, 0, 0, 0)
         bodyLayout.setSpacing(BODY_GAP)
-        # 左侧音色库独立滚动：表头(音色库+筛选)固定，只有音色行在内部滚动；右侧预览面板固定不动
-        # （对齐 design-dubbing.html：.panel-head 固定 + .voice-list overflow:auto，.audition 固定）。
+        # 左侧音色库独立滚动：表头(音色库+筛选)固定，只有音色行在内部滚动；右侧预览面板固定不动。
         self.voiceTable = VoiceTable(self.bodyPanel)
         self.sidePanel = QWidget(self.bodyPanel)
         sideLayout = QVBoxLayout(self.sidePanel)

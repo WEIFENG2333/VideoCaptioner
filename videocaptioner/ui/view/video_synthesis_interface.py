@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """字幕视频合成页：组合开关工作台。
 
-布局与状态对应 docs/dev/design-synthesis.html（方案 A）：
 左侧是输入文件面板（拖放 / 文件清单 / 生成计划 / 结果文件），
 右侧是可折叠的「本次生成」栏（输出内容开关 + 参数 + 主按钮）。
 
@@ -256,7 +255,7 @@ class SynthesisController(QObject):
 
 
 class FileStateRow(QFrame):
-    """输入文件行（.file-row）：名称 + 说明 + 状态胶囊；缺失时虚线边。"""
+    """输入文件行：名称 + 说明 + 状态胶囊；缺失时虚线边。"""
 
     clicked = pyqtSignal()
 
@@ -341,7 +340,7 @@ class FileStateRow(QFrame):
 
 
 class PlanStepRow(QFrame):
-    """生成计划行（.plan-step）：图标 + 步骤名 + 状态胶囊。"""
+    """生成计划行：图标 + 步骤名 + 状态胶囊。"""
 
     def __init__(self, icon: AppIcon, title: str, parent=None):
         super().__init__(parent)
@@ -428,7 +427,7 @@ class SynthesisBottomBar(QFrame):
 
 
 class ResultFileRow(QFrame):
-    """结果文件行（.result-file）：名称 + 元信息 + 完成胶囊，点击打开。"""
+    """结果文件行：名称 + 元信息 + 完成胶囊，点击打开。"""
 
     clicked = pyqtSignal(str)
 

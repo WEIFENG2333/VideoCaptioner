@@ -1,9 +1,9 @@
 # coding:utf-8
 """字幕样式页（三栏工作台）。
 
-对照 docs/dev/design-subtitle-style.html：左「样式库」(渲染模式分页 + 样式卡)、
-中「预览」(实时渲染当前样式)、右「参数」(分组参数行)。编辑即自动保存到当前
-用户样式（编辑内置样式时自动 fork 成用户样式），与合成页共用 subtitle_style_name。
+左「样式库」(渲染模式分页 + 样式卡)、中「预览」(实时渲染当前样式)、
+右「参数」(分组参数行)。编辑即自动保存到当前用户样式（编辑内置样式时自动
+fork 成用户样式），与合成页共用 subtitle_style_name。
 """
 
 from __future__ import annotations

@@ -67,7 +67,6 @@ def _split_with_agent_loop(
         response = call_llm(
             messages=messages,
             model=model,
-            temperature=0.1,
         )
 
         result_text = response.choices[0].message.content

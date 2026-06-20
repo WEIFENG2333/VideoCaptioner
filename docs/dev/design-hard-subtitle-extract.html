@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VideoCaptioner 硬字幕提取设计</title>
+    <style>
+      :root {
+        --bg: #08100e;
+        --app: #111715;
+        --chrome: #151b19;
+        --panel: #1b2420;
+        --panel-2: #202a26;
+        --field: #26312d;
+        --field-2: #1e2824;
+        --line: #34413d;
+        --line-soft: #293531;
+        --text: #f4f7f5;
+        --muted: #a7b4af;
+        --subtle: #75837e;
+        --accent: #07ee8a;
+        --accent-soft: rgba(7, 238, 138, 0.12);
+        --accent-line: rgba(7, 238, 138, 0.72);
+        --warn: #f2d064;
+        --danger: #ee786a;
+        --shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 1520px;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter,
+          "SF Pro Display",
+          "PingFang SC",
+          "Microsoft YaHei",
+          sans-serif;
+      }
+
+      .board {
+        width: 1520px;
+        margin: 0 auto;
+        padding: 34px 40px 80px;
+      }
+
+      .state-label {
+        margin: 28px 0 12px;
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .client {
+        position: relative;
+        width: 1440px;
+        height: 900px;
+        overflow: hidden;
+        border: 1px solid #2a3632;
+        border-radius: 18px;
+        background: var(--app);
+        box-shadow: var(--shadow);
+      }
+
+      .window-bar {
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid var(--line-soft);
+        background: #111715;
+        color: var(--muted);
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .traffic {
+        position: absolute;
+        top: 21px;
+        left: 22px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .red {
+        background: #ff5d58;
+      }
+
+      .yellow {
+        background: #ffc241;
+      }
+
+      .green {
+        background: #32d657;
+      }
+
+      .app {
+        height: calc(100% - 54px);
+        display: grid;
+        grid-template-columns: 66px 1fr;
+        min-height: 0;
+      }
+
+      .rail {
+        border-right: 1px solid var(--line-soft);
+        background: #0d1412;
+        padding: 22px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 17px;
+      }
+
+      .rail button {
+        width: 42px;
+        height: 42px;
+        border: 0;
+        border-radius: 11px;
+        background: transparent;
+        display: grid;
+        place-items: center;
+      }
+
+      .rail button.active {
+        background: #123826;
+      }
+
+      .rail img,
+      .ico img {
+        width: 20px;
+        height: 20px;
+        filter: invert(78%) sepia(9%) saturate(289%) hue-rotate(115deg) brightness(86%);
+      }
+
+      .rail button.active img,
+      .primary img,
+      .link-action img,
+      .segment.active img,
+      .status.ok img {
+        filter: invert(76%) sepia(93%) saturate(1137%) hue-rotate(93deg) brightness(103%) contrast(98%);
+      }
+
+      .main {
+        min-width: 0;
+        padding: 30px 36px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 46px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 31px;
+        line-height: 1;
+        font-weight: 950;
+      }
+
+      .head-title {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .head-title span {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 850;
+      }
+
+      .head-actions,
+      .toolbar,
+      .action-row,
+      .row-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn {
+        height: 40px;
+        min-width: 108px;
+        padding: 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: var(--field-2);
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        font-size: 15px;
+        font-weight: 900;
+      }
+
+      .btn img {
+        width: 18px;
+        height: 18px;
+        filter: invert(78%) sepia(9%) saturate(289%) hue-rotate(115deg) brightness(86%);
+      }
+
+      .btn.primary {
+        height: 54px;
+        width: 100%;
+        border-color: transparent;
+        background: var(--accent);
+        color: #06110d;
+        font-size: 17px;
+        box-shadow: 0 18px 40px rgba(7, 238, 138, 0.18);
+      }
+
+      .btn.primary.disabled {
+        border-color: var(--line);
+        background: var(--field);
+        color: var(--subtle);
+        box-shadow: none;
+      }
+
+      .btn.ghost {
+        background: transparent;
+      }
+
+      .btn.disabled {
+        color: var(--subtle);
+        opacity: 0.72;
+      }
+
+      .link-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--accent);
+        border-bottom: 2px solid rgba(7, 238, 138, 0.55);
+        padding-bottom: 2px;
+        font-size: 15px;
+        font-weight: 900;
+      }
+
+      .link-action img {
+        width: 18px;
+        height: 18px;
+      }
+
+      .work {
+        min-height: 0;
+        flex: 1;
+        display: grid;
+        grid-template-columns: 620px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .panel {
+        min-width: 0;
+        min-height: 0;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .stage {
+        display: grid;
+        grid-template-rows: 68px minmax(0, 1fr);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 22px;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .panel-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .panel-title strong {
+        font-size: 20px;
+        font-weight: 950;
+      }
+
+      .panel-title span {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .status {
+        min-height: 34px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .status.ok {
+        color: var(--accent);
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+      }
+
+      .status.warn {
+        color: var(--warn);
+        border-color: rgba(242, 208, 100, 0.58);
+        background: rgba(242, 208, 100, 0.1);
+      }
+
+      .status.danger {
+        color: #ffb5ad;
+        border-color: rgba(238, 120, 106, 0.65);
+        background: rgba(238, 120, 106, 0.1);
+      }
+
+      .drop-wrap {
+        padding: 24px;
+        min-height: 0;
+      }
+
+      .dropbox {
+        height: 100%;
+        min-height: 560px;
+        border: 1px dashed #63726d;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        background: #17211d;
+      }
+
+      .empty-center,
+      .error-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        text-align: center;
+      }
+
+      .big-icon {
+        width: 84px;
+        height: 84px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #222927;
+        display: grid;
+        place-items: center;
+      }
+
+      .big-icon img {
+        width: 40px;
+        height: 40px;
+        filter: invert(78%) sepia(9%) saturate(289%) hue-rotate(115deg) brightness(86%);
+      }
+
+      .empty-title,
+      .error-title {
+        font-size: 34px;
+        line-height: 1;
+        font-weight: 950;
+      }
+
+      .empty-sub,
+      .error-sub {
+        color: var(--muted);
+        font-size: 17px;
+        font-weight: 850;
+      }
+
+      .format-line {
+        color: var(--subtle);
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .preview {
+        min-height: 0;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .video-frame {
+        position: relative;
+        height: 460px;
+        border: 1px solid var(--line-soft);
+        border-radius: 14px;
+        overflow: hidden;
+        background:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)),
+          #14201d;
+      }
+
+      .video-scene {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+
+      .teacher {
+        position: absolute;
+        width: 210px;
+        height: 270px;
+        left: calc(50% - 105px);
+        bottom: 0;
+        border-radius: 105px 105px 0 0;
+        background: #2a3b36;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .board-shape {
+        position: absolute;
+        left: 70px;
+        top: 56px;
+        width: 220px;
+        height: 116px;
+        border-radius: 12px;
+        background: #0d1715;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .board-shape::after {
+        content: "A = QR";
+        position: absolute;
+        left: 28px;
+        top: 34px;
+        color: rgba(7, 238, 138, 0.28);
+        font-size: 30px;
+        font-weight: 950;
+      }
+
+      .subtitle-band {
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        bottom: 12.5%;
+        min-height: 74px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        color: #fff;
+        text-align: center;
+        font-weight: 950;
+        text-shadow: 0 2px 0 #000;
+        pointer-events: none;
+      }
+
+      .subtitle-band .cn {
+        font-size: 28px;
+      }
+
+      .subtitle-band .en {
+        color: #ffe16b;
+        font-size: 22px;
+      }
+
+      .crop-box {
+        position: absolute;
+        left: 6%;
+        right: 6%;
+        bottom: 9%;
+        height: 126px;
+        border: 2px solid var(--accent);
+        border-radius: 10px;
+        box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.18);
+      }
+
+      .crop-box::before,
+      .crop-box::after {
+        content: "";
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        background: var(--accent);
+        top: -7px;
+      }
+
+      .crop-box::before {
+        left: -7px;
+      }
+
+      .crop-box::after {
+        right: -7px;
+      }
+
+      .crop-label {
+        position: absolute;
+        right: 14px;
+        top: -36px;
+        height: 28px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: #0b1713;
+        border: 1px solid var(--accent-line);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .video-footer {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 850;
+      }
+
+      .timeline {
+        flex: 1;
+        height: 8px;
+        margin: 0 14px;
+        border-radius: 999px;
+        background: #35423d;
+        overflow: hidden;
+      }
+
+      .timeline span {
+        display: block;
+        width: 42%;
+        height: 100%;
+        background: var(--accent);
+        border-radius: inherit;
+      }
+
+      .caption-panel {
+        display: grid;
+        grid-template-rows: 68px 1fr 72px;
+        min-height: 0;
+      }
+
+      .result-head {
+        padding: 0 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .result-head strong {
+        font-size: 20px;
+        font-weight: 950;
+      }
+
+      .result-tools {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .caption-body {
+        min-height: 0;
+        overflow: auto;
+        background: #17201d;
+      }
+
+      .caption-empty,
+      .caption-error {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        text-align: center;
+      }
+
+      .caption-empty-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .caption-empty-inner .big-icon {
+        width: 62px;
+        height: 62px;
+        border-radius: 16px;
+      }
+
+      .caption-empty-inner .big-icon img {
+        width: 30px;
+        height: 30px;
+      }
+
+      .caption-empty-inner strong {
+        font-size: 22px;
+        font-weight: 950;
+      }
+
+      .caption-empty-inner span {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 850;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        color: var(--text);
+      }
+
+      th,
+      td {
+        height: 48px;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--line-soft);
+        font-size: 14px;
+        font-weight: 800;
+        text-align: left;
+      }
+
+      th {
+        color: var(--subtle);
+      }
+
+      td:nth-child(1),
+      th:nth-child(1),
+      td:nth-child(2),
+      th:nth-child(2) {
+        width: 86px;
+        color: var(--muted);
+      }
+
+      td:nth-child(4),
+      th:nth-child(4) {
+        width: 92px;
+      }
+
+      tr.active td {
+        background: rgba(7, 238, 138, 0.08);
+        color: var(--text);
+      }
+
+      .confidence {
+        color: var(--accent);
+      }
+
+      .caption-footer {
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-top: 1px solid var(--line-soft);
+        background: var(--panel);
+      }
+
+      .caption-footer-left {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--subtle);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .caption-footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .caption-footer-actions .btn {
+        min-width: 112px;
+      }
+
+      .caption-footer-actions .btn.primary {
+        width: auto;
+        height: 42px;
+        min-width: 132px;
+        font-size: 15px;
+      }
+
+      .caption-footer-actions .btn.primary.disabled {
+        width: auto;
+      }
+
+      .option-row {
+        min-height: 62px;
+        border: 1px solid var(--line-soft);
+        border-radius: 12px;
+        background: var(--field-2);
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .option-main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .option-main strong {
+        font-size: 15px;
+        font-weight: 950;
+      }
+
+      .option-main span {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 170px;
+      }
+
+      .value-pill {
+        min-width: 72px;
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .value-pill.ok {
+        color: var(--accent);
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+      }
+
+      .segment {
+        height: 42px;
+        border: 1px solid var(--line-soft);
+        border-radius: 11px;
+        background: var(--field-2);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        padding: 4px;
+        gap: 4px;
+      }
+
+      .segment button {
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .segment button.active {
+        color: #06110d;
+        background: var(--accent);
+      }
+
+      .side-footer {
+        margin-top: auto;
+        padding-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .tiny-note {
+        color: var(--subtle);
+        font-size: 12px;
+        line-height: 1.45;
+        font-weight: 800;
+      }
+
+      .progress-row {
+        min-height: 74px;
+        padding: 0 16px;
+        display: grid;
+        grid-template-columns: 104px minmax(0, 1fr) 72px;
+        align-items: center;
+        gap: 16px;
+        border-top: 1px solid var(--line-soft);
+      }
+
+      .progress-title {
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 950;
+      }
+
+      .bar {
+        height: 8px;
+        border-radius: 999px;
+        background: #35423d;
+        overflow: hidden;
+      }
+
+      .bar span {
+        display: block;
+        height: 100%;
+        width: 46%;
+        border-radius: inherit;
+        background: var(--accent);
+      }
+
+      .percent {
+        color: var(--accent);
+        font-size: 16px;
+        font-weight: 950;
+        text-align: right;
+      }
+
+      .error-stage {
+        padding: 22px;
+        min-height: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      .error-center {
+        gap: 14px;
+      }
+
+      .error-center .big-icon {
+        width: 74px;
+        height: 74px;
+        border-color: rgba(238, 120, 106, 0.58);
+      }
+
+      .error-center .big-icon img {
+        width: 34px;
+        height: 34px;
+      }
+
+      .inline-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .hide {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="board" id="root"></main>
+    <script>
+      const icon = (name) => `../../resource/assets/icons/${name}.svg`;
+
+      const rows = [
+        ["00:01.12", "00:03.40", "大家好，欢迎来到这一节课。", "96%"],
+        ["00:03.52", "00:06.20", "我们今天讲矩阵和向量空间。", "94%"],
+        ["00:06.36", "00:08.90", "先从最基本的概念开始。", "92%"],
+        ["00:09.10", "00:12.00", "后面会用几个例子来说明。", "93%"],
+        ["00:12.24", "00:15.64", "我们先看一下矩阵的形式。", "91%"],
+        ["00:15.90", "00:18.20", "它由若干行和若干列组成。", "95%"],
+        ["00:18.46", "00:20.88", "每一个位置上的数称为元素。", "94%"],
+        ["00:21.10", "00:24.60", "接下来我们会把它和向量空间联系起来。", "90%"],
+      ];
+
+      const states = [
+        {
+          id: "empty",
+          label: "状态 A：等待视频",
+          stageClass: "",
+          title: "硬字幕提取",
+          subtitle: "拖入视频后识别字幕区域",
+          status: "等待视频",
+          statusClass: "",
+          sideStatus: "未开始",
+          body: "empty",
+          primary: "等待视频",
+          primaryDisabled: true,
+          note: "选择视频后会自动识别一次字幕区域。",
+        },
+        {
+          id: "region",
+          label: "状态 B：确认字幕区域",
+          stageClass: "",
+          title: "硬字幕提取",
+          subtitle: "linear-algebra-demo.mp4",
+          status: "已识别区域",
+          statusClass: "ok",
+          sideStatus: "可开始",
+          body: "preview",
+          primary: "开始提取",
+          primaryIcon: "play",
+          note: "区域不准时，直接在视频画面上拖动框选。",
+        },
+        {
+          id: "processing",
+          label: "状态 C：OCR 提取中",
+          stageClass: "has-results",
+          title: "硬字幕提取",
+          subtitle: "linear-algebra-demo.mp4",
+          status: "提取中",
+          statusClass: "warn",
+          sideStatus: "正在识别",
+          body: "processing",
+          primary: "提取中",
+          primaryDisabled: true,
+          progress: true,
+          note: "识别到的字幕会持续写入右侧表格。",
+        },
+        {
+          id: "done",
+          label: "状态 D：提取完成",
+          stageClass: "has-results",
+          title: "硬字幕提取",
+          subtitle: "linear-algebra-demo.mp4",
+          status: "已完成",
+          statusClass: "ok",
+          sideStatus: "完成",
+          body: "done",
+          primary: "导出字幕",
+          primaryIcon: "download",
+          note: "双击文本可直接修正，导出前可以调整时间轴。",
+        },
+        {
+          id: "error",
+          label: "状态 E：未识别到字幕",
+          stageClass: "",
+          title: "硬字幕提取",
+          subtitle: "linear-algebra-demo.mp4",
+          status: "需要处理",
+          statusClass: "danger",
+          sideStatus: "未完成",
+          body: "error",
+          primary: "重新识别",
+          primaryIcon: "sync",
+          note: "没有稳定区域时，手动框选后再识别。",
+        },
+      ];
+
+      function appShell(state) {
+        return `
+          <section class="state-label">${state.label}</section>
+          <article class="client" data-mode="${state.id}">
+            <div class="traffic"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+            <div class="window-bar">卡卡字幕助手 -- VideoCaptioner</div>
+            <section class="app">
+              <nav class="rail">
+                <button><img src="${icon("home")}" alt="" /></button>
+                <button><img src="${icon("video")}" alt="" /></button>
+                <button class="active"><img src="${icon("subtitle")}" alt="" /></button>
+                <button><img src="${icon("volume")}" alt="" /></button>
+                <button><img src="${icon("history")}" alt="" /></button>
+                <button><img src="${icon("search")}" alt="" /></button>
+                <span style="flex: 1"></span>
+                <button><img src="${icon("github")}" alt="" /></button>
+                <button><img src="${icon("setting")}" alt="" /></button>
+              </nav>
+              <main class="main">
+                <header class="page-head">
+                  <div class="head-title">
+                    <h1>硬字幕提取</h1>
+                    <span>从视频画面识别硬字幕，框选区域后导出为可编辑字幕。</span>
+                  </div>
+                  <div class="head-actions">
+                    ${state.id === "empty" ? "" : `<button class="btn"><img src="${icon("video")}" alt="" />更换视频</button>`}
+                    <button class="btn ghost"><img src="${icon("setting")}" alt="" />提取设置</button>
+                  </div>
+                </header>
+                <section class="work">
+                  <section class="panel stage ${state.stageClass}">
+                    <div class="panel-head">
+                      <div class="panel-title">
+                        <strong>${state.title}</strong>
+                        <span>${state.subtitle}</span>
+                      </div>
+                      <span class="status ${state.statusClass}">${state.status}</span>
+                    </div>
+                    ${stageBody(state)}
+                  </section>
+                  ${captionPanel(state)}
+                </section>
+              </main>
+            </section>
+          </article>
+        `;
+      }
+
+      function stageBody(state) {
+        if (state.body === "empty") {
+          return `
+            <div class="drop-wrap">
+              <div class="dropbox">
+                <div class="empty-center">
+                  <div class="big-icon"><img src="${icon("video")}" alt="" /></div>
+                  <div class="empty-title">拖入带硬字幕的视频</div>
+                  <div class="empty-sub">或 <span class="link-action"><img src="${icon("folder_add")}" alt="" />选择视频</span></div>
+                  <div class="format-line">mp4 / mov / mkv</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (state.body === "error") {
+          return `
+            <div class="error-stage">
+              <div class="error-center">
+                <div class="big-icon"><img src="${icon("volume")}" alt="" /></div>
+                <div class="error-title">没有识别到稳定字幕区域</div>
+                <div class="error-sub">可以手动框选字幕区域后重试。</div>
+                <div class="inline-links">
+                  <span class="link-action"><img src="${icon("layout")}" alt="" />手动框选</span>
+                  <span class="link-action"><img src="${icon("sync")}" alt="" />重新识别</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="preview">
+            <div class="video-frame">
+              <div class="video-scene">
+                <div class="board-shape"></div>
+                <div class="teacher"></div>
+                <div class="subtitle-band">
+                  <div class="cn">我们今天讲矩阵和向量空间。</div>
+                  <div class="en">Today we will talk about matrices and vector spaces.</div>
+                </div>
+                <div class="crop-box"><span class="crop-label">${state.id === "processing" ? "正在识别这一区域" : "字幕区域"}</span></div>
+              </div>
+            </div>
+            <div class="video-footer">
+              <span>00:03.52</span>
+              <div class="timeline"><span></span></div>
+              <span>10:24</span>
+            </div>
+          </div>
+          ${state.progress ? `<div class="progress-row"><div class="progress-title">字幕识别</div><div class="bar"><span></span></div><div class="percent">46%</div></div>` : ""}
+        `;
+      }
+
+      function resultTable(state) {
+        return `
+            <table>
+              <thead>
+                <tr><th>开始</th><th>结束</th><th>文本</th><th>置信度</th></tr>
+              </thead>
+              <tbody>
+                ${rows
+                  .map(
+                    (row, index) =>
+                      `<tr class="${index === 1 && state.id === "processing" ? "active" : ""}"><td>${row[0]}</td><td>${row[1]}</td><td>${index === 1 && state.id === "processing" ? "正在识别..." : row[2]}</td><td class="confidence">${row[3]}</td></tr>`,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+        `;
+      }
+
+      function captionBody(state) {
+        if (state.id === "empty") {
+          return `
+            <div class="caption-empty">
+              <div class="caption-empty-inner">
+                <div class="big-icon"><img src="${icon("subtitle")}" alt="" /></div>
+                <strong>等待视频</strong>
+                <span>字幕结果会显示在这里。</span>
+              </div>
+            </div>
+          `;
+        }
+
+        if (state.id === "region") {
+          return `
+            <div class="caption-empty">
+              <div class="caption-empty-inner">
+                <div class="big-icon"><img src="${icon("layout")}" alt="" /></div>
+                <strong>已找到字幕区域</strong>
+                <span>确认区域后开始提取。</span>
+              </div>
+            </div>
+          `;
+        }
+
+        if (state.id === "error") {
+          return `
+            <div class="caption-error">
+              <div class="caption-empty-inner">
+                <div class="big-icon"><img src="${icon("subtitle")}" alt="" /></div>
+                <strong>没有识别到字幕</strong>
+                <span>可以在左侧视频上手动框选。</span>
+                <span class="link-action"><img src="${icon("layout")}" alt="" />手动框选</span>
+              </div>
+            </div>
+          `;
+        }
+
+        return resultTable(state);
+      }
+
+      function captionPanel(state) {
+        const disabled = state.id === "empty";
+        return `
+          <aside class="panel caption-panel">
+            <div class="result-head">
+              <strong>字幕结果</strong>
+              <div class="result-tools">
+                <span class="status ${state.statusClass}">${state.id === "done" ? "124 条" : state.id === "processing" ? "57 / 124 条" : state.sideStatus}</span>
+              </div>
+            </div>
+            <div class="caption-body">
+              ${captionBody(state)}
+            </div>
+            <div class="caption-footer">
+              <div class="caption-footer-left">
+                <span>${disabled ? "选择视频后自动识别字幕区域" : state.note}</span>
+              </div>
+              <div class="caption-footer-actions">
+                <button class="btn primary ${state.primaryDisabled ? "disabled" : ""}">
+                  ${state.primaryIcon ? `<img src="${icon(state.primaryIcon)}" alt="" />` : ""}
+                  ${state.primary}
+                </button>
+                ${state.id === "processing" ? `<button class="btn ghost">取消</button>` : ""}
+                ${state.id === "done" ? `<button class="btn ghost"><img src="${icon("folder")}" alt="" />打开目录</button>` : ""}
+              </div>
+            </div>
+          </aside>
+        `;
+      }
+
+      document.getElementById("root").innerHTML = states.map(appShell).join("");
+    </script>
+  </body>
+</html>

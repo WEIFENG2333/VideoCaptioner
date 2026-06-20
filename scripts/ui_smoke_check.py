@@ -54,6 +54,10 @@ PAGE_REGISTRY: dict[str, tuple[str, str]] = {
     "task": ("videocaptioner.ui.view.task_creation_interface", "TaskCreationInterface"),
     "setting": ("videocaptioner.ui.view.setting_interface", "SettingInterface"),
     "dubbing": ("videocaptioner.ui.view.dubbing_interface", "DubbingInterface"),
+    "live-caption": (
+        "videocaptioner.ui.view.live_caption_interface",
+        "LiveCaptionInterface",
+    ),
     "video-synthesis": (
         "videocaptioner.ui.view.video_synthesis_interface",
         "VideoSynthesisInterface",
@@ -80,6 +84,7 @@ SETTING_PAGE_KEYS = [
     "translate",
     "subtitle",
     "dubbing",
+    "live-caption",
     "save",
     "personal",
     "about",

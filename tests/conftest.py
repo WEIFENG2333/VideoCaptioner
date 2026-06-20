@@ -81,7 +81,7 @@ def mock_llm_client(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-4o-mini")
 
-    def fake_call_llm(messages, model, temperature=1, **kwargs):
+    def fake_call_llm(messages, model, **kwargs):
         system_prompt = "\n".join(
             str(message.get("content", ""))
             for message in messages

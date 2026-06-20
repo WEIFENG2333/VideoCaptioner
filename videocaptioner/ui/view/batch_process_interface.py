@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """批量处理页：队列工作台。
 
-布局与状态对应 docs/dev/design-batch.html（方案 A）：
+布局与状态：
 顶部是页头（标题 + 工具栏）与四张处理模式卡，中部左侧是任务队列
 （空态拖放区 / 任务行列表 + 过滤 tab），右侧是「本批任务」统计与
 流水线阶段卡，底部是提示条（含并发数选择）。
@@ -620,7 +620,7 @@ class BatchController(QObject):
 
 
 class SquareIconButton(QFrame):
-    """38px 方形图标按钮（.icon-btn）：打开目录 / 重试 / 移除。"""
+    """38px 方形图标按钮：打开目录 / 重试 / 移除。"""
 
     clicked = pyqtSignal()
 
@@ -678,7 +678,7 @@ class SquareIconButton(QFrame):
 
 
 class TaskRow(QFrame):
-    """任务行（.task-row）：文件名/目录 + 进度 + 状态胶囊 + 操作。
+    """任务行：文件名/目录 + 进度 + 状态胶囊 + 操作。
 
     点击行空白区域弹出任务详情（完整错误 / 输出文件）。
     """
@@ -833,7 +833,7 @@ class TaskRow(QFrame):
 
 
 class MetricCard(QFrame):
-    """统计卡（.metric）：数值 + 标签。"""
+    """统计卡：数值 + 标签。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -877,7 +877,7 @@ class MetricCard(QFrame):
 
 
 class StageRow(QFrame):
-    """流水线阶段行（.pipeline-step）：图标 + 标题/说明 + 设置入口。
+    """流水线阶段行：图标 + 标题/说明 + 设置入口。
 
     阶段状态（等待/当前/完成）用边框与底色表达；右侧是跳到对应
     设置页的齿轮按钮，不放文字状态 tag。

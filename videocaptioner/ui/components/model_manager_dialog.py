@@ -1,4 +1,4 @@
-"""本地模型管理弹窗（对照 docs/dev/design-model-download.html）。
+"""本地模型管理弹窗。
 
 结构：标题栏 → 引擎页签（单引擎平台隐藏）→ 运行程序区（按平台给出
 变体行：检测 / 直接下载 / 复制命令 / 打开页面）→ 模型表（文件名 +
@@ -85,7 +85,7 @@ def available_model_kinds(platform: str | None = None) -> list[str]:
 
 
 class _StatusDot(QWidget):
-    """状态点（设计稿 .status）：小圆点 + 文字。"""
+    """状态点：小圆点 + 文字。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -127,7 +127,7 @@ class _StatusDot(QWidget):
 
 
 class _EngineTabs(QFrame):
-    """引擎页签（设计稿 .engine-tabs）：均分两块，单引擎时整体隐藏。"""
+    """引擎页签：均分两块，单引擎时整体隐藏。"""
 
     changed = pyqtSignal(str)
 
@@ -288,7 +288,7 @@ class _ProgramRow(QFrame):
 
 
 class _CommandRow(QFrame):
-    """安装命令行（设计稿 .install-plan）：命令文本 + 复制按钮。"""
+    """安装命令行：命令文本 + 复制按钮。"""
 
     def __init__(self, command: str, parent=None):
         super().__init__(parent)

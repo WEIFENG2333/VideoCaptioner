@@ -19,6 +19,7 @@ from videocaptioner.core.download import (
     download_file,
     download_model,
 )
+from videocaptioner.core.download.dependencies import DependencySpec, install_dependency
 from videocaptioner.ui.thread.worker import WorkerCancelled, WorkerThread
 
 # job(progress_cb, cancel_cb) -> 落盘路径
@@ -92,6 +93,36 @@ def program_download_thread(
             should_cancel=should_cancel,
         )
         return str(dest)
+
+    return ArtifactDownloadThread(job, parent)
+
+
+def dependency_download_thread(
+    spec: DependencySpec, parent=None
+) -> ArtifactDownloadThread:
+    """下载并安装一个运行依赖（ffmpeg / voxgate）：下载→解压→落 BIN_PATH。"""
+
+    def job(report, should_cancel) -> str:
+        def on_progress(progress):
+            total = progress.total
+            if total:
+                percent = int(progress.received * 100 / total)
+                position = f"{_size_text(progress.received)} / {_size_text(total)}"
+            else:
+                percent = -1
+                position = _size_text(progress.received)
+            report(percent, f"{progress.file_name} · {position}")
+
+        def on_phase(message: str):
+            report(-1, message)  # 解压等无字节进度的阶段，只刷文案
+
+        path = install_dependency(
+            spec,
+            on_progress=on_progress,
+            on_phase=on_phase,
+            should_cancel=should_cancel,
+        )
+        return str(path)
 
     return ArtifactDownloadThread(job, parent)
 

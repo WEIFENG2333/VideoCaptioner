@@ -45,6 +45,7 @@ class ItemStatus(Enum):
     PENDING = "pending"
     CHECKING = "checking"
     OK = "ok"
+    WARNING = "warning"  # 可选项缺失/需注意：琥珀色，不等于硬错误（不计入"未通过"）
     ERROR = "error"
 
 
@@ -55,6 +56,8 @@ class ItemAction(Enum):
     LLM_SETTINGS = "llm_settings"
     TRANSLATE_SETTINGS = "translate_settings"
     DUBBING_SETTINGS = "dubbing_settings"
+    LIVE_CAPTION_SETTINGS = "live_caption_settings"
+    DOWNLOAD_DEPENDENCIES = "download_dependencies"
 
 
 @dataclass(frozen=True)
@@ -138,6 +141,10 @@ class StatusDot(QWidget):
             fill = QColor(palette.danger)
             fill.setAlphaF(0.16)
             border, mark = palette.danger, palette.danger_fg
+        elif self._status == ItemStatus.WARNING:
+            fill = QColor(palette.warn)
+            fill.setAlphaF(0.18)
+            border = mark = palette.warn
         else:
             fill = QColor(palette.field)
             border, mark = palette.line, palette.muted
@@ -153,7 +160,8 @@ class StatusDot(QWidget):
         if self._status == ItemStatus.OK:
             painter.drawLine(7, 12, 10, 15)
             painter.drawLine(10, 15, 17, 8)
-        elif self._status == ItemStatus.ERROR:
+        elif self._status in (ItemStatus.ERROR, ItemStatus.WARNING):
+            # 同一个"!"标记：错误红、警告琥珀（颜色已在上面区分）
             painter.drawLine(12, 7, 12, 13)
             painter.drawPoint(12, 17)
         else:
@@ -183,6 +191,8 @@ class DiagnosticRow(QFrame):
         self.setObjectName("diagnosticRow")
         if item.status == ItemStatus.ERROR:
             self.setProperty("status", "error")
+        elif item.status == ItemStatus.WARNING:
+            self.setProperty("status", "warning")
         self.setFixedHeight(78)  # 容纳 标题(16)+描述(13) 两行，紧凑不挤
 
         layout = QGridLayout(self)
@@ -212,6 +222,7 @@ class DiagnosticRow(QFrame):
         layout.addLayout(text_layout, 0, 1, 2, 1)
 
         pill = StatusPill(item.status, self)
+        pill.setFixedWidth(84)  # 固定列宽：各行胶囊左右对齐（文字短的也占满）
         layout.addWidget(pill, 0, 2, 2, 1, Qt.AlignVCenter)
 
         button = WorkbenchButton(
@@ -220,7 +231,7 @@ class DiagnosticRow(QFrame):
             height=36,
             parent=self,
         )
-        button.setMinimumWidth(112)
+        button.setFixedWidth(132)  # 固定按钮宽：右块（胶囊+按钮）逐行对齐，不随文字长短参差
         button.setEnabled(actions_enabled and item.status != ItemStatus.CHECKING)
         button.clicked.connect(lambda: self.actionRequested.emit(item.action))
         layout.addWidget(button, 0, 3, 2, 1, Qt.AlignVCenter)
@@ -236,7 +247,7 @@ class DiagnosticPanel(QFrame):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        # 表头：标题 + 汇总胶囊，底部一条分隔线把标题和清单分开（对齐 design-doctor .panel-head）
+        # 表头：标题 + 汇总胶囊，底部一条分隔线把标题和清单分开
         self.headerFrame = QFrame(self)
         self.headerFrame.setObjectName("diagnosticHeader")
         header = QHBoxLayout(self.headerFrame)
@@ -267,6 +278,7 @@ class DiagnosticPanel(QFrame):
     ):
         _clear_layout(self.rowsLayout)
         errors = sum(item.status == ItemStatus.ERROR for item in items)
+        warnings = sum(item.status == ItemStatus.WARNING for item in items)
         checking = any(item.status == ItemStatus.CHECKING for item in items)
         pending = sum(item.status == ItemStatus.PENDING for item in items)
         if errors:
@@ -275,6 +287,10 @@ class DiagnosticPanel(QFrame):
             )
         elif checking:
             self.summaryPill.setState(self.tr("检查中"), "neutral")
+        elif warnings:
+            self.summaryPill.setState(
+                self.tr("{count} 项需注意").format(count=warnings), "warn"
+            )
         elif finished:
             self.summaryPill.setState(self.tr("全部通过"), "ok")
         else:
@@ -282,7 +298,15 @@ class DiagnosticPanel(QFrame):
                 self.tr("{count} 项待检查").format(count=pending), "neutral"
             )
 
-        ordered = sorted(items, key=lambda i: 0 if i.status == ItemStatus.ERROR else 1)
+        # 红错误置顶、琥珀警告其次、其余在后；行高与按钮列保持稳定
+        ordered = sorted(
+            items,
+            key=lambda i: 0
+            if i.status == ItemStatus.ERROR
+            else 1
+            if i.status == ItemStatus.WARNING
+            else 2,
+        )
         for idx, item in enumerate(ordered):
             row = DiagnosticRow(item, actions_enabled=actions_enabled, parent=self.rowsFrame)
             if idx == len(ordered) - 1:
@@ -411,11 +435,19 @@ class DoctorInterface(ScrollArea):
         items = _items_from_checks(checks, self.tr)
         self.panel.setItems(items, finished=True)
         errors = sum(item.status == ItemStatus.ERROR for item in items)
+        warnings = sum(item.status == ItemStatus.WARNING for item in items)
         if errors:
             InfoBar.error(
                 self.tr("诊断完成"),
                 self.tr("发现 {count} 项需要处理").format(count=errors),
                 duration=INFOBAR_DURATION_ERROR,
+                parent=self,
+            )
+        elif warnings:
+            InfoBar.warning(
+                self.tr("诊断完成"),
+                self.tr("有 {count} 项可选项需注意（不影响主要流程）").format(count=warnings),
+                duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
         else:
@@ -453,9 +485,22 @@ class DoctorInterface(ScrollArea):
                 parent=self,
             )
             return
+        if action == ItemAction.DOWNLOAD_DEPENDENCIES:
+            self._open_dependency_dialog()
+            return
         page_key = _settings_page_for_action(action)
         if page_key:
             self._open_settings_page(page_key)
+
+    def _open_dependency_dialog(self):
+        from videocaptioner.ui.components.dependency_download_dialog import (
+            DependencyDownloadDialog,
+        )
+
+        dialog = DependencyDownloadDialog(parent=self)
+        # 装好任意依赖后自动重跑诊断，卡片状态即时刷新
+        dialog.depsChanged.connect(self._run)
+        dialog.exec()
 
     def _open_settings_page(self, page_key: str):
         window = self.window()
@@ -481,6 +526,7 @@ def _clear_layout(layout):
 def _status_text(status: ItemStatus) -> str:
     return {
         ItemStatus.OK: "正常",
+        ItemStatus.WARNING: "需注意",
         ItemStatus.ERROR: "未通过",
         ItemStatus.CHECKING: "检查中",
         ItemStatus.PENDING: "待检查",
@@ -490,6 +536,7 @@ def _status_text(status: ItemStatus) -> str:
 def _status_level(status: ItemStatus) -> str:
     return {
         ItemStatus.OK: "success",
+        ItemStatus.WARNING: "warning",
         ItemStatus.ERROR: "danger",
         ItemStatus.CHECKING: "neutral",
         ItemStatus.PENDING: "neutral",
@@ -567,6 +614,15 @@ def _base_items(tr: Translator) -> list[DiagnosticItem]:
             button_text=tr("配音配置"),
         )
     )
+    items.append(
+        DiagnosticItem(
+            key="live_caption",
+            title=tr("实时字幕"),
+            description=tr("实时转录需要本机 voxgate 转录程序，或一个外部实时服务。"),
+            action=ItemAction.LIVE_CAPTION_SETTINGS,
+            button_text=tr("实时字幕配置"),
+        )
+    )
     return items
 
 
@@ -577,6 +633,8 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
     ffmpeg_ass_check = checks_by_name.get("ffmpeg.ass_filter")
     ffmpeg_status = _combined_status([checks_by_name.get("ffmpeg"), checks_by_name.get("ffprobe"), ffmpeg_ass_check])
     ffmpeg_ass_failed = _check_status(ffmpeg_ass_check) == ItemStatus.ERROR
+    # 缺二进制 → 直接下载安装；ASS 滤镜不全是构建变体问题 → 仍给文字处理建议
+    ffmpeg_missing = _is_problem(ffmpeg_status) and not ffmpeg_ass_failed
     items.append(
         DiagnosticItem(
             key="ffmpeg",
@@ -584,18 +642,24 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
                 tr("FFmpeg 不支持 ASS 硬字幕")
                 if ffmpeg_ass_failed
                 else tr("缺少 FFmpeg / FFprobe")
-                if ffmpeg_status == ItemStatus.ERROR
+                if _is_problem(ffmpeg_status)
                 else "FFmpeg / FFprobe"
             ),
             description=(
                 tr("当前 FFmpeg 缺少 ASS 字幕滤镜。请安装完整版本，或把字幕渲染模式切换为圆角背景。")
                 if ffmpeg_ass_failed
                 else tr("缺少后无法生成视频、压入字幕或合入配音。")
-                if ffmpeg_status == ItemStatus.ERROR
+                if _is_problem(ffmpeg_status)
                 else tr("工具完整，可生成视频和配音视频。")
             ),
-            action=ItemAction.TOOL_HELP,
-            button_text=tr("处理方式") if ffmpeg_ass_failed else tr("安装工具"),
+            action=ItemAction.DOWNLOAD_DEPENDENCIES if ffmpeg_missing else ItemAction.TOOL_HELP,
+            button_text=(
+                tr("下载安装")
+                if ffmpeg_missing
+                else tr("处理方式")
+                if ffmpeg_ass_failed
+                else tr("安装工具")
+            ),
             status=ffmpeg_status,
         )
     )
@@ -610,7 +674,7 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
             title=tr("转录服务"),
             description=(
                 tr("当前转录方式不可用，请检查网络、Key 或本地模型。")
-                if transcribe_status == ItemStatus.ERROR
+                if _is_problem(transcribe_status)
                 else tr("当前转录方式可用，可生成原文字幕。")
             ),
             action=ItemAction.TRANSCRIBE_SETTINGS,
@@ -648,10 +712,10 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
         items.append(
             DiagnosticItem(
                 key="llm",
-                title=tr("大模型配置不可用") if llm_status == ItemStatus.ERROR else _llm_item_title(tr),
+                title=tr("大模型配置不可用") if _is_problem(llm_status) else _llm_item_title(tr),
                 description=(
                     tr("字幕校正、术语修正和智能断句需要可用 Key。")
-                    if llm_status == ItemStatus.ERROR
+                    if _is_problem(llm_status)
                     else tr("大模型配置可用，可用于字幕增强。")
                 ),
                 action=ItemAction.LLM_SETTINGS,
@@ -684,7 +748,7 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
             title=tr("配音服务"),
             description=(
                 tr("Gemini / SiliconFlow 需要配音 Key；Edge 可免 Key。")
-                if dubbing_status == ItemStatus.ERROR
+                if _is_problem(dubbing_status)
                 else tr("当前配音配置可用，可继续生成配音。")
             ),
             action=ItemAction.DUBBING_SETTINGS,
@@ -692,7 +756,38 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
             status=dubbing_status,
         )
     )
+
+    live_caption_checks = _checks_with_prefix(checks, ("live_caption",))
+    live_caption_status = _combined_status(live_caption_checks)
+    # 只有「缺 voxgate 本地程序」才走下载；fun-asr 缺 Key / 远程服务问题 → 去设置
+    lc_needs_download = _is_problem(live_caption_status) and any(
+        c.name == "live_caption.voxgate" for c in live_caption_checks
+    )
+    lc_is_funasr = any(c.name == "live_caption.funasr" for c in live_caption_checks)
+    if _is_problem(live_caption_status):
+        lc_desc = (
+            tr("Fun-ASR 实时缺少百炼 API Key，去设置里填写即可。")
+            if lc_is_funasr
+            else tr("可选功能：未找到 voxgate 转录程序或外部实时服务，需要时再配置即可。")
+        )
+    else:
+        lc_desc = tr("实时字幕后端就绪，可开始实时转录与翻译。")
+    items.append(
+        DiagnosticItem(
+            key="live_caption",
+            title=tr("实时字幕"),
+            description=lc_desc,
+            action=ItemAction.DOWNLOAD_DEPENDENCIES if lc_needs_download else ItemAction.LIVE_CAPTION_SETTINGS,
+            button_text=tr("下载 voxgate") if lc_needs_download else tr("实时字幕配置"),
+            status=live_caption_status,
+        )
+    )
     return items
+
+
+def _is_problem(status: ItemStatus) -> bool:
+    """需要用户关注的状态（红错误或琥珀警告），用于选「问题」文案而非「就绪」文案。"""
+    return status in (ItemStatus.ERROR, ItemStatus.WARNING)
 
 
 def _checks_with_prefix(checks: list[Check], prefixes: tuple[str, ...]) -> list[Check]:
@@ -703,8 +798,11 @@ def _combined_status(checks: list[Check | None]) -> ItemStatus:
     present = [check for check in checks if check is not None]
     if not present:
         return ItemStatus.OK
-    if any(check.status in {"error", "warn"} for check in present):
+    # error 红、warn 琥珀（可选项缺失），两者区分：error 才算"未通过"
+    if any(check.status == "error" for check in present):
         return ItemStatus.ERROR
+    if any(check.status == "warn" for check in present):
+        return ItemStatus.WARNING
     if any(check.status == "checking" for check in present):
         return ItemStatus.CHECKING
     return ItemStatus.OK
@@ -713,8 +811,10 @@ def _combined_status(checks: list[Check | None]) -> ItemStatus:
 def _check_status(check: Check | None) -> ItemStatus:
     if check is None:
         return ItemStatus.OK
-    if check.status in {"error", "warn"}:
+    if check.status == "error":
         return ItemStatus.ERROR
+    if check.status == "warn":
+        return ItemStatus.WARNING
     if check.status == "checking":
         return ItemStatus.CHECKING
     if check.status == "pending":
@@ -811,6 +911,7 @@ def _settings_page_for_action(action: ItemAction) -> str | None:
         ItemAction.LLM_SETTINGS: "llm",
         ItemAction.TRANSLATE_SETTINGS: "translate-service",
         ItemAction.DUBBING_SETTINGS: "dubbing",
+        ItemAction.LIVE_CAPTION_SETTINGS: "live-caption",
     }.get(action)
 
 
@@ -862,6 +963,10 @@ QFrame#diagnosticRow[last="true"] {{
 QFrame#diagnosticRow[status="error"] {{
     background: {rgba(palette.danger, 0.08)};
     border-left: 3px solid {palette.danger};
+}}
+QFrame#diagnosticRow[status="warning"] {{
+    background: {rgba(palette.warn, 0.08)};
+    border-left: 3px solid {palette.warn};
 }}
 QLabel#rowTitle {{
     color: {palette.text};
@@ -922,6 +1027,11 @@ def _build_doctor_config() -> dict:
             "voice": str(cfg.dubbing_voice.value or "").strip(),
             "timing": "balanced",
             "audio_mode": "replace",
+        },
+        "live_caption": {
+            "provider": cfg.live_caption_provider.value,
+            "voxgate_binary": str(cfg.live_caption_voxgate_binary.value or "").strip(),
+            "api_key": str(cfg.fun_asr_api_key.value or "").strip(),
         },
     }
 

@@ -55,6 +55,7 @@ def run_diagnostics(
     checks.extend(_check_transcribe(config))
     checks.extend(_check_subtitle(config))
     checks.extend(_check_dubbing(config))
+    checks.extend(_check_live_caption(config))
     if check_api or check_download:
         checks.extend(_check_download_sources())
     if check_api:
@@ -270,6 +271,44 @@ def _check_dubbing(config: dict) -> list[Check]:
     if audio_mode not in {"replace", "mix", "duck"}:
         checks.append(Check("dubbing.audio_mode", "error", f"Invalid audio mode: {audio_mode}", "Use replace, mix, or duck"))
     return checks
+
+
+def _check_live_caption(config: dict) -> list[Check]:
+    """实时字幕（Live Caption）后端可用性。
+
+    按 provider 分流：① fun-asr → 检查百炼 API Key 是否填了；② voxgate → 检测 voxgate
+    二进制是否能找到（配置路径 → 自带 bin → 用户 bin → PATH，同 ``find_voxgate_binary``
+    的真实发现顺序；voxgate 走 ``voxgate transcribe`` 子进程 stdio，不再有本地服务）。
+
+    实时字幕是可选功能，缺失只给 ``warn``（不影响主字幕流程，doctor 不因此失败）。
+    """
+    provider = get(config, "live_caption.provider", "voxgate")
+    if provider == "fun-asr":
+        # 云后端：检查百炼 API Key 是否填了（联网探活留给「测试转录」，doctor 不刷接口）
+        if get(config, "live_caption.api_key", "").strip():
+            return [Check("live_caption.funasr", "ok", "Fun-ASR 实时：已配置百炼 API Key")]
+        return [
+            Check(
+                "live_caption.funasr",
+                "warn",
+                "Fun-ASR 实时缺少百炼 API Key；实时字幕将无法启动（不影响其它功能）",
+                "在 设置 → 实时字幕配置 填入阿里云百炼 API Key",
+            )
+        ]
+    from videocaptioner.core.realtime.backends.voxgate import find_voxgate_binary
+
+    configured = get(config, "live_caption.voxgate_binary", "").strip()
+    binary = find_voxgate_binary(configured)
+    if binary:
+        return [Check("live_caption.voxgate", "ok", f"voxgate 转录程序已就绪：{binary}")]
+    return [
+        Check(
+            "live_caption.voxgate",
+            "warn",
+            "未找到 voxgate 转录程序；实时字幕将无法启动（不影响其它功能）",
+            "在 设置 → 实时字幕配置 指定 voxgate 路径，或把 voxgate 放到 PATH / resource/bin",
+        )
+    ]
 
 
 def _check_api(config: dict) -> list[Check]:
