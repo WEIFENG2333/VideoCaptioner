@@ -26,9 +26,13 @@ class TaskFactory:
         return TaskFactory._builder().get_rounded_style()
 
     @staticmethod
-    def new_task_dir(source: str) -> str:
-        """流水线开始时创建一次任务目录，跨阶段复用，由流程所有者清理。"""
-        return TaskFactory._builder().new_task_dir(source)
+    def new_task_dir(source: str, task_type: str) -> str:
+        """流水线开始时创建一次任务目录，跨阶段复用，由流程所有者清理。
+
+        task_type 按功能归类（output_paths.TASK_*：transcribe/synthesis/batch/dubbing），
+        决定落到 ``{work_dir}/{task_type}/`` 下哪个子目录。
+        """
+        return TaskFactory._builder().new_task_dir(source, task_type)
 
     @staticmethod
     def create_transcribe_task(

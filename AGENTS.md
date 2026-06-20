@@ -119,12 +119,14 @@ grammar; never hand-write output filename templates at call sites:
 - Products land next to the source file. GUI paths go through
   `unique_path()` (auto-increment `" (2)"`); CLI default paths overwrite
   deterministically for scriptability.
-- All intermediates live in a per-run task directory
-  `{work_dir}/tasks/{YYYYMMDD-HHMMSS}-{stem}/` with fixed names
-  (`transcript.srt`, `subtitle.ass`, `dubbing/…`). The flow owner (home
-  pipeline tail, batch `JobRunner`, synthesis page controller) deletes the
+- All intermediates live in a per-run task directory grouped by function:
+  `{work_dir}/{task_type}/{YYYYMMDD-HHMMSS}-{stem}/` (task_type =
+  `transcribe`/`synthesis`/`batch`/`dubbing`; pass it to `new_task_dir`) with
+  fixed names (`transcript.srt`, `subtitle.ass`, `dubbing/…`). The flow owner
+  (home pipeline tail, batch `JobRunner`, synthesis page controller) deletes the
   directory on success unless `app.keep_intermediates` is on; failures keep
-  it for debugging; cancels always clean it.
+  it for debugging; cancels always clean it. `cleanup_task_dir` only removes a
+  dir whose parent name is a known task_type (never rmtrees into user dirs).
 - Raw TTS segments are a content-addressed global cache in
   `CACHE_PATH/tts_segments` keyed by text + every synthesis-affecting config
   field (see `DubbingPipeline._segment_hash`). Adding a config field that
@@ -282,7 +284,9 @@ core/realtime/            business logic, NO PyQt. Grouped into subpackages by r
     system_mac.py  macOS native system audio (ScreenCaptureKit subprocess), no BlackHole
   recording/       session recording + history persistence
     history.py     LiveCaptionStore + LiveCaptionRecord/CaptionSegment (persist/list/
-                   search/delete/export SRT,TXT); records live in APPDATA/live_captions/
+                   search/delete/export SRT,TXT); records live in {work_dir}/live-caption/
+                   (a user work product, not app data); migrate_legacy_root moves the old
+                   APPDATA/live_captions once on GUI startup (from main.py, NOT widget ctor)
     recorder.py    SessionRecorder: tee PCM→WAV + collect paragraphs → LiveCaptionRecord
     debug_tap.py   optional debug dump (raw events + fed PCM + assembler output;
                    enabled by `VC_DEBUG=live`, the project-wide debug switch in
@@ -372,7 +376,10 @@ Hard rules:
   `thread.level` (→ `overlay.set_level`); a queued signal to a freed overlay aborts.
 - Every session auto-records: `SessionRecorder` tees PCM to `audio.wav` and collects
   finalized paragraphs into a `LiveCaptionRecord` saved under
-  `APPDATA_PATH/live_captions/{YYYYMMDD-HHMMSS}/transcript.json`. Empty sessions are
+  `{work_dir}/live-caption/{YYYYMMDD-HHMMSS}/transcript.json`. One `LiveCaptionStore`
+  (rooted at the configured work_dir) is built by the interface and passed through the
+  thread into the session, so recording-writes and history-reads share one root.
+  Empty sessions are
   discarded. Segment `start` = paragraph `started_at − session_start` (aligns with the
   continuously-recorded WAV). The detail page plays that WAV with per-sentence marks;
   clicking a sentence/mark seeks. Don't invent a new on-disk layout — go through

@@ -939,7 +939,7 @@ class CaptionOverlay(QWidget):
                 OverlaySettingsPopover,
             )
 
-            pop = OverlaySettingsPopover()
+            pop = OverlaySettingsPopover(self)  # 传父：随浮窗 deleteLater 一起回收，不残留孤儿顶层窗口
             pop.displayChanged.connect(self.set_display_mode)
             pop.bgStyleChanged.connect(self.set_bg_style)
             pop.fontScaleChanged.connect(self._on_font_scale)

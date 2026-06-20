@@ -1306,7 +1306,7 @@ class VideoSynthesisInterface(QWidget):
 
         if add_dubbing and add_subtitle:
             # 配音+字幕链式：共享一个任务目录，配音视频是其中的中间产物。
-            task_dir = pipeline_task_dir or TaskFactory.new_task_dir(self.video_path)
+            task_dir = pipeline_task_dir or TaskFactory.new_task_dir(self.video_path, "synthesis")
             temp_video = str(
                 Path(task_dir) / output_paths.DUBBING_DIR / f"dubbed{Path(self.video_path).suffix}"
             )

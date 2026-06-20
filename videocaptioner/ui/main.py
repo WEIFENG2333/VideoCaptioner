@@ -73,6 +73,11 @@ def main():
     else:
         disable_cache()
 
+    # 一次性把旧 APPDATA 的实时字幕历史迁入工作目录（仅真实启动时，避免 widget 构造/测试误触发）。
+    from videocaptioner.core.realtime.recording.history import default_root, migrate_legacy_root
+
+    migrate_legacy_root(default_root(cfg.get(cfg.work_dir)))
+
     # DPI scaling
     if cfg.get(cfg.dpiScale) == "Auto":
         QApplication.setHighDpiScaleFactorRoundingPolicy(

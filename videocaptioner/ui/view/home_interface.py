@@ -128,7 +128,7 @@ class HomeInterface(QWidget):
             self.switch_to_subtitle_optimization(str(subtitle_path), file_path)
             return
 
-        self._current_task_dir = TaskFactory.new_task_dir(file_path)
+        self._current_task_dir = TaskFactory.new_task_dir(file_path, "transcribe")
         transcribe_task = TaskFactory.create_transcribe_task(
             file_path,
             need_next_task=True,
@@ -158,7 +158,7 @@ class HomeInterface(QWidget):
     def switch_to_subtitle_optimization(self, file_path, video_path):
         # 继续使用同一个 task_id / 任务目录（下载字幕跳转录时这里才建目录）
         if not self._current_task_dir:
-            self._current_task_dir = TaskFactory.new_task_dir(video_path or file_path)
+            self._current_task_dir = TaskFactory.new_task_dir(video_path or file_path, "transcribe")
         subtitle_task = TaskFactory.create_subtitle_task(
             file_path,
             video_path,

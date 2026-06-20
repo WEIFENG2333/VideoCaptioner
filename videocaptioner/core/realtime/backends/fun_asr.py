@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import json
 import threading
 import uuid
 from typing import Optional
@@ -15,7 +14,6 @@ import websocket
 
 from videocaptioner.core.realtime.backends.base import (
     LiveCaptionError,
-    LiveTranscriber,
     OnError,
     OnSegment,
     OnState,
@@ -25,6 +23,7 @@ from videocaptioner.core.realtime.backends.languages import (
     FUN_ASR_MTL_LANGS,
     FUN_ASR_REALTIME_LANGS,
 )
+from videocaptioner.core.realtime.backends.ws_base import WebSocketTranscriber
 from videocaptioner.core.realtime.events import TranscriptSegment
 from videocaptioner.core.utils.logger import setup_logger
 
@@ -34,7 +33,7 @@ _WS_URL = "wss://dashscope.aliyuncs.com/api-ws/v1/inference"
 DEFAULT_MODEL = "fun-asr-mtl-realtime"  # 多语种实时：中/粤/英/日/泰/越/印尼
 
 
-class FunAsrBackend(LiveTranscriber):
+class FunAsrBackend(WebSocketTranscriber):
     def __init__(
         self,
         api_key: str,
@@ -45,21 +44,16 @@ class FunAsrBackend(LiveTranscriber):
         on_state: Optional[OnState] = None,
         on_error: Optional[OnError] = None,
     ) -> None:
+        # 基类设 WS 共性状态：_ws / _send_lock / _recv_thread / _closed / _stopping / _fed_any
         super().__init__(on_segment, on_state, on_error)
         if not api_key:
             raise LiveCaptionError("Fun-ASR 实时转录需要阿里云百炼 API Key（在设置里填写）。")
         self._api_key = api_key
         self._model = model or DEFAULT_MODEL
         self._language = language or "zh"
-        self._ws: Optional[websocket.WebSocket] = None
         self._task_id = uuid.uuid4().hex
-        self._send_lock = threading.Lock()
-        self._recv_thread: Optional[threading.Thread] = None
-        self._closed = False  # ws 已关、接收线程应退出
-        self._stopping = False  # 收尾中：停止喂音频，但接收线程仍要收 task-finished
         self._started_event = threading.Event()  # 收到 task-started
         self._finished_event = threading.Event()  # 收到 task-finished/failed
-        self._fed_any = False  # 没喂过音频就别 finish-task（空任务直接关更稳）
         self._gen = 0  # 重连代数：seg_id 带 gen 避免新旧 task 的 sentence_id 撞号
         self._open_sid: object = None     # 正在生长、尚未定稿的句 id
         self._open_seg_id: Optional[str] = None  # 该句完整 seg_id（带 gen），定稿用
@@ -141,13 +135,6 @@ class FunAsrBackend(LiveTranscriber):
 
     # ----- 内部 -----
 
-    def _send_json(self, obj: dict) -> None:
-        with self._send_lock:  # 同 feed()：避免与 stop() 关 ws 的竞态
-            ws = self._ws
-            if ws is None:
-                return
-            ws.send(json.dumps(obj))
-
     def _language_hints(self) -> list:
         """language_hints：显式选了语言就用它；auto 则给该模型支持的整套语言由模型自动识别。"""
         if self._language and self._language != "auto":
@@ -173,39 +160,6 @@ class FunAsrBackend(LiveTranscriber):
                 "input": {},
             },
         })
-
-    def _recv_loop(self) -> None:
-        while not self._closed:
-            ws = self._ws
-            if ws is None:
-                break
-            try:
-                raw = ws.recv()
-            except websocket.WebSocketTimeoutException:
-                continue
-            except Exception as exc:
-                if self._closed or self._stopping:
-                    break  # 主动收尾：正常退出
-                if not self._try_reconnect(exc):
-                    break
-                continue
-            if not raw:  # 服务端正常关闭连接
-                if self._closed or self._stopping or not self._try_reconnect(None):
-                    break
-                continue
-            self._note_alive()  # 收到数据帧 → 连接存活（供重连治理判定抖动期）
-            if isinstance(raw, bytes):
-                continue  # Fun-ASR 不回二进制
-            if self.on_raw is not None:  # 调试落盘钩子（与 voxgate 对齐；生产路径不设）
-                try:
-                    self.on_raw(raw)
-                except Exception:
-                    pass
-            try:
-                ev = json.loads(raw)
-            except Exception:
-                continue
-            self._dispatch(ev)
 
     def _try_reconnect(self, reason) -> bool:
         """掉线或服务端中途 task-finished（实时单 task 有时长上限）时透明续录：定稿在途句，退避重连
@@ -288,4 +242,4 @@ class FunAsrBackend(LiveTranscriber):
                 # 服务端中途结束 task（实时单 task 有时长上限）但音频还在喂 → 重起续录，不当结束。
                 logger.info("Fun-ASR 服务端中途结束 task，重起续录")
                 if not self._try_reconnect("服务端结束 task"):
-                    self._closed = True  # 重起失败 → 退出接收线程（错误已上报）
+                    self._fail_close()  # 重起失败：关 ws + 发 STOPPED，终态与 stop() 一致

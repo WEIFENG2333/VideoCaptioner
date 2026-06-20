@@ -112,6 +112,10 @@ class SessionRecorder:
                 nxt = ordered[i + 1]["start"] if i + 1 < len(ordered) else dur
                 start = min(s["start"], dur) if dur else s["start"]
                 end = min(nxt, dur) if dur else nxt
+                # 末句在 stop 期才首现时 start 会被钉到 ≈dur 而退化成零长 cue（点句直接跳结尾）：
+                # 回退到上一段终点，保证仍是可点击的非零区间。
+                if start >= end and segments:
+                    start = segments[-1].end
                 segments.append(
                     CaptionSegment(start=start, end=max(end, start),
                                    source=s["source"], target=s["target"])

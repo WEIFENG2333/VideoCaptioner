@@ -14,10 +14,11 @@ tag 只允许四类：目标语言码（zh-Hans / en / ja …，与 Bing 翻译�
 
 - 成品永远落在源文件旁（或调用方显式指定的位置）；GUI 路径用
   :func:`unique_path` 自增 `` (2)`` 防覆盖，CLI 保持确定性覆盖。
-- 一切中间产物进 ``{work_dir}/tasks/{YYYYMMDD-HHMMSS}-{stem}/`` 任务
-  目录，文件名固定（transcript.srt / subtitle.ass / dubbing/…），由
-  目录而不是文件名携带语义。成功后默认整目录删除（``app.
-  keep_intermediates`` 打开时保留），失败保留供排查。
+- 一切中间产物进 ``{work_dir}/{task_type}/{YYYYMMDD-HHMMSS}-{stem}/`` 任务
+  目录，按功能归类（task_type = transcribe / synthesis / batch / dubbing），
+  文件名固定（transcript.srt / subtitle.ass / dubbing/…），由目录而不是文件名
+  携带语义。成功后默认整目录删除（``app.keep_intermediates`` 打开时保留），
+  失败保留供排查。
 - TTS 原始分段是跨任务的内容寻址缓存，不属于任务目录，见
   ``core/dubbing/pipeline.py``。
 """
@@ -39,8 +40,14 @@ TAG_OPTIMIZED = "optimized"
 TAG_SUBTITLED = "subtitled"
 TAG_DUBBED = "dubbed"
 
+# 任务目录按功能归类：{work_dir}/{task_type}/{时间戳}-{stem}/，由目录携带语义。
+TASK_TRANSCRIBE = "transcribe"  # 主页转录→字幕→合成 一条龙
+TASK_SYNTHESIS = "synthesis"    # 视频合成页
+TASK_BATCH = "batch"            # 批量处理页
+TASK_DUBBING = "dubbing"        # 独立配音（CLI / 无上游任务目录时）
+_TASK_TYPES = frozenset({TASK_TRANSCRIBE, TASK_SYNTHESIS, TASK_BATCH, TASK_DUBBING})
+
 # 任务目录内的固定文件名：路径即语义，文件名不再编码阶段信息。
-TASKS_DIR_NAME = "tasks"
 DOWNLOADS_DIR_NAME = "downloads"
 TRANSCRIPT_FILE = "transcript.srt"
 STYLED_SUBTITLE_FILE = "subtitle.ass"
@@ -124,15 +131,18 @@ def downloads_dir(work_dir: PathLike) -> Path:
     return target
 
 
-def new_task_dir(work_dir: PathLike, source: PathLike) -> Path:
-    """创建一次运行的任务目录：``{work_dir}/tasks/{时间戳}-{stem}``。
+def new_task_dir(work_dir: PathLike, source: PathLike, task_type: str) -> Path:
+    """创建一次运行的任务目录：``{work_dir}/{task_type}/{时间戳}-{stem}``。
 
-    时间戳保证按时间排序且不同运行互不覆盖；stem 让人能认出来源。
+    按功能（transcribe/synthesis/batch/dubbing）分目录；时间戳保证排序且不同运行
+    互不覆盖，stem 让人能认出来源。
     """
+    if task_type not in _TASK_TYPES:
+        raise ValueError(f"unknown task type: {task_type!r}")
     stem = re.sub(r'[<>:"/\\|?*\0-\x1f]', "_", Path(source).stem).strip(" .")
     stem = stem[:_TASK_DIR_STEM_MAX] or "task"
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    root = Path(work_dir) / TASKS_DIR_NAME
+    root = Path(work_dir) / task_type
     candidate = root / f"{stamp}-{stem}"
     index = 2
     while candidate.exists():
@@ -145,12 +155,12 @@ def new_task_dir(work_dir: PathLike, source: PathLike) -> Path:
 def cleanup_task_dir(task_dir: Optional[PathLike], *, keep: bool) -> None:
     """成功收尾时删除任务目录（keep=True 保留）。
 
-    只删 ``tasks/`` 下的目录：路径来自配置/信号链，误配时宁可留下
-    垃圾也不能 rmtree 到用户目录。
+    只删功能任务目录（父目录名是已知 task_type）：路径来自配置/信号链，误配时
+    宁可留下垃圾也不能 rmtree 到用户目录。
     """
     if keep or not task_dir:
         return
     target = Path(task_dir)
-    if target.parent.name != TASKS_DIR_NAME or not target.is_dir():
+    if target.parent.name not in _TASK_TYPES or not target.is_dir():
         return
     shutil.rmtree(target, ignore_errors=True)

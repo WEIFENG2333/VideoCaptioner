@@ -37,9 +37,9 @@ class TaskBuilder:
     def __init__(self, app_config: AppConfig):
         self.config = app_config
 
-    def new_task_dir(self, source: str) -> str:
+    def new_task_dir(self, source: str, task_type: str) -> str:
         """为一次流水线运行创建任务目录（流程所有者负责跨阶段传递与清理）。"""
-        return str(output_paths.new_task_dir(self.config.work_dir or WORK_PATH, source))
+        return str(output_paths.new_task_dir(self.config.work_dir or WORK_PATH, source, task_type))
 
     def get_ass_style(self, style_name: Optional[str] = None) -> str:
         style = load_style(style_name or self.config.subtitle.style_name, renderer=SubtitleRenderer.ASS)
@@ -90,7 +90,7 @@ class TaskBuilder:
         need_word_timestamp = self.config.subtitle.need_split if need_next_task else False
         if need_next_task:
             # 流水线中间产物：原始转录进任务目录，路径即语义。
-            task_dir = task_dir or self.new_task_dir(file_path)
+            task_dir = task_dir or self.new_task_dir(file_path, output_paths.TASK_TRANSCRIBE)
             output_path = str(Path(task_dir) / output_paths.TRANSCRIPT_FILE)
         else:
             output_path = str(
@@ -150,7 +150,8 @@ class TaskBuilder:
     ) -> SubtitleTask:
         if need_next_task:
             # 流水线中间产物：样式字幕进任务目录，供后续合成消费。
-            task_dir = task_dir or self.new_task_dir(video_path or file_path)
+            task_dir = task_dir or self.new_task_dir(
+                video_path or file_path, output_paths.TASK_TRANSCRIBE)
             output_path = str(Path(task_dir) / output_paths.STYLED_SUBTITLE_FILE)
         else:
             # 成品锚定到媒体文件（有视频时），否则锚定到输入字幕。
@@ -260,7 +261,7 @@ class TaskBuilder:
         task_dir: Optional[str] = None,
     ) -> DubbingTask:
         anchor = video_path or subtitle_path
-        task_dir = task_dir or self.new_task_dir(anchor)
+        task_dir = task_dir or self.new_task_dir(anchor, output_paths.TASK_DUBBING)
         if output_video_path is None and video_path:
             output_video_path = str(
                 output_paths.unique_path(

@@ -90,34 +90,48 @@ class TestUniquePath:
 
 class TestTaskDir:
     def test_layout_and_uniqueness(self, tmp_path):
-        first = op.new_task_dir(tmp_path, "/somewhere/视频 demo.mp4")
+        first = op.new_task_dir(tmp_path, "/somewhere/视频 demo.mp4", op.TASK_TRANSCRIBE)
         assert first.is_dir()
-        assert first.parent == tmp_path / "tasks"
+        assert first.parent == tmp_path / "transcribe"  # 按功能归类到 {work_dir}/{task_type}/
         assert first.name.endswith("-视频 demo")
-        second = op.new_task_dir(tmp_path, "/somewhere/视频 demo.mp4")
+        second = op.new_task_dir(tmp_path, "/somewhere/视频 demo.mp4", op.TASK_TRANSCRIBE)
         assert second != first and second.is_dir()
 
+    def test_task_type_routes_to_subdir(self, tmp_path):
+        for tt in (op.TASK_TRANSCRIBE, op.TASK_SYNTHESIS, op.TASK_BATCH, op.TASK_DUBBING):
+            assert op.new_task_dir(tmp_path, "v.mp4", tt).parent == tmp_path / tt
+
+    def test_unknown_task_type_rejected(self, tmp_path):
+        import pytest
+        with pytest.raises(ValueError):
+            op.new_task_dir(tmp_path, "v.mp4", "bogus")
+
     def test_hostile_stem_sanitized(self, tmp_path):
-        created = op.new_task_dir(tmp_path, 'a/b<>:"|?*.mp4')
+        created = op.new_task_dir(tmp_path, 'a/b<>:"|?*.mp4', op.TASK_TRANSCRIBE)
         assert created.is_dir()
 
     def test_cleanup_removes_only_task_dirs(self, tmp_path):
-        task = op.new_task_dir(tmp_path, "video.mp4")
+        task = op.new_task_dir(tmp_path, "video.mp4", op.TASK_BATCH)
         (task / "transcript.srt").write_text("1", encoding="utf-8")
         op.cleanup_task_dir(task, keep=True)
         assert task.exists()
         op.cleanup_task_dir(task, keep=False)
         assert not task.exists()
 
-    def test_cleanup_refuses_paths_outside_tasks(self, tmp_path):
+    def test_cleanup_refuses_non_task_dirs(self, tmp_path):
+        # 父目录名不是已知 task_type → 绝不删（防 rmtree 误删到用户目录）
         outsider = tmp_path / "precious"
         outsider.mkdir()
         op.cleanup_task_dir(outsider, keep=False)
         assert outsider.exists()
+        nested = tmp_path / "notatype" / "20260101-000000-x"
+        nested.mkdir(parents=True)
+        op.cleanup_task_dir(nested, keep=False)
+        assert nested.exists()
 
     def test_cleanup_tolerates_none_and_missing(self, tmp_path):
         op.cleanup_task_dir(None, keep=False)
-        op.cleanup_task_dir(tmp_path / "tasks" / "gone", keep=False)
+        op.cleanup_task_dir(tmp_path / "transcribe" / "gone", keep=False)
 
 
 class TestHelpers:

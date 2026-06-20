@@ -8,6 +8,7 @@ stdin（EOF）即停。SCK 音频归「屏幕录制」权限；未授权时 help
 
 from __future__ import annotations
 
+import collections
 import os
 import queue
 import shutil
@@ -59,7 +60,8 @@ class MacSystemAudioCapture:
         self._queue: "queue.Queue[bytes]" = queue.Queue(maxsize=queue_max)
         self._proc: Optional[subprocess.Popen] = None
         self._read_thread: Optional[threading.Thread] = None
-        self._stderr_lines: List[str] = []
+        # 只保留尾部供报错（与 voxgate 一致）：长会话里 helper 的 stderr 行不无限累积。
+        self._stderr_lines: "collections.deque[str]" = collections.deque(maxlen=40)
         self._started = threading.Event()
         self._dropped = 0
 
@@ -97,7 +99,7 @@ class MacSystemAudioCapture:
         logger.info("系统声音采集已启动：%s", binary)
 
     def _raise_for_exit(self, code: int) -> None:
-        detail = " ".join(self._stderr_lines[-3:]).strip()
+        detail = " ".join(list(self._stderr_lines)[-3:]).strip()
         if code == _PERMISSION_EXIT or "PERMISSION" in detail:
             raise MacSystemAudioPermissionError(
                 "未获得「屏幕录制」权限，无法捕获系统声音。请在 系统设置 → 隐私与安全性 → "

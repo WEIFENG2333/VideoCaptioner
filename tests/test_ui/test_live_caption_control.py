@@ -45,8 +45,9 @@ class _Signal:
 class _FakeThread:
     """替身线程：记录调用，永远"在运行"，不真起后端。"""
 
-    def __init__(self, config, parent=None):
+    def __init__(self, config, store=None, parent=None):
         self.config = config
+        self.store = store
         self.started = False
         self.cancelled = False
         self.stopped = False

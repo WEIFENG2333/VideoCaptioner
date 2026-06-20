@@ -18,7 +18,11 @@ from videocaptioner.core.realtime.audio.capture import AudioDevice, list_input_d
 from videocaptioner.core.realtime.audio.system_mac import system_audio_supported
 from videocaptioner.core.realtime.backends.base import TranscriberState
 from videocaptioner.core.realtime.config import LiveCaptionConfig, LiveCaptionSource
-from videocaptioner.core.realtime.recording.history import LiveCaptionRecord, LiveCaptionStore
+from videocaptioner.core.realtime.recording.history import (
+    LiveCaptionRecord,
+    LiveCaptionStore,
+    default_root,
+)
 from videocaptioner.core.translate.types import TranslatorType
 from videocaptioner.ui.common.config import (
     cfg,
@@ -63,7 +67,9 @@ class LiveCaptionInterface(QWidget):
             f"QWidget#liveCaptionInterface {{ background: {app_palette().bg}; }}"
         )
 
-        self._store = LiveCaptionStore()
+        # 实时字幕历史归入工作目录（用户工作产物）。旧 APPDATA 记录的一次性迁移放在 GUI 启动
+        # （main.py）做，不在此处——否则任何构造本页的测试/smoke 都会误迁真实数据。
+        self._store = LiveCaptionStore(root=default_root(cfg.get(cfg.work_dir)))
         self._thread: Optional[LiveCaptionThread] = None
         self._overlay: Optional[CaptionOverlay] = None
         self._retiring: List[LiveCaptionThread] = []
@@ -126,6 +132,8 @@ class LiveCaptionInterface(QWidget):
             lambda on: cfg.set(cfg.live_caption_show_overlay, on, save=True))
         # 设置页切转录引擎 → 立即按新引擎刷新主页识别语言下拉（不同引擎支持的语言不同）。
         cfg.live_caption_provider.valueChanged.connect(self._refresh_source_languages)
+        # 工作目录改了：无会话进行时立即把历史 store 指向新目录（有会话则等本次结束、下次启动）。
+        cfg.work_dir.valueChanged.connect(self._on_work_dir_changed)
 
         h = self.history
         h.backClicked.connect(self._show_session)
@@ -152,6 +160,14 @@ class LiveCaptionInterface(QWidget):
             cfg.get(cfg.live_caption_target_language),
         )
         self._refresh_source_languages()
+
+    def _on_work_dir_changed(self) -> None:
+        """工作目录变更：无会话进行时把历史 store 重指向新目录并刷新；有会话则保持本次不变。"""
+        if self._thread is not None:
+            return
+        self._store = LiveCaptionStore(root=default_root(cfg.get(cfg.work_dir)))
+        self._records_cache = None
+        self._refresh_recent()
 
     def _refresh_source_languages(self) -> None:
         """重填识别语言下拉：语言集随转录引擎而变。已存语言不在新引擎支持集时落库回退 auto。"""
@@ -394,7 +410,7 @@ class LiveCaptionInterface(QWidget):
             overlay = self._make_overlay()
         self._overlay = overlay
 
-        thread = LiveCaptionThread(config, self)
+        thread = LiveCaptionThread(config, self._store, self)
         thread.caption.connect(self._on_caption)
         thread.stateChanged.connect(self._on_state)
         thread.error.connect(self._on_error)
@@ -463,22 +479,32 @@ class LiveCaptionInterface(QWidget):
         self._timer.stop()
         self._teardown_thread()
 
-    def _teardown_thread(self) -> None:
-        self._starting = False
+    def _release_thread_and_overlay(self, *, blocking: bool) -> None:
+        """统一拆线程 + 拆浮窗（_teardown_thread 与 closeEvent 共用，关键不变量只一处定义）。
+
+        必须先断 线程→浮窗 的跨线程信号再销毁浮窗：收尾期间后端线程仍可能 emit，排队信号投递到
+        已释放的浮窗 C++ 对象会硬 abort。blocking=True（退出）阻塞 stop 确保无 QThread 残留；
+        blocking=False（会话内拆换）非阻塞 request_cancel + 退役队列，不卡 GUI。
+        """
         thread = self._thread
         overlay = self._overlay
         self._thread = None
         self._overlay = None
         if thread is not None:
-            # 销毁浮窗前先断开 线程→浮窗 的跨线程信号：收尾期间后端线程仍可能 emit，
-            # 排队信号投递到已释放的浮窗 C++ 对象会硬 abort。
             self._disconnect_signals(thread)
-            thread.request_cancel()
-            self._retiring.append(thread)
-            thread.finished.connect(lambda t=thread: self._retire(t))
+            if blocking:
+                thread.stop()
+            else:
+                thread.request_cancel()
+                self._retiring.append(thread)
+                thread.finished.connect(lambda t=thread: self._retire(t))
         if overlay is not None:
             overlay.hide()
             overlay.deleteLater()
+
+    def _teardown_thread(self) -> None:
+        self._starting = False
+        self._release_thread_and_overlay(blocking=False)
 
     def _disconnect_signals(self, thread) -> None:
         """断开 线程→本页 的 caption 信号。只需断 caption：它是唯一触达浮窗的实时信号；
@@ -579,16 +605,7 @@ class LiveCaptionInterface(QWidget):
 
     def closeEvent(self, event) -> None:
         self._timer.stop()
-        thread = self._thread
-        overlay = self._overlay
-        self._thread = None
-        self._overlay = None
-        if thread is not None:
-            self._disconnect_signals(thread)
-            thread.stop()  # 退出走阻塞收尾，确保没有 QThread 仍在运行
-        if overlay is not None:
-            overlay.hide()
-            overlay.deleteLater()
+        self._release_thread_and_overlay(blocking=True)  # 退出走阻塞收尾，确保无 QThread 残留
         for t in list(self._retiring):
             t.stop()
         self._retiring.clear()

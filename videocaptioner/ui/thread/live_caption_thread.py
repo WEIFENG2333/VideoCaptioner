@@ -15,6 +15,7 @@ from PyQt5.QtCore import pyqtSignal
 from videocaptioner.core.realtime.backends.base import LiveCaptionError
 from videocaptioner.core.realtime.config import LiveCaptionConfig
 from videocaptioner.core.realtime.events import CaptionEntry
+from videocaptioner.core.realtime.recording.history import LiveCaptionStore
 from videocaptioner.core.realtime.session import LiveCaptionSession
 from videocaptioner.ui.thread.worker import WorkerThread
 
@@ -31,9 +32,12 @@ class LiveCaptionThread(WorkerThread):
     # 实时拾音电平（0~1），驱动会话页波形/「有没有听到声音」指示
     level = pyqtSignal(float)
 
-    def __init__(self, config: LiveCaptionConfig, parent=None) -> None:
+    def __init__(
+        self, config: LiveCaptionConfig, store: Optional[LiveCaptionStore] = None, parent=None
+    ) -> None:
         super().__init__(parent)
         self._config = config
+        self._store = store  # 录制存盘用，与宿主历史列表共用同一 root（工作目录下）
         self._session: Optional[LiveCaptionSession] = None
 
     def _work(self) -> None:
@@ -43,6 +47,7 @@ class LiveCaptionThread(WorkerThread):
             on_state=lambda s: self.stateChanged.emit(s.value),
             on_record=self.recorded.emit,
             on_level=self.level.emit,
+            store=self._store,
         )
         self._session = session
         session.start()
@@ -55,6 +60,12 @@ class LiveCaptionThread(WorkerThread):
         # 只有「非用户取消」的致命失败（如并发配额满）才作为终态上抛、弹一条提示。
         if session.fatal_error and not self.is_cancel_requested():
             raise LiveCaptionError(session.fatal_error)
+
+    def stop(self, wait_ms: int = 22000) -> None:
+        # 退出时 closeEvent 走阻塞 stop()。会话收尾是串行的、预算大（音频 ~5s + voxgate EOF
+        # 冲刷末句 ~10s + 翻译 drain ~6s），基类默认 3s 会在收尾半途 terminate() 硬杀
+        # （WAV 未关、记录未存）。给足等待，terminate 只作真卡死的最后兜底。
+        super().stop(wait_ms=wait_ms)
 
     def _on_cancel(self) -> None:
         # 非阻塞：只让 pump 尽快退出（request_stop 不做收尾）；真正的链路收尾在

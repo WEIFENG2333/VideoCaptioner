@@ -191,3 +191,21 @@ def test_reconnect_backoff_gives_up_after_repeated_failures(monkeypatch):
     be._RECONNECT_MAX_DELAY_S = 0.0  # 退避归零，测试不阻塞
     assert be._try_reconnect("boom") is False
     assert errs and "网络持续不可用" in errs[0]
+
+
+def test_reconnect_terminates_on_accept_then_drop(monkeypatch):
+    """抖动期（配额满 / 限流）：建连每次都成功但连接秒断，attempt 不抛 → fails 永不累加。
+
+    这种 "accept-then-drop" 必须靠跨调用累计的 _reconnect_streak 兜底终止，否则会每 0.5s 无限
+    重连、永不出字也永不报错（连不上的 fails 上限拦不住它，因为每次 attempt 都成功）。"""
+    monkeypatch.setattr(websocket, "create_connection",
+                        lambda *a, **k: _FakeWS([_ev("session.created")]))
+    errs = []
+    be = QwenAsrBackend(api_key="sk-x", language="es",
+                        on_segment=lambda s: None, on_error=errs.append)
+    be._RECONNECT_MAX_FAILS = 3
+    be._note_alive()  # 最近确认存活 → 后续断连判为抖动期，streak 累计
+    results = [be._try_reconnect("drop") for _ in range(5)]
+    assert results[:3] == [True, True, True]  # 抖动期内每次都建连成功（fails 拦不住）
+    assert results[3] is False                # streak 超上限 → 放弃续录
+    assert errs and "反复连上即断" in errs[0]

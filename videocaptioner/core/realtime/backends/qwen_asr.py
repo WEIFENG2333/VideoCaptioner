@@ -15,12 +15,12 @@ import websocket
 from videocaptioner.core.realtime.backends.base import (
     SAMPLE_RATE,
     LiveCaptionError,
-    LiveTranscriber,
     OnError,
     OnSegment,
     OnState,
     TranscriberState,
 )
+from videocaptioner.core.realtime.backends.ws_base import WebSocketTranscriber
 from videocaptioner.core.realtime.events import TranscriptSegment
 from videocaptioner.core.utils.logger import setup_logger
 
@@ -35,7 +35,7 @@ _DONE_EVENT = "conversation.item.input_audio_transcription.completed"
 _FAIL_EVENT = "conversation.item.input_audio_transcription.failed"
 
 
-class QwenAsrBackend(LiveTranscriber):
+class QwenAsrBackend(WebSocketTranscriber):
     def __init__(
         self,
         api_key: str,
@@ -49,17 +49,12 @@ class QwenAsrBackend(LiveTranscriber):
         super().__init__(on_segment, on_state, on_error)
         if not api_key:
             raise LiveCaptionError("Qwen-ASR 实时转录需要阿里云百炼 API Key（在设置里填写）。")
+        # 基类设 WS 共性状态：_ws / _send_lock / _recv_thread / _closed / _stopping / _fed_any
         self._api_key = api_key
         self._model = model or DEFAULT_MODEL
         self._language = language or "auto"
-        self._ws: Optional[websocket.WebSocket] = None
-        self._send_lock = threading.Lock()
-        self._recv_thread: Optional[threading.Thread] = None
-        self._closed = False        # ws 已关、接收线程应退出
-        self._stopping = False      # 收尾中：停喂音频，接收线程仍收末句 + session.finished
         self._session_ready = threading.Event()  # 已收 session.created 并发出 session.update
         self._finished_event = threading.Event()  # 收尾用：已收 session.finished/error
-        self._fed_any = False       # 没喂过音频则跳过 session.finish（空任务直接关更稳）
         # 在途未定稿句，重连/收尾时补定稿以免丢末句。
         self._open_item: Optional[str] = None
         self._open_text = ""
@@ -138,13 +133,6 @@ class QwenAsrBackend(LiveTranscriber):
         ws.settimeout(0.5)
         return ws
 
-    def _send_json(self, obj: dict) -> None:
-        with self._send_lock:  # 同 feed()：锁内取并用 ws，避免与 stop()/重连竞态
-            ws = self._ws
-            if ws is None:
-                return
-            ws.send(json.dumps(obj))
-
     def _send_session_update(self) -> None:
         """配置会话（连上/重连收到 session.created 后回发）；auto 省略 language 走自动识别。"""
         transcription: dict = {} if self._language == "auto" else {"language": self._language}
@@ -158,39 +146,6 @@ class QwenAsrBackend(LiveTranscriber):
                 "turn_detection": {"type": "server_vad", "silence_duration_ms": _SILENCE_MS},
             },
         })
-
-    def _recv_loop(self) -> None:
-        while not self._closed:
-            ws = self._ws
-            if ws is None:
-                break
-            try:
-                raw = ws.recv()
-            except websocket.WebSocketTimeoutException:
-                continue
-            except Exception as exc:
-                if self._closed or self._stopping:
-                    break  # 主动收尾：正常退出
-                if not self._try_reconnect(exc):
-                    break
-                continue
-            if not raw:  # 服务端关闭连接
-                if self._closed or self._stopping or not self._try_reconnect(None):
-                    break
-                continue
-            self._note_alive()  # 收到数据帧 → 连接存活（供重连治理判定抖动期）
-            if isinstance(raw, bytes):
-                continue  # Qwen-ASR 不回二进制
-            if self.on_raw is not None:  # 调试落盘钩子（生产路径不设）
-                try:
-                    self.on_raw(raw)
-                except Exception:
-                    pass
-            try:
-                ev = json.loads(raw)
-            except Exception:
-                continue
-            self._dispatch(ev)
 
     def _try_reconnect(self, reason) -> bool:
         """掉线或服务端中途结束 session 时透明续录：定稿在途句，退避重连新连接（session.update
@@ -267,5 +222,5 @@ class QwenAsrBackend(LiveTranscriber):
                 # 服务端中途结束 session（单 session 有时长上限）→ 重起续录，不当结束。
                 logger.info("Qwen-ASR 服务端中途结束 session，重起续录")
                 if not self._try_reconnect("服务端结束 session"):
-                    self._closed = True
+                    self._fail_close()  # 重起失败：关 ws + 发 STOPPED，终态与 stop() 一致
         # speech_started/stopped、committed、conversation.item.created 等信息性事件：忽略

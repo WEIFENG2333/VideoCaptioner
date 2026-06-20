@@ -1,6 +1,6 @@
 """实时字幕历史记录的持久化（纯数据，无 Qt）。
 
-每条记录一个文件夹 ``{root}/{id}/``（root 默认 ``APPDATA_PATH/live_captions``）：
+每条记录一个文件夹 ``{root}/{id}/``（root 默认 ``{work_dir}/live-caption``，是用户工作产物）：
 ``transcript.json`` 存元信息+句子，``audio.wav`` 存可选录音。``id`` 是 ``YYYYMMDD-HHMMSS``，
 唯一且天然按时间排序，是不可变主键。UI/CLI 只认 :class:`LiveCaptionRecord`，不直接碰文件布局。
 """
@@ -8,13 +8,52 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from videocaptioner.config import APPDATA_PATH
+from videocaptioner.config import APPDATA_PATH, WORK_PATH
+from videocaptioner.core.utils.logger import setup_logger
+
+logger = setup_logger("live_caption_history")
+
+# 历史曾放 APPDATA，现归入工作目录（属用户工作产物）；GUI 启动时一次性迁移，见 migrate_legacy_root。
+_LEGACY_ROOT = APPDATA_PATH / "live_captions"
+DEFAULT_DIR_NAME = "live-caption"
+
+
+def default_root(work_dir: Optional[Union[str, Path]]) -> Path:
+    """实时字幕历史目录 = ``{work_dir}/live-caption``；work_dir 空则回退应用默认工作目录。
+
+    main.py 的迁移目标与 UI 的读写根都走这里，避免两处各拼一遍、字面量漂移导致「迁过去却读不到」。
+    """
+    wd = str(work_dir or "").strip()
+    return (Path(wd) if wd else WORK_PATH) / DEFAULT_DIR_NAME
+
+
+def migrate_legacy_root(new_root: Path) -> None:
+    """把旧的 ``APPDATA/live_captions`` 一次性迁到 ``new_root``（实时字幕改放工作目录）。
+
+    仅当新目录不存在、且旧目录有内容时迁移。可恢复：先 copytree 到临时目录、成功后原子改名，最后
+    才删旧目录——任一步失败就清理临时目录、原样保留旧记录（new_root 仍不存在，下次启动可重试），
+    绝不留半截。由 GUI 启动时调用，CLI/测试不触发，避免误动用户真实数据。
+    """
+    new_root = Path(new_root)
+    if new_root == _LEGACY_ROOT or new_root.exists() or not _LEGACY_ROOT.is_dir():
+        return
+    staging = new_root.with_name(new_root.name + ".migrating")
+    try:
+        shutil.rmtree(staging, ignore_errors=True)  # 清掉上次可能残留的半截临时目录
+        new_root.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(_LEGACY_ROOT, staging)   # 先全量复制（跨盘也安全，非原子）
+        os.replace(staging, new_root)            # 同盘原子改名成正式目录
+        shutil.rmtree(_LEGACY_ROOT, ignore_errors=True)  # 仅在彻底成功后删旧
+    except Exception:
+        logger.warning("迁移实时字幕历史失败，保留原位置待下次重试", exc_info=True)
+        shutil.rmtree(staging, ignore_errors=True)
 
 _TRANSCRIPT = "transcript.json"
 AUDIO_NAME = "audio.wav"
@@ -174,7 +213,7 @@ class LiveCaptionStore:
     """实时字幕记录目录的读写。线程：保存在工作线程、列出在 GUI 线程，互不共享状态。"""
 
     def __init__(self, root: Optional[Path] = None) -> None:
-        self.root = Path(root) if root is not None else APPDATA_PATH / "live_captions"
+        self.root = Path(root) if root is not None else WORK_PATH / DEFAULT_DIR_NAME
 
     # ----- 路径 -----
 

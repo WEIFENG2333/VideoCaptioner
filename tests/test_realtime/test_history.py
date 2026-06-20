@@ -138,3 +138,31 @@ def test_recorder_discards_empty_session(tmp_path):
     rec.write_pcm(b"\x00\x00" * 100)
     assert rec.finalize() is None  # 没有任何句子 → 丢弃
     assert store.list() == []
+
+
+def test_migrate_legacy_root_moves_records(tmp_path, monkeypatch):
+    """旧 APPDATA/live_captions 一次性迁入工作目录：新目录不存在 + 旧有内容 → 整体移过去。"""
+    from videocaptioner.core.realtime.recording import history
+
+    legacy = tmp_path / "legacy"
+    (legacy / "20260101-000000").mkdir(parents=True)
+    monkeypatch.setattr(history, "_LEGACY_ROOT", legacy)
+    new_root = tmp_path / "work" / "live-caption"
+    history.migrate_legacy_root(new_root)
+    assert (new_root / "20260101-000000").is_dir()  # 记录迁过去
+    assert not legacy.exists()                        # 旧目录已移走（幂等：下次不再迁）
+
+
+def test_migrate_legacy_root_skips_when_new_exists(tmp_path, monkeypatch):
+    """新目录已存在 → 绝不迁移/覆盖（保护用户已有记录）。"""
+    from videocaptioner.core.realtime.recording import history
+
+    legacy = tmp_path / "legacy"
+    (legacy / "old").mkdir(parents=True)
+    monkeypatch.setattr(history, "_LEGACY_ROOT", legacy)
+    new_root = tmp_path / "work" / "live-caption"
+    (new_root / "existing").mkdir(parents=True)
+    history.migrate_legacy_root(new_root)
+    assert legacy.exists()                   # 旧目录原封不动
+    assert not (new_root / "old").exists()   # 没迁入
+    assert (new_root / "existing").is_dir()  # 已有记录不受影响

@@ -221,7 +221,7 @@ class JobRunner(QObject):
 
     def _ensure_task_dir(self) -> str:
         if not self._task_dir:
-            self._task_dir = TaskFactory.new_task_dir(self._path)
+            self._task_dir = TaskFactory.new_task_dir(self._path, "batch")
         return self._task_dir
 
     def request_cancel(self):
