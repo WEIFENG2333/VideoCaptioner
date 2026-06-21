@@ -152,6 +152,13 @@ class MediaDownloader:
         self._on_progress(value, "正在下载媒体")
         self._on_stats(speed, f"剩余 {eta}")
 
+    def _postprocessor_hook(self, data: dict):
+        """下载字节完成后的后处理（B 站 DASH 分离流的 ffmpeg 合并等）。这段没有百分比，但耗时，
+        必须给反馈——否则进度停在 100% 看起来像卡死。"""
+        if data.get("status") == "started":
+            self._on_progress(100, "正在合并音视频…")
+            self._on_stats("", "处理中")
+
     def _download(
         self,
         video_format: str,
@@ -166,6 +173,7 @@ class MediaDownloader:
             },
             "format": video_format,
             "progress_hooks": [self._progress_hook],
+            "postprocessor_hooks": [self._postprocessor_hook],
             "quiet": True,
             "no_warnings": True,
             "noprogress": True,

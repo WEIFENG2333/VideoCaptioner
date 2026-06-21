@@ -8,14 +8,11 @@ from __future__ import annotations
 
 import collections
 import json
-import os
 import queue
-import shutil
 import subprocess
 import sys
 import threading
 import time
-from pathlib import Path
 from typing import Deque, Optional
 
 from videocaptioner import config
@@ -39,16 +36,8 @@ _OK_CODE = 20000000  # status_code 成功值
 
 
 def find_voxgate_binary(configured: str = "") -> Optional[str]:
-    """按 配置路径 → 自带 bin → 用户 bin → PATH 的顺序发现 voxgate 可执行文件。"""
-    candidates = []
-    if configured:
-        candidates.append(Path(configured))
-    candidates.append(config.BUNDLED_BIN_PATH / _BINARY_NAME)
-    candidates.append(config.BIN_PATH / _BINARY_NAME)
-    for cand in candidates:
-        if cand.is_file() and os.access(cand, os.X_OK):
-            return str(cand)
-    return shutil.which("voxgate")
+    """发现 voxgate 可执行文件（配置路径 → 自带 bin → 用户 bin → PATH）。"""
+    return config.find_binary(_BINARY_NAME, configured)
 
 
 def _no_window_kwargs() -> dict:

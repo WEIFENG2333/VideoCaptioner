@@ -48,6 +48,14 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = []
+# 硬字幕提取（OCR）。RapidOCR = PaddleOCR 的 PP-OCR 模型转 ONNX：中英文质量好、torch-free、
+# 纯 CPU、多平台一致；模型首次用时从 ModelScope 下载缓存。opencv 是 rapidocr 的传递依赖，
+# 打包时建议 pin headless 版（更小、不与 PyQt 窗口系统冲突）。rapidfuzz 缺失时代码回退 difflib。
+ocr = [
+    "rapidocr>=3.0",
+    "onnxruntime>=1.19",
+    "rapidfuzz>=3.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/WEIFENG2333/VideoCaptioner"

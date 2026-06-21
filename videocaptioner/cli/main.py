@@ -263,6 +263,46 @@ def _build_synthesize_parser(subparsers) -> None:
     p.set_defaults(func=_run_synthesize)
 
 
+def _build_extract_hardsub_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "extract-hardsub",
+        help="Extract burned-in (hard) subtitles from video via OCR",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "OCR the burned-in subtitles in a video into an editable subtitle file.\n"
+            "Auto-detects the subtitle region (override with --roi), only OCRs at\n"
+            "subtitle change points, and writes SRT/ASS. Engine: RapidOCR (CPU)."
+        ),
+    )
+    p.add_argument("video", help="Input video file path")
+    _add_common_options(p)
+
+    opt = p.add_argument_group("Extraction options")
+    opt.add_argument(
+        "--lang",
+        choices=["ch", "en", "japan", "korean", "chinese_cht"],
+        help="Subtitle language (default: ch = Chinese+English)",
+    )
+    opt.add_argument(
+        "--mode",
+        choices=["fast", "standard", "accurate"],
+        help="Recognition mode — speed/accuracy tradeoff (default: standard)",
+    )
+    opt.add_argument(
+        "--roi",
+        metavar="X,Y,W,H",
+        help="Subtitle region in original-resolution pixels (skip auto-detect)",
+    )
+    opt.add_argument(
+        "--no-auto-region",
+        action="store_true",
+        help="Skip auto region detection; use --roi or the default bottom band",
+    )
+    p.add_argument("-o", "--output", metavar="PATH", help="Output subtitle path (.srt/.ass/.txt)")
+
+    p.set_defaults(func=_run_extract_hardsub)
+
+
 def _build_dub_parser(subparsers) -> None:
     from videocaptioner.core.dubbing.presets import available_dubbing_presets
 
@@ -544,6 +584,7 @@ def build_parser() -> argparse.ArgumentParser:
     _build_subtitle_parser(subparsers)
     _build_dub_parser(subparsers)
     _build_synthesize_parser(subparsers)
+    _build_extract_hardsub_parser(subparsers)
     _build_process_parser(subparsers)
     _build_download_parser(subparsers)
     _build_models_parser(subparsers)
@@ -718,6 +759,12 @@ def _run_synthesize(args: argparse.Namespace) -> int:
 
 def _run_dub(args: argparse.Namespace) -> int:
     from videocaptioner.cli.commands.dub import run
+    config = _load_config(args)
+    return run(args, config)
+
+
+def _run_extract_hardsub(args: argparse.Namespace) -> int:
+    from videocaptioner.cli.commands.extract_hardsub import run
     config = _load_config(args)
     return run(args, config)
 

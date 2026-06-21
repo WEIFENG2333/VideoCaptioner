@@ -26,6 +26,7 @@ from videocaptioner.ui.thread.version_checker_thread import VersionChecker
 from videocaptioner.ui.view.batch_process_interface import BatchProcessInterface
 from videocaptioner.ui.view.doctor_interface import DoctorInterface
 from videocaptioner.ui.view.dubbing_interface import DubbingInterface
+from videocaptioner.ui.view.hardsub_interface import HardsubInterface
 from videocaptioner.ui.view.home_interface import HomeInterface
 from videocaptioner.ui.view.live_caption_interface import LiveCaptionInterface
 from videocaptioner.ui.view.llm_logs_interface import LLMLogsInterface
@@ -54,11 +55,15 @@ class MainWindow(FluentWindow):
         self.settingsDialog = SettingsDialog(self)
         self.settingInterface = self.settingsDialog.settingInterface
         self.subtitleStyleInterface = SubtitleStyleInterface(self)
+        self.hardsubInterface = HardsubInterface(self)
         self.dubbingInterface = DubbingInterface(self)
         self.liveCaptionInterface = LiveCaptionInterface(self)
         self.doctorInterface = DoctorInterface(self)
         self.batchProcessInterface = BatchProcessInterface(self)
         self.llmLogsInterface = LLMLogsInterface(self)
+
+        # 硬字幕提取「送入字幕优化」：切到主页字幕优化 tab 并载入提取出的字幕
+        self.hardsubInterface.sendToOptimize.connect(self._on_hardsub_to_optimize)
 
         # 初始化版本检查器
         self.versionChecker = VersionChecker()
@@ -96,6 +101,9 @@ class MainWindow(FluentWindow):
             self.liveCaptionInterface, AppFluentIcon(AppIcon.MICROPHONE), self.tr("实时字幕")
         )
         self.addSubInterface(
+            self.hardsubInterface, AppFluentIcon(AppIcon.HARDSUB), self.tr("硬字幕提取")
+        )
+        self.addSubInterface(
             self.llmLogsInterface, AppFluentIcon(AppIcon.HISTORY), self.tr("请求日志")
         )
         self.addSubInterface(
@@ -124,6 +132,11 @@ class MainWindow(FluentWindow):
 
         # 设置默认界面
         self.switchTo(self.homeInterface)
+
+    def _on_hardsub_to_optimize(self, subtitle_path: str, video_path: str) -> None:
+        """硬字幕提取 → 主页字幕优化页（载入提取出的字幕，等用户配置优化/翻译）。"""
+        self.switchTo(self.homeInterface)
+        self.homeInterface.load_subtitle_for_optimize(subtitle_path, video_path)
 
     def switchTo(self, interface):
         if interface.windowTitle():
@@ -246,6 +259,7 @@ class MainWindow(FluentWindow):
         for interface in (
             self.homeInterface,
             self.batchProcessInterface,
+            self.hardsubInterface,
             self.subtitleStyleInterface,
             self.dubbingInterface,
             self.liveCaptionInterface,

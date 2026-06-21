@@ -45,6 +45,7 @@ class AppIcon(str, Enum):
     FONT_SIZE = "font_size"
     GITHUB = "github"
     GLOBE = "globe"
+    HARDSUB = "hardsub"
     HEART = "heart"
     HISTORY = "history"
     HOME = "home"

@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from videocaptioner.config import BIN_PATH, CACHE_PATH
+from videocaptioner.config import BIN_PATH, CACHE_PATH, find_binary
 from videocaptioner.core.download.downloader import (
     CancelCheck,
     DownloadProgress,
@@ -179,14 +179,8 @@ def asset_for(spec: DependencySpec) -> Optional[DependencyAsset]:
 
 
 def _find_executable(name: str) -> Optional[str]:
-    """在 PATH 与 BIN_PATH 里找可执行文件（BIN_PATH 启动时已前置到 PATH，这里再兜一道）。"""
-    found = shutil.which(name)
-    if found:
-        return found
-    candidate = Path(BIN_PATH) / name
-    if candidate.is_file() and os.access(candidate, os.X_OK):
-        return str(candidate)
-    return None
+    """在 自带 bin / 用户 bin / PATH 里找可执行文件（统一走 config.find_binary）。"""
+    return find_binary(name)
 
 
 def is_installed(spec: DependencySpec) -> bool:

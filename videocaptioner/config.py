@@ -1,7 +1,9 @@
 import logging
 import os
+import shutil
 import sys
 from pathlib import Path
+from typing import Optional
 
 from platformdirs import user_data_path
 
@@ -59,6 +61,27 @@ SUBTITLE_STYLE_PATH = USER_SUBTITLE_STYLE_PATH
 FONTS_PATH = RESOURCE_PATH / "fonts"
 
 BUNDLED_BIN_PATH = RESOURCE_PATH / "bin"
+
+
+def find_binary(name: str, configured: str = "") -> Optional[str]:
+    """发现一个随包/可下载的二进制：配置路径 → 自带 bin → 用户 bin → PATH，找不到返回 None。
+
+    ``name`` 不带扩展名（如 ``"ffmpeg"`` / ``"voxgate"``）；Windows 自动补 ``.exe``（已带则不重复
+    补）。``configured`` 是设置里用户手动指定的绝对路径（可空，优先级最高）。voxgate / macsysaudio /
+    ffmpeg 等都走这里，别再各自重写一份发现逻辑。
+    """
+    exe = name
+    if os.name == "nt" and not name.lower().endswith(".exe"):
+        exe = f"{name}.exe"
+    candidates = []
+    if configured:
+        candidates.append(Path(configured))
+    candidates.append(BUNDLED_BIN_PATH / exe)
+    candidates.append(BIN_PATH / exe)
+    for cand in candidates:
+        if cand.is_file() and os.access(cand, os.X_OK):
+            return str(cand)
+    return shutil.which(exe)
 
 LOG_PATH = APPDATA_PATH / "logs"
 LLM_LOG_FILE = LOG_PATH / "llm_requests.jsonl"

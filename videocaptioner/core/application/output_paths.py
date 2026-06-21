@@ -39,13 +39,17 @@ PathLike = Union[str, Path]
 TAG_OPTIMIZED = "optimized"
 TAG_SUBTITLED = "subtitled"
 TAG_DUBBED = "dubbed"
+TAG_HARDSUB = "hardsub"  # 从视频画面 OCR 提取出的字幕
 
 # 任务目录按功能归类：{work_dir}/{task_type}/{时间戳}-{stem}/，由目录携带语义。
 TASK_TRANSCRIBE = "transcribe"  # 主页转录→字幕→合成 一条龙
 TASK_SYNTHESIS = "synthesis"    # 视频合成页
 TASK_BATCH = "batch"            # 批量处理页
 TASK_DUBBING = "dubbing"        # 独立配音（CLI / 无上游任务目录时）
-_TASK_TYPES = frozenset({TASK_TRANSCRIBE, TASK_SYNTHESIS, TASK_BATCH, TASK_DUBBING})
+TASK_HARDSUB = "hardsub"        # 硬字幕提取页
+_TASK_TYPES = frozenset(
+    {TASK_TRANSCRIBE, TASK_SYNTHESIS, TASK_BATCH, TASK_DUBBING, TASK_HARDSUB}
+)
 
 # 任务目录内的固定文件名：路径即语义，文件名不再编码阶段信息。
 DOWNLOADS_DIR_NAME = "downloads"
@@ -56,7 +60,7 @@ DUBBING_AUDIO_FILE = "audio.wav"
 DUBBING_REPORT_FILE = "report.json"
 
 _LANGUAGE_TAGS = frozenset(BING_LANG_MAP.values())
-_KNOWN_TAGS = frozenset({TAG_OPTIMIZED, TAG_SUBTITLED, TAG_DUBBED}) | _LANGUAGE_TAGS
+_KNOWN_TAGS = frozenset({TAG_OPTIMIZED, TAG_SUBTITLED, TAG_DUBBED, TAG_HARDSUB}) | _LANGUAGE_TAGS
 
 _LAYOUT_FILE_KEYS = {
     SubtitleLayoutEnum.TRANSLATE_ON_TOP: "target-above",

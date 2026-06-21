@@ -67,6 +67,7 @@ PAGE_REGISTRY: dict[str, tuple[str, str]] = {
         "TranscriptionInterface",
     ),
     "subtitle": ("videocaptioner.ui.view.subtitle_interface", "SubtitleInterface"),
+    "hardsub": ("videocaptioner.ui.view.hardsub_interface", "HardsubInterface"),
     "batch": ("videocaptioner.ui.view.batch_process_interface", "BatchProcessInterface"),
     "subtitle-style": (
         "videocaptioner.ui.view.subtitle_style_interface",

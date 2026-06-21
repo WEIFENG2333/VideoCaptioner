@@ -9,15 +9,12 @@ stdin（EOF）即停。SCK 音频归「屏幕录制」权限；未授权时 help
 from __future__ import annotations
 
 import collections
-import os
 import queue
-import shutil
 import subprocess
 import sys
 import threading
 import time
-from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from videocaptioner import config
 from videocaptioner.core.realtime.audio.capture import AudioSourceError
@@ -35,16 +32,8 @@ class MacSystemAudioPermissionError(AudioSourceError):
 
 
 def find_macsysaudio_binary(configured: str = "") -> Optional[str]:
-    """按 配置路径 → 自带 bin → 用户 bin → PATH 的顺序发现 macsysaudio（与 voxgate 同规则）。"""
-    candidates: List[Path] = []
-    if configured:
-        candidates.append(Path(configured))
-    candidates.append(config.BUNDLED_BIN_PATH / _BINARY_NAME)
-    candidates.append(config.BIN_PATH / _BINARY_NAME)
-    for cand in candidates:
-        if cand.is_file() and os.access(cand, os.X_OK):
-            return str(cand)
-    return shutil.which(_BINARY_NAME)
+    """发现 macsysaudio 可执行文件（配置路径 → 自带 bin → 用户 bin → PATH）。"""
+    return config.find_binary(_BINARY_NAME, configured)
 
 
 def system_audio_supported() -> bool:

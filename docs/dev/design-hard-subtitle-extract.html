@@ -146,7 +146,6 @@
       .rail button.active img,
       .primary img,
       .link-action img,
-      .segment.active img,
       .status.ok img {
         filter: invert(76%) sepia(93%) saturate(1137%) hue-rotate(93deg) brightness(103%) contrast(98%);
       }
@@ -206,6 +205,7 @@
         align-items: center;
         justify-content: center;
         gap: 9px;
+        white-space: nowrap;
         font-size: 15px;
         font-weight: 900;
       }
@@ -262,8 +262,9 @@
         min-height: 0;
         flex: 1;
         display: grid;
-        grid-template-columns: 620px minmax(0, 1fr);
+        grid-template-columns: 780px minmax(0, 1fr);
         gap: 18px;
+        align-items: stretch;
       }
 
       .panel {
@@ -276,8 +277,9 @@
       }
 
       .stage {
+        align-self: start;
         display: grid;
-        grid-template-rows: 68px minmax(0, 1fr);
+        grid-template-rows: 68px auto;
       }
 
       .panel-head {
@@ -409,21 +411,29 @@
 
       .video-frame {
         position: relative;
-        height: 460px;
+        aspect-ratio: 16 / 9;
+        width: 100%;
         border: 1px solid var(--line-soft);
         border-radius: 14px;
         overflow: hidden;
         background:
-          linear-gradient(90deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.22)),
           #14201d;
       }
 
       .video-scene {
         position: absolute;
         inset: 0;
-        display: grid;
-        place-items: center;
         overflow: hidden;
+      }
+
+      .video-scene::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: 38%;
+        background: linear-gradient(180deg, rgba(8, 14, 12, 0), rgba(8, 14, 12, 0.76));
+        pointer-events: none;
       }
 
       .teacher {
@@ -460,40 +470,48 @@
 
       .subtitle-band {
         position: absolute;
-        left: 8%;
-        right: 8%;
-        bottom: 12.5%;
-        min-height: 74px;
+        left: 4.8%;
+        right: 4.8%;
+        bottom: 22.5%;
+        min-height: 104px;
+        max-height: 154px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 6px;
+        gap: 7px;
         color: #fff;
         text-align: center;
         font-weight: 950;
+        line-height: 1.18;
         text-shadow: 0 2px 0 #000;
         pointer-events: none;
+        z-index: 2;
       }
 
       .subtitle-band .cn {
-        font-size: 28px;
+        max-width: 96%;
+        font-size: 22px;
+        text-wrap: balance;
       }
 
       .subtitle-band .en {
+        max-width: 94%;
         color: #ffe16b;
-        font-size: 22px;
+        font-size: 16px;
+        text-wrap: balance;
       }
 
       .crop-box {
         position: absolute;
         left: 6%;
         right: 6%;
-        bottom: 9%;
-        height: 126px;
+        bottom: 18%;
+        height: 158px;
         border: 2px solid var(--accent);
         border-radius: 10px;
         box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.18);
+        z-index: 3;
       }
 
       .crop-box::before,
@@ -515,6 +533,16 @@
         right: -7px;
       }
 
+      .crop-box.needs-manual {
+        border-style: dashed;
+        border-color: var(--danger);
+      }
+
+      .crop-box.needs-manual::before,
+      .crop-box.needs-manual::after {
+        background: var(--danger);
+      }
+
       .crop-label {
         position: absolute;
         right: 14px;
@@ -531,31 +559,152 @@
         font-weight: 900;
       }
 
-      .video-footer {
-        min-height: 44px;
+      .crop-box.needs-manual .crop-label {
+        color: #ffb5ad;
+        border-color: rgba(238, 120, 106, 0.68);
+      }
+
+      .video-controls {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 14px;
+        z-index: 5;
+        min-height: 74px;
+        padding: 12px 14px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        background: rgba(10, 17, 15, 0.72);
+        display: grid;
+        grid-template-rows: 14px 36px;
+        gap: 9px;
+      }
+
+      .scrub {
+        position: relative;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(197, 215, 209, 0.22);
+      }
+
+      .scrub-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 42%;
+        border-radius: inherit;
+        background: var(--accent);
+      }
+
+      .scrub-thumb {
+        position: absolute;
+        left: 42%;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        background: var(--accent);
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 0 4px rgba(7, 238, 138, 0.18);
+      }
+
+      .scrub-mark {
+        position: absolute;
+        top: 50%;
+        width: 3px;
+        height: 13px;
+        border-radius: 999px;
+        background: rgba(241, 248, 245, 0.42);
+        transform: translateY(-50%);
+      }
+
+      .scrub-mark.m1 {
+        left: 12%;
+      }
+
+      .scrub-mark.m2 {
+        left: 27%;
+      }
+
+      .scrub-mark.m3 {
+        left: 63%;
+      }
+
+      .scrub-mark.m4 {
+        left: 78%;
+      }
+
+      .control-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: var(--muted);
+        gap: 14px;
+      }
+
+      .control-left,
+      .control-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .play-button {
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--accent);
+        display: grid;
+        place-items: center;
+      }
+
+      .play-button img {
+        width: 17px;
+        height: 17px;
+        filter: brightness(0);
+      }
+
+      .timecode {
+        color: #f5fbf8;
         font-size: 14px;
+        font-weight: 950;
+      }
+
+      .duration {
+        color: var(--muted);
+      }
+
+      .clip-name {
+        min-width: 0;
+        max-width: 270px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--muted);
+        font-size: 13px;
         font-weight: 850;
       }
 
-      .timeline {
-        flex: 1;
-        height: 8px;
-        margin: 0 14px;
-        border-radius: 999px;
-        background: #35423d;
-        overflow: hidden;
+      .control-chip {
+        height: 32px;
+        min-width: 44px;
+        padding: 0 11px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 950;
       }
 
-      .timeline span {
-        display: block;
-        width: 42%;
-        height: 100%;
-        background: var(--accent);
-        border-radius: inherit;
+      .control-chip img {
+        width: 16px;
+        height: 16px;
+        filter: invert(78%) sepia(9%) saturate(289%) hue-rotate(115deg) brightness(86%);
       }
 
       .caption-panel {
@@ -636,16 +785,20 @@
 
       th,
       td {
-        height: 48px;
-        padding: 0 18px;
+        min-height: 48px;
+        padding: 13px 18px;
         border-bottom: 1px solid var(--line-soft);
         font-size: 14px;
         font-weight: 800;
+        line-height: 1.45;
         text-align: left;
+        vertical-align: top;
       }
 
       th {
         color: var(--subtle);
+        padding-top: 14px;
+        padding-bottom: 14px;
       }
 
       td:nth-child(1),
@@ -654,20 +807,16 @@
       th:nth-child(2) {
         width: 86px;
         color: var(--muted);
+        white-space: nowrap;
       }
 
-      td:nth-child(4),
-      th:nth-child(4) {
-        width: 92px;
+      td:nth-child(3) {
+        color: var(--text);
       }
 
       tr.active td {
         background: rgba(7, 238, 138, 0.08);
         color: var(--text);
-      }
-
-      .confidence {
-        color: var(--accent);
       }
 
       .caption-footer {
@@ -711,101 +860,6 @@
         width: auto;
       }
 
-      .option-row {
-        min-height: 62px;
-        border: 1px solid var(--line-soft);
-        border-radius: 12px;
-        background: var(--field-2);
-        padding: 12px 14px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .option-main {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-      }
-
-      .option-main strong {
-        font-size: 15px;
-        font-weight: 950;
-      }
-
-      .option-main span {
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 800;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 170px;
-      }
-
-      .value-pill {
-        min-width: 72px;
-        height: 34px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        color: var(--muted);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        font-weight: 900;
-        white-space: nowrap;
-      }
-
-      .value-pill.ok {
-        color: var(--accent);
-        border-color: var(--accent-line);
-        background: var(--accent-soft);
-      }
-
-      .segment {
-        height: 42px;
-        border: 1px solid var(--line-soft);
-        border-radius: 11px;
-        background: var(--field-2);
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        padding: 4px;
-        gap: 4px;
-      }
-
-      .segment button {
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--muted);
-        font-size: 14px;
-        font-weight: 900;
-      }
-
-      .segment button.active {
-        color: #06110d;
-        background: var(--accent);
-      }
-
-      .side-footer {
-        margin-top: auto;
-        padding-top: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .tiny-note {
-        color: var(--subtle);
-        font-size: 12px;
-        line-height: 1.45;
-        font-weight: 800;
-      }
-
       .progress-row {
         min-height: 74px;
         padding: 0 16px;
@@ -844,35 +898,6 @@
         text-align: right;
       }
 
-      .error-stage {
-        padding: 22px;
-        min-height: 0;
-        display: grid;
-        place-items: center;
-      }
-
-      .error-center {
-        gap: 14px;
-      }
-
-      .error-center .big-icon {
-        width: 74px;
-        height: 74px;
-        border-color: rgba(238, 120, 106, 0.58);
-      }
-
-      .error-center .big-icon img {
-        width: 34px;
-        height: 34px;
-      }
-
-      .inline-links {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        justify-content: center;
-      }
-
       .hide {
         display: none !important;
       }
@@ -884,14 +909,13 @@
       const icon = (name) => `../../resource/assets/icons/${name}.svg`;
 
       const rows = [
-        ["00:01.12", "00:03.40", "大家好，欢迎来到这一节课。", "96%"],
-        ["00:03.52", "00:06.20", "我们今天讲矩阵和向量空间。", "94%"],
-        ["00:06.36", "00:08.90", "先从最基本的概念开始。", "92%"],
-        ["00:09.10", "00:12.00", "后面会用几个例子来说明。", "93%"],
-        ["00:12.24", "00:15.64", "我们先看一下矩阵的形式。", "91%"],
-        ["00:15.90", "00:18.20", "它由若干行和若干列组成。", "95%"],
-        ["00:18.46", "00:20.88", "每一个位置上的数称为元素。", "94%"],
-        ["00:21.10", "00:24.60", "接下来我们会把它和向量空间联系起来。", "90%"],
+        ["00:01.12", "00:03.40", "大家好，欢迎来到这一节课。"],
+        ["00:03.52", "00:07.80", "我们今天讲矩阵和向量空间，先把矩阵看作一组线性变换，再讨论它如何改变坐标系，以及为什么同一个向量在不同基底下会有完全不同的坐标表示。"],
+        ["00:08.10", "00:11.20", "如果这一段字幕特别长，识别结果需要完整保留，表格也应该让用户能直接阅读和修正，而不是因为列宽太窄或行高太死被挤得看不清。"],
+        ["00:11.44", "00:14.60", "后面会用几个例子来说明。"],
+        ["00:14.84", "00:18.24", "我们先看一下矩阵的形式，以及每一列向量在空间里的含义。"],
+        ["00:18.46", "00:20.88", "每一个位置上的数称为元素。"],
+        ["00:21.10", "00:24.60", "接下来我们会把它和向量空间联系起来。"],
       ];
 
       const states = [
@@ -948,9 +972,9 @@
           statusClass: "ok",
           sideStatus: "完成",
           body: "done",
-          primary: "导出字幕",
-          primaryIcon: "download",
-          note: "双击文本可直接修正，导出前可以调整时间轴。",
+          primary: "送入字幕优化",
+          primaryIcon: "right_arrow",
+          note: "双击文本可修正、调整时间轴；可送入字幕优化继续翻译，或直接导出。",
         },
         {
           id: "error",
@@ -994,7 +1018,7 @@
                   </div>
                   <div class="head-actions">
                     ${state.id === "empty" ? "" : `<button class="btn"><img src="${icon("video")}" alt="" />更换视频</button>`}
-                    <button class="btn ghost"><img src="${icon("setting")}" alt="" />提取设置</button>
+                    ${state.id === "empty" || state.id === "processing" ? "" : `<button class="btn ghost"><img src="${icon("sync")}" alt="" />自动识别区域</button>`}
                   </div>
                 </header>
                 <section class="work">
@@ -1032,22 +1056,6 @@
           `;
         }
 
-        if (state.body === "error") {
-          return `
-            <div class="error-stage">
-              <div class="error-center">
-                <div class="big-icon"><img src="${icon("volume")}" alt="" /></div>
-                <div class="error-title">没有识别到稳定字幕区域</div>
-                <div class="error-sub">可以手动框选字幕区域后重试。</div>
-                <div class="inline-links">
-                  <span class="link-action"><img src="${icon("layout")}" alt="" />手动框选</span>
-                  <span class="link-action"><img src="${icon("sync")}" alt="" />重新识别</span>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-
         return `
           <div class="preview">
             <div class="video-frame">
@@ -1055,16 +1063,26 @@
                 <div class="board-shape"></div>
                 <div class="teacher"></div>
                 <div class="subtitle-band">
-                  <div class="cn">我们今天讲矩阵和向量空间。</div>
-                  <div class="en">Today we will talk about matrices and vector spaces.</div>
+                  <div class="cn">我们今天讲矩阵和向量空间，先把矩阵看作一组线性变换，再讨论它如何改变坐标系，以及为什么同一个向量在不同基底下会有完全不同的坐标表示。</div>
+                  <div class="en">Today we will talk about matrices and vector spaces, starting from linear transformations, how they reshape a coordinate system, and why the same vector can have very different coordinates in another basis.</div>
                 </div>
-                <div class="crop-box"><span class="crop-label">${state.id === "processing" ? "正在识别这一区域" : "字幕区域"}</span></div>
+                <div class="crop-box ${state.id === "error" ? "needs-manual" : ""}"><span class="crop-label">${state.id === "processing" ? "正在识别这一区域" : state.id === "error" ? "拖动框选字幕" : "字幕区域"}</span></div>
+                <div class="video-controls">
+                  <div class="scrub">
+                    <span class="scrub-fill"></span>
+                    <span class="scrub-thumb"></span>
+                  </div>
+                  <div class="control-row">
+                    <div class="control-left">
+                      <span class="timecode">04:18 <span class="duration">/ 10:24</span></span>
+                      <span class="clip-name">linear-algebra-demo.mp4</span>
+                    </div>
+                    <div class="control-right">
+                      <span class="control-chip">拖动查看其他帧</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="video-footer">
-              <span>00:03.52</span>
-              <div class="timeline"><span></span></div>
-              <span>10:24</span>
             </div>
           </div>
           ${state.progress ? `<div class="progress-row"><div class="progress-title">字幕识别</div><div class="bar"><span></span></div><div class="percent">46%</div></div>` : ""}
@@ -1075,13 +1093,13 @@
         return `
             <table>
               <thead>
-                <tr><th>开始</th><th>结束</th><th>文本</th><th>置信度</th></tr>
+                <tr><th>开始</th><th>结束</th><th>文本</th></tr>
               </thead>
               <tbody>
                 ${rows
                   .map(
                     (row, index) =>
-                      `<tr class="${index === 1 && state.id === "processing" ? "active" : ""}"><td>${row[0]}</td><td>${row[1]}</td><td>${index === 1 && state.id === "processing" ? "正在识别..." : row[2]}</td><td class="confidence">${row[3]}</td></tr>`,
+                      `<tr class="${index === 1 && state.id === "processing" ? "active" : ""}"><td>${row[0]}</td><td>${row[1]}</td><td>${index === 1 && state.id === "processing" ? "正在识别..." : row[2]}</td></tr>`,
                   )
                   .join("")}
               </tbody>
@@ -1137,7 +1155,7 @@
             <div class="result-head">
               <strong>字幕结果</strong>
               <div class="result-tools">
-                <span class="status ${state.statusClass}">${state.id === "done" ? "124 条" : state.id === "processing" ? "57 / 124 条" : state.sideStatus}</span>
+                ${state.id === "empty" ? "" : `<span class="status">${state.id === "done" ? "124 条" : state.id === "processing" ? "已识别 57 条" : "中文 + 英文 ▾"}</span>`}
               </div>
             </div>
             <div class="caption-body">
@@ -1148,12 +1166,12 @@
                 <span>${disabled ? "选择视频后自动识别字幕区域" : state.note}</span>
               </div>
               <div class="caption-footer-actions">
+                ${state.id === "done" ? `<button class="btn ghost"><img src="${icon("download")}" alt="" />导出字幕</button>` : ""}
                 <button class="btn primary ${state.primaryDisabled ? "disabled" : ""}">
                   ${state.primaryIcon ? `<img src="${icon(state.primaryIcon)}" alt="" />` : ""}
                   ${state.primary}
                 </button>
                 ${state.id === "processing" ? `<button class="btn ghost">取消</button>` : ""}
-                ${state.id === "done" ? `<button class="btn ghost"><img src="${icon("folder")}" alt="" />打开目录</button>` : ""}
               </div>
             </div>
           </aside>

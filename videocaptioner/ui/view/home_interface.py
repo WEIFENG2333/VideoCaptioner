@@ -171,6 +171,23 @@ class HomeInterface(QWidget):
         self.stackedWidget.setCurrentWidget(self.subtitle_optimization_interface)
         self.pivot.setCurrentItem("SubtitleInterface")
 
+    def load_subtitle_for_optimize(self, subtitle_path: str, video_path: str = "") -> None:
+        """外部（硬字幕提取）送入字幕：载入字幕优化页并显示，等用户自行配置后开始（不自动跑 LLM）。"""
+        if not self._current_task_dir:
+            self._current_task_dir = TaskFactory.new_task_dir(
+                video_path or subtitle_path, "transcribe"
+            )
+        subtitle_task = TaskFactory.create_subtitle_task(
+            subtitle_path,
+            video_path or "",
+            need_next_task=False,
+            task_id=self._current_task_id,
+            task_dir=self._current_task_dir,
+        )
+        self.subtitle_optimization_interface.set_task(subtitle_task)
+        self.stackedWidget.setCurrentWidget(self.subtitle_optimization_interface)
+        self.pivot.setCurrentItem("SubtitleInterface")
+
     def switch_to_video_synthesis(self, video_path, subtitle_path):
         # 继续使用同一个 task_id；任务目录交给合成页在收尾时清理
         synthesis_task = TaskFactory.create_synthesis_task(
