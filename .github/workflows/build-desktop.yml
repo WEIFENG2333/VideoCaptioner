@@ -54,10 +54,11 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen
+        # --extra ocr：把硬字幕 OCR（rapidocr/onnxruntime/rapidfuzz）装进构建环境，否则 PyInstaller 收不到、桌面包硬字幕不可用。
+        run: uv sync --frozen --extra ocr
 
       - name: Build desktop bundle
-        run: uv run --with pyinstaller --with static-ffmpeg python scripts/build_desktop.py --clean
+        run: uv run --extra ocr --with pyinstaller --with static-ffmpeg python scripts/build_desktop.py --clean
 
       - name: Smoke test packaged app
         run: uv run python scripts/smoke_desktop.py dist/VideoCaptioner

@@ -117,6 +117,24 @@ def _duration(ffprobe: Path, media: Path) -> float:
     return float(data["format"]["duration"])
 
 
+def _check_bundled_payload(bundle: Path) -> None:
+    """新功能的原生依赖必须真打进包；缺了让 smoke 失败，堵住『OCR/实时字幕没进包也 CI 绿』。
+
+    voxgate 不在此列（按设计运行时下载）。仅对 onedir 目录校验（传单可执行文件时跳过）。
+    """
+    if bundle.is_file():
+        return
+    required = {
+        "onnxruntime 原生库（硬字幕 OCR）": ["libonnxruntime*", "onnxruntime_pybind11_state*", "onnxruntime*.dll"],
+        "rapidocr 模型（硬字幕 OCR）": ["*PP-OCR*.onnx", "*ppocr*.onnx"],
+        "PortAudio（实时字幕采集）": ["libportaudio*", "portaudio*.dll"],
+    }
+    for label, globs in required.items():
+        if not any(any(bundle.rglob(g)) for g in globs):
+            raise RuntimeError(f"打包缺少新功能依赖：{label}（未在包内找到 {globs}）")
+        print(f"Bundled payload OK: {label}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", help="Path to dist/VideoCaptioner or an executable")
@@ -124,6 +142,7 @@ def main() -> int:
 
     bundle = Path(args.bundle).resolve()
     exe = _find_executable(bundle)
+    _check_bundled_payload(bundle)
     ffmpeg = _find_bundled_tool(bundle, "ffmpeg")
     ffprobe = _find_bundled_tool(bundle, "ffprobe")
 
