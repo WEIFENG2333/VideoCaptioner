@@ -64,6 +64,7 @@ from videocaptioner.ui.components.workbench import (
     file_type_icon,
     icon_pixmap,
 )
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.media_download_thread import MediaDownloadThread
 from videocaptioner.ui.thread.video_info_thread import VideoInfoThread
 from videocaptioner.ui.view.log_window import LogWindow
@@ -194,7 +195,7 @@ class InputField(QFrame):
         layout.addWidget(self.iconLabel)
         self.edit = QLineEdit(self)
         self.edit.setObjectName("taskInputEdit")
-        self.edit.setPlaceholderText("粘贴视频链接，或拖入本地音视频文件")
+        self.edit.setPlaceholderText(tr("home.input.placeholder"))
         # 聚焦反馈由外框点亮主题色承担，关掉 macOS 原生蓝色焦点环
         self.edit.setAttribute(Qt.WA_MacShowFocusRect, False)  # type: ignore[attr-defined]
         # 自绘清除按钮：Qt 内置清除图标是低分辨率位图，Retina 下发糊
@@ -276,7 +277,7 @@ class MediaReadyPanel(QFrame):
         chips.addStretch(1)
         column.addLayout(chips)
         layout.addLayout(column, 1)
-        self.pill = StatusPill("已就绪", "ok", self)
+        self.pill = StatusPill(tr("home.media.ready"), "ok", self)
         layout.addWidget(self.pill, 0, Qt.AlignTop)  # type: ignore[arg-type]
         self.syncStyle()
 
@@ -284,7 +285,11 @@ class MediaReadyPanel(QFrame):
         file = Path(path)
         self.nameLabel.setText(file.stem)
         self.pathLabel.setText(path)
-        chips = ["音频" if file_type_icon(path) == AppIcon.MUSIC else "视频"]
+        chips = [
+            tr("home.media.kind.audio")
+            if file_type_icon(path) == AppIcon.MUSIC
+            else tr("home.media.kind.video")
+        ]
         chips.append(file.suffix.lstrip(".").lower())
         if info is not None and info.duration_seconds:
             minutes, seconds = divmod(int(info.duration_seconds), 60)
@@ -346,12 +351,12 @@ class DownloadPanel(QFrame):
 
         head = QHBoxLayout()
         head.setSpacing(12)
-        self.titleLabel = ElidedLabel("正在解析视频信息…", self)
+        self.titleLabel = ElidedLabel(tr("home.download.parsing"), self)
         self.titleLabel.setObjectName("downloadTitle")
         apply_font(self.titleLabel, 15, 850)
         head.addWidget(self.titleLabel, 1)
         # 下载必须可取消
-        self.cancelButton = CompactButton("取消", AppIcon.CANCEL, self)
+        self.cancelButton = CompactButton(tr("common.cancel"), AppIcon.CANCEL, self)
         self.cancelButton.clicked.connect(self.cancelRequested)
         head.addWidget(self.cancelButton)
         layout.addLayout(head)
@@ -382,7 +387,7 @@ class DownloadPanel(QFrame):
 
     def setPreparing(self, url: str):
         """解析阶段：标题占位 + 元信息行先放链接域名。"""
-        self.titleLabel.setText("正在解析视频信息…")
+        self.titleLabel.setText(tr("home.download.parsing"))
         try:
             from urllib.parse import urlparse
 
@@ -456,7 +461,7 @@ class ConfirmPanel(QFrame):
         self.titleLabel.setObjectName("confirmTitle")
         apply_font(self.titleLabel, 15, 850)
         head.addWidget(self.titleLabel, 1)
-        self.cancelButton = CompactButton("取消", AppIcon.CANCEL, self)
+        self.cancelButton = CompactButton(tr("common.cancel"), AppIcon.CANCEL, self)
         self.cancelButton.clicked.connect(self.cancelRequested)
         head.addWidget(self.cancelButton)
         layout.addLayout(head)
@@ -469,7 +474,7 @@ class ConfirmPanel(QFrame):
 
         action_row = QHBoxLayout()
         action_row.setSpacing(10)
-        self.qualityLabel = QLabel("清晰度", self)
+        self.qualityLabel = QLabel(tr("home.confirm.quality"), self)
         self.qualityLabel.setObjectName("confirmQualityLabel")
         apply_font(self.qualityLabel, 13, 780)
         action_row.addWidget(self.qualityLabel)
@@ -477,7 +482,7 @@ class ConfirmPanel(QFrame):
         action_row.addWidget(self.qualitySelect)
         action_row.addStretch(1)
         self.startButton = WorkbenchButton(
-            "开始下载", AppIcon.PLAY, primary=True, height=34, parent=self
+            tr("home.download.start"), AppIcon.PLAY, primary=True, height=34, parent=self
         )
         self.startButton.setMinimumWidth(118)
         self.startButton.clicked.connect(self._emit_start)
@@ -486,15 +491,15 @@ class ConfirmPanel(QFrame):
         self.syncStyle()
 
     def setData(self, summary: dict):
-        self.titleLabel.setText(summary.get("title") or "未命名视频")
+        self.titleLabel.setText(summary.get("title") or tr("home.confirm.untitled"))
         parts = [
             summary[key] for key in ("site", "uploader", "duration") if summary.get(key)
         ]
         if summary.get("has_subtitle"):
-            parts.append("含字幕")
+            parts.append(tr("home.confirm.has_subtitle"))
         self.metaLabel.setText(" · ".join(parts))
         self._heights = list(summary.get("qualities") or [])
-        labels = ["最佳"] + [f"{h}p" for h in self._heights]
+        labels = [tr("home.confirm.quality.best")] + [f"{h}p" for h in self._heights]
         self.qualitySelect.setItems(labels, labels[0])
         # 始终显示清晰度选择（至少「最佳」）：没探测到分档时也让用户知道是自动选最佳，
         # 而不是只剩一个下载按钮、以为没有清晰度可选。
@@ -605,7 +610,7 @@ class TaskCreationInterface(QWidget):
         self.heroMark.setScaledContents(True)
         self.heroMark.setPixmap(QPixmap(str(HERO_MARK_PATH)))
         hero.addWidget(self.heroMark)
-        self.heroTitle = QLabel("导入视频，生成字幕与配音", self)
+        self.heroTitle = QLabel(tr("home.hero.title"), self)
         self.heroTitle.setObjectName("heroTitle")
         # 跨平台中文字体栈：mac / Windows / Linux 各取系统最佳黑体
         apply_font(
@@ -641,7 +646,7 @@ class TaskCreationInterface(QWidget):
         self.primaryButton = PrimaryIconButton(
             AppIcon.FOLDER_ADD, diameter=52, parent=self.inputCard
         )
-        self.primaryButton.setToolTip("选择文件")
+        self.primaryButton.setToolTip(tr("home.btn.browse"))
         input_row.addWidget(self.primaryButton)
         card_layout.addLayout(input_row)
         quick_row = QHBoxLayout()
@@ -651,7 +656,7 @@ class TaskCreationInterface(QWidget):
         apply_font(self.quickLabel, 13, 740)
         quick_row.addWidget(self.quickLabel)
         quick_row.addStretch(1)
-        self.statusPill = StatusPill("等待输入", "neutral", self.inputCard)
+        self.statusPill = StatusPill(tr("home.status.waiting"), "neutral", self.inputCard)
         self.statusPill.setMinimumWidth(66)
         quick_row.addWidget(self.statusPill)
         card_layout.addLayout(quick_row)
@@ -712,8 +717,8 @@ class TaskCreationInterface(QWidget):
         apply_font(self.versionChip, 10, 800)
         footer.addWidget(self.versionChip)
         footer.addSpacing(14)
-        self.logAction = FooterAction("查看日志", self.footerBar)
-        self.donateAction = FooterAction("捐助", self.footerBar)
+        self.logAction = FooterAction(tr("home.footer.logs"), self.footerBar)
+        self.donateAction = FooterAction(tr("home.footer.donate"), self.footerBar)
         self._footerDividers = []
         for index, action in enumerate((self.logAction, self.donateAction)):
             if index:
@@ -816,10 +821,11 @@ class TaskCreationInterface(QWidget):
         audio_formats = " ".join(f"*.{fmt.value}" for fmt in SupportedAudioFormats)
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "选择媒体文件",
+            tr("home.dialog.select_media"),
             "",
-            f"媒体文件 ({video_formats} {audio_formats});;"
-            f"视频文件 ({video_formats});;音频文件 ({audio_formats})",
+            f"{tr('home.dialog.filter.media')} ({video_formats} {audio_formats});;"
+            f"{tr('home.dialog.filter.video')} ({video_formats});;"
+            f"{tr('home.dialog.filter.audio')} ({audio_formats})",
         )
         if file_path:
             self.inputField.edit.setText(file_path)
@@ -865,7 +871,7 @@ class TaskCreationInterface(QWidget):
         self.state = PageState.INPUT
         self.inputField.edit.setText(video_path)
         InfoBar.success(
-            "下载完成", "开始自动处理...",
+            tr("home.download.done.title"), tr("home.download.done.body"),
             duration=INFOBAR_DURATION_SUCCESS,
             position=InfoBarPosition.TOP, parent=self,
         )
@@ -903,14 +909,18 @@ class TaskCreationInterface(QWidget):
             self.inputField.setKindIcon(AppIcon.LINK)
             self.inputField.edit.setReadOnly(True)
             self.primaryButton.setIcon(AppIcon.SYNC)
-            self.primaryButton.setToolTip("解析中" if probing else "下载中")
+            self.primaryButton.setToolTip(
+                tr("home.tip.parsing") if probing else tr("home.tip.downloading")
+            )
             self.primaryButton.setEnabled(False)
             self.quickLabel.setText(
-                "正在解析视频信息，稍后确认清晰度"
+                tr("home.quick.parsing")
                 if probing
-                else "在线视频链接 · 下载完成后自动进入下一步"
+                else tr("home.quick.downloading")
             )
-            self.statusPill.setState("解析中" if probing else "0%", "warn")
+            self.statusPill.setState(
+                tr("home.status.parsing") if probing else "0%", "warn"
+            )
             self.detailStack.setCurrentWidget(self.downloadHost)
             return
 
@@ -918,19 +928,19 @@ class TaskCreationInterface(QWidget):
             self.inputField.setKindIcon(AppIcon.LINK)
             self.inputField.edit.setReadOnly(True)
             self.primaryButton.setIcon(AppIcon.PLAY)
-            self.primaryButton.setToolTip("开始下载")
+            self.primaryButton.setToolTip(tr("home.download.start"))
             self.primaryButton.setEnabled(True)
-            self.quickLabel.setText("解析完成 · 确认清晰度后开始下载")
-            self.statusPill.setState("待确认", "ok")
+            self.quickLabel.setText(tr("home.quick.confirm"))
+            self.statusPill.setState(tr("home.status.pending"), "ok")
             self.detailStack.setCurrentWidget(self.confirmHost)
             return
 
         self.inputField.edit.setReadOnly(False)
         specs = {
-            InputKind.EMPTY: (AppIcon.LINK, "选择文件", AppIcon.FOLDER_ADD, "等待输入", "neutral"),
-            InputKind.FILE: (file_type_icon(self._input_text()), "开始处理", AppIcon.PLAY, "可开始", "ok"),
-            InputKind.URL: (AppIcon.LINK, "开始处理", AppIcon.PLAY, "可开始", "ok"),
-            InputKind.INVALID: (AppIcon.FILE, "选择文件", AppIcon.FOLDER_ADD, "输入无效", "fail"),
+            InputKind.EMPTY: (AppIcon.LINK, tr("home.btn.browse"), AppIcon.FOLDER_ADD, tr("home.status.waiting"), "neutral"),
+            InputKind.FILE: (file_type_icon(self._input_text()), tr("home.btn.start"), AppIcon.PLAY, tr("home.status.ready"), "ok"),
+            InputKind.URL: (AppIcon.LINK, tr("home.btn.start"), AppIcon.PLAY, tr("home.status.ready"), "ok"),
+            InputKind.INVALID: (AppIcon.FILE, tr("home.btn.browse"), AppIcon.FOLDER_ADD, tr("home.status.invalid"), "fail"),
         }
         icon, tooltip, button_icon, pill_text, pill_level = specs[kind]
         self.inputField.setKindIcon(icon)
@@ -940,10 +950,10 @@ class TaskCreationInterface(QWidget):
         self.statusPill.setState(pill_text, pill_level)
 
         quick_texts = {
-            InputKind.EMPTY: "可直接拖入文件 · 支持本地音视频与在线视频链接",
-            InputKind.FILE: "本地媒体文件 · 开始后自动进入语音转录",
-            InputKind.URL: "在线视频链接 · 将先下载到工作目录",
-            InputKind.INVALID: "无法识别输入内容",
+            InputKind.EMPTY: tr("home.quick.empty"),
+            InputKind.FILE: tr("home.quick.file"),
+            InputKind.URL: tr("home.quick.url"),
+            InputKind.INVALID: tr("home.quick.invalid"),
         }
         self.quickLabel.setText(quick_texts[kind])
 
@@ -954,7 +964,7 @@ class TaskCreationInterface(QWidget):
             self.mediaPanel.setFile(self._input_text(), self._media_info)
             self.detailStack.setCurrentWidget(self.mediaHost)
         elif kind == InputKind.INVALID:
-            self.errorCard.setText("请输入有效的本地音视频文件，或完整的 http / https 链接。")
+            self.errorCard.setText(tr("home.error.invalid_input"))
             self.detailStack.setCurrentWidget(self.errorHost)
         else:
             self.detailStack.setCurrentWidget(self.detailPlaceholder)
@@ -984,7 +994,7 @@ class TaskCreationInterface(QWidget):
                 if Path(path).suffix.lower() in _MEDIA_EXTENSIONS:
                     self.inputField.edit.setText(path)
                     return
-        self._error = "拖入的文件不是受支持的音视频格式"
+        self._error = tr("home.error.unsupported_drop")
         self._refresh()
 
     # ------------------------------------------------------------ 其他

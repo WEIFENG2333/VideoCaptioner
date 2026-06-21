@@ -617,6 +617,24 @@ screenshot if it touches layout.
 not use it for broad configuration propagation; config changes should flow
 through the shared settings/config store.
 
+## Internationalization (i18n)
+
+UI 国际化是 **key-based gettext**，**只翻 UI（PyQt）；core 与 CLI 不翻译**。
+
+- 写文案：`from videocaptioner.ui.i18n import tr`（顶部模块级导入），`label.setText(tr("域.语义"))`。
+  key 命名 `<域>.<组件>.<语义>`，通用词用 `common.*`。**禁止** `self.tr(...)` 或把中文当 msgid。
+- 枚举下拉标签不手写：`options_from(...)`（`ui/components/settings_controls.py`，内部走 `enum_label`）
+  或 `enum_options(EnumCls)`（`ui/common/enum_labels.py`）自动经 `tr(enum.<类>.<成员>)`。
+  新增需翻译枚举：加进 `enum_labels.py` 的 `TRANSLATABLE_ENUMS`。
+- 动态拼接的 key（配音 provider/voice/tag、识别语言 lclang.\*）和 `tr(常量)` 的 key：前者由
+  `dubbing_options.i18n_base_map()`/`config.source_language_i18n_map()` 注册表注入 `.pot`，后者在
+  常量定义处用 `N_("key")` 标记让 pybabel 抽取。
+- 资源在 `resource/i18n/<lang>/LC_MESSAGES/videocaptioner.{po,mo}`；基准 `zh_Hans` 是 key→中文
+  真相源；en/zh_Hant 缺译时运行时回退基准中文（不显示 key）。
+- 改了文案后跑 `scripts/i18n.py extract→update→fill-base→translate→compile`（详见
+  `docs/dev/i18n-workflow.md`）。CI 跑 `scripts/i18n.py check`（源码 key 集==.pot、基准无空译文）。
+- 语言切换 = 保存即弹确认自动重启（不做逐页热刷新）。完整方案见 `docs/dev/i18n-plan.md`。
+
 ## Useful Docs
 
 - `docs/dev/config-architecture.md`
@@ -624,6 +642,7 @@ through the shared settings/config store.
 - `docs/dev/asr-chunking.md`
 - `docs/dev/translate-module.md`
 - `docs/dev/tts-provider-research.md`
+- `docs/dev/i18n-workflow.md` · `docs/dev/i18n-plan.md`
 - `videocaptioner/core/subtitle/README.md`
 
 `docs/dev/architecture.md`, `api.md`, and `contributing.md` are public pages

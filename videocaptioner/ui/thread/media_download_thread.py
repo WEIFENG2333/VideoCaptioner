@@ -14,6 +14,7 @@ from PyQt5.QtCore import pyqtSignal
 
 from videocaptioner.core.application import output_paths
 from videocaptioner.core.download.media import MediaDownloader
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.worker import WorkerThread
 
 
@@ -59,6 +60,6 @@ class MediaDownloadThread(WorkerThread):
         if self.probe_only:
             return
         if not video_path:
-            raise RuntimeError("下载完成但未找到视频文件，请换一个链接重试")
-        self.progress.emit(100, "下载完成")
+            raise RuntimeError(tr("t_media.error.no_video_file"))
+        self.progress.emit(100, tr("t_media.status.completed"))
         self.finished.emit(video_path, subtitle_path)

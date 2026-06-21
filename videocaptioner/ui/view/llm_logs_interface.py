@@ -42,6 +42,7 @@ from videocaptioner.ui.components.workbench import (
     WorkbenchPanel,
     apply_font,
 )
+from videocaptioner.ui.i18n import N_, tr
 
 PAGE_SIZE = 50
 
@@ -62,7 +63,7 @@ class LogDetailDialog(AppDialog):
 
     def __init__(self, log_entry: Dict[str, Any], parent=None):
         self.log_entry = log_entry
-        super().__init__("请求详情", icon=AppIcon.DOCUMENT, parent=parent, width=1000)
+        super().__init__(tr("llmlog.detail.title"), icon=AppIcon.DOCUMENT, parent=parent, width=1000)
         self._build()
 
     def _is_failure(self) -> bool:
@@ -78,7 +79,7 @@ class LogDetailDialog(AppDialog):
         entry = self.log_entry
         request = entry.get("request", {}) or {}
         response = entry.get("response", {}) or {}
-        model = request.get("model") or entry.get("model") or "未知"
+        model = request.get("model") or entry.get("model") or tr("llmlog.unknown")
         stage = entry.get("stage") or "-"
         file_name = entry.get("file_name") or "-"
         failed = self._is_failure()
@@ -98,11 +99,11 @@ class LogDetailDialog(AppDialog):
         strip = QHBoxLayout()
         strip.setSpacing(10)
         metas = [
-            ("时间", entry.get("time", "-")),
-            ("阶段", stage),
-            ("耗时", f"{duration:.1f}s"),
+            (tr("llmlog.meta.time"), entry.get("time", "-")),
+            (tr("llmlog.meta.stage"), stage),
+            (tr("llmlog.meta.duration"), f"{duration:.1f}s"),
             ("Tokens", tokens),
-            ("结果", "失败" if failed else "完成"),
+            (tr("llmlog.meta.result"), tr("llmlog.result.failed") if failed else tr("llmlog.result.done")),
         ]
         for idx, (label, value) in enumerate(metas):
             strip.addWidget(self._meta_item(label, value, result=(idx == len(metas) - 1), failed=failed))
@@ -112,11 +113,11 @@ class LogDetailDialog(AppDialog):
         row = QHBoxLayout()
         row.setSpacing(12)
         req_panel, self.copyReqBtn = self._payload_panel(
-            self.tr("请求体"), self.tr("发送给模型的完整 Request JSON"), request, danger=False
+            tr("llmlog.panel.request"), tr("llmlog.panel.request.desc"), request, danger=False
         )
         resp_panel, self.copyRespBtn = self._payload_panel(
-            self.tr("错误响应") if failed else self.tr("响应体"),
-            self.tr("模型或接口返回的 Error JSON") if failed else self.tr("模型返回的原始 Response JSON"),
+            tr("llmlog.panel.error") if failed else tr("llmlog.panel.response"),
+            tr("llmlog.panel.error.desc") if failed else tr("llmlog.panel.response.desc"),
             response,
             danger=failed,
         )
@@ -127,12 +128,12 @@ class LogDetailDialog(AppDialog):
         self.copyRespBtn.clicked.connect(lambda: self._copy("response"))
 
         # 底栏：提示 + 关闭
-        hint = QLabel(self.tr("复制按钮只复制对应 JSON；Esc 或右上角关闭。"))
+        hint = QLabel(tr("llmlog.detail.foot_hint"))
         hint.setObjectName("logFootHint")
         apply_font(hint, 12, 600)
         self.footerLayout.addWidget(hint)
         self.addFooterStretch()
-        self.addFooterButton(self.tr("关闭"), kind="accent").clicked.connect(lambda: self.done(0))
+        self.addFooterButton(tr("common.close"), kind="accent").clicked.connect(lambda: self.done(0))
         self.syncStyle()
 
     def _meta_item(self, label: str, value: str, *, result: bool = False, failed: bool = False) -> QFrame:
@@ -176,7 +177,7 @@ class LogDetailDialog(AppDialog):
         titles.addWidget(t)
         titles.addWidget(d)
         hl.addLayout(titles, 1)
-        copy_btn = CompactButton(self.tr("复制"), AppIcon.COPY, head, pad_h=8)
+        copy_btn = CompactButton(tr("common.copy"), AppIcon.COPY, head, pad_h=8)
         hl.addWidget(copy_btn, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
         col.addWidget(head)
 
@@ -206,7 +207,7 @@ class LogDetailDialog(AppDialog):
             """
         )
         code.setPlainText(
-            json.dumps(payload, indent=2, ensure_ascii=False) if payload else self.tr("（空）")
+            json.dumps(payload, indent=2, ensure_ascii=False) if payload else tr("llmlog.empty_payload")
         )
         col.addWidget(code, 1)
         return panel, copy_btn
@@ -246,7 +247,7 @@ class LogDetailDialog(AppDialog):
         clipboard = QApplication.clipboard()
         if clipboard:
             clipboard.setText(text)
-        InfoBar.success("", self.tr("已复制"), parent=self.window(),
+        InfoBar.success("", tr("llmlog.copied"), parent=self.window(),
                         position=InfoBarPosition.TOP, duration=1500)
 
 
@@ -258,18 +259,18 @@ class LLMLogsInterface(QWidget):
     # 时间/阶段/模型 按内容自适应（绝不截断，时间是固定格式必须完整显示）；文件做唯一弹性列吸收余宽；
     # 耗时/Tokens 定宽数字列。任务ID 对用户无意义、且占宽，已移除（搜索仍可匹配 task_id）。
     _COLUMNS = (
-        ("时间", 0, "content"),
-        ("文件", 0, "stretch"),
-        ("阶段", 0, "content"),
-        ("模型", 0, "content"),
-        ("耗时", 80, "fixed"),
+        (N_("llmlog.col.time"), 0, "content"),
+        (N_("llmlog.col.file"), 0, "stretch"),
+        (N_("llmlog.col.stage"), 0, "content"),
+        (N_("llmlog.col.model"), 0, "content"),
+        (N_("llmlog.col.duration"), 80, "fixed"),
         ("Tokens", 92, "fixed"),
     )
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("llmLogsInterface")
-        self.setWindowTitle(self.tr("LLM 请求日志"))
+        self.setWindowTitle(tr("llmlog.title"))
         self.setAttribute(Qt.WA_StyledBackground, True)  # type: ignore[arg-type]
 
         self.all_logs: List[Dict[str, Any]] = []
@@ -302,7 +303,7 @@ class LLMLogsInterface(QWidget):
         toolbar.setSpacing(12)
 
         self.search_edit = AppLineEdit(height=44)
-        self.search_edit.setPlaceholderText(self.tr("搜索任务 ID、文件名、模型或阶段"))
+        self.search_edit.setPlaceholderText(tr("llmlog.search.placeholder"))
         self.search_edit.setMinimumWidth(320)
         self.search_action = self.search_edit.addAction(
             render_svg_icon(AppIcon.SEARCH, app_palette().muted, 16),
@@ -310,12 +311,12 @@ class LLMLogsInterface(QWidget):
         )
         toolbar.addWidget(self.search_edit, 1)
 
-        self.empty_pill = StatusPill(self.tr("暂无记录"), "neutral")
+        self.empty_pill = StatusPill(tr("llmlog.no_records"), "neutral")
         self.empty_pill.setVisible(False)
         toolbar.addWidget(self.empty_pill)
 
-        self.refresh_btn = WorkbenchButton(self.tr("刷新"), AppIcon.SYNC, height=44)
-        self.clear_btn = WorkbenchButton(self.tr("清空日志"), AppIcon.DELETE, height=44)
+        self.refresh_btn = WorkbenchButton(tr("llmlog.btn.refresh"), AppIcon.SYNC, height=44)
+        self.clear_btn = WorkbenchButton(tr("llmlog.btn.clear"), AppIcon.DELETE, height=44)
         toolbar.addWidget(self.refresh_btn)
         toolbar.addWidget(self.clear_btn)
         return toolbar
@@ -326,7 +327,7 @@ class LLMLogsInterface(QWidget):
         self.table = _LogTable()
         self.table.setObjectName("llmLogTable")
         self.table.setColumnCount(len(self._COLUMNS))
-        self.table.setHorizontalHeaderLabels([self.tr(c[0]) for c in self._COLUMNS])
+        self.table.setHorizontalHeaderLabels([tr(c[0]) for c in self._COLUMNS])
 
         header = self.table.horizontalHeader()
         if header:
@@ -362,14 +363,12 @@ class LLMLogsInterface(QWidget):
         self.empty_mark = IconBox(AppIcon.HISTORY, panel, size=64)
         lay.addWidget(self.empty_mark, 0, Qt.AlignHCenter)  # type: ignore[arg-type]
         lay.addSpacing(16)
-        self.empty_title = SectionLabel(self.tr("暂无 LLM 请求日志"))
+        self.empty_title = SectionLabel(tr("llmlog.empty.title"))
         apply_font(self.empty_title, 19, 860)
         self.empty_title.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
         lay.addWidget(self.empty_title, 0, Qt.AlignHCenter)  # type: ignore[arg-type]
         lay.addSpacing(8)
-        self.empty_hint = QLabel(
-            self.tr("启用字幕校正、智能断句或 LLM 翻译后，页面会自动记录请求与响应。")
-        )
+        self.empty_hint = QLabel(tr("llmlog.empty.hint"))
         self.empty_hint.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
         apply_font(self.empty_hint, 13, 680)
         lay.addWidget(self.empty_hint, 0, Qt.AlignHCenter)  # type: ignore[arg-type]
@@ -379,7 +378,7 @@ class LLMLogsInterface(QWidget):
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
         footer.setSpacing(12)
-        self.status_label = QLabel(self.tr("共 0 条"))
+        self.status_label = QLabel(tr("llmlog.status.total_zero"))
         apply_font(self.status_label, 13, 740)
         footer.addWidget(self.status_label)
         footer.addStretch(1)
@@ -499,7 +498,7 @@ class LLMLogsInterface(QWidget):
 
     def _on_refresh_clicked(self):
         self._load_logs()
-        InfoBar.success("", self.tr("刷新成功"), parent=self,
+        InfoBar.success("", tr("llmlog.refresh.success"), parent=self,
                         position=InfoBarPosition.TOP, duration=1000)
 
     def _load_logs(self):
@@ -517,7 +516,7 @@ class LLMLogsInterface(QWidget):
                         except json.JSONDecodeError:
                             continue
         except Exception as e:
-            InfoBar.error(self.tr("错误"), str(e), parent=self,
+            InfoBar.error(tr("common.error"), str(e), parent=self,
                           position=InfoBarPosition.TOP, duration=3000)
             return
         self.all_logs.reverse()
@@ -557,13 +556,11 @@ class LLMLogsInterface(QWidget):
 
     def _apply_empty_text(self):
         if self.all_logs:  # 有日志但筛选无结果
-            self.empty_title.setText(self.tr("没有匹配的日志"))
-            self.empty_hint.setText(self.tr("换个任务 ID、文件名、模型或阶段关键词再试。"))
+            self.empty_title.setText(tr("llmlog.empty.no_match.title"))
+            self.empty_hint.setText(tr("llmlog.empty.no_match.hint"))
         else:
-            self.empty_title.setText(self.tr("暂无 LLM 请求日志"))
-            self.empty_hint.setText(
-                self.tr("启用字幕校正、智能断句或 LLM 翻译后，页面会自动记录请求与响应。")
-            )
+            self.empty_title.setText(tr("llmlog.empty.title"))
+            self.empty_hint.setText(tr("llmlog.empty.hint"))
 
     def _fill_table(self):
         self.table.setRowCount(0)
@@ -583,7 +580,7 @@ class LLMLogsInterface(QWidget):
                 time_str,
                 log.get("file_name", "") or "-",
                 log.get("stage", "") or "-",
-                log.get("request", {}).get("model", "未知"),
+                log.get("request", {}).get("model", tr("llmlog.unknown")),
                 f"{log.get('duration_ms', 0) / 1000:.1f}s",
                 str(total_tokens),
             )
@@ -606,10 +603,10 @@ class LLMLogsInterface(QWidget):
         total = len(self.all_logs)
         shown = len(self.filtered_logs)
         if total == 0:
-            return self.tr("共 0 条")
+            return tr("llmlog.status.total_zero")
         if shown != total:
-            return self.tr("共 {} 条 · 筛选后 {} 条 · 双击查看完整 JSON").format(total, shown)
-        return self.tr("共 {} 条 · 双击查看完整 JSON").format(total)
+            return tr("llmlog.status.filtered", total=total, shown=shown)
+        return tr("llmlog.status.total", total=total)
 
     def _show_detail(self, index):
         actual_idx = self.current_page * PAGE_SIZE + index.row()
@@ -629,10 +626,10 @@ class LLMLogsInterface(QWidget):
 
     def _clear_logs(self):
         dialog = ConfirmDialog(
-            self.tr("确认清空"),
-            self.tr("确定要清空所有日志吗？此操作不可恢复。"),
+            tr("llmlog.clear.confirm_title"),
+            tr("llmlog.clear.confirm_body"),
             self,
-            confirm_text=self.tr("清空"),
+            confirm_text=tr("llmlog.clear.confirm_btn"),
             danger=True,
             icon=AppIcon.DELETE,
         )
@@ -644,8 +641,8 @@ class LLMLogsInterface(QWidget):
             self.all_logs = []
             self.filtered_logs = []
             self._update_view()
-            InfoBar.success("", self.tr("日志已清空"), parent=self,
+            InfoBar.success("", tr("llmlog.clear.success"), parent=self,
                             position=InfoBarPosition.TOP, duration=2000)
         except Exception as e:
-            InfoBar.error(self.tr("错误"), str(e), parent=self,
+            InfoBar.error(tr("common.error"), str(e), parent=self,
                           position=InfoBarPosition.TOP, duration=3000)

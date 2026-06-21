@@ -17,6 +17,7 @@ from videocaptioner.core.application import output_paths
 from videocaptioner.core.dubbing import DubbingPipeline, SpeakerProfile, build_dubbing_config
 from videocaptioner.core.entities import DubbingTask
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.worker import WorkerThread
 
 logger = setup_logger("dubbing_thread")
@@ -33,16 +34,16 @@ class DubbingThread(WorkerThread):
         self.task.started_at = datetime.datetime.now()
         config = self.task.dubbing_config
         if config is None:
-            raise ValueError("配音配置为空")
+            raise ValueError(tr("t_dubbing.error.config_empty"))
         if not self.task.subtitle_path:
-            raise ValueError("字幕路径为空")
+            raise ValueError(tr("t_dubbing.error.subtitle_path_empty"))
         if not self.task.output_audio_path:
-            raise ValueError("输出音频路径为空")
+            raise ValueError(tr("t_dubbing.error.output_audio_path_empty"))
         if not self.task.task_dir:
-            raise ValueError("任务目录为空")
+            raise ValueError(tr("t_dubbing.error.task_dir_empty"))
 
         logger.info("\n%s", config.print_config())
-        self.progress.emit(2, "准备配音")
+        self.progress.emit(2, tr("t_dubbing.status.preparing"))
 
         speaker_profiles = {
             name: SpeakerProfile(name=name, voice=voice)
@@ -87,7 +88,7 @@ class DubbingThread(WorkerThread):
             str(result.video_path) if result.video_path else None
         )
         self.task.completed_at = datetime.datetime.now()
-        self.progress.emit(100, "配音完成")
+        self.progress.emit(100, tr("t_dubbing.status.done"))
         self.finished.emit(self.task)
 
     def _progress_callback(self, value: int, message: str):

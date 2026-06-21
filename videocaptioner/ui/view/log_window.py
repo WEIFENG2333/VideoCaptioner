@@ -8,12 +8,13 @@ from videocaptioner.core.utils.platform_utils import reveal_in_explorer
 from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.theme_tokens import app_palette
 from videocaptioner.ui.components.workbench import WorkbenchButton, apply_font
+from videocaptioner.ui.i18n import tr
 
 
 class LogWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("日志查看器")
+        self.setWindowTitle(tr("logwin.title"))
         self.resize(800, 600)
 
         # 设置为非模态对话框
@@ -30,7 +31,7 @@ class LogWindow(QWidget):
         # 创建顶部按钮布局
         top_layout = QHBoxLayout()
         self.open_folder_btn = WorkbenchButton(
-            "打开日志文件夹", AppIcon.FOLDER, parent=self
+            tr("logwin.btn.open_folder"), AppIcon.FOLDER, parent=self
         )
         self.open_folder_btn.clicked.connect(self.open_log_folder)
         top_layout.addWidget(self.open_folder_btn)
@@ -54,10 +55,12 @@ class LogWindow(QWidget):
             self.log_file = open(self.log_path, "r", encoding="utf-8")
             self.load_last_lines(20480)
             self.log_text.moveCursor(QTextCursor.End)
-            self.log_text.insertPlainText(f"\n{'=' * 25}以上是历史日志{'=' * 25}\n\n")
+            self.log_text.insertPlainText(
+                f"\n{'=' * 25}{tr('logwin.history_divider')}{'=' * 25}\n\n"
+            )
         except Exception as e:
             self.log_file = None
-            self.log_text.setPlainText(f"打开日志文件失败: {str(e)}")
+            self.log_text.setPlainText(tr("logwin.error.open_failed", error=str(e)))
 
         # 添加文件大小跟踪
         self.last_position = self.log_file.tell()
@@ -106,7 +109,7 @@ class LogWindow(QWidget):
             )
 
         except Exception as e:
-            self.log_text.setPlainText(f"读取日志文件失败: {str(e)}")
+            self.log_text.setPlainText(tr("logwin.error.read_failed", error=str(e)))
 
     def _sync_style(self):
         palette = app_palette()
@@ -165,7 +168,7 @@ class LogWindow(QWidget):
                     )
 
         except Exception as e:
-            self.log_text.setPlainText(f"读取日志文件出错: {str(e)}")
+            self.log_text.setPlainText(tr("logwin.error.update_failed", error=str(e)))
 
     def open_log_folder(self):
         """打开日志文件所在文件夹"""

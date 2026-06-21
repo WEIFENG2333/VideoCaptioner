@@ -1,0 +1,4287 @@
+msgid "app.announcement.got_it"
+msgstr ""
+
+msgid "app.announcement.title"
+msgstr ""
+
+msgid "app.ffmpeg.missing_body"
+msgstr ""
+
+msgid "app.ffmpeg.missing_title"
+msgstr ""
+
+msgid "app.github.body"
+msgstr ""
+
+msgid "app.github.open"
+msgstr ""
+
+msgid "app.github.support_author"
+msgstr ""
+
+msgid "app.github.title"
+msgstr ""
+
+msgid "app.nav.batch"
+msgstr ""
+
+msgid "app.nav.doctor"
+msgstr ""
+
+msgid "app.nav.dubbing"
+msgstr ""
+
+msgid "app.nav.hardsub"
+msgstr ""
+
+msgid "app.nav.home"
+msgstr ""
+
+msgid "app.nav.live_caption"
+msgstr ""
+
+msgid "app.nav.request_logs"
+msgstr ""
+
+msgid "app.nav.settings"
+msgstr ""
+
+msgid "app.nav.subtitle_style"
+msgstr ""
+
+msgid "app.update.body"
+msgstr ""
+
+msgid "app.update.body_required"
+msgstr ""
+
+msgid "app.update.disabled_body"
+msgstr ""
+
+msgid "app.update.disabled_title"
+msgstr ""
+
+msgid "app.update.later"
+msgstr ""
+
+msgid "app.update.now"
+msgstr ""
+
+msgid "app.update.title"
+msgstr ""
+
+msgid "app.update.title_required"
+msgstr ""
+
+msgid "app.window_title"
+msgstr ""
+
+msgid "batch.added.count"
+msgstr ""
+
+msgid "batch.added.duplicated"
+msgstr ""
+
+msgid "batch.added.ignored"
+msgstr ""
+
+msgid "batch.added.title"
+msgstr ""
+
+msgid "batch.btn.add_file"
+msgstr ""
+
+msgid "batch.btn.add_folder"
+msgstr ""
+
+msgid "batch.btn.clear"
+msgstr ""
+
+msgid "batch.btn.pause"
+msgstr ""
+
+msgid "batch.btn.resume"
+msgstr ""
+
+msgid "batch.btn.start"
+msgstr ""
+
+msgid "batch.cannot_retry"
+msgstr ""
+
+msgid "batch.cannot_start"
+msgstr ""
+
+msgid "batch.concurrency"
+msgstr ""
+
+msgid "batch.count"
+msgstr ""
+
+msgid "batch.detail.error"
+msgstr ""
+
+msgid "batch.detail.file"
+msgstr ""
+
+msgid "batch.detail.got_it"
+msgstr ""
+
+msgid "batch.detail.outputs"
+msgstr ""
+
+msgid "batch.detail.progress"
+msgstr ""
+
+msgid "batch.detail.status"
+msgstr ""
+
+msgid "batch.detail.title"
+msgstr ""
+
+msgid "batch.dialog.pick_files"
+msgstr ""
+
+msgid "batch.dialog.pick_folder"
+msgstr ""
+
+msgid "batch.done.body"
+msgstr ""
+
+msgid "batch.done.title"
+msgstr ""
+
+msgid "batch.drop.format"
+msgstr ""
+
+msgid "batch.drop.media_kinds"
+msgstr ""
+
+msgid "batch.drop.subtitle_kinds"
+msgstr ""
+
+msgid "batch.drop.title"
+msgstr ""
+
+msgid "batch.empty.duplicated"
+msgstr ""
+
+msgid "batch.empty.no_media"
+msgstr ""
+
+msgid "batch.empty.no_subtitle"
+msgstr ""
+
+msgid "batch.empty.title"
+msgstr ""
+
+msgid "batch.error.empty_output"
+msgstr ""
+
+msgid "batch.error.empty_video_output"
+msgstr ""
+
+msgid "batch.filter.all"
+msgstr ""
+
+msgid "batch.filter.empty"
+msgstr ""
+
+msgid "batch.filter.media"
+msgstr ""
+
+msgid "batch.filter.subtitle"
+msgstr ""
+
+msgid "batch.filtered.body"
+msgstr ""
+
+msgid "batch.filtered.title"
+msgstr ""
+
+msgid "batch.finished.body"
+msgstr ""
+
+msgid "batch.finished.title"
+msgstr ""
+
+msgid "batch.metric.concurrency"
+msgstr ""
+
+msgid "batch.metric.progress"
+msgstr ""
+
+msgid "batch.metric.queue"
+msgstr ""
+
+msgid "batch.metric.success_rate"
+msgstr ""
+
+msgid "batch.mode.full.desc"
+msgstr ""
+
+msgid "batch.mode.full.title"
+msgstr ""
+
+msgid "batch.mode.subtitle.desc"
+msgstr ""
+
+msgid "batch.mode.subtitle.title"
+msgstr ""
+
+msgid "batch.mode.trans_sub.desc"
+msgstr ""
+
+msgid "batch.mode.trans_sub.title"
+msgstr ""
+
+msgid "batch.mode.transcribe.desc"
+msgstr ""
+
+msgid "batch.mode.transcribe.title"
+msgstr ""
+
+msgid "batch.note.completed"
+msgstr ""
+
+msgid "batch.note.failed"
+msgstr ""
+
+msgid "batch.note.output"
+msgstr ""
+
+msgid "batch.panel.ended"
+msgstr ""
+
+msgid "batch.panel.not_started"
+msgstr ""
+
+msgid "batch.panel.paused"
+msgstr ""
+
+msgid "batch.panel.ready"
+msgstr ""
+
+msgid "batch.panel.running"
+msgstr ""
+
+msgid "batch.panel.title"
+msgstr ""
+
+msgid "batch.preflight.dubbing_key"
+msgstr ""
+
+msgid "batch.preflight.ffmpeg"
+msgstr ""
+
+msgid "batch.preflight.ffprobe"
+msgstr ""
+
+msgid "batch.preflight.llm"
+msgstr ""
+
+msgid "batch.row.details_tip"
+msgstr ""
+
+msgid "batch.row.open_output"
+msgstr ""
+
+msgid "batch.row.remove"
+msgstr ""
+
+msgid "batch.row.retry"
+msgstr ""
+
+msgid "batch.stage.dubbing.desc"
+msgstr ""
+
+msgid "batch.stage.dubbing.title"
+msgstr ""
+
+msgid "batch.stage.settings_tip"
+msgstr ""
+
+msgid "batch.stage.subtitle.desc"
+msgstr ""
+
+msgid "batch.stage.subtitle.title"
+msgstr ""
+
+msgid "batch.stage.synthesis.desc"
+msgstr ""
+
+msgid "batch.stage.synthesis.title"
+msgstr ""
+
+msgid "batch.stage.transcribe.desc"
+msgstr ""
+
+msgid "batch.stage.transcribe.title"
+msgstr ""
+
+msgid "batch.status.completed"
+msgstr ""
+
+msgid "batch.status.failed"
+msgstr ""
+
+msgid "batch.status.preparing"
+msgstr ""
+
+msgid "batch.status.running"
+msgstr ""
+
+msgid "batch.status.waiting"
+msgstr ""
+
+msgid "batch.subtitle.done"
+msgstr ""
+
+msgid "batch.subtitle.done_failed"
+msgstr ""
+
+msgid "batch.subtitle.empty"
+msgstr ""
+
+msgid "batch.subtitle.paused"
+msgstr ""
+
+msgid "batch.subtitle.ready"
+msgstr ""
+
+msgid "batch.subtitle.running"
+msgstr ""
+
+msgid "batch.switch.busy_body"
+msgstr ""
+
+msgid "batch.switch.busy_title"
+msgstr ""
+
+msgid "batch.switched.body"
+msgstr ""
+
+msgid "batch.switched.title"
+msgstr ""
+
+msgid "batch.title"
+msgstr ""
+
+msgid "colorpicker.clear"
+msgstr ""
+
+msgid "colorpicker.section.presets"
+msgstr ""
+
+msgid "colorpicker.section.recent"
+msgstr ""
+
+msgid "colorpicker.title"
+msgstr ""
+
+msgid "common.cancel"
+msgstr ""
+
+msgid "common.close"
+msgstr ""
+
+msgid "common.copy"
+msgstr ""
+
+msgid "common.delete"
+msgstr ""
+
+msgid "common.error"
+msgstr ""
+
+msgid "common.ok"
+msgstr ""
+
+msgid "common.open_folder"
+msgstr ""
+
+msgid "common.retry"
+msgstr ""
+
+msgid "common.save"
+msgstr ""
+
+msgid "common.tip"
+msgstr ""
+
+msgid "common.warning"
+msgstr ""
+
+msgid "ctrl.change"
+msgstr ""
+
+msgid "ctrl.open"
+msgstr ""
+
+msgid "ctrl.settings_title"
+msgstr ""
+
+msgid "depdl.body.intro"
+msgstr ""
+
+msgid "depdl.btn.done"
+msgstr ""
+
+msgid "depdl.btn.download"
+msgstr ""
+
+msgid "depdl.btn.install_all_missing"
+msgstr ""
+
+msgid "depdl.btn.open_install_dir"
+msgstr ""
+
+msgid "depdl.error.download_failed"
+msgstr ""
+
+msgid "depdl.info.done_body"
+msgstr ""
+
+msgid "depdl.info.nothing_body"
+msgstr ""
+
+msgid "depdl.info.nothing_title"
+msgstr ""
+
+msgid "depdl.status.connecting"
+msgstr ""
+
+msgid "depdl.status.failed"
+msgstr ""
+
+msgid "depdl.status.installed"
+msgstr ""
+
+msgid "depdl.status.unsupported"
+msgstr ""
+
+msgid "depdl.title"
+msgstr ""
+
+msgid "doctor.btn.download_install"
+msgstr ""
+
+msgid "doctor.btn.download_voxgate"
+msgstr ""
+
+msgid "doctor.btn.dubbing_settings"
+msgstr ""
+
+msgid "doctor.btn.how_to_handle"
+msgstr ""
+
+msgid "doctor.btn.install_tool"
+msgstr ""
+
+msgid "doctor.btn.live_caption_settings"
+msgstr ""
+
+msgid "doctor.btn.llm_settings"
+msgstr ""
+
+msgid "doctor.btn.rerun"
+msgstr ""
+
+msgid "doctor.btn.run"
+msgstr ""
+
+msgid "doctor.btn.running"
+msgstr ""
+
+msgid "doctor.btn.transcribe_settings"
+msgstr ""
+
+msgid "doctor.btn.translate_settings"
+msgstr ""
+
+msgid "doctor.btn.usage"
+msgstr ""
+
+msgid "doctor.checklist"
+msgstr ""
+
+msgid "doctor.chip.dubbing"
+msgstr ""
+
+msgid "doctor.chip.export"
+msgstr ""
+
+msgid "doctor.chip.subtitle"
+msgstr ""
+
+msgid "doctor.chip.transcribe"
+msgstr ""
+
+msgid "doctor.chip.translate"
+msgstr ""
+
+msgid "doctor.done.all_passed"
+msgstr ""
+
+msgid "doctor.done.errors"
+msgstr ""
+
+msgid "doctor.done.title"
+msgstr ""
+
+msgid "doctor.done.warnings"
+msgstr ""
+
+msgid "doctor.download"
+msgstr ""
+
+msgid "doctor.download.desc"
+msgstr ""
+
+msgid "doctor.download.ok"
+msgstr ""
+
+msgid "doctor.download.ok_login"
+msgstr ""
+
+msgid "doctor.download.unavailable"
+msgstr ""
+
+msgid "doctor.dubbing.desc"
+msgstr ""
+
+msgid "doctor.dubbing.fail.desc"
+msgstr ""
+
+msgid "doctor.dubbing.ok.desc"
+msgstr ""
+
+msgid "doctor.dubbing.title"
+msgstr ""
+
+msgid "doctor.failed.title"
+msgstr ""
+
+msgid "doctor.ffmpeg.desc"
+msgstr ""
+
+msgid "doctor.ffmpeg.missing.desc"
+msgstr ""
+
+msgid "doctor.ffmpeg.missing.title"
+msgstr ""
+
+msgid "doctor.ffmpeg.no_ass.desc"
+msgstr ""
+
+msgid "doctor.ffmpeg.no_ass.title"
+msgstr ""
+
+msgid "doctor.ffmpeg.ok.desc"
+msgstr ""
+
+msgid "doctor.help.download"
+msgstr ""
+
+msgid "doctor.help.ffmpeg"
+msgstr ""
+
+msgid "doctor.jump_failed.body"
+msgstr ""
+
+msgid "doctor.jump_failed.title"
+msgstr ""
+
+msgid "doctor.label.disabled"
+msgstr ""
+
+msgid "doctor.label.dubbing"
+msgstr ""
+
+msgid "doctor.label.optimize"
+msgstr ""
+
+msgid "doctor.label.split"
+msgstr ""
+
+msgid "doctor.label.subtitle"
+msgstr ""
+
+msgid "doctor.label.subtitle_file"
+msgstr ""
+
+msgid "doctor.label.video"
+msgstr ""
+
+msgid "doctor.live_caption.desc"
+msgstr ""
+
+msgid "doctor.live_caption.funasr_no_key.desc"
+msgstr ""
+
+msgid "doctor.live_caption.not_found.desc"
+msgstr ""
+
+msgid "doctor.live_caption.ok.desc"
+msgstr ""
+
+msgid "doctor.live_caption.title"
+msgstr ""
+
+msgid "doctor.llm.desc.default"
+msgstr ""
+
+msgid "doctor.llm.desc.translate"
+msgstr ""
+
+msgid "doctor.llm.fail.desc"
+msgstr ""
+
+msgid "doctor.llm.ok.desc"
+msgstr ""
+
+msgid "doctor.llm.title.optimize"
+msgstr ""
+
+msgid "doctor.llm.title.optimize_split"
+msgstr ""
+
+msgid "doctor.llm.title.split"
+msgstr ""
+
+msgid "doctor.llm.title.translate"
+msgstr ""
+
+msgid "doctor.llm.unavailable.title"
+msgstr ""
+
+msgid "doctor.status.checking"
+msgstr ""
+
+msgid "doctor.status.error"
+msgstr ""
+
+msgid "doctor.status.ok"
+msgstr ""
+
+msgid "doctor.status.pending"
+msgstr ""
+
+msgid "doctor.status.warning"
+msgstr ""
+
+msgid "doctor.subtitle"
+msgstr ""
+
+msgid "doctor.summary.all_passed"
+msgstr ""
+
+msgid "doctor.summary.errors"
+msgstr ""
+
+msgid "doctor.summary.pending"
+msgstr ""
+
+msgid "doctor.summary.warnings"
+msgstr ""
+
+msgid "doctor.title"
+msgstr ""
+
+msgid "doctor.transcribe.desc.free"
+msgstr ""
+
+msgid "doctor.transcribe.desc.local"
+msgstr ""
+
+msgid "doctor.transcribe.desc.whisper"
+msgstr ""
+
+msgid "doctor.transcribe.fail.desc"
+msgstr ""
+
+msgid "doctor.transcribe.ok.desc"
+msgstr ""
+
+msgid "doctor.transcribe.title"
+msgstr ""
+
+msgid "doctor.translate.desc.default"
+msgstr ""
+
+msgid "doctor.translate.desc.uses_llm"
+msgstr ""
+
+msgid "doctor.translate.ok.desc"
+msgstr ""
+
+msgid "doctor.translate.title"
+msgstr ""
+
+msgid "doctor.translate.uses_llm.desc"
+msgstr ""
+
+msgid "donate.alipay"
+msgstr ""
+
+msgid "donate.desc"
+msgstr ""
+
+msgid "donate.title"
+msgstr ""
+
+msgid "donate.wechat"
+msgstr ""
+
+msgid "dubbing.badge.clone"
+msgstr ""
+
+msgid "dubbing.badge.need_key"
+msgstr ""
+
+msgid "dubbing.badge.no_key"
+msgstr ""
+
+msgid "dubbing.btn.audition"
+msgstr ""
+
+msgid "dubbing.btn.config"
+msgstr ""
+
+msgid "dubbing.btn.generate_clone"
+msgstr ""
+
+msgid "dubbing.btn.generate_preview"
+msgstr ""
+
+msgid "dubbing.btn.stop"
+msgstr ""
+
+msgid "dubbing.btn.synthesizing"
+msgstr ""
+
+msgid "dubbing.clone.clear"
+msgstr ""
+
+msgid "dubbing.clone.hint"
+msgstr ""
+
+msgid "dubbing.clone.missing_file"
+msgstr ""
+
+msgid "dubbing.clone.no_audio"
+msgstr ""
+
+msgid "dubbing.clone.record"
+msgstr ""
+
+msgid "dubbing.clone.ref_text"
+msgstr ""
+
+msgid "dubbing.clone.ref_text_placeholder"
+msgstr ""
+
+msgid "dubbing.clone.title"
+msgstr ""
+
+msgid "dubbing.clone.upload"
+msgstr ""
+
+msgid "dubbing.clone.uploaded"
+msgstr ""
+
+msgid "dubbing.dialog.audio_filter"
+msgstr ""
+
+msgid "dubbing.dialog.choose_audio"
+msgstr ""
+
+msgid "dubbing.filter.all"
+msgstr ""
+
+msgid "dubbing.filter.clone"
+msgstr ""
+
+msgid "dubbing.filter.female"
+msgstr ""
+
+msgid "dubbing.filter.male"
+msgstr ""
+
+msgid "dubbing.form.current_voice"
+msgstr ""
+
+msgid "dubbing.form.gen_type"
+msgstr ""
+
+msgid "dubbing.form.not_selected"
+msgstr ""
+
+msgid "dubbing.form.type_preview"
+msgstr ""
+
+msgid "dubbing.preview.char_count"
+msgstr ""
+
+msgid "dubbing.preview.desc"
+msgstr ""
+
+msgid "dubbing.preview.desc_clone"
+msgstr ""
+
+msgid "dubbing.preview.input_placeholder"
+msgstr ""
+
+msgid "dubbing.preview.sample_text"
+msgstr ""
+
+msgid "dubbing.preview.title"
+msgstr ""
+
+msgid "dubbing.provider.edge.desc"
+msgstr ""
+
+msgid "dubbing.provider.edge.title"
+msgstr ""
+
+msgid "dubbing.provider.gemini.desc"
+msgstr ""
+
+msgid "dubbing.provider.gemini.title"
+msgstr ""
+
+msgid "dubbing.provider.siliconflow.desc"
+msgstr ""
+
+msgid "dubbing.provider.siliconflow.title"
+msgstr ""
+
+msgid "dubbing.ready.clone"
+msgstr ""
+
+msgid "dubbing.ready.default"
+msgstr ""
+
+msgid "dubbing.ready.need_key"
+msgstr ""
+
+msgid "dubbing.ready.no_key"
+msgstr ""
+
+msgid "dubbing.subtitle"
+msgstr ""
+
+msgid "dubbing.tag.breathy"
+msgstr ""
+
+msgid "dubbing.tag.bright"
+msgstr ""
+
+msgid "dubbing.tag.casual"
+msgstr ""
+
+msgid "dubbing.tag.clear"
+msgstr ""
+
+msgid "dubbing.tag.clone"
+msgstr ""
+
+msgid "dubbing.tag.easy_going"
+msgstr ""
+
+msgid "dubbing.tag.en"
+msgstr ""
+
+msgid "dubbing.tag.even"
+msgstr ""
+
+msgid "dubbing.tag.female"
+msgstr ""
+
+msgid "dubbing.tag.firm"
+msgstr ""
+
+msgid "dubbing.tag.forward"
+msgstr ""
+
+msgid "dubbing.tag.free"
+msgstr ""
+
+msgid "dubbing.tag.gentle"
+msgstr ""
+
+msgid "dubbing.tag.gravelly"
+msgstr ""
+
+msgid "dubbing.tag.informative"
+msgstr ""
+
+msgid "dubbing.tag.knowledgeable"
+msgstr ""
+
+msgid "dubbing.tag.lively"
+msgstr ""
+
+msgid "dubbing.tag.male"
+msgstr ""
+
+msgid "dubbing.tag.mature"
+msgstr ""
+
+msgid "dubbing.tag.need_key"
+msgstr ""
+
+msgid "dubbing.tag.recommended"
+msgstr ""
+
+msgid "dubbing.tag.smooth"
+msgstr ""
+
+msgid "dubbing.tag.soft"
+msgstr ""
+
+msgid "dubbing.tag.upbeat"
+msgstr ""
+
+msgid "dubbing.tag.warm"
+msgstr ""
+
+msgid "dubbing.tag.yue"
+msgstr ""
+
+msgid "dubbing.tag.zh"
+msgstr ""
+
+msgid "dubbing.title"
+msgstr ""
+
+msgid "dubbing.toast.audio_missing"
+msgstr ""
+
+msgid "dubbing.toast.audio_missing_body"
+msgstr ""
+
+msgid "dubbing.toast.empty_text"
+msgstr ""
+
+msgid "dubbing.toast.empty_text_body"
+msgstr ""
+
+msgid "dubbing.toast.missing_ref_text"
+msgstr ""
+
+msgid "dubbing.toast.missing_ref_text_body"
+msgstr ""
+
+msgid "dubbing.toast.need_api_key"
+msgstr ""
+
+msgid "dubbing.toast.need_api_key_body"
+msgstr ""
+
+msgid "dubbing.toast.play_failed"
+msgstr ""
+
+msgid "dubbing.toast.play_failed_body"
+msgstr ""
+
+msgid "dubbing.toast.please_wait"
+msgstr ""
+
+msgid "dubbing.toast.please_wait_body"
+msgstr ""
+
+msgid "dubbing.toast.preview_failed"
+msgstr ""
+
+msgid "dubbing.toast.record_done"
+msgstr ""
+
+msgid "dubbing.toast.record_done_body"
+msgstr ""
+
+msgid "dubbing.voice.edge-cn-female.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-cn-male.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-cn-xiaoyi.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-cn-yunjian.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-cn-yunyang.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-andrew.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-ava.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-brian.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-emma.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-female.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-libby.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-male.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-en-ryan.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-hk-hiugaai.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-hk-wanlung.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-tw-hsiaoyu.desc"
+msgstr ""
+
+msgid "dubbing.voice.edge-tw-yunjhe.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-achernar.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-algenib.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-algieba.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-alnilam.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-aoede.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-autonoe.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-callirrhoe.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-charon.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-despina.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-en-friendly.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-en-neutral.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-en-upbeat.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-enceladus.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-erinome.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-fenrir.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-gacrux.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-iapetus.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-laomedeia.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-leda.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-orus.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-pulcherrima.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-rasalgethi.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-sadachbia.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-sadaltager.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-schedar.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-sulafat.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-umbriel.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-vindemiatrix.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-zephyr.desc"
+msgstr ""
+
+msgid "dubbing.voice.gemini-zubenelgenubi.desc"
+msgstr ""
+
+msgid "dubbing.voice.library"
+msgstr ""
+
+msgid "dubbing.voice.library_zh"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-bella.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-charles.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-claire.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-david.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-deep-male.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-diana.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-female.desc"
+msgstr ""
+
+msgid "dubbing.voice.siliconflow-cn-male.desc"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.BASE"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V1"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V2"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V3"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V3_TURBO"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.MEDIUM"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.SMALL"
+msgstr ""
+
+msgid "enum.FasterWhisperModelEnum.TINY"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.CHATGLM"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.DEEPSEEK"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.GEMINI"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.LM_STUDIO"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.OLLAMA"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.OPENAI"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.SILICON_CLOUD"
+msgstr ""
+
+msgid "enum.SubtitleLayoutEnum.ONLY_ORIGINAL"
+msgstr ""
+
+msgid "enum.SubtitleLayoutEnum.ONLY_TRANSLATE"
+msgstr ""
+
+msgid "enum.SubtitleLayoutEnum.ORIGINAL_ON_TOP"
+msgstr ""
+
+msgid "enum.SubtitleLayoutEnum.TRANSLATE_ON_TOP"
+msgstr ""
+
+msgid "enum.SubtitleRenderModeEnum.ASS_STYLE"
+msgstr ""
+
+msgid "enum.SubtitleRenderModeEnum.ROUNDED_BG"
+msgstr ""
+
+msgid "enum.TargetLanguage.ARABIC"
+msgstr ""
+
+msgid "enum.TargetLanguage.BULGARIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.CANTONESE"
+msgstr ""
+
+msgid "enum.TargetLanguage.CZECH"
+msgstr ""
+
+msgid "enum.TargetLanguage.DANISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.DUTCH"
+msgstr ""
+
+msgid "enum.TargetLanguage.ENGLISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.ENGLISH_UK"
+msgstr ""
+
+msgid "enum.TargetLanguage.ENGLISH_US"
+msgstr ""
+
+msgid "enum.TargetLanguage.FINNISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.FRENCH"
+msgstr ""
+
+msgid "enum.TargetLanguage.GERMAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.GREEK"
+msgstr ""
+
+msgid "enum.TargetLanguage.HEBREW"
+msgstr ""
+
+msgid "enum.TargetLanguage.HUNGARIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.INDONESIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.ITALIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.JAPANESE"
+msgstr ""
+
+msgid "enum.TargetLanguage.KOREAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.MALAY"
+msgstr ""
+
+msgid "enum.TargetLanguage.NORWEGIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.PERSIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.POLISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.PORTUGUESE"
+msgstr ""
+
+msgid "enum.TargetLanguage.PORTUGUESE_BR"
+msgstr ""
+
+msgid "enum.TargetLanguage.PORTUGUESE_PT"
+msgstr ""
+
+msgid "enum.TargetLanguage.ROMANIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.RUSSIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.SIMPLIFIED_CHINESE"
+msgstr ""
+
+msgid "enum.TargetLanguage.SPANISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.SPANISH_LATAM"
+msgstr ""
+
+msgid "enum.TargetLanguage.SWEDISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.TAGALOG"
+msgstr ""
+
+msgid "enum.TargetLanguage.THAI"
+msgstr ""
+
+msgid "enum.TargetLanguage.TRADITIONAL_CHINESE"
+msgstr ""
+
+msgid "enum.TargetLanguage.TURKISH"
+msgstr ""
+
+msgid "enum.TargetLanguage.UKRAINIAN"
+msgstr ""
+
+msgid "enum.TargetLanguage.VIETNAMESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.AFRIKAANS"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ALBANIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.AMHARIC"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ARABIC"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ARMENIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ASSAMESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.AUTO"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.AZERBAIJANI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BASHKIR"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BASQUE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BELARUSIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BENGALI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BOSNIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BRETON"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.BULGARIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.CANTONESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.CATALAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.CHINESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.CROATIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.CZECH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.DANISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.DUTCH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ENGLISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ESTONIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.FAROESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.FINNISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.FRENCH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.GALICIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.GEORGIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.GERMAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.GREEK"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.GUJARATI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.HAITIAN_CREOLE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.HAUSA"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.HAWAIIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.HEBREW"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.HINDI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.HUNGARIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ICELANDIC"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.INDONESIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ITALIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.JAPANESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.JAVANESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.KANNADA"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.KAZAKH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.KHMER"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.KOREAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.LAO"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.LATIN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.LATVIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.LINGALA"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.LITHUANIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.LUXEMBOURGISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MACEDONIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MALAGASY"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MALAY"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MALAYALAM"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MALTESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MAORI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MARATHI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MONGOLIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.MYANMAR"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.NEPALI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.NORWEGIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.NYNORSK"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.OCCITAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.PASHTO"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.PERSIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.POLISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.PORTUGUESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.PUNJABI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.ROMANIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.RUSSIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SANSKRIT"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SERBIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SHONA"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SINDHI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SINHALA"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SLOVAK"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SLOVENIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SOMALI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SPANISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SUNDANESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SWAHILI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.SWEDISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TAGALOG"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TAJIK"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TAMIL"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TATAR"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TELUGU"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.THAI"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TIBETAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TURKISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.TURKMEN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.UKRAINIAN"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.URDU"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.UZBEK"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.VIETNAMESE"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.WELSH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.YIDDISH"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.YORUBA"
+msgstr ""
+
+msgid "enum.TranscribeLanguageEnum.YUE"
+msgstr ""
+
+msgid "enum.TranscribeModelEnum.BAILIAN_FUN_ASR"
+msgstr ""
+
+msgid "enum.TranscribeModelEnum.BIJIAN"
+msgstr ""
+
+msgid "enum.TranscribeModelEnum.FASTER_WHISPER"
+msgstr ""
+
+msgid "enum.TranscribeModelEnum.JIANYING"
+msgstr ""
+
+msgid "enum.TranscribeModelEnum.WHISPER_API"
+msgstr ""
+
+msgid "enum.TranscribeModelEnum.WHISPER_CPP"
+msgstr ""
+
+msgid "enum.TranscribeOutputFormatEnum.ALL"
+msgstr ""
+
+msgid "enum.TranscribeOutputFormatEnum.ASS"
+msgstr ""
+
+msgid "enum.TranscribeOutputFormatEnum.SRT"
+msgstr ""
+
+msgid "enum.TranscribeOutputFormatEnum.TXT"
+msgstr ""
+
+msgid "enum.TranscribeOutputFormatEnum.VTT"
+msgstr ""
+
+msgid "enum.TranslatorServiceEnum.BING"
+msgstr ""
+
+msgid "enum.TranslatorServiceEnum.DEEPLX"
+msgstr ""
+
+msgid "enum.TranslatorServiceEnum.GOOGLE"
+msgstr ""
+
+msgid "enum.TranslatorServiceEnum.OPENAI"
+msgstr ""
+
+msgid "enum.VadMethodEnum.AUDITOK"
+msgstr ""
+
+msgid "enum.VadMethodEnum.PYANNOTE_ONNX_V3"
+msgstr ""
+
+msgid "enum.VadMethodEnum.PYANNOTE_V3"
+msgstr ""
+
+msgid "enum.VadMethodEnum.SILERO_V3"
+msgstr ""
+
+msgid "enum.VadMethodEnum.SILERO_V4"
+msgstr ""
+
+msgid "enum.VadMethodEnum.SILERO_V4_FW"
+msgstr ""
+
+msgid "enum.VadMethodEnum.SILERO_V5"
+msgstr ""
+
+msgid "enum.VadMethodEnum.WEBRTC"
+msgstr ""
+
+msgid "enum.VideoQualityEnum.HIGH"
+msgstr ""
+
+msgid "enum.VideoQualityEnum.LOW"
+msgstr ""
+
+msgid "enum.VideoQualityEnum.MEDIUM"
+msgstr ""
+
+msgid "enum.VideoQualityEnum.ULTRA_HIGH"
+msgstr ""
+
+msgid "enum.WhisperModelEnum.BASE"
+msgstr ""
+
+msgid "enum.WhisperModelEnum.LARGE_V1"
+msgstr ""
+
+msgid "enum.WhisperModelEnum.LARGE_V2"
+msgstr ""
+
+msgid "enum.WhisperModelEnum.MEDIUM"
+msgstr ""
+
+msgid "enum.WhisperModelEnum.SMALL"
+msgstr ""
+
+msgid "enum.WhisperModelEnum.TINY"
+msgstr ""
+
+msgid "hardsub.btn.auto_region"
+msgstr ""
+
+msgid "hardsub.btn.export"
+msgstr ""
+
+msgid "hardsub.btn.redo"
+msgstr ""
+
+msgid "hardsub.btn.replace_video"
+msgstr ""
+
+msgid "hardsub.btn.send_optimize"
+msgstr ""
+
+msgid "hardsub.btn.start"
+msgstr ""
+
+msgid "hardsub.busy.detecting_region"
+msgstr ""
+
+msgid "hardsub.busy.detecting_region_pct"
+msgstr ""
+
+msgid "hardsub.busy.loading_video"
+msgstr ""
+
+msgid "hardsub.col.end"
+msgstr ""
+
+msgid "hardsub.col.start"
+msgstr ""
+
+msgid "hardsub.col.text"
+msgstr ""
+
+msgid "hardsub.count.recognized"
+msgstr ""
+
+msgid "hardsub.count.total"
+msgstr ""
+
+msgid "hardsub.dialog.export"
+msgstr ""
+
+msgid "hardsub.dialog.pick_video"
+msgstr ""
+
+msgid "hardsub.drop.pick"
+msgstr ""
+
+msgid "hardsub.drop.title"
+msgstr ""
+
+msgid "hardsub.engine.card_title"
+msgstr ""
+
+msgid "hardsub.engine.desc"
+msgstr ""
+
+msgid "hardsub.engine.title"
+msgstr ""
+
+msgid "hardsub.error.read_video"
+msgstr ""
+
+msgid "hardsub.menu.delete_row"
+msgstr ""
+
+msgid "hardsub.menu.locate"
+msgstr ""
+
+msgid "hardsub.note.done"
+msgstr ""
+
+msgid "hardsub.note.empty"
+msgstr ""
+
+msgid "hardsub.note.engine_missing"
+msgstr ""
+
+msgid "hardsub.note.no_subtitle"
+msgstr ""
+
+msgid "hardsub.note.processing"
+msgstr ""
+
+msgid "hardsub.note.region"
+msgstr ""
+
+msgid "hardsub.ph.empty.sub"
+msgstr ""
+
+msgid "hardsub.ph.empty.title"
+msgstr ""
+
+msgid "hardsub.ph.engine_missing.sub"
+msgstr ""
+
+msgid "hardsub.ph.engine_missing.title"
+msgstr ""
+
+msgid "hardsub.ph.no_subtitle.sub"
+msgstr ""
+
+msgid "hardsub.ph.no_subtitle.title"
+msgstr ""
+
+msgid "hardsub.ph.region.sub"
+msgstr ""
+
+msgid "hardsub.ph.region.title"
+msgstr ""
+
+msgid "hardsub.progress.title"
+msgstr ""
+
+msgid "hardsub.result.title"
+msgstr ""
+
+msgid "hardsub.stage.video_preview"
+msgstr ""
+
+msgid "hardsub.status.done"
+msgstr ""
+
+msgid "hardsub.status.engine_missing"
+msgstr ""
+
+msgid "hardsub.status.need_action"
+msgstr ""
+
+msgid "hardsub.status.processing"
+msgstr ""
+
+msgid "hardsub.status.region_detected"
+msgstr ""
+
+msgid "hardsub.status.waiting_video"
+msgstr ""
+
+msgid "hardsub.subtitle"
+msgstr ""
+
+msgid "hardsub.title"
+msgstr ""
+
+msgid "hardsub.toast.exported"
+msgstr ""
+
+msgid "hardsub.toast.no_auto_region"
+msgstr ""
+
+msgid "home.btn.browse"
+msgstr ""
+
+msgid "home.btn.start"
+msgstr ""
+
+msgid "home.confirm.has_subtitle"
+msgstr ""
+
+msgid "home.confirm.quality"
+msgstr ""
+
+msgid "home.confirm.quality.best"
+msgstr ""
+
+msgid "home.confirm.untitled"
+msgstr ""
+
+msgid "home.dialog.filter.audio"
+msgstr ""
+
+msgid "home.dialog.filter.media"
+msgstr ""
+
+msgid "home.dialog.filter.video"
+msgstr ""
+
+msgid "home.dialog.select_media"
+msgstr ""
+
+msgid "home.download.done.body"
+msgstr ""
+
+msgid "home.download.done.title"
+msgstr ""
+
+msgid "home.download.parsing"
+msgstr ""
+
+msgid "home.download.start"
+msgstr ""
+
+msgid "home.error.invalid_input"
+msgstr ""
+
+msgid "home.error.unsupported_drop"
+msgstr ""
+
+msgid "home.footer.donate"
+msgstr ""
+
+msgid "home.footer.logs"
+msgstr ""
+
+msgid "home.hero.title"
+msgstr ""
+
+msgid "home.input.placeholder"
+msgstr ""
+
+msgid "home.media.kind.audio"
+msgstr ""
+
+msgid "home.media.kind.video"
+msgstr ""
+
+msgid "home.media.ready"
+msgstr ""
+
+msgid "home.quick.confirm"
+msgstr ""
+
+msgid "home.quick.downloading"
+msgstr ""
+
+msgid "home.quick.empty"
+msgstr ""
+
+msgid "home.quick.file"
+msgstr ""
+
+msgid "home.quick.invalid"
+msgstr ""
+
+msgid "home.quick.parsing"
+msgstr ""
+
+msgid "home.quick.url"
+msgstr ""
+
+msgid "home.status.invalid"
+msgstr ""
+
+msgid "home.status.parsing"
+msgstr ""
+
+msgid "home.status.pending"
+msgstr ""
+
+msgid "home.status.ready"
+msgstr ""
+
+msgid "home.status.waiting"
+msgstr ""
+
+msgid "home.tip.downloading"
+msgstr ""
+
+msgid "home.tip.parsing"
+msgstr ""
+
+msgid "homeflow.tab.subtitle_optimize"
+msgstr ""
+
+msgid "homeflow.tab.task_creation"
+msgstr ""
+
+msgid "homeflow.tab.transcription"
+msgstr ""
+
+msgid "homeflow.tab.video_synthesis"
+msgstr ""
+
+msgid "inspector.color.pick"
+msgstr ""
+
+msgid "inspector.color.pick_prefix"
+msgstr ""
+
+msgid "inspector.style.rename"
+msgstr ""
+
+msgid "inspector.style.source.builtin"
+msgstr ""
+
+msgid "inspector.style.source.mine"
+msgstr ""
+
+msgid "lclang.ar"
+msgstr ""
+
+msgid "lclang.auto"
+msgstr ""
+
+msgid "lclang.cs"
+msgstr ""
+
+msgid "lclang.da"
+msgstr ""
+
+msgid "lclang.de"
+msgstr ""
+
+msgid "lclang.en"
+msgstr ""
+
+msgid "lclang.es"
+msgstr ""
+
+msgid "lclang.fi"
+msgstr ""
+
+msgid "lclang.fil"
+msgstr ""
+
+msgid "lclang.fr"
+msgstr ""
+
+msgid "lclang.hi"
+msgstr ""
+
+msgid "lclang.id"
+msgstr ""
+
+msgid "lclang.is"
+msgstr ""
+
+msgid "lclang.it"
+msgstr ""
+
+msgid "lclang.ja"
+msgstr ""
+
+msgid "lclang.ko"
+msgstr ""
+
+msgid "lclang.ms"
+msgstr ""
+
+msgid "lclang.no"
+msgstr ""
+
+msgid "lclang.pl"
+msgstr ""
+
+msgid "lclang.pt"
+msgstr ""
+
+msgid "lclang.ru"
+msgstr ""
+
+msgid "lclang.sv"
+msgstr ""
+
+msgid "lclang.th"
+msgstr ""
+
+msgid "lclang.tr"
+msgstr ""
+
+msgid "lclang.uk"
+msgstr ""
+
+msgid "lclang.vi"
+msgstr ""
+
+msgid "lclang.yue"
+msgstr ""
+
+msgid "lclang.zh"
+msgstr ""
+
+msgid "live.delete.confirm"
+msgstr ""
+
+msgid "live.delete.title"
+msgstr ""
+
+msgid "live.device.default_input"
+msgstr ""
+
+msgid "live.device.default_tag"
+msgstr ""
+
+msgid "live.device.system_audio"
+msgstr ""
+
+msgid "live.error.concurrency_full"
+msgstr ""
+
+msgid "live.error.start_failed"
+msgstr ""
+
+msgid "live.error.start_failed_desc"
+msgstr ""
+
+msgid "live.error.transcribe_failed"
+msgstr ""
+
+msgid "live.export.dialog_title"
+msgstr ""
+
+msgid "live.export.failed"
+msgstr ""
+
+msgid "live.export.success"
+msgstr ""
+
+msgid "live.ready.desc"
+msgstr ""
+
+msgid "live.ready.title"
+msgstr ""
+
+msgid "live.rename.placeholder"
+msgstr ""
+
+msgid "live.rename.title"
+msgstr ""
+
+msgid "live.status.connecting"
+msgstr ""
+
+msgid "live.status.connecting_with_time"
+msgstr ""
+
+msgid "live.status.paused"
+msgstr ""
+
+msgid "live.status.progress"
+msgstr ""
+
+msgid "live.status.recording"
+msgstr ""
+
+msgid "live.status.saved"
+msgstr ""
+
+msgid "live.status.waiting"
+msgstr ""
+
+msgid "live.title"
+msgstr ""
+
+msgid "livetx.menu.copy_all"
+msgstr ""
+
+msgid "livetx.menu.copy_sentence"
+msgstr ""
+
+msgid "liveview.action.back"
+msgstr ""
+
+msgid "liveview.action.export"
+msgstr ""
+
+msgid "liveview.action.folder"
+msgstr ""
+
+msgid "liveview.action.home"
+msgstr ""
+
+msgid "liveview.action.open"
+msgstr ""
+
+msgid "liveview.action.refresh"
+msgstr ""
+
+msgid "liveview.action.rename"
+msgstr ""
+
+msgid "liveview.btn.new_session"
+msgstr ""
+
+msgid "liveview.btn.pause"
+msgstr ""
+
+msgid "liveview.btn.resume"
+msgstr ""
+
+msgid "liveview.btn.saving"
+msgstr ""
+
+msgid "liveview.btn.start"
+msgstr ""
+
+msgid "liveview.btn.stop"
+msgstr ""
+
+msgid "liveview.btn.view_record"
+msgstr ""
+
+msgid "liveview.detail.display"
+msgstr ""
+
+msgid "liveview.detail.export"
+msgstr ""
+
+msgid "liveview.display.bilingual"
+msgstr ""
+
+msgid "liveview.display.source"
+msgstr ""
+
+msgid "liveview.display.target"
+msgstr ""
+
+msgid "liveview.error.detail"
+msgstr ""
+
+msgid "liveview.error.title"
+msgstr ""
+
+msgid "liveview.export.srt"
+msgstr ""
+
+msgid "liveview.export.txt"
+msgstr ""
+
+msgid "liveview.history.empty.detail"
+msgstr ""
+
+msgid "liveview.history.empty.title"
+msgstr ""
+
+msgid "liveview.history.search_placeholder"
+msgstr ""
+
+msgid "liveview.option.audio_source"
+msgstr ""
+
+msgid "liveview.option.live_translate"
+msgstr ""
+
+msgid "liveview.option.overlay"
+msgstr ""
+
+msgid "liveview.option.source_language"
+msgstr ""
+
+msgid "liveview.option.target_language"
+msgstr ""
+
+msgid "liveview.ready.detail"
+msgstr ""
+
+msgid "liveview.ready.title"
+msgstr ""
+
+msgid "liveview.recent.empty.detail"
+msgstr ""
+
+msgid "liveview.recent.empty.title"
+msgstr ""
+
+msgid "liveview.recent.title"
+msgstr ""
+
+msgid "liveview.recent.view_all"
+msgstr ""
+
+msgid "liveview.settings.config"
+msgstr ""
+
+msgid "liveview.settings.title"
+msgstr ""
+
+msgid "liveview.timer.saving"
+msgstr ""
+
+msgid "liveview.timer.waiting"
+msgstr ""
+
+msgid "liveview.title.detail"
+msgstr ""
+
+msgid "liveview.title.history"
+msgstr ""
+
+msgid "liveview.title.session"
+msgstr ""
+
+msgid "llmlog.btn.clear"
+msgstr ""
+
+msgid "llmlog.btn.refresh"
+msgstr ""
+
+msgid "llmlog.clear.confirm_body"
+msgstr ""
+
+msgid "llmlog.clear.confirm_btn"
+msgstr ""
+
+msgid "llmlog.clear.confirm_title"
+msgstr ""
+
+msgid "llmlog.clear.success"
+msgstr ""
+
+msgid "llmlog.col.duration"
+msgstr ""
+
+msgid "llmlog.col.file"
+msgstr ""
+
+msgid "llmlog.col.model"
+msgstr ""
+
+msgid "llmlog.col.stage"
+msgstr ""
+
+msgid "llmlog.col.time"
+msgstr ""
+
+msgid "llmlog.copied"
+msgstr ""
+
+msgid "llmlog.detail.foot_hint"
+msgstr ""
+
+msgid "llmlog.detail.title"
+msgstr ""
+
+msgid "llmlog.empty.hint"
+msgstr ""
+
+msgid "llmlog.empty.no_match.hint"
+msgstr ""
+
+msgid "llmlog.empty.no_match.title"
+msgstr ""
+
+msgid "llmlog.empty.title"
+msgstr ""
+
+msgid "llmlog.empty_payload"
+msgstr ""
+
+msgid "llmlog.meta.duration"
+msgstr ""
+
+msgid "llmlog.meta.result"
+msgstr ""
+
+msgid "llmlog.meta.stage"
+msgstr ""
+
+msgid "llmlog.meta.time"
+msgstr ""
+
+msgid "llmlog.no_records"
+msgstr ""
+
+msgid "llmlog.panel.error"
+msgstr ""
+
+msgid "llmlog.panel.error.desc"
+msgstr ""
+
+msgid "llmlog.panel.request"
+msgstr ""
+
+msgid "llmlog.panel.request.desc"
+msgstr ""
+
+msgid "llmlog.panel.response"
+msgstr ""
+
+msgid "llmlog.panel.response.desc"
+msgstr ""
+
+msgid "llmlog.refresh.success"
+msgstr ""
+
+msgid "llmlog.result.done"
+msgstr ""
+
+msgid "llmlog.result.failed"
+msgstr ""
+
+msgid "llmlog.search.placeholder"
+msgstr ""
+
+msgid "llmlog.status.filtered"
+msgstr ""
+
+msgid "llmlog.status.total"
+msgstr ""
+
+msgid "llmlog.status.total_zero"
+msgstr ""
+
+msgid "llmlog.title"
+msgstr ""
+
+msgid "llmlog.unknown"
+msgstr ""
+
+msgid "logwin.btn.open_folder"
+msgstr ""
+
+msgid "logwin.error.open_failed"
+msgstr ""
+
+msgid "logwin.error.read_failed"
+msgstr ""
+
+msgid "logwin.error.update_failed"
+msgstr ""
+
+msgid "logwin.history_divider"
+msgstr ""
+
+msgid "logwin.title"
+msgstr ""
+
+msgid "modelmgr.action.current"
+msgstr ""
+
+msgid "modelmgr.action.download"
+msgstr ""
+
+msgid "modelmgr.action.resume"
+msgstr ""
+
+msgid "modelmgr.col.action"
+msgstr ""
+
+msgid "modelmgr.col.model"
+msgstr ""
+
+msgid "modelmgr.col.size"
+msgstr ""
+
+msgid "modelmgr.col.status"
+msgstr ""
+
+msgid "modelmgr.command.copied_body"
+msgstr ""
+
+msgid "modelmgr.command.copied_title"
+msgstr ""
+
+msgid "modelmgr.command.copy"
+msgstr ""
+
+msgid "modelmgr.download.done_body"
+msgstr ""
+
+msgid "modelmgr.download.done_title"
+msgstr ""
+
+msgid "modelmgr.download.failed"
+msgstr ""
+
+msgid "modelmgr.footer.model_dir"
+msgstr ""
+
+msgid "modelmgr.footer.open_dir"
+msgstr ""
+
+msgid "modelmgr.program.available"
+msgstr ""
+
+msgid "modelmgr.program.found"
+msgstr ""
+
+msgid "modelmgr.program.missing"
+msgstr ""
+
+msgid "modelmgr.program.open_page"
+msgstr ""
+
+msgid "modelmgr.program.opened_body"
+msgstr ""
+
+msgid "modelmgr.program.opened_title"
+msgstr ""
+
+msgid "modelmgr.program.ready_body"
+msgstr ""
+
+msgid "modelmgr.program.ready_title"
+msgstr ""
+
+msgid "modelmgr.program.recheck"
+msgstr ""
+
+msgid "modelmgr.progress.connecting"
+msgstr ""
+
+msgid "modelmgr.recheck.available_body"
+msgstr ""
+
+msgid "modelmgr.recheck.available_title"
+msgstr ""
+
+msgid "modelmgr.recheck.missing_title"
+msgstr ""
+
+msgid "modelmgr.remove.body"
+msgstr ""
+
+msgid "modelmgr.remove.done"
+msgstr ""
+
+msgid "modelmgr.remove.failed"
+msgstr ""
+
+msgid "modelmgr.remove.title"
+msgstr ""
+
+msgid "modelmgr.section.models"
+msgstr ""
+
+msgid "modelmgr.section.programs"
+msgstr ""
+
+msgid "modelmgr.status.downloading"
+msgstr ""
+
+msgid "modelmgr.status.installed"
+msgstr ""
+
+msgid "modelmgr.status.paused"
+msgstr ""
+
+msgid "modelmgr.status.pending"
+msgstr ""
+
+msgid "modelmgr.title"
+msgstr ""
+
+msgid "overlay.listening"
+msgstr ""
+
+msgid "overlay.paused"
+msgstr ""
+
+msgid "overlayset.bg"
+msgstr ""
+
+msgid "overlayset.bg.black"
+msgstr ""
+
+msgid "overlayset.bg.outline"
+msgstr ""
+
+msgid "overlayset.bg.translucent"
+msgstr ""
+
+msgid "overlayset.display"
+msgstr ""
+
+msgid "overlayset.display.bilingual"
+msgstr ""
+
+msgid "overlayset.display.source"
+msgstr ""
+
+msgid "overlayset.display.target"
+msgstr ""
+
+msgid "overlayset.font_size"
+msgstr ""
+
+msgid "overlayset.font_size.medium"
+msgstr ""
+
+msgid "overlayset.title"
+msgstr ""
+
+msgid "roi.scrub.hint"
+msgstr ""
+
+msgid "roi.tag.caption_area"
+msgstr ""
+
+msgid "settings.about.current_version"
+msgstr ""
+
+msgid "settings.about.feedback"
+msgstr ""
+
+msgid "settings.about.feedback.desc"
+msgstr ""
+
+msgid "settings.about.feedback_button"
+msgstr ""
+
+msgid "settings.about.help"
+msgstr ""
+
+msgid "settings.about.help.desc"
+msgstr ""
+
+msgid "settings.about.help_button"
+msgstr ""
+
+msgid "settings.about.update_button"
+msgstr ""
+
+msgid "settings.about.version"
+msgstr ""
+
+msgid "settings.busy.loading"
+msgstr ""
+
+msgid "settings.busy.testing"
+msgstr ""
+
+msgid "settings.busy.transcribing"
+msgstr ""
+
+msgid "settings.dubbing.api_key"
+msgstr ""
+
+msgid "settings.dubbing.api_key.desc"
+msgstr ""
+
+msgid "settings.dubbing.audio_mode"
+msgstr ""
+
+msgid "settings.dubbing.audio_mode.desc"
+msgstr ""
+
+msgid "settings.dubbing.audio_mode.duck"
+msgstr ""
+
+msgid "settings.dubbing.audio_mode.mix"
+msgstr ""
+
+msgid "settings.dubbing.audio_mode.replace"
+msgstr ""
+
+msgid "settings.dubbing.config_error"
+msgstr ""
+
+msgid "settings.dubbing.enabled"
+msgstr ""
+
+msgid "settings.dubbing.enabled.desc"
+msgstr ""
+
+msgid "settings.dubbing.model"
+msgstr ""
+
+msgid "settings.dubbing.model.desc"
+msgstr ""
+
+msgid "settings.dubbing.need_api_key"
+msgstr ""
+
+msgid "settings.dubbing.preset"
+msgstr ""
+
+msgid "settings.dubbing.preset.desc"
+msgstr ""
+
+msgid "settings.dubbing.provider"
+msgstr ""
+
+msgid "settings.dubbing.provider.desc"
+msgstr ""
+
+msgid "settings.dubbing.test"
+msgstr ""
+
+msgid "settings.dubbing.test.desc"
+msgstr ""
+
+msgid "settings.dubbing.test_button"
+msgstr ""
+
+msgid "settings.dubbing.test_failed"
+msgstr ""
+
+msgid "settings.dubbing.test_success"
+msgstr ""
+
+msgid "settings.dubbing.test_success.detail"
+msgstr ""
+
+msgid "settings.dubbing.text_track"
+msgstr ""
+
+msgid "settings.dubbing.text_track.auto"
+msgstr ""
+
+msgid "settings.dubbing.text_track.desc"
+msgstr ""
+
+msgid "settings.dubbing.text_track.first"
+msgstr ""
+
+msgid "settings.dubbing.text_track.second"
+msgstr ""
+
+msgid "settings.dubbing.timing"
+msgstr ""
+
+msgid "settings.dubbing.timing.balanced"
+msgstr ""
+
+msgid "settings.dubbing.timing.desc"
+msgstr ""
+
+msgid "settings.dubbing.timing.natural"
+msgstr ""
+
+msgid "settings.dubbing.timing.none"
+msgstr ""
+
+msgid "settings.dubbing.timing.strict"
+msgstr ""
+
+msgid "settings.dubbing.workers"
+msgstr ""
+
+msgid "settings.dubbing.workers.desc"
+msgstr ""
+
+msgid "settings.live_caption.asr_model"
+msgstr ""
+
+msgid "settings.live_caption.asr_model.desc"
+msgstr ""
+
+msgid "settings.live_caption.bg.black"
+msgstr ""
+
+msgid "settings.live_caption.bg.translucent"
+msgstr ""
+
+msgid "settings.live_caption.bg_style"
+msgstr ""
+
+msgid "settings.live_caption.bg_style.desc"
+msgstr ""
+
+msgid "settings.live_caption.deps_button"
+msgstr ""
+
+msgid "settings.live_caption.display.bilingual"
+msgstr ""
+
+msgid "settings.live_caption.display.source"
+msgstr ""
+
+msgid "settings.live_caption.display.target"
+msgstr ""
+
+msgid "settings.live_caption.display_mode"
+msgstr ""
+
+msgid "settings.live_caption.display_mode.desc"
+msgstr ""
+
+msgid "settings.live_caption.engine"
+msgstr ""
+
+msgid "settings.live_caption.engine.desc"
+msgstr ""
+
+msgid "settings.live_caption.engine.group"
+msgstr ""
+
+msgid "settings.live_caption.font_scale"
+msgstr ""
+
+msgid "settings.live_caption.font_scale.desc"
+msgstr ""
+
+msgid "settings.live_caption.fun_key"
+msgstr ""
+
+msgid "settings.live_caption.fun_key.desc"
+msgstr ""
+
+msgid "settings.live_caption.overlay.group"
+msgstr ""
+
+msgid "settings.live_caption.source_language"
+msgstr ""
+
+msgid "settings.live_caption.source_language.desc"
+msgstr ""
+
+msgid "settings.live_caption.target_language"
+msgstr ""
+
+msgid "settings.live_caption.target_language.desc"
+msgstr ""
+
+msgid "settings.live_caption.test.desc"
+msgstr ""
+
+msgid "settings.live_caption.translate"
+msgstr ""
+
+msgid "settings.live_caption.translate.desc"
+msgstr ""
+
+msgid "settings.live_caption.translate.group"
+msgstr ""
+
+msgid "settings.live_caption.translator_service"
+msgstr ""
+
+msgid "settings.live_caption.translator_service.desc"
+msgstr ""
+
+msgid "settings.live_caption.voxgate"
+msgstr ""
+
+msgid "settings.live_caption.voxgate.desc"
+msgstr ""
+
+msgid "settings.llm.api_key"
+msgstr ""
+
+msgid "settings.llm.api_key.desc"
+msgstr ""
+
+msgid "settings.llm.base_url"
+msgstr ""
+
+msgid "settings.llm.base_url.desc"
+msgstr ""
+
+msgid "settings.llm.connect_error"
+msgstr ""
+
+msgid "settings.llm.connect_failed"
+msgstr ""
+
+msgid "settings.llm.connect_success"
+msgstr ""
+
+msgid "settings.llm.load_models"
+msgstr ""
+
+msgid "settings.llm.model"
+msgstr ""
+
+msgid "settings.llm.model.desc"
+msgstr ""
+
+msgid "settings.llm.model_service"
+msgstr ""
+
+msgid "settings.llm.model_service.desc"
+msgstr ""
+
+msgid "settings.llm.models_load_failed"
+msgstr ""
+
+msgid "settings.llm.models_loaded"
+msgstr ""
+
+msgid "settings.llm.models_loaded.desc"
+msgstr ""
+
+msgid "settings.llm.no_models"
+msgstr ""
+
+msgid "settings.llm.no_models.desc"
+msgstr ""
+
+msgid "settings.llm.provider"
+msgstr ""
+
+msgid "settings.llm.provider.desc"
+msgstr ""
+
+msgid "settings.llm.test_connection"
+msgstr ""
+
+msgid "settings.llm.warn.need_all"
+msgstr ""
+
+msgid "settings.llm.warn.need_base_key"
+msgstr ""
+
+msgid "settings.page.about"
+msgstr ""
+
+msgid "settings.page.dubbing"
+msgstr ""
+
+msgid "settings.page.live_caption"
+msgstr ""
+
+msgid "settings.page.llm"
+msgstr ""
+
+msgid "settings.page.personal"
+msgstr ""
+
+msgid "settings.page.save"
+msgstr ""
+
+msgid "settings.page.subtitle"
+msgstr ""
+
+msgid "settings.page.transcribe"
+msgstr ""
+
+msgid "settings.page.translate"
+msgstr ""
+
+msgid "settings.page.translate_service"
+msgstr ""
+
+msgid "settings.personal.choose_theme_color"
+msgstr ""
+
+msgid "settings.personal.follow_system"
+msgstr ""
+
+msgid "settings.personal.language"
+msgstr ""
+
+msgid "settings.personal.restart_required"
+msgstr ""
+
+msgid "settings.personal.theme"
+msgstr ""
+
+msgid "settings.personal.theme.dark"
+msgstr ""
+
+msgid "settings.personal.theme.desc"
+msgstr ""
+
+msgid "settings.personal.theme.light"
+msgstr ""
+
+msgid "settings.personal.theme_color"
+msgstr ""
+
+msgid "settings.personal.theme_color.desc"
+msgstr ""
+
+msgid "settings.personal.theme_color.is_default"
+msgstr ""
+
+msgid "settings.personal.theme_color.pick_tip"
+msgstr ""
+
+msgid "settings.personal.theme_color.reset"
+msgstr ""
+
+msgid "settings.personal.theme_color.reset_tip"
+msgstr ""
+
+msgid "settings.personal.zoom"
+msgstr ""
+
+msgid "settings.placeholder.empty"
+msgstr ""
+
+msgid "settings.placeholder.not_selected"
+msgstr ""
+
+msgid "settings.restart.confirm"
+msgstr ""
+
+msgid "settings.restart.later"
+msgstr ""
+
+msgid "settings.restart.message"
+msgstr ""
+
+msgid "settings.restart.title"
+msgstr ""
+
+msgid "settings.save.cache"
+msgstr ""
+
+msgid "settings.save.cache.desc"
+msgstr ""
+
+msgid "settings.save.cache_disabled"
+msgstr ""
+
+msgid "settings.save.cache_disabled.detail"
+msgstr ""
+
+msgid "settings.save.cache_enabled"
+msgstr ""
+
+msgid "settings.save.cache_enabled.detail"
+msgstr ""
+
+msgid "settings.save.choose_work_dir"
+msgstr ""
+
+msgid "settings.save.keep_intermediates"
+msgstr ""
+
+msgid "settings.save.keep_intermediates.desc"
+msgstr ""
+
+msgid "settings.save.work_dir"
+msgstr ""
+
+msgid "settings.save.work_dir.desc"
+msgstr ""
+
+msgid "settings.subtitle.layout"
+msgstr ""
+
+msgid "settings.subtitle.layout.desc"
+msgstr ""
+
+msgid "settings.subtitle.need_video"
+msgstr ""
+
+msgid "settings.subtitle.need_video.desc"
+msgstr ""
+
+msgid "settings.subtitle.open_style"
+msgstr ""
+
+msgid "settings.subtitle.render_mode"
+msgstr ""
+
+msgid "settings.subtitle.render_mode.desc"
+msgstr ""
+
+msgid "settings.subtitle.soft"
+msgstr ""
+
+msgid "settings.subtitle.soft.desc"
+msgstr ""
+
+msgid "settings.subtitle.style"
+msgstr ""
+
+msgid "settings.subtitle.style.desc"
+msgstr ""
+
+msgid "settings.subtitle.video_quality"
+msgstr ""
+
+msgid "settings.subtitle.video_quality.desc"
+msgstr ""
+
+msgid "settings.test_transcribe"
+msgstr ""
+
+msgid "settings.title"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.choose_dir"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.device"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.device.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.model"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.model.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.model_dir"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.model_dir.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.one_word"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.one_word.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.vad_filter"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.vad_filter.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.vad_method"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.vad_method.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.vad_threshold"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.vad_threshold.desc"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.voice_extraction"
+msgstr ""
+
+msgid "settings.transcribe.faster_whisper.voice_extraction.desc"
+msgstr ""
+
+msgid "settings.transcribe.fun_asr.key"
+msgstr ""
+
+msgid "settings.transcribe.fun_asr.key.desc"
+msgstr ""
+
+msgid "settings.transcribe.fun_asr.model"
+msgstr ""
+
+msgid "settings.transcribe.fun_asr.model.desc"
+msgstr ""
+
+msgid "settings.transcribe.local_model"
+msgstr ""
+
+msgid "settings.transcribe.local_model.desc"
+msgstr ""
+
+msgid "settings.transcribe.local_model.no_model"
+msgstr ""
+
+msgid "settings.transcribe.local_model.not_installed"
+msgstr ""
+
+msgid "settings.transcribe.manage_models"
+msgstr ""
+
+msgid "settings.transcribe.missing.fun_asr_key"
+msgstr ""
+
+msgid "settings.transcribe.missing.local_model"
+msgstr ""
+
+msgid "settings.transcribe.missing.whisper_api"
+msgstr ""
+
+msgid "settings.transcribe.model"
+msgstr ""
+
+msgid "settings.transcribe.model.desc"
+msgstr ""
+
+msgid "settings.transcribe.output_format"
+msgstr ""
+
+msgid "settings.transcribe.output_format.desc"
+msgstr ""
+
+msgid "settings.transcribe.prompt"
+msgstr ""
+
+msgid "settings.transcribe.prompt.desc"
+msgstr ""
+
+msgid "settings.transcribe.source_language"
+msgstr ""
+
+msgid "settings.transcribe.source_language.desc"
+msgstr ""
+
+msgid "settings.transcribe.test.desc"
+msgstr ""
+
+msgid "settings.transcribe.test_error"
+msgstr ""
+
+msgid "settings.transcribe.test_failed"
+msgstr ""
+
+msgid "settings.transcribe.test_result"
+msgstr ""
+
+msgid "settings.transcribe.test_success"
+msgstr ""
+
+msgid "settings.transcribe.whisper_api.base"
+msgstr ""
+
+msgid "settings.transcribe.whisper_api.base.desc"
+msgstr ""
+
+msgid "settings.transcribe.whisper_api.key"
+msgstr ""
+
+msgid "settings.transcribe.whisper_api.key.desc"
+msgstr ""
+
+msgid "settings.transcribe.whisper_api.model"
+msgstr ""
+
+msgid "settings.transcribe.whisper_api.model.desc"
+msgstr ""
+
+msgid "settings.transcribe.whisper_cpp.model"
+msgstr ""
+
+msgid "settings.transcribe.whisper_cpp.model.desc"
+msgstr ""
+
+msgid "settings.translate.cjk_length"
+msgstr ""
+
+msgid "settings.translate.cjk_length.desc"
+msgstr ""
+
+msgid "settings.translate.custom_prompt"
+msgstr ""
+
+msgid "settings.translate.custom_prompt.desc"
+msgstr ""
+
+msgid "settings.translate.english_length"
+msgstr ""
+
+msgid "settings.translate.english_length.desc"
+msgstr ""
+
+msgid "settings.translate.optimize"
+msgstr ""
+
+msgid "settings.translate.optimize.desc"
+msgstr ""
+
+msgid "settings.translate.split"
+msgstr ""
+
+msgid "settings.translate.split.desc"
+msgstr ""
+
+msgid "settings.translate.target_language"
+msgstr ""
+
+msgid "settings.translate.target_language.desc"
+msgstr ""
+
+msgid "settings.translate.translate"
+msgstr ""
+
+msgid "settings.translate.translate.desc"
+msgstr ""
+
+msgid "settings.translate_service.batch_size"
+msgstr ""
+
+msgid "settings.translate_service.batch_size.desc"
+msgstr ""
+
+msgid "settings.translate_service.deeplx_endpoint"
+msgstr ""
+
+msgid "settings.translate_service.deeplx_endpoint.desc"
+msgstr ""
+
+msgid "settings.translate_service.reflect"
+msgstr ""
+
+msgid "settings.translate_service.reflect.desc"
+msgstr ""
+
+msgid "settings.translate_service.service"
+msgstr ""
+
+msgid "settings.translate_service.service.desc"
+msgstr ""
+
+msgid "settings.translate_service.thread_num"
+msgstr ""
+
+msgid "settings.translate_service.thread_num.desc"
+msgstr ""
+
+msgid "settings.warn.incomplete"
+msgstr ""
+
+msgid "substyle.align.center"
+msgstr ""
+
+msgid "substyle.align.left"
+msgstr ""
+
+msgid "substyle.align.right"
+msgstr ""
+
+msgid "substyle.content.bilingual"
+msgstr ""
+
+msgid "substyle.content.source"
+msgstr ""
+
+msgid "substyle.content.target"
+msgstr ""
+
+msgid "substyle.copy_suffix"
+msgstr ""
+
+msgid "substyle.custom_suffix"
+msgstr ""
+
+msgid "substyle.dialog.delete_body"
+msgstr ""
+
+msgid "substyle.dialog.delete_title"
+msgstr ""
+
+msgid "substyle.dialog.name_placeholder"
+msgstr ""
+
+msgid "substyle.dialog.new_style"
+msgstr ""
+
+msgid "substyle.dialog.pick_bg"
+msgstr ""
+
+msgid "substyle.dialog.rename_style"
+msgstr ""
+
+msgid "substyle.dock.count"
+msgstr ""
+
+msgid "substyle.dock.folder"
+msgstr ""
+
+msgid "substyle.dock.new"
+msgstr ""
+
+msgid "substyle.field.align"
+msgstr ""
+
+msgid "substyle.field.bg_color"
+msgstr ""
+
+msgid "substyle.field.bold"
+msgstr ""
+
+msgid "substyle.field.font"
+msgstr ""
+
+msgid "substyle.field.letter_spacing"
+msgstr ""
+
+msgid "substyle.field.margin_bottom"
+msgstr ""
+
+msgid "substyle.field.max_width"
+msgstr ""
+
+msgid "substyle.field.outline_color"
+msgstr ""
+
+msgid "substyle.field.outline_width"
+msgstr ""
+
+msgid "substyle.field.pad_h"
+msgstr ""
+
+msgid "substyle.field.pad_v"
+msgstr ""
+
+msgid "substyle.field.radius"
+msgstr ""
+
+msgid "substyle.field.size"
+msgstr ""
+
+msgid "substyle.field.text_color"
+msgstr ""
+
+msgid "substyle.filter.image"
+msgstr ""
+
+msgid "substyle.group.background"
+msgstr ""
+
+msgid "substyle.group.layout"
+msgstr ""
+
+msgid "substyle.group.padding"
+msgstr ""
+
+msgid "substyle.group.position"
+msgstr ""
+
+msgid "substyle.group.primary"
+msgstr ""
+
+msgid "substyle.group.secondary"
+msgstr ""
+
+msgid "substyle.group.text"
+msgstr ""
+
+msgid "substyle.group.text.sub"
+msgstr ""
+
+msgid "substyle.inspector.autosave"
+msgstr ""
+
+msgid "substyle.inspector.title"
+msgstr ""
+
+msgid "substyle.mode.ass"
+msgstr ""
+
+msgid "substyle.mode.rounded"
+msgstr ""
+
+msgid "substyle.order.source_top"
+msgstr ""
+
+msgid "substyle.order.target_top"
+msgstr ""
+
+msgid "substyle.preview.background"
+msgstr ""
+
+msgid "substyle.preview.landscape"
+msgstr ""
+
+msgid "substyle.preview.portrait"
+msgstr ""
+
+msgid "substyle.preview.source_placeholder"
+msgstr ""
+
+msgid "substyle.preview.target_placeholder"
+msgstr ""
+
+msgid "substyle.preview.text"
+msgstr ""
+
+msgid "substyle.preview.title"
+msgstr ""
+
+msgid "substyle.row.content"
+msgstr ""
+
+msgid "substyle.row.gap"
+msgstr ""
+
+msgid "substyle.row.order"
+msgstr ""
+
+msgid "substyle.title"
+msgstr ""
+
+msgid "substyle.toast.bg_set"
+msgstr ""
+
+msgid "substyle.toast.created"
+msgstr ""
+
+msgid "substyle.toast.deleted"
+msgstr ""
+
+msgid "substyle.toast.duplicated"
+msgstr ""
+
+msgid "substyle.toast.renamed"
+msgstr ""
+
+msgid "subtitle.bottom.can_synthesize"
+msgstr ""
+
+msgid "subtitle.bottom.count"
+msgstr ""
+
+msgid "subtitle.bottom.hint"
+msgstr ""
+
+msgid "subtitle.bottom.loaded"
+msgstr ""
+
+msgid "subtitle.bottom.output"
+msgstr ""
+
+msgid "subtitle.bottom.progress"
+msgstr ""
+
+msgid "subtitle.btn.clear"
+msgstr ""
+
+msgid "subtitle.btn.enter_synthesis"
+msgstr ""
+
+msgid "subtitle.btn.folder"
+msgstr ""
+
+msgid "subtitle.btn.open_config"
+msgstr ""
+
+msgid "subtitle.btn.processing"
+msgstr ""
+
+msgid "subtitle.btn.replace"
+msgstr ""
+
+msgid "subtitle.btn.start"
+msgstr ""
+
+msgid "subtitle.btn.wait_subtitle"
+msgstr ""
+
+msgid "subtitle.clear.body"
+msgstr ""
+
+msgid "subtitle.clear.title"
+msgstr ""
+
+msgid "subtitle.col.end"
+msgstr ""
+
+msgid "subtitle.col.original"
+msgstr ""
+
+msgid "subtitle.col.start"
+msgstr ""
+
+msgid "subtitle.col.translated"
+msgstr ""
+
+msgid "subtitle.dialog.choose_file"
+msgstr ""
+
+msgid "subtitle.dialog.save_file"
+msgstr ""
+
+msgid "subtitle.drop.pick"
+msgstr ""
+
+msgid "subtitle.drop.title"
+msgstr ""
+
+msgid "subtitle.error.need_llm"
+msgstr ""
+
+msgid "subtitle.error.no_config"
+msgstr ""
+
+msgid "subtitle.fail.config_missing"
+msgstr ""
+
+msgid "subtitle.fail.process"
+msgstr ""
+
+msgid "subtitle.file_filter"
+msgstr ""
+
+msgid "subtitle.menu.merge"
+msgstr ""
+
+msgid "subtitle.menu.retranslate"
+msgstr ""
+
+msgid "subtitle.no_file"
+msgstr ""
+
+msgid "subtitle.opt.language"
+msgstr ""
+
+msgid "subtitle.opt.layout"
+msgstr ""
+
+msgid "subtitle.opt.optimize"
+msgstr ""
+
+msgid "subtitle.opt.prompt"
+msgstr ""
+
+msgid "subtitle.opt.split"
+msgstr ""
+
+msgid "subtitle.opt.translate"
+msgstr ""
+
+msgid "subtitle.process_settings"
+msgstr ""
+
+msgid "subtitle.prompt.placeholder"
+msgstr ""
+
+msgid "subtitle.prompt.set"
+msgstr ""
+
+msgid "subtitle.prompt.unset"
+msgstr ""
+
+msgid "subtitle.status.preparing"
+msgstr ""
+
+msgid "subtitle.status.retranslating"
+msgstr ""
+
+msgid "subtitle.tip.collapse_settings"
+msgstr ""
+
+msgid "subtitle.tip.expand_settings"
+msgstr ""
+
+msgid "subtitle.toast.format_error"
+msgstr ""
+
+msgid "subtitle.toast.load_failed"
+msgstr ""
+
+msgid "subtitle.toast.load_first"
+msgstr ""
+
+msgid "subtitle.toast.no_video"
+msgstr ""
+
+msgid "subtitle.toast.processing_wait"
+msgstr ""
+
+msgid "subtitle.toast.save_done"
+msgstr ""
+
+msgid "subtitle.toast.save_failed"
+msgstr ""
+
+msgid "subtitle.toast.saved_to"
+msgstr ""
+
+msgid "subtitle.toast.supported_formats"
+msgstr ""
+
+msgid "subtitle.toast.translate_done"
+msgstr ""
+
+msgid "subtitle.toast.translate_done_body"
+msgstr ""
+
+msgid "subtitle.toast.translate_failed"
+msgstr ""
+
+msgid "synth.audio_mode.duck"
+msgstr ""
+
+msgid "synth.audio_mode.mix"
+msgstr ""
+
+msgid "synth.audio_mode.replace"
+msgstr ""
+
+msgid "synth.blocker.ffmpeg_missing"
+msgstr ""
+
+msgid "synth.blocker.ffmpeg_missing_detail"
+msgstr ""
+
+msgid "synth.blocker.ffprobe_missing"
+msgstr ""
+
+msgid "synth.blocker.ffprobe_missing_detail"
+msgstr ""
+
+msgid "synth.blocker.key_required"
+msgstr ""
+
+msgid "synth.blocker.key_required_detail"
+msgstr ""
+
+msgid "synth.btn.generate_audio"
+msgstr ""
+
+msgid "synth.btn.generate_full"
+msgstr ""
+
+msgid "synth.btn.generate_subtitle_video"
+msgstr ""
+
+msgid "synth.btn.optional_video"
+msgstr ""
+
+msgid "synth.btn.pick_output"
+msgstr ""
+
+msgid "synth.btn.pick_subtitle"
+msgstr ""
+
+msgid "synth.btn.pick_video"
+msgstr ""
+
+msgid "synth.btn.regenerate"
+msgstr ""
+
+msgid "synth.btn.wait_files"
+msgstr ""
+
+msgid "synth.btn.wait_video"
+msgstr ""
+
+msgid "synth.dialog.pick_media"
+msgstr ""
+
+msgid "synth.dialog.pick_subtitle"
+msgstr ""
+
+msgid "synth.dialog.pick_video"
+msgstr ""
+
+msgid "synth.drop.formats"
+msgstr ""
+
+msgid "synth.drop.pick"
+msgstr ""
+
+msgid "synth.drop.title"
+msgstr ""
+
+msgid "synth.error.ass_unsupported"
+msgstr ""
+
+msgid "synth.error.dubbed_video_path_empty"
+msgstr ""
+
+msgid "synth.file.media"
+msgstr ""
+
+msgid "synth.file.reference_video"
+msgstr ""
+
+msgid "synth.file.subtitle"
+msgstr ""
+
+msgid "synth.file.video"
+msgstr ""
+
+msgid "synth.hint.dub_only"
+msgstr ""
+
+msgid "synth.hint.dub_then_synthesize"
+msgstr ""
+
+msgid "synth.hint.need_subtitle"
+msgstr ""
+
+msgid "synth.hint.need_subtitle_and_video"
+msgstr ""
+
+msgid "synth.hint.need_video"
+msgstr ""
+
+msgid "synth.hint.pick_output"
+msgstr ""
+
+msgid "synth.hint.synthesize_only"
+msgstr ""
+
+msgid "synth.link.style_page"
+msgstr ""
+
+msgid "synth.link.voice_library"
+msgstr ""
+
+msgid "synth.opt.audio_mode"
+msgstr ""
+
+msgid "synth.opt.render_mode"
+msgstr ""
+
+msgid "synth.opt.style"
+msgstr ""
+
+msgid "synth.opt.subtitle_mode"
+msgstr ""
+
+msgid "synth.opt.subtitle_style"
+msgstr ""
+
+msgid "synth.opt.text_track"
+msgstr ""
+
+msgid "synth.opt.timing"
+msgstr ""
+
+msgid "synth.opt.video_quality"
+msgstr ""
+
+msgid "synth.opt.voice"
+msgstr ""
+
+msgid "synth.output.dubbing"
+msgstr ""
+
+msgid "synth.output.dubbing_desc"
+msgstr ""
+
+msgid "synth.output.subtitle_video"
+msgstr ""
+
+msgid "synth.output.subtitle_video_desc"
+msgstr ""
+
+msgid "synth.panel.title"
+msgstr ""
+
+msgid "synth.pill.completed"
+msgstr ""
+
+msgid "synth.pill.failed"
+msgstr ""
+
+msgid "synth.pill.missing_ffmpeg"
+msgstr ""
+
+msgid "synth.pill.missing_ffprobe"
+msgstr ""
+
+msgid "synth.pill.missing_key"
+msgstr ""
+
+msgid "synth.pill.missing_video"
+msgstr ""
+
+msgid "synth.pill.no_output"
+msgstr ""
+
+msgid "synth.pill.ready"
+msgstr ""
+
+msgid "synth.plan.collect"
+msgstr ""
+
+msgid "synth.plan.dubbing"
+msgstr ""
+
+msgid "synth.plan.pending"
+msgstr ""
+
+msgid "synth.plan.save"
+msgstr ""
+
+msgid "synth.plan.synthesize"
+msgstr ""
+
+msgid "synth.result.dubbed_audio"
+msgstr ""
+
+msgid "synth.result.dubbed_video"
+msgstr ""
+
+msgid "synth.result.subtitled_video"
+msgstr ""
+
+msgid "synth.row.subtitle_required"
+msgstr ""
+
+msgid "synth.row.video_optional"
+msgstr ""
+
+msgid "synth.row.video_required"
+msgstr ""
+
+msgid "synth.section.dubbing_params"
+msgstr ""
+
+msgid "synth.section.output"
+msgstr ""
+
+msgid "synth.section.subtitle_params"
+msgstr ""
+
+msgid "synth.status.completed"
+msgstr ""
+
+msgid "synth.status.done"
+msgstr ""
+
+msgid "synth.status.failed"
+msgstr ""
+
+msgid "synth.status.generating"
+msgstr ""
+
+msgid "synth.status.missing"
+msgstr ""
+
+msgid "synth.status.optional"
+msgstr ""
+
+msgid "synth.status.processing"
+msgstr ""
+
+msgid "synth.status.ready"
+msgstr ""
+
+msgid "synth.status.waiting"
+msgstr ""
+
+msgid "synth.subtitle_mode.hard"
+msgstr ""
+
+msgid "synth.subtitle_mode.soft"
+msgstr ""
+
+msgid "synth.text_track.auto"
+msgstr ""
+
+msgid "synth.text_track.first"
+msgstr ""
+
+msgid "synth.text_track.second"
+msgstr ""
+
+msgid "synth.timing.balanced"
+msgstr ""
+
+msgid "synth.timing.natural"
+msgstr ""
+
+msgid "synth.timing.strict"
+msgstr ""
+
+msgid "synth.tip.collapse_panel"
+msgstr ""
+
+msgid "synth.tip.expand_panel"
+msgstr ""
+
+msgid "synth.tip.open_config"
+msgstr ""
+
+msgid "synth.title.config_check"
+msgstr ""
+
+msgid "synth.title.confirm"
+msgstr ""
+
+msgid "synth.title.input"
+msgstr ""
+
+msgid "synth.title.results"
+msgstr ""
+
+msgid "synth.title.running"
+msgstr ""
+
+msgid "t_dubbing.error.config_empty"
+msgstr ""
+
+msgid "t_dubbing.error.output_audio_path_empty"
+msgstr ""
+
+msgid "t_dubbing.error.subtitle_path_empty"
+msgstr ""
+
+msgid "t_dubbing.error.task_dir_empty"
+msgstr ""
+
+msgid "t_dubbing.status.done"
+msgstr ""
+
+msgid "t_dubbing.status.preparing"
+msgstr ""
+
+msgid "t_hardsub.error.read_video_failed"
+msgstr ""
+
+msgid "t_hardsub.status.detecting_region"
+msgstr ""
+
+msgid "t_hardsub.status.recognizing"
+msgstr ""
+
+msgid "t_media.error.no_video_file"
+msgstr ""
+
+msgid "t_media.status.completed"
+msgstr ""
+
+msgid "t_subtitle.error.llm_model_not_configured"
+msgstr ""
+
+msgid "t_subtitle.error.llm_not_configured"
+msgstr ""
+
+msgid "t_subtitle.error.llm_test_failed"
+msgstr ""
+
+msgid "t_subtitle.error.no_config"
+msgstr ""
+
+msgid "t_subtitle.error.no_subtitle_path"
+msgstr ""
+
+msgid "t_subtitle.error.no_target_language"
+msgstr ""
+
+msgid "t_subtitle.error.unsupported_service"
+msgstr ""
+
+msgid "t_subtitle.status.done"
+msgstr ""
+
+msgid "t_subtitle.status.optimizing"
+msgstr ""
+
+msgid "t_subtitle.status.processing_percent"
+msgstr ""
+
+msgid "t_subtitle.status.splitting"
+msgstr ""
+
+msgid "t_subtitle.status.translating"
+msgstr ""
+
+msgid "t_subtitle.status.translating_percent"
+msgstr ""
+
+msgid "t_subtitle.status.verifying_llm"
+msgstr ""
+
+msgid "t_synth.error.no_output_path"
+msgstr ""
+
+msgid "t_synth.error.no_subtitle_path"
+msgstr ""
+
+msgid "t_synth.error.no_video_path"
+msgstr ""
+
+msgid "t_synth.status.done"
+msgstr ""
+
+msgid "t_synth.status.synthesizing"
+msgstr ""
+
+msgid "t_transcript.error.audio_extract_failed"
+msgstr ""
+
+msgid "t_transcript.error.file_not_found"
+msgstr ""
+
+msgid "t_transcript.error.no_config"
+msgstr ""
+
+msgid "t_transcript.error.no_file_path"
+msgstr ""
+
+msgid "t_transcript.error.no_output_path"
+msgstr ""
+
+msgid "t_transcript.status.done"
+msgstr ""
+
+msgid "t_transcript.status.extracting_audio"
+msgstr ""
+
+msgid "t_transcript.status.transcribing"
+msgstr ""
+
+msgid "t_voice.error.need_api_key"
+msgstr ""
+
+msgid "t_voice.sample_text"
+msgstr ""
+
+msgid "transcribe.action.cancel"
+msgstr ""
+
+msgid "transcribe.action.replace_file"
+msgstr ""
+
+msgid "transcribe.btn.open_subtitle"
+msgstr ""
+
+msgid "transcribe.btn.retranscribe"
+msgstr ""
+
+msgid "transcribe.btn.running"
+msgstr ""
+
+msgid "transcribe.btn.start"
+msgstr ""
+
+msgid "transcribe.btn.waiting_file"
+msgstr ""
+
+msgid "transcribe.col.content"
+msgstr ""
+
+msgid "transcribe.col.end"
+msgstr ""
+
+msgid "transcribe.col.start"
+msgstr ""
+
+msgid "transcribe.config.open_tip"
+msgstr ""
+
+msgid "transcribe.dialog.media_filter"
+msgstr ""
+
+msgid "transcribe.dialog.pick_media"
+msgstr ""
+
+msgid "transcribe.drop.pick"
+msgstr ""
+
+msgid "transcribe.drop.title"
+msgstr ""
+
+msgid "transcribe.empty.title"
+msgstr ""
+
+msgid "transcribe.error.title"
+msgstr ""
+
+msgid "transcribe.file.title"
+msgstr ""
+
+msgid "transcribe.format.txt"
+msgstr ""
+
+msgid "transcribe.opt.language"
+msgstr ""
+
+msgid "transcribe.opt.model"
+msgstr ""
+
+msgid "transcribe.opt.output"
+msgstr ""
+
+msgid "transcribe.opt.service"
+msgstr ""
+
+msgid "transcribe.opt.track"
+msgstr ""
+
+msgid "transcribe.opt.word_timestamp"
+msgstr ""
+
+msgid "transcribe.params.collapse_tip"
+msgstr ""
+
+msgid "transcribe.params.expand_tip"
+msgstr ""
+
+msgid "transcribe.params.title"
+msgstr ""
+
+msgid "transcribe.pending.not_started"
+msgstr ""
+
+msgid "transcribe.preview.count"
+msgstr ""
+
+msgid "transcribe.preview.title"
+msgstr ""
+
+msgid "transcribe.progress.phase"
+msgstr ""
+
+msgid "transcribe.result.collapse_tip"
+msgstr ""
+
+msgid "transcribe.result.file"
+msgstr ""
+
+msgid "transcribe.result.open_file_tip"
+msgstr ""
+
+msgid "transcribe.result.title"
+msgstr ""
+
+msgid "transcribe.stage.done"
+msgstr ""
+
+msgid "transcribe.stage.read_audio"
+msgstr ""
+
+msgid "transcribe.stage.recognize"
+msgstr ""
+
+msgid "transcribe.stage.running"
+msgstr ""
+
+msgid "transcribe.stage.waiting"
+msgstr ""
+
+msgid "transcribe.stage.write_subtitle"
+msgstr ""
+
+msgid "transcribe.status.done"
+msgstr ""
+
+msgid "transcribe.status.failed"
+msgstr ""
+
+msgid "transcribe.status.pending"
+msgstr ""
+
+msgid "transcribe.status.running"
+msgstr ""
+
+msgid "transcribe.status.unreachable"
+msgstr ""
+
+msgid "transcribe.text_preview.done"
+msgstr ""
+
+msgid "transcribe.text_preview.title"
+msgstr ""
+
+msgid "transcribe.toast.bad_format"
+msgstr ""
+
+msgid "transcribe.toast.drop_media"
+msgstr ""
+
+msgid "transcribe.toast.no_subtitle"
+msgstr ""
+
+msgid "transcribe.toast.processing"
+msgstr ""
+
+msgid "transcribe.track.first"
+msgstr ""
+
+msgid "workbench.drop.or"
+msgstr ""
+

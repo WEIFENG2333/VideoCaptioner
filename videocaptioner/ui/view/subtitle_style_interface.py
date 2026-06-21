@@ -67,6 +67,7 @@ from videocaptioner.ui.components.workbench import (
     apply_font,
     draw_rounded_surface,
 )
+from videocaptioner.ui.i18n import tr
 
 # 预览示例文本（原文, 译文）的兜底：用户清空自定义时回落到配置里的默认值，
 # 直接取 SettingField 默认，避免再硬编码一份导致与 config 漂移。
@@ -105,7 +106,12 @@ def _font_choices() -> list[str]:
 
 
 # 对齐取值与显示文案（存 left/center/right，展示居左/居中/居右）。
-_ALIGN_ITEMS = (("left", "居左"), ("center", "居中"), ("right", "居右"))
+def _align_items() -> tuple[tuple[str, str], ...]:
+    return (
+        ("left", tr("substyle.align.left")),
+        ("center", tr("substyle.align.center")),
+        ("right", tr("substyle.align.right")),
+    )
 
 # 样式卡固定宽度（坞横向滚动按此累加内容宽度）。容纳一行「复制/重命名/删除」图标按钮。
 _CARD_WIDTH = 260
@@ -198,7 +204,7 @@ class SubtitleStyleInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setObjectName("SubtitleStyleInterface")
-        self.setWindowTitle(self.tr("字幕样式配置"))
+        self.setWindowTitle(tr("substyle.title"))
         self.setAttribute(Qt.WA_StyledBackground, True)  # type: ignore[arg-type]
         self.setAcceptDrops(True)
 
@@ -268,7 +274,7 @@ class SubtitleStyleInterface(QWidget):
         head.setSpacing(12)
         is_rounded = self._renderer_key() == "rounded"
         self.modeTabs = FilterTabs(
-            [("ass", self.tr("ASS 描边")), ("rounded", self.tr("圆角背景"))]
+            [("ass", tr("substyle.mode.ass")), ("rounded", tr("substyle.mode.rounded"))]
         )
         self.modeTabs.setCurrent("rounded" if is_rounded else "ass")
         self.modeTabs.changed.connect(self._on_mode_changed)
@@ -276,9 +282,9 @@ class SubtitleStyleInterface(QWidget):
         head.addStretch(1)
         self.countChip = StatusPill("", "neutral")
         head.addWidget(self.countChip)
-        self.newButton = WorkbenchButton(self.tr("新建"), AppIcon.ADD, primary=True, height=34)
+        self.newButton = WorkbenchButton(tr("substyle.dock.new"), AppIcon.ADD, primary=True, height=34)
         self.newButton.clicked.connect(self._on_new_style)
-        self.folderButton = WorkbenchButton(self.tr("目录"), AppIcon.FOLDER, height=34)
+        self.folderButton = WorkbenchButton(tr("substyle.dock.folder"), AppIcon.FOLDER, height=34)
         self.folderButton.clicked.connect(lambda: open_folder(str(USER_SUBTITLE_STYLE_PATH)))
         head.addWidget(self.newButton)
         head.addWidget(self.folderButton)
@@ -313,15 +319,15 @@ class SubtitleStyleInterface(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setContentsMargins(16, 14, 16, 13)
         toolbar.setSpacing(10)
-        self.previewTitle = SectionLabel(self.tr("预览"))
+        self.previewTitle = SectionLabel(tr("substyle.preview.title"))
         apply_font(self.previewTitle, 17, 880)
         toolbar.addWidget(self.previewTitle)
         toolbar.addStretch(1)
-        self.textButton = CompactButton(self.tr("预览文字"), AppIcon.FONT)
+        self.textButton = CompactButton(tr("substyle.preview.text"), AppIcon.FONT)
         self.textButton.clicked.connect(self._edit_preview_text)
-        self.orientationButton = CompactButton(self.tr("横屏预览"), AppIcon.LAYOUT)
+        self.orientationButton = CompactButton(tr("substyle.preview.landscape"), AppIcon.LAYOUT)
         self.orientationButton.clicked.connect(self._toggle_orientation)
-        self.bgButton = CompactButton(self.tr("更换背景"), AppIcon.PHOTO)
+        self.bgButton = CompactButton(tr("substyle.preview.background"), AppIcon.PHOTO)
         self.bgButton.clicked.connect(self._pick_background)
         for btn in (self.textButton, self.orientationButton, self.bgButton):
             toolbar.addWidget(btn)
@@ -352,11 +358,11 @@ class SubtitleStyleInterface(QWidget):
         # 自定义头：与「样式库」头同款 16px 内边距，让"参数"标题与下面的分组左对齐。
         head = QHBoxLayout()
         head.setContentsMargins(16, 14, 16, 13)
-        title = SectionLabel(self.tr("参数"))
+        title = SectionLabel(tr("substyle.inspector.title"))
         apply_font(title, 17, 880)
         head.addWidget(title)
         head.addStretch(1)
-        self.autoSavePill = StatusPill(self.tr("自动保存"), "ok")
+        self.autoSavePill = StatusPill(tr("substyle.inspector.autosave"), "ok")
         head.addWidget(self.autoSavePill)
         layout.addLayout(head)
         layout.addWidget(self._hline())
@@ -441,18 +447,19 @@ class SubtitleStyleInterface(QWidget):
 
     def _align_select(self) -> PillSelect:
         pill = PillSelect()
-        pill.setItems([label for _v, label in _ALIGN_ITEMS])
+        pill.setItems([label for _v, label in _align_items()])
         pill.currentTextChanged.connect(lambda _t: self._on_edit())
         return pill
 
     @staticmethod
     def _align_value(pill: PillSelect) -> str:
         label = pill.currentText()
-        return next((v for v, lab in _ALIGN_ITEMS if lab == label), "center")
+        return next((v for v, lab in _align_items() if lab == label), "center")
 
     @staticmethod
     def _set_align(pill: PillSelect, value: str):
-        label = next((lab for v, lab in _ALIGN_ITEMS if v == value), "居中")
+        items = _align_items()
+        label = next((lab for v, lab in items if v == value), items[1][1])
         pill.setCurrentText(label)
 
     def _color(self, color: QColor, title: str, alpha: bool = False) -> ColorValueControl:
@@ -461,24 +468,28 @@ class SubtitleStyleInterface(QWidget):
         return ctl
 
     def _build_layout_group(self) -> InspectorGroup:
-        group = InspectorGroup(self.tr("字幕排布"))
+        group = InspectorGroup(tr("substyle.group.layout"))
         self.contentSeg = FilterTabs(
-            [("bilingual", self.tr("双语")), ("source", self.tr("原文")), ("target", self.tr("译文"))]
+            [
+                ("bilingual", tr("substyle.content.bilingual")),
+                ("source", tr("substyle.content.source")),
+                ("target", tr("substyle.content.target")),
+            ]
         )
         self.contentSeg.changed.connect(self._on_content_changed)
-        group.addRow(InspectorRow(AppIcon.LANGUAGE, self.tr("显示内容"), self.contentSeg))
+        group.addRow(InspectorRow(AppIcon.LANGUAGE, tr("substyle.row.content"), self.contentSeg))
 
         self.orderPill = PillSelect()
-        self.orderPill.setItems([self.tr("原文在上"), self.tr("译文在上")])
+        self.orderPill.setItems([tr("substyle.order.source_top"), tr("substyle.order.target_top")])
         self.orderPill.currentTextChanged.connect(lambda _t: self._on_edit())
-        self.orderRow = InspectorRow(AppIcon.ALIGNMENT, self.tr("双语顺序"), self.orderPill)
+        self.orderRow = InspectorRow(AppIcon.ALIGNMENT, tr("substyle.row.order"), self.orderPill)
         group.addRow(self.orderRow)
         return group
 
     def _gap_row(self) -> InspectorRow:
         """主副间距行（放在「位置」组）：ASS 映射上行对话 MarginV；圆角映射两气泡间距。"""
         self.gapStepper = self._stepper(10, 0, 80, 1, suffix="px")
-        self.gapRow = InspectorRow(AppIcon.LAYOUT, self.tr("主副间距"), self.gapStepper)
+        self.gapRow = InspectorRow(AppIcon.LAYOUT, tr("substyle.row.gap"), self.gapStepper)
         return self.gapRow
 
     def _rebuild_inspector(self, key: str):
@@ -489,84 +500,84 @@ class SubtitleStyleInterface(QWidget):
 
         if key == "rounded":
             r = self._rounded
-            bg = InspectorGroup(self.tr("背景"))
-            r["bg_color"] = self._color(QColor(13, 227, 255, 230), self.tr("背景颜色"), alpha=True)
-            bg.addRow(InspectorRow(AppIcon.PALETTE, self.tr("背景颜色"), r["bg_color"]))
+            bg = InspectorGroup(tr("substyle.group.background"))
+            r["bg_color"] = self._color(QColor(13, 227, 255, 230), tr("substyle.field.bg_color"), alpha=True)
+            bg.addRow(InspectorRow(AppIcon.PALETTE, tr("substyle.field.bg_color"), r["bg_color"]))
             r["radius"] = self._stepper(14, 0, 60, 1, suffix="px")
-            bg.addRow(InspectorRow(AppIcon.ZOOM, self.tr("圆角半径"), r["radius"]))
+            bg.addRow(InspectorRow(AppIcon.ZOOM, tr("substyle.field.radius"), r["radius"]))
             groups.append(bg)
 
-            text = InspectorGroup(self.tr("文字"), self.tr("主副字幕"))
+            text = InspectorGroup(tr("substyle.group.text"), tr("substyle.group.text.sub"))
             r["font"] = self._font_select()
-            text.addRow(InspectorRow(AppIcon.FONT, self.tr("字体"), r["font"]))
+            text.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.font"), r["font"]))
             r["size"] = self._stepper(34, 8, 160, 1, suffix="px")
-            text.addRow(InspectorRow(AppIcon.FONT_SIZE, self.tr("字号"), r["size"]))
-            r["text_color"] = self._color(QColor("#ffffff"), self.tr("文字颜色"))
-            text.addRow(InspectorRow(AppIcon.PALETTE, self.tr("文字颜色"), r["text_color"]))
+            text.addRow(InspectorRow(AppIcon.FONT_SIZE, tr("substyle.field.size"), r["size"]))
+            r["text_color"] = self._color(QColor("#ffffff"), tr("substyle.field.text_color"))
+            text.addRow(InspectorRow(AppIcon.PALETTE, tr("substyle.field.text_color"), r["text_color"]))
             r["letter"] = self._stepper(0, 0, 40, 1, suffix="px")
-            text.addRow(InspectorRow(AppIcon.FONT, self.tr("字间距"), r["letter"]))
+            text.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.letter_spacing"), r["letter"]))
             groups.append(text)
 
-            inner = InspectorGroup(self.tr("内边距"))
+            inner = InspectorGroup(tr("substyle.group.padding"))
             r["pad_h"] = self._stepper(28, 0, 120, 1, suffix="px")
-            inner.addRow(InspectorRow(AppIcon.LAYOUT, self.tr("水平内边距"), r["pad_h"]))
+            inner.addRow(InspectorRow(AppIcon.LAYOUT, tr("substyle.field.pad_h"), r["pad_h"]))
             r["pad_v"] = self._stepper(14, 0, 80, 1, suffix="px")
-            inner.addRow(InspectorRow(AppIcon.LAYOUT, self.tr("垂直内边距"), r["pad_v"]))
+            inner.addRow(InspectorRow(AppIcon.LAYOUT, tr("substyle.field.pad_v"), r["pad_v"]))
             groups.append(inner)
 
-            position = InspectorGroup(self.tr("位置"))
+            position = InspectorGroup(tr("substyle.group.position"))
             r["margin"] = self._stepper(60, 0, 400, 2, suffix="px")
-            position.addRow(InspectorRow(AppIcon.ALIGNMENT, self.tr("底部边距"), r["margin"]))
+            position.addRow(InspectorRow(AppIcon.ALIGNMENT, tr("substyle.field.margin_bottom"), r["margin"]))
             position.addRow(self._gap_row())
             r["max_width"] = self._stepper(90, 30, 100, 2, suffix="%")
-            position.addRow(InspectorRow(AppIcon.LAYOUT, self.tr("最大宽度"), r["max_width"]))
+            position.addRow(InspectorRow(AppIcon.LAYOUT, tr("substyle.field.max_width"), r["max_width"]))
             r["align"] = self._align_select()
-            position.addRow(InspectorRow(AppIcon.ALIGNMENT, self.tr("对齐方式"), r["align"]))
+            position.addRow(InspectorRow(AppIcon.ALIGNMENT, tr("substyle.field.align"), r["align"]))
             groups.append(position)
         else:
             a = self._ass
-            primary = InspectorGroup(self.tr("主字幕"), self.tr("原文"))
+            primary = InspectorGroup(tr("substyle.group.primary"), tr("substyle.content.source"))
             a["font"] = self._font_select()
-            primary.addRow(InspectorRow(AppIcon.FONT, self.tr("字体"), a["font"]))
+            primary.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.font"), a["font"]))
             a["size"] = self._stepper(42, 8, 160, 1, suffix="px")
-            primary.addRow(InspectorRow(AppIcon.FONT_SIZE, self.tr("字号"), a["size"]))
-            a["color"] = self._color(QColor("#ffffff"), self.tr("文字颜色"))
-            primary.addRow(InspectorRow(AppIcon.PALETTE, self.tr("文字颜色"), a["color"]))
-            a["outline_color"] = self._color(QColor("#000000"), self.tr("描边颜色"))
-            primary.addRow(InspectorRow(AppIcon.BRUSH, self.tr("描边颜色"), a["outline_color"]))
+            primary.addRow(InspectorRow(AppIcon.FONT_SIZE, tr("substyle.field.size"), a["size"]))
+            a["color"] = self._color(QColor("#ffffff"), tr("substyle.field.text_color"))
+            primary.addRow(InspectorRow(AppIcon.PALETTE, tr("substyle.field.text_color"), a["color"]))
+            a["outline_color"] = self._color(QColor("#000000"), tr("substyle.field.outline_color"))
+            primary.addRow(InspectorRow(AppIcon.BRUSH, tr("substyle.field.outline_color"), a["outline_color"]))
             a["outline"] = self._stepper(3, 0, 12, 0.5, decimals=1, suffix="px")
-            primary.addRow(InspectorRow(AppIcon.BRUSH, self.tr("描边宽度"), a["outline"]))
+            primary.addRow(InspectorRow(AppIcon.BRUSH, tr("substyle.field.outline_width"), a["outline"]))
             a["spacing"] = self._stepper(0.2, 0, 12, 0.2, decimals=1, suffix="px")
-            primary.addRow(InspectorRow(AppIcon.FONT, self.tr("字间距"), a["spacing"]))
+            primary.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.letter_spacing"), a["spacing"]))
             a["bold"] = self._toggle(True)
-            primary.addRow(InspectorRow(AppIcon.FONT, self.tr("加粗"), a["bold"]))
+            primary.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.bold"), a["bold"]))
             groups.append(primary)
 
-            secondary = InspectorGroup(self.tr("副字幕"), self.tr("译文"))
+            secondary = InspectorGroup(tr("substyle.group.secondary"), tr("substyle.content.target"))
             a["sec_font"] = self._font_select()
-            secondary.addRow(InspectorRow(AppIcon.FONT, self.tr("字体"), a["sec_font"]))
+            secondary.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.font"), a["sec_font"]))
             a["sec_size"] = self._stepper(27, 8, 160, 1, suffix="px")
-            secondary.addRow(InspectorRow(AppIcon.FONT_SIZE, self.tr("字号"), a["sec_size"]))
-            a["sec_color"] = self._color(QColor("#ffe36b"), self.tr("文字颜色"))
-            secondary.addRow(InspectorRow(AppIcon.PALETTE, self.tr("文字颜色"), a["sec_color"]))
-            a["sec_outline_color"] = self._color(QColor("#000000"), self.tr("描边颜色"))
-            secondary.addRow(InspectorRow(AppIcon.BRUSH, self.tr("描边颜色"), a["sec_outline_color"]))
+            secondary.addRow(InspectorRow(AppIcon.FONT_SIZE, tr("substyle.field.size"), a["sec_size"]))
+            a["sec_color"] = self._color(QColor("#ffe36b"), tr("substyle.field.text_color"))
+            secondary.addRow(InspectorRow(AppIcon.PALETTE, tr("substyle.field.text_color"), a["sec_color"]))
+            a["sec_outline_color"] = self._color(QColor("#000000"), tr("substyle.field.outline_color"))
+            secondary.addRow(InspectorRow(AppIcon.BRUSH, tr("substyle.field.outline_color"), a["sec_outline_color"]))
             a["sec_outline"] = self._stepper(2, 0, 12, 0.5, decimals=1, suffix="px")
-            secondary.addRow(InspectorRow(AppIcon.BRUSH, self.tr("描边宽度"), a["sec_outline"]))
+            secondary.addRow(InspectorRow(AppIcon.BRUSH, tr("substyle.field.outline_width"), a["sec_outline"]))
             a["sec_spacing"] = self._stepper(0.8, 0, 12, 0.2, decimals=1, suffix="px")
-            secondary.addRow(InspectorRow(AppIcon.FONT, self.tr("字间距"), a["sec_spacing"]))
+            secondary.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.letter_spacing"), a["sec_spacing"]))
             a["sec_bold"] = self._toggle(True)
-            secondary.addRow(InspectorRow(AppIcon.FONT, self.tr("加粗"), a["sec_bold"]))
+            secondary.addRow(InspectorRow(AppIcon.FONT, tr("substyle.field.bold"), a["sec_bold"]))
             groups.append(secondary)
 
-            position = InspectorGroup(self.tr("位置"))
+            position = InspectorGroup(tr("substyle.group.position"))
             a["margin"] = self._stepper(42, 0, 400, 2, suffix="px")
-            position.addRow(InspectorRow(AppIcon.ALIGNMENT, self.tr("底部边距"), a["margin"]))
+            position.addRow(InspectorRow(AppIcon.ALIGNMENT, tr("substyle.field.margin_bottom"), a["margin"]))
             position.addRow(self._gap_row())
             a["max_width"] = self._stepper(100, 30, 100, 2, suffix="%")
-            position.addRow(InspectorRow(AppIcon.LAYOUT, self.tr("最大宽度"), a["max_width"]))
+            position.addRow(InspectorRow(AppIcon.LAYOUT, tr("substyle.field.max_width"), a["max_width"]))
             a["align"] = self._align_select()
-            position.addRow(InspectorRow(AppIcon.ALIGNMENT, self.tr("对齐方式"), a["align"]))
+            position.addRow(InspectorRow(AppIcon.ALIGNMENT, tr("substyle.field.align"), a["align"]))
             groups.append(position)
 
         for group in groups:
@@ -586,7 +597,7 @@ class SubtitleStyleInterface(QWidget):
             return SubtitleLayoutEnum.ONLY_ORIGINAL
         if content == "target":
             return SubtitleLayoutEnum.ONLY_TRANSLATE
-        if self.orderPill.currentText() == self.tr("译文在上"):
+        if self.orderPill.currentText() == tr("substyle.order.target_top"):
             return SubtitleLayoutEnum.TRANSLATE_ON_TOP
         return SubtitleLayoutEnum.ORIGINAL_ON_TOP
 
@@ -597,10 +608,10 @@ class SubtitleStyleInterface(QWidget):
             self.contentSeg.setCurrent("target")
         elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
             self.contentSeg.setCurrent("bilingual")
-            self.orderPill.setCurrentText(self.tr("译文在上"))
+            self.orderPill.setCurrentText(tr("substyle.order.target_top"))
         else:
             self.contentSeg.setCurrent("bilingual")
-            self.orderPill.setCurrentText(self.tr("原文在上"))
+            self.orderPill.setCurrentText(tr("substyle.order.source_top"))
         bilingual = self.contentSeg.current() == "bilingual"
         self.orderRow.setVisible(bilingual)
         self.gapRow.setVisible(bilingual)
@@ -629,7 +640,7 @@ class SubtitleStyleInterface(QWidget):
         key = self._mode_key
         styles = list_styles(renderer=key)
         styles.sort(key=lambda s: (s.id != f"{key}/default", s.source.value, s.short_id))
-        self.countChip.setText(self.tr("共 {} 套").format(len(styles)))
+        self.countChip.setText(tr("substyle.dock.count", n=len(styles)))
 
         # 优先用本模式记住的选择；它若属于另一模式（normalize 仍带原前缀）则解析不到，
         # 回退到该模式首张卡（内置默认），而不会污染另一模式的记忆。
@@ -853,7 +864,7 @@ class SubtitleStyleInterface(QWidget):
             name = (
                 existing.name
                 if existing is not None and existing.source == StyleSource.USER
-                else f"{preset.name} · {self.tr('自定义')}"
+                else f"{preset.name} · {tr('substyle.custom_suffix')}"
             )
             save_user_style(self._preset_from_controls(fork_id, name))
             self._set_current_style(fork_id)
@@ -882,14 +893,14 @@ class SubtitleStyleInterface(QWidget):
     # ---------------------------------------------------------------- 库动作
 
     def _on_new_style(self):
-        name = self._ask_name(self.tr("新建样式"))
+        name = self._ask_name(tr("substyle.dialog.new_style"))
         if not name:
             return
         style_id = self._new_user_id(name)
         save_user_style(self._preset_from_controls(style_id, name))
         self._set_current_style(style_id)
         self._refresh_style_list()
-        self._toast(self.tr("已创建样式「{}」").format(name))
+        self._toast(tr("substyle.toast.created", name=name))
 
     def _duplicate_style(self, style_id: str):
         preset = load_style(style_id, renderer=self._mode_key)
@@ -898,7 +909,7 @@ class SubtitleStyleInterface(QWidget):
         new_id = self._unique_user_id(preset)
         copy = SubtitleStylePreset(
             id=new_id,
-            name=f"{preset.name} {self.tr('副本')}",
+            name=f"{preset.name} {tr('substyle.copy_suffix')}",
             renderer=preset.renderer,
             source=StyleSource.USER,
             style=preset.style,
@@ -906,14 +917,14 @@ class SubtitleStyleInterface(QWidget):
         save_user_style(copy)
         self._set_current_style(new_id)
         self._refresh_style_list()
-        self._toast(self.tr("已复制为「{}」").format(copy.name))
+        self._toast(tr("substyle.toast.duplicated", name=copy.name))
 
     def _rename_style(self, style_id: str):
         # 只改显示名，文件 id 保持不变：避免中文名 slug 化撞名、也省去删旧文件。
         preset = load_style(style_id, renderer=self._mode_key)
         if preset is None or not preset.editable:
             return
-        name = self._ask_name(self.tr("重命名样式"), preset.name)
+        name = self._ask_name(tr("substyle.dialog.rename_style"), preset.name)
         if not name or name == preset.name:
             return
         renamed = SubtitleStylePreset(
@@ -922,15 +933,15 @@ class SubtitleStyleInterface(QWidget):
         )
         save_user_style(renamed)
         self._refresh_style_list()
-        self._toast(self.tr("已重命名为「{}」").format(name))
+        self._toast(tr("substyle.toast.renamed", name=name))
 
     def _delete_style(self, style_id: str):
         preset = load_style(style_id, renderer=self._mode_key)
         if preset is None or not preset.editable:
             return
         dialog = ConfirmDialog(
-            self.tr("删除样式"),
-            self.tr("确定删除样式「{}」吗？此操作不可恢复。").format(preset.name),
+            tr("substyle.dialog.delete_title"),
+            tr("substyle.dialog.delete_body", name=preset.name),
             self,
         )
         if not dialog.exec():
@@ -938,20 +949,24 @@ class SubtitleStyleInterface(QWidget):
         delete_user_style(style_id)
         self._set_current_style(f"{self._mode_key}/default")
         self._refresh_style_list()
-        self._toast(self.tr("样式已删除"))
+        self._toast(tr("substyle.toast.deleted"))
 
     # ---------------------------------------------------------------- 预览
 
     def _toggle_orientation(self):
         self._orientation = "竖屏" if self._orientation == "横屏" else "横屏"
-        self.orientationButton.setText(self.tr("{}预览").format(self._orientation))
+        self.orientationButton.setText(
+            tr("substyle.preview.portrait")
+            if self._orientation == "竖屏"
+            else tr("substyle.preview.landscape")
+        )
         # 切方向时回退到内置背景（用户自定义背景按固定尺寸渲染不区分横竖）
         cfg.set(cfg.subtitle_preview_image, "")
         self.update_preview()
 
     def _pick_background(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("选择背景图片"), "", self.tr("图片文件") + " (*.png *.jpg *.jpeg)"
+            self, tr("substyle.dialog.pick_bg"), "", tr("substyle.filter.image") + " (*.png *.jpg *.jpeg)"
         )
         if path:
             cfg.set(cfg.subtitle_preview_image, path)
@@ -1119,7 +1134,7 @@ class SubtitleStyleInterface(QWidget):
             if path.lower().endswith((".png", ".jpg", ".jpeg")):
                 cfg.set(cfg.subtitle_preview_image, path)
                 self.update_preview()
-                self._toast(self.tr("已设置预览背景：") + Path(path).name)
+                self._toast(tr("substyle.toast.bg_set") + Path(path).name)
                 break
 
     def closeEvent(self, event):
@@ -1133,18 +1148,18 @@ class SubtitleStyleInterface(QWidget):
 class StyleNameDialog(AppDialog):
     """样式名称输入弹窗（新建 / 重命名共用）。"""
 
-    def __init__(self, title: str = "新建样式", initial: str = "", parent=None):
-        super().__init__(title, icon=AppIcon.EDIT, parent=parent, width=380)
+    def __init__(self, title: Optional[str] = None, initial: str = "", parent=None):
+        super().__init__(title or tr("substyle.dialog.new_style"), icon=AppIcon.EDIT, parent=parent, width=380)
         self.nameLineEdit = AppLineEdit(parent=self.widget)
-        self.nameLineEdit.setPlaceholderText(self.tr("输入样式名称"))
+        self.nameLineEdit.setPlaceholderText(tr("substyle.dialog.name_placeholder"))
         self.nameLineEdit.setClearButtonEnabled(True)
         self.nameLineEdit.setText(initial)
         self.bodyLayout.addWidget(self.nameLineEdit)
 
         self.addFooterStretch()
-        self.cancelButton = self.addFooterButton(self.tr("取消"))
+        self.cancelButton = self.addFooterButton(tr("common.cancel"))
         self.cancelButton.clicked.connect(lambda: self.done(0))
-        self.confirmButton = self.addFooterButton(self.tr("确定"), kind="accent")
+        self.confirmButton = self.addFooterButton(tr("common.ok"), kind="accent")
         self.confirmButton.clicked.connect(lambda: self.done(1))
         self.confirmButton.setEnabled(bool(initial.strip()))
         self.nameLineEdit.textChanged.connect(
@@ -1156,25 +1171,25 @@ class PreviewTextDialog(AppDialog):
     """编辑预览示例文字（原文 / 译文）。"""
 
     def __init__(self, source: str = "", target: str = "", parent=None):
-        super().__init__("预览文字", icon=AppIcon.FONT, parent=parent, width=420)
-        source_label = SectionLabel(self.tr("原文"))
+        super().__init__(tr("substyle.preview.text"), icon=AppIcon.FONT, parent=parent, width=420)
+        source_label = SectionLabel(tr("substyle.content.source"))
         apply_font(source_label, 13, 800)
         self.bodyLayout.addWidget(source_label)
         self.sourceEdit = AppLineEdit(parent=self.widget)
-        self.sourceEdit.setPlaceholderText(self.tr("用于预览的原文示例"))
+        self.sourceEdit.setPlaceholderText(tr("substyle.preview.source_placeholder"))
         self.sourceEdit.setText(source)
         self.bodyLayout.addWidget(self.sourceEdit)
 
-        target_label = SectionLabel(self.tr("译文"))
+        target_label = SectionLabel(tr("substyle.content.target"))
         apply_font(target_label, 13, 800)
         self.bodyLayout.addWidget(target_label)
         self.targetEdit = AppLineEdit(parent=self.widget)
-        self.targetEdit.setPlaceholderText(self.tr("用于预览的译文示例"))
+        self.targetEdit.setPlaceholderText(tr("substyle.preview.target_placeholder"))
         self.targetEdit.setText(target)
         self.bodyLayout.addWidget(self.targetEdit)
 
         self.addFooterStretch()
-        self.cancelButton = self.addFooterButton(self.tr("取消"))
+        self.cancelButton = self.addFooterButton(tr("common.cancel"))
         self.cancelButton.clicked.connect(lambda: self.done(0))
-        self.confirmButton = self.addFooterButton(self.tr("确定"), kind="accent")
+        self.confirmButton = self.addFooterButton(tr("common.ok"), kind="accent")
         self.confirmButton.clicked.connect(lambda: self.done(1))

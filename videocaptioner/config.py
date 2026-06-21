@@ -49,7 +49,8 @@ APPDATA_PATH = user_data_path(APP_NAME)
 WORK_PATH = Path.home() / APP_NAME
 
 ASSETS_PATH = RESOURCE_PATH / "assets"
-TRANSLATIONS_PATH = RESOURCE_PATH / "translations"
+# UI 翻译目录（key-based gettext）：{lang}/LC_MESSAGES/videocaptioner.mo。
+I18N_PATH = RESOURCE_PATH / "i18n"
 BUILTIN_SUBTITLE_STYLE_PATH = RESOURCE_PATH / "subtitle_styles"
 
 # Writable user data. Keep generated/downloaded files out of source trees,

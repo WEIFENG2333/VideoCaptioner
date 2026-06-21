@@ -26,6 +26,7 @@ from videocaptioner.ui.components.caption_overlay import (
     make_icon,
 )
 from videocaptioner.ui.components.workbench import apply_font
+from videocaptioner.ui.i18n import tr
 
 PANEL_BG = "rgba(26,28,29,0.99)"
 PANEL_BORDER = "rgba(255,255,255,0.13)"
@@ -171,7 +172,7 @@ class OverlaySettingsPopover(QWidget):
         head.setSpacing(7)
         icon = QLabel()
         icon.setPixmap(make_icon("gear", BRAND, size=14).pixmap(14, 14))
-        title = QLabel("字幕设置")
+        title = QLabel(tr("overlayset.title"))
         apply_font(title, 12, 800)
         title.setStyleSheet("color:#f5f7f6;background:transparent;")
         head.addWidget(icon)
@@ -179,21 +180,35 @@ class OverlaySettingsPopover(QWidget):
         head.addStretch(1)
         lay.addLayout(head)
 
-        lay.addWidget(self._row("显示内容"))
-        self._disp = _Seg(["双语", "仅译文", "仅原文"], 0)
+        lay.addWidget(self._row(tr("overlayset.display")))
+        self._disp = _Seg(
+            [
+                tr("overlayset.display.bilingual"),
+                tr("overlayset.display.target"),
+                tr("overlayset.display.source"),
+            ],
+            0,
+        )
         self._disp.changed.connect(
             lambda i: self.displayChanged.emit(["bilingual", "target", "source"][i])
         )
         lay.addWidget(self._disp)
 
-        lay.addWidget(self._row("底色样式"))
-        self._bg = _Seg(["半透明", "纯描边", "纯黑"], 0)
+        lay.addWidget(self._row(tr("overlayset.bg")))
+        self._bg = _Seg(
+            [
+                tr("overlayset.bg.translucent"),
+                tr("overlayset.bg.outline"),
+                tr("overlayset.bg.black"),
+            ],
+            0,
+        )
         self._bg.changed.connect(
             lambda i: self.bgStyleChanged.emit(["translucent", "outline", "black"][i])
         )
         lay.addWidget(self._bg)
 
-        lay.addWidget(self._row("字号", "中", C_MUTED))
+        lay.addWidget(self._row(tr("overlayset.font_size"), tr("overlayset.font_size.medium"), C_MUTED))
         self._font = QSlider(Qt.Horizontal)  # type: ignore[arg-type]
         self._font.setRange(0, 100)
         self._font.setValue(60)

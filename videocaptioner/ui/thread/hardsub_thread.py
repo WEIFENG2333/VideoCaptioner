@@ -13,6 +13,7 @@ from PyQt5.QtCore import pyqtSignal
 
 from videocaptioner.core.hardsub.config import HardsubConfig
 from videocaptioner.core.ocr.base import OcrEngine
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.worker import WorkerThread
 
 
@@ -31,7 +32,7 @@ class PrepareThread(WorkerThread):
         dims = probe_dimensions(self._video_path)
         self.checkpoint()
         if dims is None:
-            self.error.emit("无法读取该视频")
+            self.error.emit(tr("t_hardsub.error.read_video_failed"))
             return
         width, height, _, duration = dims
         frame = grab_frame(self._video_path, max(0.5, duration * 0.1), max_width=1280)
@@ -55,10 +56,10 @@ class RegionDetectThread(WorkerThread):
     def _work(self) -> None:
         from videocaptioner.core.hardsub.region import detect_subtitle_region
 
-        self.progress.emit(0, "识别字幕区域")
+        self.progress.emit(0, tr("t_hardsub.status.detecting_region"))
         result = detect_subtitle_region(
             self._video_path, self._engine, self._sample_count,
-            on_progress=lambda p: self.progress.emit(p, "识别字幕区域"),
+            on_progress=lambda p: self.progress.emit(p, tr("t_hardsub.status.detecting_region")),
         )
         self.checkpoint()
         self.detected.emit(result)
@@ -82,7 +83,9 @@ class HardsubExtractThread(WorkerThread):
             self._config,
             self._engine,
             on_cue=lambda cue: self.cue_ready.emit(cue),
-            on_progress=lambda p: self.progress.emit(p.percent, f"识别中 {p.cue_count} 条"),
+            on_progress=lambda p: self.progress.emit(
+                p.percent, tr("t_hardsub.status.recognizing", count=p.cue_count)
+            ),
             should_cancel=self.is_cancel_requested,
         )
         # 取消也照常发 finished：已识别的部分保留给用户，不丢弃。

@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
 from videocaptioner.ui.common.theme_tokens import app_palette, rgba
 from videocaptioner.ui.components.live_caption.typing import TYPE_INTERVAL_MS, next_visible
 from videocaptioner.ui.components.workbench import apply_font
+from videocaptioner.ui.i18n import tr
 
 DISPLAY_BILINGUAL = "bilingual"
 DISPLAY_SOURCE = "source"
@@ -195,8 +196,8 @@ class TranscriptEntry(QFrame):
         from PyQt5.QtWidgets import QApplication, QMenu
 
         menu = QMenu(self)
-        act_one = menu.addAction(self.tr("复制本句"))
-        act_all = menu.addAction(self.tr("复制全部"))
+        act_one = menu.addAction(tr("livetx.menu.copy_sentence"))
+        act_all = menu.addAction(tr("livetx.menu.copy_all"))
         chosen = menu.exec_(event.globalPos())
         if chosen is act_one:
             text = self._own_text()

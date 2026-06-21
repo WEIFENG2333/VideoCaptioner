@@ -35,6 +35,7 @@ from videocaptioner.core.split.split import SubtitleSplitter
 from videocaptioner.core.translate.factory import TranslatorFactory
 from videocaptioner.core.translate.types import TranslatorType
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.worker import WorkerThread
 
 logger = setup_logger("subtitle_thread")
@@ -62,7 +63,7 @@ def create_translator_from_config(
     """根据 SubtitleConfig 创建翻译器。"""
     service = config.translator_service
     if service not in _SERVICE_TO_TYPE:
-        raise ValueError(f"不支持的翻译服务: {service}")
+        raise ValueError(tr("t_subtitle.error.unsupported_service", service=service))
     if service == TranslatorServiceEnum.DEEPLX:
         os.environ["DEEPLX_ENDPOINT"] = config.deeplx_endpoint or ""
     return TranslatorFactory.create_translator(
@@ -80,12 +81,12 @@ def create_translator_from_config(
 def _setup_llm_environment(config: SubtitleConfig) -> None:
     """验证 LLM 连通性并写入环境变量；失败抛异常。"""
     if not (config.base_url and config.api_key and config.llm_model):
-        raise Exception("LLM API 未配置, 请检查LLM配置")
+        raise Exception(tr("t_subtitle.error.llm_not_configured"))
     success, message = check_llm_connection(
         config.base_url, config.api_key, config.llm_model
     )
     if not success:
-        raise Exception(f"LLM API 测试失败: {message or ''}")
+        raise Exception(tr("t_subtitle.error.llm_test_failed", message=message or ""))
     os.environ["OPENAI_BASE_URL"] = config.base_url
     os.environ["OPENAI_API_KEY"] = config.api_key
 
@@ -131,9 +132,9 @@ class SubtitleThread(WorkerThread):
         try:
             config = self.task.subtitle_config
             if self.task.subtitle_path is None:
-                raise Exception("字幕文件路径为空")
+                raise Exception(tr("t_subtitle.error.no_subtitle_path"))
             if config is None:
-                raise Exception("字幕配置为空")
+                raise Exception(tr("t_subtitle.error.no_config"))
             logger.info("\n%s", config.print_config())
 
             asr_data = ASRData.from_subtitle_file(self.task.subtitle_path)
@@ -146,7 +147,7 @@ class SubtitleThread(WorkerThread):
 
             # 2. 验证 LLM（断句/校正/LLM 翻译任一需要）
             if self._need_llm(config, asr_data):
-                self.progress.emit(2, "开始验证 LLM 配置...")
+                self.progress.emit(2, tr("t_subtitle.status.verifying_llm"))
                 _setup_llm_environment(config)
             self.checkpoint()
 
@@ -174,7 +175,7 @@ class SubtitleThread(WorkerThread):
 
             # 6. 导出
             self._export_stage(asr_data, config)
-            self.progress.emit(100, "处理完成")
+            self.progress.emit(100, tr("t_subtitle.status.done"))
             logger.info("字幕处理完成")
             self.finished.emit(
                 self.task.video_path or "", self.task.output_path or ""
@@ -186,7 +187,7 @@ class SubtitleThread(WorkerThread):
 
     def _split_stage(self, asr_data: ASRData, config: SubtitleConfig) -> ASRData:
         update_stage("split")
-        self.progress.emit(5, "字幕断句...")
+        self.progress.emit(5, tr("t_subtitle.status.splitting"))
         logger.info("正在字幕断句...")
         splitter = SubtitleSplitter(
             thread_num=config.thread_num,
@@ -206,10 +207,10 @@ class SubtitleThread(WorkerThread):
         self, asr_data: ASRData, config: SubtitleConfig, prompt: str
     ) -> ASRData:
         update_stage("optimize")
-        self.progress.emit(0, "优化字幕...")
+        self.progress.emit(0, tr("t_subtitle.status.optimizing"))
         logger.info("正在优化字幕...")
         if not config.llm_model:
-            raise Exception("LLM 模型未配置")
+            raise Exception(tr("t_subtitle.error.llm_model_not_configured"))
         self._done_segments = 0
         optimizer = SubtitleOptimizer(
             thread_num=config.thread_num,
@@ -231,10 +232,10 @@ class SubtitleThread(WorkerThread):
         self, asr_data: ASRData, config: SubtitleConfig, prompt: str
     ) -> ASRData:
         update_stage("translate")
-        self.progress.emit(0, "翻译字幕...")
+        self.progress.emit(0, tr("t_subtitle.status.translating"))
         logger.info("正在翻译字幕...")
         if not config.target_language:
-            raise Exception("目标语言未配置")
+            raise Exception(tr("t_subtitle.error.no_target_language"))
         self._done_segments = 0
         translator = create_translator_from_config(config, prompt, self._batch_callback)
         self._active_worker = translator
@@ -301,7 +302,7 @@ class SubtitleThread(WorkerThread):
         percent = min(
             int(self._done_segments / max(self._total_segments, 1) * 100), 100
         )
-        self.progress.emit(percent, f"{percent}% 处理字幕")
+        self.progress.emit(percent, tr("t_subtitle.status.processing_percent", percent=percent))
         self.update.emit(
             {
                 str(data.index): data.translated_text
@@ -339,7 +340,7 @@ class RetranslateThread(WorkerThread):
         self.checkpoint()
         self._done += len(result)
         percent = min(int(self._done / max(len(self.selected_data), 1) * 100), 100)
-        self.progress.emit(percent, f"{percent}% 翻译中")
+        self.progress.emit(percent, tr("t_subtitle.status.translating_percent", percent=percent))
 
     def _work(self):
         set_task_context(
@@ -347,7 +348,7 @@ class RetranslateThread(WorkerThread):
         )
         try:
             if not self.config.target_language:
-                raise Exception("目标语言未配置")
+                raise Exception(tr("t_subtitle.error.no_target_language"))
             if self.config.translator_service == TranslatorServiceEnum.OPENAI:
                 _setup_llm_environment(self.config)
 

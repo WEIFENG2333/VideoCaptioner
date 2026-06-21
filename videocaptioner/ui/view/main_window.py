@@ -22,6 +22,7 @@ from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.theme_tokens import BG_DARK, BG_LIGHT
 from videocaptioner.ui.components.app_dialog import ConfirmDialog
 from videocaptioner.ui.components.donate_dialog import DonateDialog
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.version_checker_thread import VersionChecker
 from videocaptioner.ui.view.batch_process_interface import BatchProcessInterface
 from videocaptioner.ui.view.doctor_interface import DoctorInterface
@@ -91,23 +92,23 @@ class MainWindow(FluentWindow):
         self.navigationInterface.setMinimumExpandWidth(NAV_MINIMUM_EXPAND_WIDTH)
 
         # 添加导航项
-        self.addSubInterface(self.homeInterface, FIF.HOME, self.tr("主页"))
-        self.addSubInterface(self.batchProcessInterface, FIF.VIDEO, self.tr("批量处理"))
+        self.addSubInterface(self.homeInterface, FIF.HOME, tr("app.nav.home"))
+        self.addSubInterface(self.batchProcessInterface, FIF.VIDEO, tr("app.nav.batch"))
         self.addSubInterface(
-            self.subtitleStyleInterface, AppFluentIcon(AppIcon.SUBTITLE), self.tr("字幕样式")
+            self.subtitleStyleInterface, AppFluentIcon(AppIcon.SUBTITLE), tr("app.nav.subtitle_style")
         )
-        self.addSubInterface(self.dubbingInterface, FIF.VOLUME, self.tr("配音"))
+        self.addSubInterface(self.dubbingInterface, FIF.VOLUME, tr("app.nav.dubbing"))
         self.addSubInterface(
-            self.liveCaptionInterface, AppFluentIcon(AppIcon.MICROPHONE), self.tr("实时字幕")
-        )
-        self.addSubInterface(
-            self.hardsubInterface, AppFluentIcon(AppIcon.HARDSUB), self.tr("硬字幕提取")
+            self.liveCaptionInterface, AppFluentIcon(AppIcon.MICROPHONE), tr("app.nav.live_caption")
         )
         self.addSubInterface(
-            self.llmLogsInterface, AppFluentIcon(AppIcon.HISTORY), self.tr("请求日志")
+            self.hardsubInterface, AppFluentIcon(AppIcon.HARDSUB), tr("app.nav.hardsub")
         )
         self.addSubInterface(
-            self.doctorInterface, AppFluentIcon(AppIcon.DIAGNOSTIC), self.tr("诊断")
+            self.llmLogsInterface, AppFluentIcon(AppIcon.HISTORY), tr("app.nav.request_logs")
+        )
+        self.addSubInterface(
+            self.doctorInterface, AppFluentIcon(AppIcon.DIAGNOSTIC), tr("app.nav.doctor")
         )
 
         self.navigationInterface.addSeparator()
@@ -123,7 +124,7 @@ class MainWindow(FluentWindow):
         # 设置：底部导航动作项（点击弹出设置 modal，不作为可选中的 tab）
         self.navigationInterface.addItem(
             routeKey="settings",
-            text=self.tr("设置"),
+            text=tr("app.nav.settings"),
             icon=FIF.SETTING,
             onClick=lambda: self.openSettingsPage("transcribe"),
             selectable=False,
@@ -142,7 +143,7 @@ class MainWindow(FluentWindow):
         if interface.windowTitle():
             self.setWindowTitle(interface.windowTitle())
         else:
-            self.setWindowTitle(self.tr("卡卡字幕助手 -- VideoCaptioner"))
+            self.setWindowTitle(tr("app.window_title"))
         self.stackedWidget.setCurrentWidget(interface, popOut=False)
 
     def openSettingsPage(self, page_key: str) -> bool:  # noqa: N802
@@ -161,7 +162,7 @@ class MainWindow(FluentWindow):
         # 防御：任何页面的最小高度都不能把窗口顶出屏幕（否则底部播放条/按钮看不到）。
         self.setMaximumHeight(avail.height() - 40)
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
-        self.setWindowTitle(self.tr("卡卡字幕助手 -- VideoCaptioner"))
+        self.setWindowTitle(tr("app.window_title"))
 
         self.setMicaEffectEnabled(cfg.get(cfg.micaEnabled))
 
@@ -182,13 +183,11 @@ class MainWindow(FluentWindow):
     def onGithubDialog(self):
         """打开GitHub"""
         w = ConfirmDialog(
-            self.tr("GitHub信息"),
-            self.tr(
-                "VideoCaptioner 由本人在课余时间独立开发完成，目前托管在GitHub上，欢迎Star和Fork。项目诚然还有很多地方需要完善，遇到软件的问题或者BUG欢迎提交Issue。\n\n https://github.com/WEIFENG2333/VideoCaptioner"
-            ),
+            tr("app.github.title"),
+            tr("app.github.body"),
             self,
-            confirm_text=self.tr("打开 GitHub"),
-            cancel_text=self.tr("支持作者"),
+            confirm_text=tr("app.github.open"),
+            cancel_text=tr("app.github.support_author"),
             icon=AppIcon.GITHUB,
         )
         # 「支持作者」是动作而非放弃：点它打开捐赠弹窗，Esc/关闭则什么都不做
@@ -203,18 +202,18 @@ class MainWindow(FluentWindow):
     def onNewVersion(self, version, update_required, update_info, download_url):
         """新版本提示"""
         if update_required:
-            title = "发现新版本, 需要更新"
-            content = f"发现新版本 {version}\n\n" f"更新内容：\n{update_info}"
+            title = tr("app.update.title_required")
+            content = tr("app.update.body_required", version=version, update_info=update_info)
         else:
-            title = "发现新版本"
-            content = f"发现新版本 {version}\n\n{update_info}"
+            title = tr("app.update.title")
+            content = tr("app.update.body", version=version, update_info=update_info)
 
         w = ConfirmDialog(
             title,
             content,
             self,
-            confirm_text="立即更新",
-            cancel_text="稍后再说",
+            confirm_text=tr("app.update.now"),
+            cancel_text=tr("app.update.later"),
             icon=AppIcon.DOWNLOAD,
         )
         if w.exec() or update_required:
@@ -224,8 +223,8 @@ class MainWindow(FluentWindow):
             self.homeInterface.setEnabled(False)
             self.batchProcessInterface.setEnabled(False)
             InfoBar.error(
-                title="需要更新",
-                content=self.tr("当前版本部分功能已被禁用。请尽快更新。"),
+                title=tr("app.update.disabled_title"),
+                content=tr("app.update.disabled_body"),
                 isClosable=False,
                 position=InfoBarPosition.BOTTOM,
                 duration=-1,
@@ -235,10 +234,10 @@ class MainWindow(FluentWindow):
     def onAnnouncement(self, content):
         """显示公告"""
         w = ConfirmDialog(
-            "公告",
+            tr("app.announcement.title"),
             content,
             self,
-            confirm_text="我知道了",
+            confirm_text=tr("app.announcement.got_it"),
             cancel_text=None,
             icon=AppIcon.DOCUMENT,
         )
@@ -286,8 +285,8 @@ class MainWindow(FluentWindow):
         """检查 FFmpeg 是否已安装"""
         if shutil.which("ffmpeg") is None:
             InfoBar.warning(
-                self.tr("FFmpeg 未安装"),
-                self.tr("软件处理音视频文件时需要 FFmpeg，请先安装"),
+                tr("app.ffmpeg.missing_title"),
+                tr("app.ffmpeg.missing_body"),
                 duration=INFOBAR_DURATION_FOREVER,
                 position=InfoBarPosition.BOTTOM,
                 parent=self,

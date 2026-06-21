@@ -31,6 +31,7 @@ from videocaptioner.ui.components.workbench import (
     draw_rounded_surface,
     icon_pixmap,
 )
+from videocaptioner.ui.i18n import tr
 
 
 class ColorSwatch(QFrame):
@@ -145,7 +146,7 @@ class ColorValueControl(QFrame):
         if self.isEnabled() and event.button() == Qt.LeftButton:  # type: ignore[attr-defined]
             from videocaptioner.ui.components.color_picker import ColorPickerDialog
 
-            title = (self.tr("选择") + self._title) if self._title else self.tr("选择颜色")
+            title = (tr("inspector.color.pick_prefix") + self._title) if self._title else tr("inspector.color.pick")
             color = ColorPickerDialog.get_color(
                 self._color, parent=self.window(), alpha=self._alpha, title=title
             )
@@ -322,7 +323,9 @@ class StyleCard(QFrame):
         apply_font(self.nameLabel, 14, 880)
         main.addWidget(self.nameLabel, 1, Qt.AlignVCenter)  # type: ignore[arg-type]
         self.sourcePill = StatusPill(
-            self.tr("我的") if editable else self.tr("内置"), "neutral", self
+            tr("inspector.style.source.mine") if editable else tr("inspector.style.source.builtin"),
+            "neutral",
+            self,
         )
         main.addWidget(self.sourcePill, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
         outer.addLayout(main)
@@ -348,11 +351,11 @@ class StyleCard(QFrame):
         actions = QHBoxLayout(self.actionsRow)
         actions.setContentsMargins(0, 0, 0, 0)
         actions.setSpacing(7)
-        self.duplicateButton = CompactButton(self.tr("复制"), AppIcon.COPY, self.actionsRow, pad_h=8)
+        self.duplicateButton = CompactButton(tr("common.copy"), AppIcon.COPY, self.actionsRow, pad_h=8)
         self.duplicateButton.clicked.connect(lambda: self.duplicateRequested.emit(self.style_id))
         if editable:
-            self.renameButton = CompactButton(self.tr("重命名"), AppIcon.EDIT, self.actionsRow, pad_h=8)
-            self.deleteButton = DangerButton(self.tr("删除"), AppIcon.DELETE, self.actionsRow, pad_h=8)
+            self.renameButton = CompactButton(tr("inspector.style.rename"), AppIcon.EDIT, self.actionsRow, pad_h=8)
+            self.deleteButton = DangerButton(tr("common.delete"), AppIcon.DELETE, self.actionsRow, pad_h=8)
             self.renameButton.clicked.connect(lambda: self.renameRequested.emit(self.style_id))
             self.deleteButton.clicked.connect(lambda: self.deleteRequested.emit(self.style_id))
             self._buttons = (self.duplicateButton, self.renameButton, self.deleteButton)

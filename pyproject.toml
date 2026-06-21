@@ -101,7 +101,7 @@ packages = ["videocaptioner"]
 # 默认字幕样式主字体是 LXGW WenKai，缺了它 pip 用户默认渲染就回退错字体。
 "resource/assets" = "videocaptioner/resources/assets"
 "resource/subtitle_styles" = "videocaptioner/resources/subtitle_styles"
-"resource/translations" = "videocaptioner/resources/translations"
+"resource/i18n" = "videocaptioner/resources/i18n"
 "resource/fonts" = "videocaptioner/resources/fonts"
 
 [tool.uv]
@@ -120,6 +120,8 @@ dev = [
     "pyright>=1.1.0",
     "ruff>=0.4.0",
     "pytest>=8.0.0",
+    # i18n 开发期工具：抽取 .pot / 维护 .po / 编译 .mo（运行时只用标准库 gettext，不需 Babel）
+    "babel>=2.14.0",
     # GUI deps for development
     "PyQt5==5.15.11",
     "PyQt-Fluent-Widgets==1.8.4",

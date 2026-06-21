@@ -78,6 +78,7 @@ from videocaptioner.ui.components.workbench import (
     file_type_icon,
     icon_pixmap,
 )
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.thread.dubbing_thread import DubbingThread
 from videocaptioner.ui.thread.subtitle_thread import SubtitleThread
@@ -101,18 +102,58 @@ class BatchMode:
 
 
 BATCH_MODES = [
-    BatchMode("full", AppIcon.VIDEO, "全流程处理", "转录、翻译、合成成片", True),
-    BatchMode("trans_sub", AppIcon.SUBTITLE, "转录 + 字幕", "生成字幕并翻译优化", True),
-    BatchMode("transcribe", AppIcon.MICROPHONE, "批量转录", "从音视频生成字幕", True),
-    BatchMode("subtitle", AppIcon.FILE, "批量字幕翻译", "优化、翻译已有字幕", False),
+    BatchMode(
+        "full",
+        AppIcon.VIDEO,
+        tr("batch.mode.full.title"),
+        tr("batch.mode.full.desc"),
+        True,
+    ),
+    BatchMode(
+        "trans_sub",
+        AppIcon.SUBTITLE,
+        tr("batch.mode.trans_sub.title"),
+        tr("batch.mode.trans_sub.desc"),
+        True,
+    ),
+    BatchMode(
+        "transcribe",
+        AppIcon.MICROPHONE,
+        tr("batch.mode.transcribe.title"),
+        tr("batch.mode.transcribe.desc"),
+        True,
+    ),
+    BatchMode(
+        "subtitle",
+        AppIcon.FILE,
+        tr("batch.mode.subtitle.title"),
+        tr("batch.mode.subtitle.desc"),
+        False,
+    ),
 ]
 
 # 阶段元数据：key -> (图标, 标题, 说明)
 STAGE_SPECS = {
-    "transcribe": (AppIcon.MICROPHONE, "语音转录", "生成原始字幕"),
-    "subtitle": (AppIcon.SUBTITLE, "字幕处理", "断句、优化、翻译"),
-    "dubbing": (AppIcon.VOLUME, "配音", "按字幕生成音轨"),
-    "synthesis": (AppIcon.VIDEO, "视频合成", "输出成片"),
+    "transcribe": (
+        AppIcon.MICROPHONE,
+        tr("batch.stage.transcribe.title"),
+        tr("batch.stage.transcribe.desc"),
+    ),
+    "subtitle": (
+        AppIcon.SUBTITLE,
+        tr("batch.stage.subtitle.title"),
+        tr("batch.stage.subtitle.desc"),
+    ),
+    "dubbing": (
+        AppIcon.VOLUME,
+        tr("batch.stage.dubbing.title"),
+        tr("batch.stage.dubbing.desc"),
+    ),
+    "synthesis": (
+        AppIcon.VIDEO,
+        tr("batch.stage.synthesis.title"),
+        tr("batch.stage.synthesis.desc"),
+    ),
 }
 
 
@@ -171,7 +212,7 @@ class BatchJob:
     path: str
     status: JobStatus = JobStatus.WAITING
     progress: int = 0
-    note: str = "等待中"
+    note: str = field(default_factory=lambda: tr("batch.status.waiting"))
     error: str = ""
     stage: str = ""  # 运行中的当前阶段 key
     outputs: list[str] = field(default_factory=list)
@@ -270,7 +311,7 @@ class JobRunner(QObject):
         thread.progress.connect(self._on_stage_progress)
         thread.error.connect(self._on_stage_error)
         self._thread = thread
-        self._emit_progress(0, "准备中")
+        self._emit_progress(0, tr("batch.status.preparing"))
         thread.start()
 
     def _build_thread(self, stage: str):
@@ -348,28 +389,36 @@ class JobRunner(QObject):
 
     def _on_transcribed(self, task: TranscribeTask):
         if not task.output_path:
-            self.failed.emit("语音转录：输出路径为空")
+            self.failed.emit(
+                tr("batch.error.empty_output", stage=STAGE_SPECS["transcribe"][1])
+            )
             return
         self._subtitle_path = task.output_path
         self._advance([task.output_path] if self._is_last("transcribe") else None)
 
     def _on_subtitled(self, _video_path: str, output_path: str):
         if not output_path:
-            self.failed.emit("字幕处理：输出路径为空")
+            self.failed.emit(
+                tr("batch.error.empty_output", stage=STAGE_SPECS["subtitle"][1])
+            )
             return
         self._subtitle_path = output_path
         self._advance([output_path] if self._is_last("subtitle") else None)
 
     def _on_dubbed(self, task):
         if not task.output_video_path:
-            self.failed.emit("配音：输出视频路径为空")
+            self.failed.emit(
+                tr("batch.error.empty_video_output", stage=STAGE_SPECS["dubbing"][1])
+            )
             return
         self._dub_video = task.output_video_path
         self._advance()
 
     def _on_synthesized(self, task):
         if not task.output_path:
-            self.failed.emit("视频合成：输出路径为空")
+            self.failed.emit(
+                tr("batch.error.empty_output", stage=STAGE_SPECS["synthesis"][1])
+            )
             return
         self._advance([task.output_path])
 
@@ -456,7 +505,7 @@ class BatchController(QObject):
             return
         job.status = JobStatus.WAITING
         job.progress = 0
-        job.note = "等待中"
+        job.note = tr("batch.status.waiting")
         job.error = ""
         self.jobChanged.emit(self.jobs.index(job))
         if stages is not None and not self._dispatch_enabled and not self._runners:
@@ -490,7 +539,7 @@ class BatchController(QObject):
             if job.status == JobStatus.FAILED:
                 job.status = JobStatus.WAITING
                 job.progress = 0
-                job.note = "等待中"
+                job.note = tr("batch.status.waiting")
                 job.error = ""
         self._dispatch_enabled = True
         self._started = True
@@ -575,7 +624,7 @@ class BatchController(QObject):
     def _start_job(self, job: BatchJob):
         job.status = JobStatus.RUNNING
         job.progress = 0
-        job.note = "准备中"
+        job.note = tr("batch.status.preparing")
         job.stage = self._stages[0] if self._stages else ""
         runner = JobRunner(job.path, self._stages, self)
         self._runners[runner] = job
@@ -598,7 +647,11 @@ class BatchController(QObject):
         job.progress = 100
         job.stage = ""
         job.outputs = list(outputs)
-        job.note = f"已输出 {Path(outputs[-1]).name}" if outputs else "处理完成"
+        job.note = (
+            tr("batch.note.output", name=Path(outputs[-1]).name)
+            if outputs
+            else tr("batch.note.completed")
+        )
         if job in self.jobs:
             self.jobChanged.emit(self.jobs.index(job))
         self._dispatch()
@@ -608,7 +661,7 @@ class BatchController(QObject):
         job.status = JobStatus.FAILED
         job.stage = ""
         job.error = error
-        job.note = error.splitlines()[0] if error else "处理失败"
+        job.note = error.splitlines()[0] if error else tr("batch.note.failed")
         if job in self.jobs:
             self.jobChanged.emit(self.jobs.index(job))
         self._dispatch()
@@ -695,7 +748,7 @@ class TaskRow(QFrame):
         self._running = False
         self.setMinimumHeight(78)
         self.setCursor(Qt.PointingHandCursor)  # type: ignore[arg-type]
-        self.setToolTip("点击查看任务详情")
+        self.setToolTip(tr("batch.row.details_tip"))
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
@@ -743,14 +796,16 @@ class TaskRow(QFrame):
         progress_host.setMaximumWidth(210)
         layout.addWidget(progress_host, 1)
 
-        self.pill = StatusPill("等待中", "neutral", self)
+        self.pill = StatusPill(tr("batch.status.waiting"), "neutral", self)
         self.pill.setMinimumWidth(86)
         layout.addWidget(self.pill)
 
-        self.primaryButton = SquareIconButton(AppIcon.FOLDER, "打开输出目录", self)
+        self.primaryButton = SquareIconButton(
+            AppIcon.FOLDER, tr("batch.row.open_output"), self
+        )
         self.primaryButton.clicked.connect(lambda: self.openRequested.emit(self.job))
         layout.addWidget(self.primaryButton)
-        self.removeButton = SquareIconButton(AppIcon.CANCEL, "移除任务", self)
+        self.removeButton = SquareIconButton(AppIcon.CANCEL, tr("batch.row.remove"), self)
         self.removeButton.clicked.connect(lambda: self.removeRequested.emit(self.job))
         layout.addWidget(self.removeButton)
         self.syncStyle()
@@ -773,17 +828,19 @@ class TaskRow(QFrame):
         self.noteLabel.setToolTip(job.error or "")
         self.progressLine.setValue(job.progress)
         pill_specs = {
-            JobStatus.WAITING: ("等待中", "neutral", "accent"),
-            JobStatus.RUNNING: ("处理中", "warn", "warn"),
-            JobStatus.COMPLETED: ("已完成", "ok", "accent"),
-            JobStatus.FAILED: ("失败", "fail", "fail"),
+            JobStatus.WAITING: (tr("batch.status.waiting"), "neutral", "accent"),
+            JobStatus.RUNNING: (tr("batch.status.running"), "warn", "warn"),
+            JobStatus.COMPLETED: (tr("batch.status.completed"), "ok", "accent"),
+            JobStatus.FAILED: (tr("batch.status.failed"), "fail", "fail"),
         }
         text, level, tone = pill_specs[job.status]
         self.pill.setState(text, level)
         self.progressLine.setTone(tone)
         failed = job.status == JobStatus.FAILED
         self.primaryButton.setIcon(AppIcon.SYNC if failed else AppIcon.FOLDER)
-        self.primaryButton.setToolTip("重试任务" if failed else "打开输出目录")
+        self.primaryButton.setToolTip(
+            tr("batch.row.retry") if failed else tr("batch.row.open_output")
+        )
         try:
             self.primaryButton.clicked.disconnect()
         except TypeError:
@@ -911,7 +968,7 @@ class StageRow(QFrame):
         text_box.addWidget(self.descLabel)
         layout.addLayout(text_box, 1)
         self.settingsButton = RoundIconButton(AppIcon.SETTING, diameter=28, parent=self)
-        self.settingsButton.setToolTip(f"{title}设置")
+        self.settingsButton.setToolTip(tr("batch.stage.settings_tip", title=title))
         self.settingsButton.clicked.connect(
             lambda: self.settingsRequested.emit(self.stage_key)
         )
@@ -958,8 +1015,10 @@ class BatchSidePanel(WorkbenchPanel):
         self.bodyLayout.setContentsMargins(20, 20, 20, 20)
         self.bodyLayout.setSpacing(14)
 
-        self.header = PanelHeader("本批任务", inline=True, underline=True, parent=self)
-        self.pill = StatusPill("未开始", "neutral", self)
+        self.header = PanelHeader(
+            tr("batch.panel.title"), inline=True, underline=True, parent=self
+        )
+        self.pill = StatusPill(tr("batch.panel.not_started"), "neutral", self)
         self.header.addRight(self.pill)
         self.bodyLayout.addWidget(self.header)
 
@@ -1014,7 +1073,7 @@ class BatchProcessInterface(QWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setObjectName("BatchProcessInterface")
-        self.setWindowTitle("批量处理")
+        self.setWindowTitle(tr("batch.title"))
         self.setAttribute(Qt.WA_StyledBackground, True)  # type: ignore[arg-type]
         self.setAcceptDrops(True)
 
@@ -1050,7 +1109,7 @@ class BatchProcessInterface(QWidget):
         head.addWidget(self.headIcon)
         title_box = QVBoxLayout()
         title_box.setSpacing(3)
-        self.titleLabel = QLabel("批量处理", self)
+        self.titleLabel = QLabel(tr("batch.title"), self)
         self.titleLabel.setObjectName("pageTitle")
         apply_font(self.titleLabel, 26, 860)
         title_box.addWidget(self.titleLabel)
@@ -1060,13 +1119,21 @@ class BatchProcessInterface(QWidget):
         title_box.addWidget(self.subtitleLabel)
         head.addLayout(title_box)
         head.addStretch(1)
-        self.addFolderButton = WorkbenchButton("添加文件夹", AppIcon.FOLDER_ADD, parent=self)
+        self.addFolderButton = WorkbenchButton(
+            tr("batch.btn.add_folder"), AppIcon.FOLDER_ADD, parent=self
+        )
         head.addWidget(self.addFolderButton)
-        self.addFileButton = WorkbenchButton("添加文件", AppIcon.ADD, parent=self)
+        self.addFileButton = WorkbenchButton(
+            tr("batch.btn.add_file"), AppIcon.ADD, parent=self
+        )
         head.addWidget(self.addFileButton)
-        self.clearButton = WorkbenchButton("清空列表", AppIcon.DELETE, parent=self)
+        self.clearButton = WorkbenchButton(
+            tr("batch.btn.clear"), AppIcon.DELETE, parent=self
+        )
         head.addWidget(self.clearButton)
-        self.primaryButton = WorkbenchButton("开始处理", AppIcon.PLAY, primary=True, parent=self)
+        self.primaryButton = WorkbenchButton(
+            tr("batch.btn.start"), AppIcon.PLAY, primary=True, parent=self
+        )
         self.primaryButton.setMinimumWidth(150)
         head.addWidget(self.primaryButton)
         root.addLayout(head)
@@ -1095,18 +1162,23 @@ class BatchProcessInterface(QWidget):
         head_layout.setContentsMargins(16, 0, 16, 0)
         head_layout.setSpacing(12)
         self.filterTabs = FilterTabs(
-            [("all", "全部"), ("waiting", "等待中"), ("running", "处理中"), ("failed", "失败")],
+            [
+                ("all", tr("batch.filter.all")),
+                ("waiting", tr("batch.status.waiting")),
+                ("running", tr("batch.status.running")),
+                ("failed", tr("batch.status.failed")),
+            ],
             queue_head,
         )
         head_layout.addWidget(self.filterTabs)
         head_layout.addStretch(1)
         self.concurrencySelect = PillSelect(queue_head)
         self.concurrencySelect.setItems(
-            [f"并发 {value}" for value in (1, 2, 3)],
-            f"并发 {int(cfg.batch_concurrency.value)}",
+            [tr("batch.concurrency", n=value) for value in (1, 2, 3)],
+            tr("batch.concurrency", n=int(cfg.batch_concurrency.value)),
         )
         head_layout.addWidget(self.concurrencySelect)
-        self.countPill = StatusPill("0 个任务", "neutral", queue_head)
+        self.countPill = StatusPill(tr("batch.count", n=0), "neutral", queue_head)
         self.countPill.setMinimumWidth(88)
         head_layout.addWidget(self.countPill)
         queue_layout.addWidget(queue_head)
@@ -1119,8 +1191,8 @@ class BatchProcessInterface(QWidget):
         drop_layout.setContentsMargins(16, 16, 16, 16)
         self.dropZone = DropZone(
             icon=AppIcon.FOLDER_ADD,
-            title="拖入文件或文件夹",
-            pick_text="添加文件",
+            title=tr("batch.drop.title"),
+            pick_text=tr("batch.btn.add_file"),
             pick_icon=AppIcon.ADD,
             formats_line=" ",  # 占位保证间距，实际文案随模式在 _refresh 填充
             parent=drop_host,
@@ -1135,7 +1207,7 @@ class BatchProcessInterface(QWidget):
         self.rowsLayout = QVBoxLayout(self.rowsHost)
         self.rowsLayout.setContentsMargins(14, 14, 14, 14)
         self.rowsLayout.setSpacing(10)
-        self.filterEmptyLabel = QLabel("没有匹配当前筛选的任务", self.rowsHost)
+        self.filterEmptyLabel = QLabel(tr("batch.filter.empty"), self.rowsHost)
         self.filterEmptyLabel.setObjectName("filterEmpty")
         self.filterEmptyLabel.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
         apply_font(self.filterEmptyLabel, 14, 720)
@@ -1218,16 +1290,20 @@ class BatchProcessInterface(QWidget):
     def _browse_files(self):
         if self.mode.accepts_media:
             patterns = " ".join(f"*{ext}" for ext in sorted(_MEDIA_EXTENSIONS))
-            file_filter = f"音视频文件 ({patterns})"
+            file_filter = tr("batch.filter.media", patterns=patterns)
         else:
             patterns = " ".join(f"*{ext}" for ext in sorted(_SUBTITLE_EXTENSIONS))
-            file_filter = f"字幕文件 ({patterns})"
-        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", file_filter)
+            file_filter = tr("batch.filter.subtitle", patterns=patterns)
+        files, _ = QFileDialog.getOpenFileNames(
+            self, tr("batch.dialog.pick_files"), "", file_filter
+        )
         if files:
             self.add_paths(files)
 
     def _browse_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "选择文件夹", "")
+        folder = QFileDialog.getExistingDirectory(
+            self, tr("batch.dialog.pick_folder"), ""
+        )
         if folder:
             self.add_paths([folder])
 
@@ -1238,22 +1314,24 @@ class BatchProcessInterface(QWidget):
         added = self.controller.add_paths(valid) if valid else 0
         duplicated = len(valid) - added
         if added:
-            parts = [f"已加入 {added} 个文件"]
+            parts = [tr("batch.added.count", n=added)]
             if duplicated:
-                parts.append(f"{duplicated} 个已在队列")
+                parts.append(tr("batch.added.duplicated", n=duplicated))
             if ignored:
-                parts.append(f"忽略 {ignored} 个不支持的文件")
+                parts.append(tr("batch.added.ignored", n=ignored))
             InfoBar.success(
-                "添加完成", "，".join(parts),
+                tr("batch.added.title"), "，".join(parts),
                 duration=INFOBAR_DURATION_SUCCESS,
                 position=InfoBarPosition.TOP, parent=self,
             )
         else:
-            reason = "文件已在队列中" if duplicated else (
-                "未找到字幕文件" if not self.mode.accepts_media else "未找到支持的音视频文件"
+            reason = tr("batch.empty.duplicated") if duplicated else (
+                tr("batch.empty.no_subtitle")
+                if not self.mode.accepts_media
+                else tr("batch.empty.no_media")
             )
             InfoBar.warning(
-                "未加入任何文件", reason,
+                tr("batch.empty.title"), reason,
                 duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -1277,7 +1355,7 @@ class BatchProcessInterface(QWidget):
             return
         if self.controller.is_active():
             InfoBar.warning(
-                "正在处理", "请先暂停并等待当前任务结束，再切换处理类型",
+                tr("batch.switch.busy_title"), tr("batch.switch.busy_body"),
                 duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -1291,13 +1369,15 @@ class BatchProcessInterface(QWidget):
         dropped = self.controller.keep_only(self._allowed_extensions())
         if dropped:
             InfoBar.info(
-                "已过滤队列", f"{dropped} 个文件与「{self.mode.title}」输入类型不匹配，已移出队列",
+                tr("batch.filtered.title"),
+                tr("batch.filtered.body", n=dropped, mode=self.mode.title),
                 duration=INFOBAR_DURATION_INFO,
                 position=InfoBarPosition.TOP, parent=self,
             )
         if announce:
             InfoBar.info(
-                "已切换处理类型", f"根据文件类型切换为「{self.mode.title}」",
+                tr("batch.switched.title"),
+                tr("batch.switched.body", mode=self.mode.title),
                 duration=INFOBAR_DURATION_INFO,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -1330,15 +1410,15 @@ class BatchProcessInterface(QWidget):
                 if config is None or not (
                     config.api_key and config.base_url and config.llm_model
                 ):
-                    return "字幕处理需要大模型：请先配置可用的 API Key、接口地址和模型"
+                    return tr("batch.preflight.llm")
         if "synthesis" in stages and not shutil.which("ffmpeg"):
-            return "视频合成需要 FFmpeg：请先安装并确保 ffmpeg 在 PATH 中"
+            return tr("batch.preflight.ffmpeg")
         if "dubbing" in stages:
             if not shutil.which("ffprobe"):
-                return "配音需要 ffprobe 读取音频时长，请确认 FFmpeg 套件完整"
+                return tr("batch.preflight.ffprobe")
             provider = cfg.dubbing_provider.value
             if provider != "edge" and not cfg.dubbing_api_key.value.strip():
-                return "当前配音音色需要 API Key，请检查配音配置或切换 Edge 免费音色"
+                return tr("batch.preflight.dubbing_key")
         return None
 
     def _on_primary_clicked(self):
@@ -1353,7 +1433,7 @@ class BatchProcessInterface(QWidget):
             error = self._preflight_error()
             if error is not None:
                 InfoBar.error(
-                    "无法开始", error,
+                    tr("batch.cannot_start"), error,
                     duration=INFOBAR_DURATION_WARNING,
                     position=InfoBarPosition.TOP, parent=self,
                 )
@@ -1374,20 +1454,23 @@ class BatchProcessInterface(QWidget):
         completed = self.controller.count(JobStatus.COMPLETED)
         if failed:
             InfoBar.warning(
-                "批量处理结束", f"{completed} 个完成，{failed} 个失败，可在列表中重试",
+                tr("batch.finished.title"),
+                tr("batch.finished.body", completed=completed, failed=failed),
                 duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP, parent=self,
             )
         else:
             InfoBar.success(
-                "批量处理完成", f"{completed} 个任务全部完成",
+                tr("batch.done.title"),
+                tr("batch.done.body", completed=completed),
                 duration=INFOBAR_DURATION_SUCCESS,
                 position=InfoBarPosition.TOP, parent=self,
             )
         self._refresh()
 
     def _on_concurrency_selected(self, text: str):
-        value = int(text.replace("并发", "").strip() or 1)
+        digits = "".join(ch for ch in text if ch.isdigit())
+        value = int(digits or 1)
         if cfg.batch_concurrency.value != value:
             cfg.set(cfg.batch_concurrency, value)
 
@@ -1419,7 +1502,7 @@ class BatchProcessInterface(QWidget):
         error = self._preflight_error()
         if error is not None:
             InfoBar.error(
-                "无法重试", error,
+                tr("batch.cannot_retry"), error,
                 duration=INFOBAR_DURATION_WARNING,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -1436,29 +1519,32 @@ class BatchProcessInterface(QWidget):
     def _show_job_details(self, job: BatchJob):
         """任务详情：完整错误 / 输出文件清单，附打开目录或重试入口。"""
         status_text = {
-            JobStatus.WAITING: "等待中",
-            JobStatus.RUNNING: "处理中",
-            JobStatus.COMPLETED: "已完成",
-            JobStatus.FAILED: "失败",
+            JobStatus.WAITING: tr("batch.status.waiting"),
+            JobStatus.RUNNING: tr("batch.status.running"),
+            JobStatus.COMPLETED: tr("batch.status.completed"),
+            JobStatus.FAILED: tr("batch.status.failed"),
         }[job.status]
-        lines = [f"文件：{job.path}", f"状态：{status_text} · {job.progress}%"]
+        lines = [
+            tr("batch.detail.file", path=job.path),
+            tr("batch.detail.status", status=status_text, progress=job.progress),
+        ]
         if job.status == JobStatus.FAILED and job.error:
             lines.append("")
-            lines.append(f"错误信息：\n{job.error}")
+            lines.append(tr("batch.detail.error", error=job.error))
         elif job.outputs:
             lines.append("")
-            lines.append("输出文件：")
+            lines.append(tr("batch.detail.outputs"))
             lines.extend(f"· {path}" for path in job.outputs)
         elif job.note:
-            lines.append(f"进度：{job.note}")
+            lines.append(tr("batch.detail.progress", note=job.note))
         message = "\n".join(lines)
         if job.status == JobStatus.FAILED:
             dialog = ConfirmDialog(
-                "任务详情",
+                tr("batch.detail.title"),
                 message,
                 self,
-                confirm_text="重试任务",
-                cancel_text="关闭",
+                confirm_text=tr("batch.row.retry"),
+                cancel_text=tr("common.close"),
                 icon=AppIcon.FILE,
                 width=560,
             )
@@ -1466,11 +1552,11 @@ class BatchProcessInterface(QWidget):
                 self._on_retry_job(job)
         elif job.status == JobStatus.COMPLETED:
             dialog = ConfirmDialog(
-                "任务详情",
+                tr("batch.detail.title"),
                 message,
                 self,
-                confirm_text="打开输出目录",
-                cancel_text="关闭",
+                confirm_text=tr("batch.row.open_output"),
+                cancel_text=tr("common.close"),
                 icon=AppIcon.FILE,
                 width=560,
             )
@@ -1478,10 +1564,10 @@ class BatchProcessInterface(QWidget):
                 self._on_open_job(job)
         else:
             ConfirmDialog(
-                "任务详情",
+                tr("batch.detail.title"),
                 message,
                 self,
-                confirm_text="我知道了",
+                confirm_text=tr("batch.detail.got_it"),
                 cancel_text=None,
                 icon=AppIcon.FILE,
                 width=560,
@@ -1559,31 +1645,31 @@ class BatchProcessInterface(QWidget):
 
         # 页头副标题 + 主按钮
         if state == PageState.EMPTY:
-            self.subtitleLabel.setText("拖入一批文件，选择处理类型后开始")
-            self.primaryButton.setText("开始处理")
+            self.subtitleLabel.setText(tr("batch.subtitle.empty"))
+            self.primaryButton.setText(tr("batch.btn.start"))
             self.primaryButton.setIcon(AppIcon.PLAY)
             self.primaryButton.setEnabled(False)
         elif state == PageState.READY:
-            self.subtitleLabel.setText(f"{total} 个文件已加入队列")
-            self.primaryButton.setText("开始处理")
+            self.subtitleLabel.setText(tr("batch.subtitle.ready", n=total))
+            self.primaryButton.setText(tr("batch.btn.start"))
             self.primaryButton.setIcon(AppIcon.PLAY)
             self.primaryButton.setEnabled(waiting > 0 or failed > 0)
         elif state == PageState.RUNNING:
             if paused:
-                self.subtitleLabel.setText("已暂停 · 处理中的任务完成后停止")
-                self.primaryButton.setText("继续处理")
+                self.subtitleLabel.setText(tr("batch.subtitle.paused"))
+                self.primaryButton.setText(tr("batch.btn.resume"))
                 self.primaryButton.setIcon(AppIcon.PLAY)
             else:
-                self.subtitleLabel.setText("正在按队列顺序处理")
-                self.primaryButton.setText("暂停队列")
+                self.subtitleLabel.setText(tr("batch.subtitle.running"))
+                self.primaryButton.setText(tr("batch.btn.pause"))
                 self.primaryButton.setIcon(AppIcon.CANCEL)
             self.primaryButton.setEnabled(True)
         else:  # DONE
             if failed:
-                self.subtitleLabel.setText(f"批量任务完成，{failed} 个文件需要处理")
+                self.subtitleLabel.setText(tr("batch.subtitle.done_failed", n=failed))
             else:
-                self.subtitleLabel.setText("批量任务完成")
-            self.primaryButton.setText("开始处理")
+                self.subtitleLabel.setText(tr("batch.subtitle.done"))
+            self.primaryButton.setText(tr("batch.btn.start"))
             self.primaryButton.setIcon(AppIcon.PLAY)
             self.primaryButton.setEnabled(failed > 0)
         self.clearButton.setEnabled(total > 0)
@@ -1595,38 +1681,57 @@ class BatchProcessInterface(QWidget):
 
         # 队列区
         self.queueStack.setCurrentIndex(0 if state == PageState.EMPTY else 1)
+        accepts = (
+            tr("batch.drop.media_kinds")
+            if self.mode.accepts_media
+            else tr("batch.drop.subtitle_kinds")
+        )
         self.dropZone.formatLabel.setText(
-            f"当前模式：{self.mode.title} · "
-            f"支持{'音频、视频' if self.mode.accepts_media else '字幕文件'}，可拖入文件夹"
+            tr("batch.drop.format", mode=self.mode.title, kinds=accepts)
         )
         self.dropZone.formatLabel.setVisible(True)
         count_level = {PageState.RUNNING: "warn", PageState.DONE: "ok"}.get(
             state, "neutral"
         )
-        self.countPill.setState(f"{total} 个任务", count_level)
+        self.countPill.setState(tr("batch.count", n=total), count_level)
 
         # 右栏统计 + 阶段
         if state == PageState.EMPTY:
-            pill = ("未开始", "neutral")
-            metrics = [("0", "队列任务"), (str(concurrency), "并发数"), ("0", "处理中"), ("0", "失败")]
-        elif state == PageState.READY:
-            pill = ("可开始", "neutral")
+            pill = (tr("batch.panel.not_started"), "neutral")
             metrics = [
-                (str(total), "队列任务"), (str(concurrency), "并发数"),
-                (str(waiting), "等待中"), (str(failed), "失败"),
+                ("0", tr("batch.metric.queue")),
+                (str(concurrency), tr("batch.metric.concurrency")),
+                ("0", tr("batch.status.running")),
+                ("0", tr("batch.status.failed")),
+            ]
+        elif state == PageState.READY:
+            pill = (tr("batch.panel.ready"), "neutral")
+            metrics = [
+                (str(total), tr("batch.metric.queue")),
+                (str(concurrency), tr("batch.metric.concurrency")),
+                (str(waiting), tr("batch.status.waiting")),
+                (str(failed), tr("batch.status.failed")),
             ]
         elif state == PageState.RUNNING:
-            pill = ("已暂停", "neutral") if paused else ("运行中", "warn")
+            pill = (
+                (tr("batch.panel.paused"), "neutral")
+                if paused
+                else (tr("batch.panel.running"), "warn")
+            )
             metrics = [
-                (str(total), "队列任务"), (str(running), "处理中"),
-                (str(waiting), "等待中"), (f"{controller.current_progress()}%", "当前进度"),
+                (str(total), tr("batch.metric.queue")),
+                (str(running), tr("batch.status.running")),
+                (str(waiting), tr("batch.status.waiting")),
+                (f"{controller.current_progress()}%", tr("batch.metric.progress")),
             ]
         else:
-            pill = ("已结束", "ok")
+            pill = (tr("batch.panel.ended"), "ok")
             rate = round(completed * 100 / total) if total else 0
             metrics = [
-                (str(total), "队列任务"), (str(completed), "已完成"),
-                (str(failed), "失败"), (f"{rate}%", "成功率"),
+                (str(total), tr("batch.metric.queue")),
+                (str(completed), tr("batch.status.completed")),
+                (str(failed), tr("batch.status.failed")),
+                (f"{rate}%", tr("batch.metric.success_rate")),
             ]
         self.sidePanel.pill.setState(*pill)
         self.sidePanel.setMetrics(metrics)

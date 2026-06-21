@@ -44,6 +44,7 @@ from videocaptioner.ui.components.workbench import (
     apply_font,
     draw_rounded_surface,
 )
+from videocaptioner.ui.i18n import tr
 
 MODE_READY = "ready"
 MODE_LIVE = "live"
@@ -152,13 +153,13 @@ class _HistoryRow(QFrame):
         col.addWidget(meta)
         lay.addLayout(col, 1)
         # 带文字的动作按钮：纯图标看不出干啥，行内也有空间，直接标清「打开/重命名/导出/删除」
-        self._open = CompactButton("打开", AppIcon.DOCUMENT, self)
+        self._open = CompactButton(tr("liveview.action.open"), AppIcon.DOCUMENT, self)
         self._open.clicked.connect(lambda: self.opened.emit(self._record))
-        self._rename = CompactButton("重命名", AppIcon.EDIT, self)
+        self._rename = CompactButton(tr("liveview.action.rename"), AppIcon.EDIT, self)
         self._rename.clicked.connect(lambda: self.renameRequested.emit(self._record))
-        self._exp = CompactButton("导出", AppIcon.DOWNLOAD, self)
+        self._exp = CompactButton(tr("liveview.action.export"), AppIcon.DOWNLOAD, self)
         self._exp.clicked.connect(lambda: self.exportRequested.emit(self._record))
-        self._del = CompactButton("删除", AppIcon.DELETE, self)
+        self._del = CompactButton(tr("common.delete"), AppIcon.DELETE, self)
         self._del.clicked.connect(lambda: self.deleteRequested.emit(self._record))
         for b in (self._open, self._rename, self._exp, self._del):
             lay.addWidget(b, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
@@ -347,7 +348,7 @@ class SessionView(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(16)
-        root.addWidget(_h2("实时字幕", self))
+        root.addWidget(_h2(tr("liveview.title.session"), self))
 
         workspace = QHBoxLayout()
         workspace.setContentsMargins(0, 0, 0, 0)
@@ -377,7 +378,7 @@ class SessionView(QWidget):
         tcol.addWidget(self._title)
         tcol.addWidget(self._sub)
         head.addLayout(tcol, 1)
-        self._btn_export = CompactButton("导出", AppIcon.DOWNLOAD, self._head)
+        self._btn_export = CompactButton(tr("liveview.action.export"), AppIcon.DOWNLOAD, self._head)
         self._btn_export.clicked.connect(self.exportClicked.emit)
         head.addWidget(self._btn_export, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
         ml.addWidget(self._head)
@@ -398,10 +399,10 @@ class SessionView(QWidget):
         rl.setContentsMargins(0, 0, 0, 0)
         rl.setSpacing(10)
         rhead = QHBoxLayout()
-        rt = QLabel("最近记录", recent)
+        rt = QLabel(tr("liveview.recent.title"), recent)
         apply_font(rt, 14, 820)
         rt.setStyleSheet(f"color:{p.muted};background:transparent;")
-        self._view_all = CompactButton("查看全部", AppIcon.HISTORY, recent)
+        self._view_all = CompactButton(tr("liveview.recent.view_all"), AppIcon.HISTORY, recent)
         self._view_all.clicked.connect(self.historyClicked.emit)
         rhead.addWidget(rt)
         rhead.addStretch(1)
@@ -409,8 +410,8 @@ class SessionView(QWidget):
         rl.addLayout(rhead)
         self._recent = _ScrollList(recent)
         rl.addWidget(self._recent, 1)
-        self._recent_empty = _EmptyState(AppIcon.MICROPHONE, "还没有记录",
-                                         "开始一段实时字幕，结束后会自动保存到这里。", recent)
+        self._recent_empty = _EmptyState(AppIcon.MICROPHONE, tr("liveview.recent.empty.title"),
+                                         tr("liveview.recent.empty.detail"), recent)
         rl.addWidget(self._recent_empty)
         self._recent_empty.setVisible(False)
         self._stack.addWidget(recent)
@@ -471,17 +472,17 @@ class SessionView(QWidget):
         self._controls.setSpacing(10)
         cl.addLayout(self._controls)
         # 控制按钮（建一次，按态显隐）——统一用项目 WorkbenchButton（primary/warn/danger/default）
-        self._b_start = WorkbenchButton("开始实时字幕", AppIcon.PLAY, primary=True)
+        self._b_start = WorkbenchButton(tr("liveview.btn.start"), AppIcon.PLAY, primary=True)
         self._b_start.clicked.connect(self.startClicked.emit)
-        self._b_pause = WorkbenchButton("暂停", tone="warn")
+        self._b_pause = WorkbenchButton(tr("liveview.btn.pause"), tone="warn")
         self._b_pause.clicked.connect(self.pauseClicked.emit)
-        self._b_resume = WorkbenchButton("继续", AppIcon.PLAY, primary=True)
+        self._b_resume = WorkbenchButton(tr("liveview.btn.resume"), AppIcon.PLAY, primary=True)
         self._b_resume.clicked.connect(self.resumeClicked.emit)
-        self._b_stop = WorkbenchButton("结束保存", tone="danger")
+        self._b_stop = WorkbenchButton(tr("liveview.btn.stop"), tone="danger")
         self._b_stop.clicked.connect(self.stopClicked.emit)
-        self._b_view = WorkbenchButton("查看记录", AppIcon.DOCUMENT, primary=True)
+        self._b_view = WorkbenchButton(tr("liveview.btn.view_record"), AppIcon.DOCUMENT, primary=True)
         self._b_view.clicked.connect(self._open_current)
-        self._b_new = WorkbenchButton("新建会话", AppIcon.SYNC)
+        self._b_new = WorkbenchButton(tr("liveview.btn.new_session"), AppIcon.SYNC)
         self._b_new.clicked.connect(self.newSessionClicked.emit)
         for b in (self._b_start, self._b_pause, self._b_resume, self._b_stop,
                   self._b_view, self._b_new):
@@ -494,10 +495,10 @@ class SessionView(QWidget):
         stl.setContentsMargins(20, 18, 20, 18)
         stl.setSpacing(14)
         sthead = QHBoxLayout()
-        stt = QLabel("本次设置", self._settings)
+        stt = QLabel(tr("liveview.settings.title"), self._settings)
         apply_font(stt, 15, 850)
         stt.setStyleSheet(f"color:{p.text};background:transparent;")
-        self._btn_config = CompactButton("配置", AppIcon.SETTING, self._settings)
+        self._btn_config = CompactButton(tr("liveview.settings.config"), AppIcon.SETTING, self._settings)
         self._btn_config.clicked.connect(self.configClicked.emit)
         sthead.addWidget(stt)
         sthead.addStretch(1)
@@ -517,11 +518,11 @@ class SessionView(QWidget):
         self._overlay_sw = ToggleSwitch(True, self._settings)
         self._overlay_sw.toggled.connect(self.overlayToggled.emit)
         for card in (
-            OptionCard("音频来源", self._device_pill, self._settings),
-            OptionCard("识别语言", self._src_lang_pill, self._settings),
-            OptionCard("实时翻译", self._translate_sw, self._settings),
-            OptionCard("翻译语言", self._lang_pill, self._settings),
-            OptionCard("桌面浮窗", self._overlay_sw, self._settings),
+            OptionCard(tr("liveview.option.audio_source"), self._device_pill, self._settings),
+            OptionCard(tr("liveview.option.source_language"), self._src_lang_pill, self._settings),
+            OptionCard(tr("liveview.option.live_translate"), self._translate_sw, self._settings),
+            OptionCard(tr("liveview.option.target_language"), self._lang_pill, self._settings),
+            OptionCard(tr("liveview.option.overlay"), self._overlay_sw, self._settings),
         ):
             stl.addWidget(card)
         sl.addWidget(self._settings)
@@ -628,15 +629,15 @@ class SessionView(QWidget):
         """「结束保存」后、记录就绪前的过渡态：禁用控制按钮 + 提示「正在保存…」，避免后台收尾
         （冲刷末句 + 写盘）期间用户以为没反应而反复点。"""
         self._b_stop.setEnabled(False)
-        self._b_stop.setText("保存中…")
+        self._b_stop.setText(tr("liveview.btn.saving"))
         self._b_pause.setEnabled(False)
-        self.set_timer(self._timer.text() or "00:00", "正在保存…")
+        self.set_timer(self._timer.text() or "00:00", tr("liveview.timer.saving"))
 
     def set_mode(self, mode: str) -> None:
         self._mode = mode
         # 退出「保存中…」过渡态：任何态切换都复位结束/暂停按钮的可用与文案。
         self._b_stop.setEnabled(True)
-        self._b_stop.setText("结束保存")
+        self._b_stop.setText(tr("liveview.btn.stop"))
         self._b_pause.setEnabled(True)
         live = mode in (MODE_LIVE, MODE_PAUSED)
         error = mode == MODE_ERROR
@@ -651,7 +652,7 @@ class SessionView(QWidget):
         # 控制按钮：就绪=开始，错误=重试（同一按钮，复用 startClicked）
         self._b_start.setVisible(mode in (MODE_READY, MODE_ERROR))
         if mode in (MODE_READY, MODE_ERROR):
-            self._b_start.setText("重试" if error else "开始实时字幕")
+            self._b_start.setText(tr("common.retry") if error else tr("liveview.btn.start"))
             self._b_start.setIcon(AppIcon.SYNC if error else AppIcon.PLAY)
         self._b_pause.setVisible(mode == MODE_LIVE)
         self._b_resume.setVisible(mode == MODE_PAUSED)
@@ -670,14 +671,14 @@ class SessionView(QWidget):
             self._meter.reset()  # 非录制态：波形归静音暗条
         # 头部文案默认（宿主可覆盖）
         defaults = {
-            MODE_READY: ("开始新的实时字幕", "选择声音来源后即可开始"),
-            MODE_ERROR: ("启动失败", "未能捕获音频，请在右侧切换来源后重试"),
+            MODE_READY: (tr("liveview.ready.title"), tr("liveview.ready.detail")),
+            MODE_ERROR: (tr("liveview.error.title"), tr("liveview.error.detail")),
         }
         if mode in defaults:
             self.set_record_title(*defaults[mode])
         labels = {
-            MODE_READY: ("00:00", "等待开始"),
-            MODE_ERROR: ("--:--", "启动失败"),
+            MODE_READY: ("00:00", tr("liveview.timer.waiting")),
+            MODE_ERROR: ("--:--", tr("liveview.error.title")),
         }
         if mode in labels:
             self.set_timer(*labels[mode])
@@ -706,10 +707,10 @@ class HistoryView(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(16)
         head = QHBoxLayout()
-        head.addWidget(_h2("实时字幕历史", self))
+        head.addWidget(_h2(tr("liveview.title.history"), self))
         head.addStretch(1)
         # 「返回」即回会话页（=实时字幕首页），不再放重复的「主页」
-        self._back = CompactButton("返回", AppIcon.ARROW_LEFT, self)
+        self._back = CompactButton(tr("liveview.action.back"), AppIcon.ARROW_LEFT, self)
         self._back.clicked.connect(self.backClicked.emit)
         head.addWidget(self._back, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
         root.addLayout(head)
@@ -719,11 +720,11 @@ class HistoryView(QWidget):
         tl.setContentsMargins(16, 12, 16, 12)
         tl.setSpacing(12)
         self._search = AppLineEdit("", toolbar)
-        self._search.setPlaceholderText("搜索记录名称或正文")
+        self._search.setPlaceholderText(tr("liveview.history.search_placeholder"))
         self._search.textChanged.connect(self.searchChanged.emit)
-        self._refresh = CompactButton("刷新", AppIcon.SYNC, toolbar)
+        self._refresh = CompactButton(tr("liveview.action.refresh"), AppIcon.SYNC, toolbar)
         self._refresh.clicked.connect(self.refreshClicked.emit)
-        self._dir = CompactButton("目录", AppIcon.FOLDER, toolbar)
+        self._dir = CompactButton(tr("liveview.action.folder"), AppIcon.FOLDER, toolbar)
         self._dir.clicked.connect(self.openDirClicked.emit)
         tl.addWidget(self._search, 1)
         tl.addWidget(self._refresh)
@@ -736,7 +737,8 @@ class HistoryView(QWidget):
         bl.setSpacing(0)
         self._list = _ScrollList(body)
         bl.addWidget(self._list, 1)
-        self._empty = _EmptyState(AppIcon.HISTORY, "暂无记录", "保存后的实时字幕会显示在这里。", body)
+        self._empty = _EmptyState(AppIcon.HISTORY, tr("liveview.history.empty.title"),
+                                  tr("liveview.history.empty.detail"), body)
         bl.addWidget(self._empty)
         self._empty.setVisible(False)
         root.addWidget(body, 1)
@@ -774,11 +776,11 @@ class DetailView(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(16)
         head = QHBoxLayout()
-        head.addWidget(_h2("记录详情", self))
+        head.addWidget(_h2(tr("liveview.title.detail"), self))
         head.addStretch(1)
-        self._home = CompactButton("主页", AppIcon.HOME, self)
+        self._home = CompactButton(tr("liveview.action.home"), AppIcon.HOME, self)
         self._home.clicked.connect(self.homeClicked.emit)
-        self._back = CompactButton("返回", AppIcon.ARROW_LEFT, self)
+        self._back = CompactButton(tr("liveview.action.back"), AppIcon.ARROW_LEFT, self)
         self._back.clicked.connect(self.backClicked.emit)
         head.addWidget(self._home, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
         head.addWidget(self._back, 0, Qt.AlignVCenter)  # type: ignore[arg-type]
@@ -822,12 +824,17 @@ class DetailView(QWidget):
         dl = QVBoxLayout(disp)
         dl.setContentsMargins(18, 16, 18, 16)
         dl.setSpacing(12)
-        dt = QLabel("显示", disp)
+        dt = QLabel(tr("liveview.detail.display"), disp)
         apply_font(dt, 15, 850)
         dt.setStyleSheet(f"color:{p.text};background:transparent;")
         dl.addWidget(dt)
         self._display_tabs = FilterTabs(
-            [(DISPLAY_BILINGUAL, "双语"), (DISPLAY_SOURCE, "原文"), (DISPLAY_TARGET, "译文")], disp
+            [
+                (DISPLAY_BILINGUAL, tr("liveview.display.bilingual")),
+                (DISPLAY_SOURCE, tr("liveview.display.source")),
+                (DISPLAY_TARGET, tr("liveview.display.target")),
+            ],
+            disp,
         )
         self._display_tabs.changed.connect(self.transcript.set_display)
         dl.addWidget(self._display_tabs)
@@ -836,15 +843,15 @@ class DetailView(QWidget):
         el = QVBoxLayout(exp)
         el.setContentsMargins(18, 16, 18, 16)
         el.setSpacing(10)
-        et = QLabel("导出", exp)
+        et = QLabel(tr("liveview.detail.export"), exp)
         apply_font(et, 15, 850)
         et.setStyleSheet(f"color:{p.text};background:transparent;")
         el.addWidget(et)
-        self._exp_srt = WorkbenchButton("SRT 字幕", AppIcon.DOWNLOAD)
+        self._exp_srt = WorkbenchButton(tr("liveview.export.srt"), AppIcon.DOWNLOAD)
         self._exp_srt.clicked.connect(lambda: self.exportRequested.emit("srt"))
-        self._exp_txt = WorkbenchButton("TXT 文本", AppIcon.DOCUMENT)
+        self._exp_txt = WorkbenchButton(tr("liveview.export.txt"), AppIcon.DOCUMENT)
         self._exp_txt.clicked.connect(lambda: self.exportRequested.emit("txt"))
-        self._open_dir = WorkbenchButton("打开文件夹", AppIcon.FOLDER)
+        self._open_dir = WorkbenchButton(tr("common.open_folder"), AppIcon.FOLDER)
         self._open_dir.clicked.connect(self.openFolderRequested.emit)
         el.addWidget(self._exp_srt)
         el.addWidget(self._exp_txt)

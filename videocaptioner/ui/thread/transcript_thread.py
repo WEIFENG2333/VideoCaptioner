@@ -20,6 +20,7 @@ from videocaptioner.core.entities import (
 )
 from videocaptioner.core.utils.logger import setup_logger
 from videocaptioner.core.utils.video_utils import video2audio
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.worker import WorkerThread
 
 logger = setup_logger("transcript_thread")
@@ -42,7 +43,7 @@ class TranscriptThread(WorkerThread):
         audio_path = self._extract_audio()
         try:
             self.checkpoint()
-            self.progress.emit(20, "语音转录中")
+            self.progress.emit(20, tr("t_transcript.status.transcribing"))
             logger.info("开始语音转录")
             asr_data = transcribe(
                 audio_path,
@@ -51,7 +52,7 @@ class TranscriptThread(WorkerThread):
             )
             self.checkpoint()
             self._save_outputs(asr_data)
-            self.progress.emit(100, "转录完成")
+            self.progress.emit(100, tr("t_transcript.status.done"))
             self.finished.emit(self.task)
         finally:
             Path(audio_path).unlink(missing_ok=True)
@@ -60,16 +61,16 @@ class TranscriptThread(WorkerThread):
 
     def _validate_task(self):
         if not self.task.file_path:
-            raise ValueError("文件路径为空")
+            raise ValueError(tr("t_transcript.error.no_file_path"))
         if not Path(self.task.file_path).exists():
-            raise ValueError("媒体文件不存在")
+            raise ValueError(tr("t_transcript.error.file_not_found"))
         if not self.task.transcribe_config:
-            raise ValueError("转录配置为空")
+            raise ValueError(tr("t_transcript.error.no_config"))
         if not self.task.output_path:
-            raise ValueError("输出路径为空")
+            raise ValueError(tr("t_transcript.error.no_output_path"))
 
     def _extract_audio(self) -> str:
-        self.progress.emit(5, "转换音频中")
+        self.progress.emit(5, tr("t_transcript.status.extracting_audio"))
         logger.info("开始转换音频")
         # delete=False 避免 Windows 句柄占用，结束后统一清理
         temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
@@ -81,7 +82,7 @@ class TranscriptThread(WorkerThread):
         )
         if not ok:
             Path(temp_audio.name).unlink(missing_ok=True)
-            raise RuntimeError("音频转换失败")
+            raise RuntimeError(tr("t_transcript.error.audio_extract_failed"))
         return temp_audio.name
 
     def _save_outputs(self, asr_data):

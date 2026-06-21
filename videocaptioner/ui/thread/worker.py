@@ -8,7 +8,8 @@
   停掉 core 层的 optimizer/translator 等），``_work()`` 在阶段边界调用
   ``checkpoint()`` 主动退出；只有等待超时才退化为 ``terminate()``。
 - 被取消的运行静默结束：不发 ``error``，也不发结果信号。
-- 线程内不要用 ``self.tr()``：界面文案属于页面层，线程只上报事实字符串。
+- 面向用户的错误/状态文案用模块级 ``tr("t_xxx.key")``（已 i18n），不要用 Qt 的
+  ``self.tr()``（基类是 QThread，语境不对）；纯日志/调试串不翻译。
 """
 
 from __future__ import annotations

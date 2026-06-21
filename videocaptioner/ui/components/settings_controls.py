@@ -26,9 +26,11 @@ from qfluentwidgets import (
 )
 
 from videocaptioner.ui.common.config import cfg
+from videocaptioner.ui.common.enum_labels import enum_label
 from videocaptioner.ui.common.settings_state import SettingField
 from videocaptioner.ui.common.theme_tokens import app_palette, is_dark_theme, rgba
 from videocaptioner.ui.components.workbench import AppLineEdit, WorkbenchButton, apply_font
+from videocaptioner.ui.i18n import tr
 
 CONTROL_WIDTH = 246
 CONTROL_HEIGHT = 42
@@ -57,6 +59,10 @@ class Option:
 
 
 def option_text(value: Any) -> str:
+    # 已注册枚举 → i18n 标签（key=enum.<类名>.<成员名>）；其余取 .value 并去装饰 ✨。
+    label = enum_label(value)
+    if label is not None:
+        return label
     text = str(getattr(value, "value", value))
     return text.replace(" ✨", "").strip()
 
@@ -89,7 +95,7 @@ class SettingsShell(QWidget):
         self.sidebarLayout.setSpacing(12)
 
         # 弹窗里不再用左侧「返回应用」——关闭统一走右上角 X / Esc / 点遮罩
-        self.navTitle = QLabel(self.tr("设置"), self.sidebar)
+        self.navTitle = QLabel(tr("ctrl.settings_title"), self.sidebar)
         self.navTitle.setObjectName("settingsNavTitle")
         apply_font(self.navTitle, 13, 820)
 
@@ -793,8 +799,8 @@ class FolderPickerControl(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
         self.pathLabel = _ElidedPathLabel(self)
-        self.openButton = make_button(self.tr("打开"), parent=self)
-        self.changeButton = make_button(self.tr("更改"), parent=self)
+        self.openButton = make_button(tr("ctrl.open"), parent=self)
+        self.changeButton = make_button(tr("ctrl.change"), parent=self)
         layout.addWidget(self.pathLabel)
         layout.addWidget(self.openButton)
         layout.addWidget(self.changeButton)

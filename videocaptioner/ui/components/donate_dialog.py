@@ -13,6 +13,7 @@ from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.theme_tokens import app_palette
 from videocaptioner.ui.components.app_dialog import AppDialog
 from videocaptioner.ui.components.workbench import apply_font, draw_rounded_surface
+from videocaptioner.ui.i18n import tr
 
 
 class _QrCard(QFrame):
@@ -56,19 +57,20 @@ class DonateDialog(AppDialog):
     """支持作者：感谢语 + 两个收款二维码。"""
 
     def __init__(self, parent=None):
-        super().__init__("支持作者", icon=AppIcon.HEART, parent=parent, width=620)
-        desc = self.addBodyText(
-            "目前本人精力有限，您的支持让我有动力继续折腾这个项目！\n"
-            "感谢您对开源事业的热爱与支持！"
-        )
+        super().__init__(tr("donate.title"), icon=AppIcon.HEART, parent=parent, width=620)
+        desc = self.addBodyText(tr("donate.desc"))
         desc.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
 
         qr_row = QHBoxLayout()
         qr_row.setSpacing(13)
-        qr_row.addWidget(_QrCard(ASSETS_PATH / "donate_blue.jpg", "支付宝", self.widget))
-        qr_row.addWidget(_QrCard(ASSETS_PATH / "donate_green.jpg", "微信", self.widget))
+        qr_row.addWidget(
+            _QrCard(ASSETS_PATH / "donate_blue.jpg", tr("donate.alipay"), self.widget)
+        )
+        qr_row.addWidget(
+            _QrCard(ASSETS_PATH / "donate_green.jpg", tr("donate.wechat"), self.widget)
+        )
         self.bodyLayout.addLayout(qr_row)
 
         self.addFooterStretch()
-        self.dismissButton = self.addFooterButton("关闭")
+        self.dismissButton = self.addFooterButton(tr("common.close"))
         self.dismissButton.clicked.connect(lambda: self.done(0))

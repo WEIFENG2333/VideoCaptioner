@@ -5,10 +5,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from PyQt5.QtCore import QByteArray, QSize, Qt
+from PyQt5.QtCore import QByteArray, Qt
 from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt5.QtSvg import QSvgRenderer
-from PyQt5.QtWidgets import QAbstractButton, QApplication
+from PyQt5.QtWidgets import QApplication
 from qfluentwidgets.common.icon import FluentIconBase
 
 from videocaptioner.config import ASSETS_PATH
@@ -177,15 +177,3 @@ def to_qicon(icon: Any, color: str | QColor | None = None, size: int = 24) -> QI
         return render_svg_icon(icon, color, size)
 
     return QIcon(str(custom_icon_path(icon)))
-
-
-def apply_button_icon(
-    button: QAbstractButton,
-    icon: Any,
-    size: int = 18,
-    color: str | QColor | None = None,
-) -> None:
-    button.setIcon(to_qicon(icon, color=color, size=size))
-    button.setIconSize(QSize(size, size))
-    if isinstance(icon, AppIcon):
-        button.setProperty("appIcon", icon.value)

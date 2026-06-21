@@ -21,7 +21,7 @@ datas = [
     _data(ROOT / "resource" / "assets", "resource/assets"),
     _data(ROOT / "resource" / "fonts", "resource/fonts"),
     _data(ROOT / "resource" / "subtitle_styles", "resource/subtitle_styles"),
-    _data(ROOT / "resource" / "translations", "resource/translations"),
+    _data(ROOT / "resource" / "i18n", "resource/i18n"),
     _data(ROOT / "videocaptioner" / "core" / "prompts", "videocaptioner/core/prompts"),
 ]
 

@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QWidget
 from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.theme_tokens import app_palette
 from videocaptioner.ui.components.workbench import apply_font, icon_pixmap, to_qcolor
+from videocaptioner.ui.i18n import tr
 
 # 边缘掩码（位运算，与 caption_overlay 的拖拽/缩放同风格）
 _L, _R, _T, _B = 1, 2, 4, 8
@@ -118,7 +119,7 @@ class _ScrubBar(QWidget):
                    f"{self._fmt(cur)} / {self._fmt(self._duration)}")
         p.setPen(QColor(palette.subtle))
         p.drawText(QRect(self.width() - 180, text_y, 166, 22),
-                   Qt.AlignVCenter | Qt.AlignRight, "拖动查看其他帧")  # type: ignore[arg-type]
+                   Qt.AlignVCenter | Qt.AlignRight, tr("roi.scrub.hint"))  # type: ignore[arg-type]
 
 
 class RoiSelector(QWidget):
@@ -433,7 +434,7 @@ class RoiSelector(QWidget):
             for hr in self._handles().values():
                 p.drawRoundedRect(hr.adjusted(4, 4, -4, -4), 2, 2)
             # 右上角「字幕区域」标签（不越出画面顶部）
-            label = "字幕区域"
+            label = tr("roi.tag.caption_area")
             apply_font(self, 11, 850)
             p.setFont(self.font())
             lw = self.fontMetrics().horizontalAdvance(label) + 20

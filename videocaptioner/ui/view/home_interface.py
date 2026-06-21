@@ -9,6 +9,7 @@ from videocaptioner.core.asr.asr_data import ASRData
 from videocaptioner.core.llm.context import generate_task_id
 from videocaptioner.core.utils.logger import setup_logger
 from videocaptioner.ui.common.theme_tokens import app_palette
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.view.subtitle_interface import SubtitleInterface
 from videocaptioner.ui.view.task_creation_interface import TaskCreationInterface
@@ -44,20 +45,24 @@ class HomeInterface(QWidget):
         self.video_synthesis_interface = VideoSynthesisInterface(self)
 
         self.addSubInterface(
-            self.task_creation_interface, "TaskCreationInterface", self.tr("任务创建")
+            self.task_creation_interface,
+            "TaskCreationInterface",
+            tr("homeflow.tab.task_creation"),
         )
         self.addSubInterface(
-            self.transcription_interface, "TranscriptionInterface", self.tr("语音转录")
+            self.transcription_interface,
+            "TranscriptionInterface",
+            tr("homeflow.tab.transcription"),
         )
         self.addSubInterface(
             self.subtitle_optimization_interface,
             "SubtitleInterface",
-            self.tr("字幕优化与翻译"),
+            tr("homeflow.tab.subtitle_optimize"),
         )
         self.addSubInterface(
             self.video_synthesis_interface,
             "VideoSynthesisInterface",
-            self.tr("字幕视频合成"),
+            tr("homeflow.tab.video_synthesis"),
         )
 
         self.vBoxLayout.addWidget(self.pivot)

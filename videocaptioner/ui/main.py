@@ -29,12 +29,13 @@ def main():
 
     _suppress_qt_font_alias_warning()
 
-    from PyQt5.QtCore import Qt, QTranslator
+    from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication
 
-    from videocaptioner.config import TRANSLATIONS_PATH
+    from videocaptioner.config import I18N_PATH
     from videocaptioner.core.utils.cache import disable_cache, enable_cache
     from videocaptioner.core.utils.logger import setup_logger
+    from videocaptioner.ui.i18n import init as init_i18n
 
     # Suppress qfluentwidgets ad
     with open(os.devnull, "w") as _devnull:
@@ -97,12 +98,11 @@ def main():
 
     from videocaptioner.ui.view.main_window import MainWindow
 
-    # i18n
+    # i18n：UI 走 key-based gettext（core/CLI 不翻译）；FluentTranslator 负责 qfluent 自带控件。
+    # 必须在构造 MainWindow（页面 __init__ 会调 tr()）之前装载语言。
     locale = cfg.get(cfg.language).value
     app.installTranslator(FluentTranslator(locale))
-    my_translator = QTranslator()
-    my_translator.load(str(TRANSLATIONS_PATH / f"VideoCaptioner_{locale.name()}.qm"))
-    app.installTranslator(my_translator)
+    init_i18n(I18N_PATH, locale.name())
 
     w = MainWindow()
     w.show()

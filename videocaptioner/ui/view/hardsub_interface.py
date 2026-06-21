@@ -49,6 +49,7 @@ from videocaptioner.ui.components.workbench import (
     icon_pixmap,
     to_qcolor,
 )
+from videocaptioner.ui.i18n import N_, tr
 
 _VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".flv", ".m4v", ".ts"}
 
@@ -136,11 +137,11 @@ class HardsubInterface(QWidget):
 
         titles = QVBoxLayout()
         titles.setSpacing(6)
-        self.titleLabel = QLabel(self.tr("硬字幕提取"), self)
+        self.titleLabel = QLabel(tr("hardsub.title"), self)
         apply_font(self.titleLabel, 26, 950)
         self.titleLabel.setStyleSheet(f"color: {palette.text}; background: transparent;")
         self.subtitleLabel = QLabel(
-            self.tr("从视频画面识别硬字幕，框选区域后导出为可编辑字幕。"), self
+            tr("hardsub.subtitle"), self
         )
         apply_font(self.subtitleLabel, 13, 760)
         self.subtitleLabel.setStyleSheet(f"color: {palette.muted}; background: transparent;")
@@ -149,9 +150,9 @@ class HardsubInterface(QWidget):
         head.addLayout(titles)
         head.addStretch(1)
 
-        self.replaceBtn = WorkbenchButton(self.tr("更换视频"), AppIcon.VIDEO, parent=self)
+        self.replaceBtn = WorkbenchButton(tr("hardsub.btn.replace_video"), AppIcon.VIDEO, parent=self)
         self.replaceBtn.clicked.connect(self._on_pick_file)
-        self.autoRegionBtn = WorkbenchButton(self.tr("自动识别区域"), AppIcon.SYNC, parent=self)
+        self.autoRegionBtn = WorkbenchButton(tr("hardsub.btn.auto_region"), AppIcon.SYNC, parent=self)
         self.autoRegionBtn.clicked.connect(self._on_auto_region)
         head.addWidget(self.replaceBtn)
         head.addWidget(self.autoRegionBtn)
@@ -175,12 +176,12 @@ class HardsubInterface(QWidget):
         self.stageFileIcon.setObjectName("stageFileIcon")
         self.stageFileIcon.hide()
         hl.addWidget(self.stageFileIcon)
-        self.stageFile = ElidedLabel(self.tr("视频预览"), header)
+        self.stageFile = ElidedLabel(tr("hardsub.stage.video_preview"), header)
         self.stageFile.setObjectName("stageFileName")
         apply_font(self.stageFile, 16, 860)
         hl.addWidget(self.stageFile, 1)
         hl.addSpacing(8)
-        self.stagePill = StatusPill(self.tr("等待视频"), "neutral", header)
+        self.stagePill = StatusPill(tr("hardsub.status.waiting_video"), "neutral", header)
         hl.addWidget(self.stagePill)
         # object-name 作用域：避免 border-bottom 级联到子标签（否则每个标签后面都出现矩形线框）。
         header.setStyleSheet(
@@ -206,8 +207,8 @@ class HardsubInterface(QWidget):
         dh.setContentsMargins(22, 22, 22, 22)
         self.dropZone = DropZone(
             icon=AppIcon.VIDEO,
-            title=self.tr("拖入带硬字幕的视频"),
-            pick_text=self.tr("选择视频"),
+            title=tr("hardsub.drop.title"),
+            pick_text=tr("hardsub.drop.pick"),
             pick_icon=AppIcon.FOLDER_ADD,
             formats_line="mp4 / mov / mkv",
             parent=drop_host,
@@ -229,7 +230,7 @@ class HardsubInterface(QWidget):
         pr = QHBoxLayout(self.progressRow)
         pr.setContentsMargins(0, 0, 0, 0)
         pr.setSpacing(14)
-        self.progressTitle = QLabel(self.tr("字幕识别"), self.progressRow)
+        self.progressTitle = QLabel(tr("hardsub.progress.title"), self.progressRow)
         apply_font(self.progressTitle, 14, 900)
         self.progressTitle.setStyleSheet(f"color: {palette.text}; background: transparent;")
         self.progressBar = ProgressBarLine(self.progressRow)
@@ -257,7 +258,7 @@ class HardsubInterface(QWidget):
         hl = QHBoxLayout(header)
         hl.setContentsMargins(22, 0, 18, 0)
         header.setFixedHeight(56)
-        title = QLabel(self.tr("字幕结果"), header)
+        title = QLabel(tr("hardsub.result.title"), header)
         title.setObjectName("resultHeadTitle")
         apply_font(title, 16, 900)
         hl.addWidget(title)
@@ -305,16 +306,16 @@ class HardsubInterface(QWidget):
         fl.addWidget(self.footerNote, 1)
 
         # 完成后可回流：重新提取（回到框选态，可调区域/语言后再来一遍）。
-        self.redoBtn = CompactButton(self.tr("重新提取"), AppIcon.SYNC, parent=footer)
+        self.redoBtn = CompactButton(tr("hardsub.btn.redo"), AppIcon.SYNC, parent=footer)
         self.redoBtn.clicked.connect(self._on_redo)
-        self.exportBtn = CompactButton(self.tr("导出字幕"), AppIcon.DOWNLOAD, parent=footer)
+        self.exportBtn = CompactButton(tr("hardsub.btn.export"), AppIcon.DOWNLOAD, parent=footer)
         self.exportBtn.clicked.connect(self._on_export)
-        self.cancelBtn = CompactButton(self.tr("取消"), AppIcon.CANCEL, parent=footer)
+        self.cancelBtn = CompactButton(tr("common.cancel"), AppIcon.CANCEL, parent=footer)
         self.cancelBtn.clicked.connect(self._on_cancel)
-        self.startBtn = WorkbenchButton(self.tr("开始提取"), AppIcon.PLAY, primary=True, parent=footer)
+        self.startBtn = WorkbenchButton(tr("hardsub.btn.start"), AppIcon.PLAY, primary=True, parent=footer)
         self.startBtn.clicked.connect(self._on_start)
         self.sendBtn = WorkbenchButton(
-            self.tr("送入字幕优化"), AppIcon.RIGHT_ARROW, primary=True, parent=footer
+            tr("hardsub.btn.send_optimize"), AppIcon.RIGHT_ARROW, primary=True, parent=footer
         )
         self.sendBtn.clicked.connect(self._on_send_optimize)
         for btn in (self.redoBtn, self.exportBtn, self.cancelBtn, self.startBtn, self.sendBtn):
@@ -344,7 +345,7 @@ class HardsubInterface(QWidget):
         # 头部文件行：有视频显示文件名 + 图标，否则回到「视频预览」占位。
         self.stageFileIcon.setVisible(has_video)
         if not has_video:
-            self.stageFile.setText(self.tr("视频预览"))
+            self.stageFile.setText(tr("hardsub.stage.video_preview"))
 
         # 左栏：空态/引擎缺失 → 拖放区；其余 → 预览
         if state in (_State.EMPTY, _State.ENGINE_MISSING):
@@ -358,12 +359,12 @@ class HardsubInterface(QWidget):
 
         # 状态胶囊
         pill_spec = {
-            _State.EMPTY: (self.tr("等待视频"), "neutral"),
-            _State.ENGINE_MISSING: (self.tr("引擎未就绪"), "fail"),
-            _State.REGION: (self.tr("已识别区域"), "ok"),
-            _State.PROCESSING: (self.tr("提取中"), "warn"),
-            _State.DONE: (self.tr("已完成"), "ok"),
-            _State.NO_SUBTITLE: (self.tr("需要处理"), "fail"),
+            _State.EMPTY: (tr("hardsub.status.waiting_video"), "neutral"),
+            _State.ENGINE_MISSING: (tr("hardsub.status.engine_missing"), "fail"),
+            _State.REGION: (tr("hardsub.status.region_detected"), "ok"),
+            _State.PROCESSING: (tr("hardsub.status.processing"), "warn"),
+            _State.DONE: (tr("hardsub.status.done"), "ok"),
+            _State.NO_SUBTITLE: (tr("hardsub.status.need_action"), "fail"),
         }[state]
         self.stagePill.setState(*pill_spec)
 
@@ -381,10 +382,10 @@ class HardsubInterface(QWidget):
         # 计数胶囊
         if state == _State.PROCESSING:
             self.countPill.show()
-            self.countPill.setState(self.tr("已识别 0 条"), "warn")
+            self.countPill.setState(tr("hardsub.count.recognized", n=0), "warn")
         elif state == _State.DONE:
             self.countPill.show()
-            self.countPill.setState(self.tr("共 %d 条") % self.table.rowCount(), "ok")
+            self.countPill.setState(tr("hardsub.count.total", n=self.table.rowCount()), "ok")
         else:
             self.countPill.hide()
 
@@ -395,12 +396,12 @@ class HardsubInterface(QWidget):
         self.sendBtn.setVisible(state == _State.DONE)
         self.startBtn.setVisible(state in (_State.REGION, _State.NO_SUBTITLE))
         notes = {
-            _State.EMPTY: self.tr("选择视频后自动识别字幕区域"),
-            _State.ENGINE_MISSING: self.tr("OCR 引擎依赖未安装"),
-            _State.REGION: self.tr("区域不准时，直接在视频画面上拖动框选。"),
-            _State.PROCESSING: self.tr("识别到的字幕会持续写入右侧表格。"),
-            _State.DONE: self.tr("双击改文本 / 时间，右键删除行；可送入字幕优化或导出。"),
-            _State.NO_SUBTITLE: self.tr("没有稳定区域时，手动框选后再识别。"),
+            _State.EMPTY: tr("hardsub.note.empty"),
+            _State.ENGINE_MISSING: tr("hardsub.note.engine_missing"),
+            _State.REGION: tr("hardsub.note.region"),
+            _State.PROCESSING: tr("hardsub.note.processing"),
+            _State.DONE: tr("hardsub.note.done"),
+            _State.NO_SUBTITLE: tr("hardsub.note.no_subtitle"),
         }
         self.footerNote.setText(notes[state])
         # 完成态底部三个按钮占满，提示文案会被挤成窄列；此时让按钮独占，提示交给表头/右键。
@@ -410,7 +411,7 @@ class HardsubInterface(QWidget):
 
     def _on_pick_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("选择视频"), "",
+            self, tr("hardsub.dialog.pick_video"), "",
             "Video (*.mp4 *.mov *.mkv *.avi *.webm *.flv *.m4v *.ts);;All files (*)",
         )
         if path:
@@ -450,7 +451,7 @@ class HardsubInterface(QWidget):
         self.stageFile.setText(Path(path).name)
         self.stageFileIcon.setPixmap(icon_pixmap(AppIcon.VIDEO, app_palette().muted, 18))
         self._apply_state(_State.REGION)
-        self.roiSelector.set_busy(self.tr("正在载入视频…"))
+        self.roiSelector.set_busy(tr("hardsub.busy.loading_video"))
         thread = PrepareThread(path)
         thread._gen = self._load_gen
         thread.ready.connect(self._on_prepared)
@@ -472,7 +473,7 @@ class HardsubInterface(QWidget):
 
     def _on_prepare_error(self, msg: str) -> None:
         self.roiSelector.set_busy(None)
-        self._toast(self.tr("无法读取该视频：%s") % msg)
+        self._toast(tr("hardsub.error.read_video", msg=msg))
         self._apply_state(_State.EMPTY)
 
     def _ensure_engine(self):
@@ -487,7 +488,7 @@ class HardsubInterface(QWidget):
         if not self._video_path:
             return
         self.autoRegionBtn.setEnabled(False)
-        self.roiSelector.set_busy(self.tr("正在识别字幕区域…"))
+        self.roiSelector.set_busy(tr("hardsub.busy.detecting_region"))
         thread = RegionDetectThread(self._video_path, self._ensure_engine())
         thread._gen = self._load_gen
         thread.detected.connect(self._on_region_detected)
@@ -500,7 +501,7 @@ class HardsubInterface(QWidget):
     def _on_region_progress(self, percent: int, _text: str) -> None:
         if self._stale():
             return
-        self.roiSelector.set_busy(self.tr("正在识别字幕区域… %d%%") % percent)
+        self.roiSelector.set_busy(tr("hardsub.busy.detecting_region_pct", percent=percent))
 
     def _on_region_detected(self, result) -> None:
         if self._stale():
@@ -512,7 +513,7 @@ class HardsubInterface(QWidget):
             self._region_font_height = result.font_height  # 复用主导字号，提取不再重复学
         else:
             # 没检测到稳定字幕带：提示手动框选（不强行用默认带产出杂质）。
-            self._toast(self.tr("未自动检测到字幕区域，请在画面上手动框选字幕所在的位置。"))
+            self._toast(tr("hardsub.toast.no_auto_region"))
 
     def _on_region_error(self, _msg: str) -> None:
         self.roiSelector.set_busy(None)
@@ -583,7 +584,7 @@ class HardsubInterface(QWidget):
 
     def _on_cue(self, cue) -> None:
         self.table.append_cue(cue.start, cue.end, cue.text)
-        self.countPill.setState(self.tr("已识别 %d 条") % self.table.rowCount(), "warn")
+        self.countPill.setState(tr("hardsub.count.recognized", n=self.table.rowCount()), "warn")
 
     def _on_progress(self, percent: int, _text: str) -> None:
         self.progressBar.setValue(percent)
@@ -609,12 +610,12 @@ class HardsubInterface(QWidget):
             default = str(output_paths.product_path(
                 Path(self._video_path), output_paths.TAG_HARDSUB, ext=".srt"))
         path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("导出字幕"), default,
+            self, tr("hardsub.dialog.export"), default,
             "SRT (*.srt);;ASS (*.ass);;Plain text (*.txt)",
         )
         if path:
             data.save(path)
-            self._toast(self.tr("已导出：%s") % Path(path).name)
+            self._toast(tr("hardsub.toast.exported", name=Path(path).name))
 
     def _on_send_optimize(self) -> None:
         data = self.table.to_asrdata()
@@ -631,11 +632,11 @@ class HardsubInterface(QWidget):
     def _show_engine_missing(self, reason: str) -> None:
         self._apply_state(_State.ENGINE_MISSING)
         self.placeholder.set_error(
-            self.tr("OCR 引擎未就绪"),
-            self.tr("硬字幕提取需要 OCR 引擎依赖（rapidocr / onnxruntime）。"),
+            tr("hardsub.engine.title"),
+            tr("hardsub.engine.desc"),
         )
         self.dropZone.setVisible(False)
-        card = ErrorCard(reason, title=self.tr("引擎未就绪"), parent=self._stagePanel)
+        card = ErrorCard(reason, title=tr("hardsub.engine.card_title"), parent=self._stagePanel)
         host = self.stageStack.widget(0)
         lay = host.layout()
         if lay is not None and lay.count() and not getattr(self, "_engine_card_shown", False):
@@ -644,7 +645,7 @@ class HardsubInterface(QWidget):
             self._engine_card_shown = True
 
     def _toast(self, text: str) -> None:
-        ConfirmDialog(self.tr("提示"), text, parent=self, cancel_text=None).exec()
+        ConfirmDialog(tr("common.tip"), text, parent=self, cancel_text=None).exec()
 
     def closeEvent(self, event):
         for thread in (self._prepare_thread, self._region_thread, self._extract_thread):
@@ -685,10 +686,10 @@ class _Placeholder(QWidget):
     def set_for_state(self, state) -> None:
         from videocaptioner.ui.view.hardsub_interface import _State
         specs = {
-            _State.EMPTY: (AppIcon.SUBTITLE, "等待视频", "字幕结果会显示在这里。"),
-            _State.REGION: (AppIcon.LAYOUT, "已找到字幕区域", "确认区域后开始提取。"),
-            _State.NO_SUBTITLE: (AppIcon.SUBTITLE, "没有识别到字幕", "可在左侧视频上手动框选后重试。"),
-            _State.ENGINE_MISSING: (AppIcon.SUBTITLE, "OCR 引擎未就绪", "请先安装识别引擎依赖。"),
+            _State.EMPTY: (AppIcon.SUBTITLE, tr("hardsub.ph.empty.title"), tr("hardsub.ph.empty.sub")),
+            _State.REGION: (AppIcon.LAYOUT, tr("hardsub.ph.region.title"), tr("hardsub.ph.region.sub")),
+            _State.NO_SUBTITLE: (AppIcon.SUBTITLE, tr("hardsub.ph.no_subtitle.title"), tr("hardsub.ph.no_subtitle.sub")),
+            _State.ENGINE_MISSING: (AppIcon.SUBTITLE, tr("hardsub.ph.engine_missing.title"), tr("hardsub.ph.engine_missing.sub")),
         }
         icon, title, sub = specs.get(state, specs[_State.EMPTY])
         self.iconBox.setIcon(icon)
@@ -710,7 +711,7 @@ class _ResultModel(QAbstractTableModel):
     （解析失败则拒绝该次编辑，保留原值）。
     """
 
-    HEADERS = ("开始", "结束", "文本")
+    HEADERS = (N_("hardsub.col.start"), N_("hardsub.col.end"), N_("hardsub.col.text"))
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -783,7 +784,7 @@ class _ResultModel(QAbstractTableModel):
 
     def headerData(self, section: int, orientation, role: int = Qt.DisplayRole):  # type: ignore[assignment]
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:  # type: ignore[attr-defined]
-            return self.HEADERS[section]
+            return tr(self.HEADERS[section])
         return None
 
     def flags(self, index: QModelIndex):
@@ -902,10 +903,10 @@ class _ResultTable(QTableView):
             return
         row = index.row()
         menu = RoundMenu(parent=self)
-        locate = Action(self.tr("定位到此画面"))
+        locate = Action(tr("hardsub.menu.locate"))
         locate.triggered.connect(lambda: self._emit_locate(row))
         menu.addAction(locate)
-        remove = Action(self.tr("删除该行"))
+        remove = Action(tr("hardsub.menu.delete_row"))
         remove.triggered.connect(lambda: self._model.remove_row(row))
         menu.addAction(remove)
         menu.exec(self.viewport().mapToGlobal(pos))

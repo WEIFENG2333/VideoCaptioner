@@ -37,6 +37,10 @@ from videocaptioner.ui.common.dubbing_options import (
     DubbingVoiceOption,
     get_provider_option,
     get_provider_voices,
+    provider_desc,
+    provider_title,
+    tag_label,
+    voice_desc,
 )
 from videocaptioner.ui.common.theme_tokens import app_palette, rgba
 from videocaptioner.ui.components.workbench import (
@@ -51,6 +55,7 @@ from videocaptioner.ui.components.workbench import (
     apply_font,
     draw_rounded_surface,
 )
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.voice_preview_thread import (
     VoicePreviewThread,
     bundled_voice_preview,
@@ -68,7 +73,6 @@ VOICE_ROW_HEIGHT = 92  # 容纳 标题 + 描述 + 标签三行
 VOICE_LIST_PADDING = 12  # 音色列表内边距
 VOICE_ROW_GAP = 8  # 音色卡片之间的留白
 VOICE_ROW_RADIUS = 14  # 音色卡片圆角（圆角卡片，非直角行）
-SQUARE_BUTTON_SIZE = 40
 AUDITION_BUTTON_WIDTH = 92
 
 
@@ -84,10 +88,10 @@ def _provider_badge(option) -> tuple[str, str]:
     """提供商卡右侧状态胶囊：
     免 Key（Edge）/ 可克隆（SiliconFlow）为 ok，其余需 Key 为 neutral。"""
     if not option.needs_api_key:
-        return "免 Key", "ok"
+        return tr("dubbing.badge.no_key"), "ok"
     if option.supports_clone:
-        return "可克隆", "ok"
-    return "需 Key", "neutral"
+        return tr("dubbing.badge.clone"), "ok"
+    return tr("dubbing.badge.need_key"), "neutral"
 
 # 提供商卡左侧图标（与批量处理页模式卡同款图标盒）：均为音频族图标，
 # edge=扬声器、gemini=音符、siliconflow=麦克风（克隆录音语义贴切）。
@@ -238,9 +242,9 @@ class VoiceRow(QFrame):
         titleBox = QVBoxLayout(titleWidget)
         titleBox.setContentsMargins(0, 0, 0, 0)
         titleBox.setSpacing(5)
-        self.titleLabel = QLabel(self.tr(voice.title), self)
+        self.titleLabel = QLabel(voice.title, self)
         apply_font(self.titleLabel, 16, 760)
-        self.descLabel = QLabel(self.tr(voice.description), self)
+        self.descLabel = QLabel(voice_desc(voice), self)
         self.descLabel.setObjectName("dubCaption")
         apply_font(self.descLabel, 13, 500)
         self.descLabel.setWordWrap(False)
@@ -251,12 +255,12 @@ class VoiceRow(QFrame):
             tagsRow.setContentsMargins(0, 1, 0, 0)
             tagsRow.setSpacing(6)
             for tag in voice.tags:
-                tagsRow.addWidget(_tag_chip(self.tr(tag), self))
+                tagsRow.addWidget(_tag_chip(tag_label(tag), self))
             tagsRow.addStretch(1)
             titleBox.addLayout(tagsRow)
         layout.addWidget(titleWidget, 0, 0, Qt.AlignVCenter)  # type: ignore
 
-        self.previewButton = AuditionButton(self.tr("试听"), self)
+        self.previewButton = AuditionButton(tr("dubbing.btn.audition"), self)
         layout.addWidget(self.previewButton, 0, 1, Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.previewButton.clicked.connect(lambda: self.previewRequested.emit(self.voice.preset, self.previewButton))
 
@@ -314,12 +318,18 @@ class VoiceTable(QFrame):
         self._headerLayout = QHBoxLayout(self.header)
         self._headerLayout.setContentsMargins(16, 0, 10, 0)
         self._headerLayout.setSpacing(10)
-        self.headingLabel = QLabel(self.tr("音色库"), self.header)
+        self.headingLabel = QLabel(tr("dubbing.voice.library"), self.header)
         self.headingLabel.setObjectName("voiceHeading")
         apply_font(self.headingLabel, 19, 820)
         self._headerLayout.addWidget(self.headingLabel)
         self._headerLayout.addStretch(1)
-        self._build_filter([("全部", "全部"), ("女声", "女声"), ("男声", "男声")])
+        self._build_filter(
+            [
+                ("全部", tr("dubbing.filter.all")),
+                ("女声", tr("dubbing.filter.female")),
+                ("男声", tr("dubbing.filter.male")),
+            ]
+        )
         self.layout.addWidget(self.header)
 
     def _build_filter(self, items: list[tuple[str, str]]):
@@ -339,11 +349,11 @@ class VoiceTable(QFrame):
     def configure(self, heading: str, *, show_gender: bool, show_clone: bool):
         """按提供商配置表头：标题文案 + 筛选项（性别/克隆按需出现）。"""
         self.headingLabel.setText(heading)
-        items = [("全部", "全部")]
+        items = [("全部", tr("dubbing.filter.all"))]
         if show_gender:
-            items += [("女声", "女声"), ("男声", "男声")]
+            items += [("女声", tr("dubbing.filter.female")), ("男声", tr("dubbing.filter.male"))]
         if show_clone:
-            items += [("克隆", "克隆")]
+            items += [("克隆", tr("dubbing.filter.clone"))]
         self._build_filter(items)
 
     def setFilter(self, key: str):
@@ -403,9 +413,9 @@ class PreviewPanel(ThemedSimpleCard):
         headText = QVBoxLayout()
         headText.setContentsMargins(0, 0, 0, 0)
         headText.setSpacing(3)
-        self.titleLabel = QLabel(self.tr("配音文案"), self.selectedCard)
+        self.titleLabel = QLabel(tr("dubbing.preview.title"), self.selectedCard)
         apply_font(self.titleLabel, 19, 700)
-        self.descLabel = QLabel(self.tr("填写测试文案，生成音频后确认声音和语气。"), self.selectedCard)
+        self.descLabel = QLabel(tr("dubbing.preview.desc"), self.selectedCard)
         self.descLabel.setObjectName("dubCaption")
         self.descLabel.setWordWrap(True)
         apply_font(self.descLabel, 13, 500)
@@ -418,9 +428,9 @@ class PreviewPanel(ThemedSimpleCard):
 
         self.previewInput = AppTextEdit(parent=self, min_height=104, radius=15)
         self.previewInput.setObjectName("previewInput")
-        self.previewInput.setPlaceholderText(self.tr("输入一句话，试听选中的音色"))
+        self.previewInput.setPlaceholderText(tr("dubbing.preview.input_placeholder"))
         self.previewInput.setFixedHeight(104)
-        self.previewInput.setPlainText(self.tr("你好，这是我想用于测试的配音文案。请用自然清晰的语气朗读这一句话。"))
+        self.previewInput.setPlainText(tr("dubbing.preview.sample_text"))
         apply_font(self.previewInput, 13, 700)
 
         meta = QHBoxLayout()
@@ -435,7 +445,7 @@ class PreviewPanel(ThemedSimpleCard):
         meta.addWidget(self.countLabel)
 
         self.customPreviewButton = WorkbenchButton(
-            self.tr("生成试听音频"), AppIcon.PLAY, primary=True, height=40, parent=self
+            tr("dubbing.btn.generate_preview"), AppIcon.PLAY, primary=True, height=40, parent=self
         )
 
         # 自绘抗锯齿圆角（绿调克隆框）；QSS border-radius 会有锯齿
@@ -451,7 +461,7 @@ class PreviewPanel(ThemedSimpleCard):
         cloneLayout.setSpacing(8)
 
         cloneHeader = QHBoxLayout()
-        cloneTitle = QLabel(self.tr("声音克隆"), self.cloneSection)
+        cloneTitle = QLabel(tr("dubbing.clone.title"), self.cloneSection)
         apply_font(cloneTitle, 15, 700)
         cloneHeader.addWidget(cloneTitle)
         cloneHeader.addStretch(1)
@@ -462,11 +472,11 @@ class PreviewPanel(ThemedSimpleCard):
         fileLayout = QHBoxLayout(self.fileBox)
         fileLayout.setContentsMargins(12, 0, 10, 0)
         fileLayout.setSpacing(8)
-        self.fileLabel = QLabel(self.tr("未选择参考音频"), self.fileBox)
+        self.fileLabel = QLabel(tr("dubbing.clone.no_audio"), self.fileBox)
         self.fileLabel.setObjectName("dubCaption")
         apply_font(self.fileLabel, 12, 600)
         self.fileLabel.setWordWrap(False)
-        self.fileStatusPill = StatusPill(self.tr("已上传"), "ok", self.fileBox)
+        self.fileStatusPill = StatusPill(tr("dubbing.clone.uploaded"), "ok", self.fileBox)
         self.fileStatusPill.hide()
         fileLayout.addWidget(self.fileLabel, 1)
         fileLayout.addWidget(self.fileStatusPill, 0, Qt.AlignVCenter)
@@ -475,26 +485,26 @@ class PreviewPanel(ThemedSimpleCard):
         actions = QHBoxLayout()
         actions.setContentsMargins(0, 0, 0, 0)
         actions.setSpacing(8)
-        self.chooseButton = CompactButton(self.tr("上传"), AppIcon.FOLDER_ADD, self.cloneSection)
-        self.playButton = CompactButton(self.tr("试听"), AppIcon.PLAY, self.cloneSection)
-        self.recordButton = CompactButton(self.tr("录制"), AppIcon.MICROPHONE, self.cloneSection)
-        self.clearButton = DangerButton(self.tr("清除"), AppIcon.DELETE, self.cloneSection)
+        self.chooseButton = CompactButton(tr("dubbing.clone.upload"), AppIcon.FOLDER_ADD, self.cloneSection)
+        self.playButton = CompactButton(tr("dubbing.btn.audition"), AppIcon.PLAY, self.cloneSection)
+        self.recordButton = CompactButton(tr("dubbing.clone.record"), AppIcon.MICROPHONE, self.cloneSection)
+        self.clearButton = DangerButton(tr("dubbing.clone.clear"), AppIcon.DELETE, self.cloneSection)
         actions.addWidget(self.chooseButton)
         actions.addWidget(self.playButton)
         actions.addWidget(self.recordButton)
         actions.addWidget(self.clearButton)
         actions.addStretch(1)
 
-        self.cloneTextLabel = QLabel(self.tr("参考文本"), self.cloneSection)
+        self.cloneTextLabel = QLabel(tr("dubbing.clone.ref_text"), self.cloneSection)
         self.cloneTextLabel.setObjectName("sampleMetaLabel")
         apply_font(self.cloneTextLabel, 12, 600)
         self.cloneTextInput = AppTextEdit(parent=self.cloneSection, min_height=48, radius=12)
         self.cloneTextInput.setObjectName("cloneTextInput")
-        self.cloneTextInput.setPlaceholderText(self.tr("输入参考音频里实际朗读的文字"))
+        self.cloneTextInput.setPlaceholderText(tr("dubbing.clone.ref_text_placeholder"))
         self.cloneTextInput.setFixedHeight(48)
         apply_font(self.cloneTextInput, 12, 650)
 
-        self.cloneHintLabel = QLabel(self.tr("未上传参考音频时，会直接用上方文案试听当前音色。"), self.cloneSection)
+        self.cloneHintLabel = QLabel(tr("dubbing.clone.hint"), self.cloneSection)
         self.cloneHintLabel.setObjectName("sampleMetaLabel")
         apply_font(self.cloneHintLabel, 11, 400)
         self.cloneHintLabel.setWordWrap(True)
@@ -516,9 +526,9 @@ class PreviewPanel(ThemedSimpleCard):
         formLayout.setContentsMargins(14, 10, 14, 10)
         formLayout.setSpacing(8)
         self.formVoiceValue = QLabel("", self.formList)
-        self.formTypeValue = QLabel(self.tr("试听音频"), self.formList)
-        formLayout.addLayout(self._form_row(self.tr("当前音色"), self.formVoiceValue))
-        formLayout.addLayout(self._form_row(self.tr("生成类型"), self.formTypeValue))
+        self.formTypeValue = QLabel(tr("dubbing.form.type_preview"), self.formList)
+        formLayout.addLayout(self._form_row(tr("dubbing.form.current_voice"), self.formVoiceValue))
+        formLayout.addLayout(self._form_row(tr("dubbing.form.gen_type"), self.formTypeValue))
 
         layout.addWidget(self.selectedCard)
         layout.addWidget(self.cloneSection)
@@ -558,8 +568,8 @@ class PreviewPanel(ThemedSimpleCard):
     def customButtonLabel(self) -> str:
         """主按钮应显示的文案：有参考音频的克隆态用「生成克隆音频」，否则「生成试听音频」。"""
         if self._clone_available and bool(self._clone_audio_path):
-            return self.tr("生成克隆音频")
-        return self.tr("生成试听音频")
+            return tr("dubbing.btn.generate_clone")
+        return tr("dubbing.btn.generate_preview")
 
     def setCurrentVoice(self, name: str):
         """右栏「配音文案」标题旁显示当前音色名。"""
@@ -568,18 +578,18 @@ class PreviewPanel(ThemedSimpleCard):
             self.voicePill.show()
         else:
             self.voicePill.hide()
-        self.formVoiceValue.setText(name or self.tr("未选择"))
+        self.formVoiceValue.setText(name or tr("dubbing.form.not_selected"))
 
     def setCloneAvailable(self, available: bool):
         self._clone_available = available
         self.cloneSection.setVisible(available)
         self.formList.setVisible(not available)
         if not available:
-            self.customPreviewButton.setText(self.tr("生成试听音频"))
-            self.descLabel.setText(self.tr("填写测试文案，生成音频后确认声音和语气。"))
+            self.customPreviewButton.setText(tr("dubbing.btn.generate_preview"))
+            self.descLabel.setText(tr("dubbing.preview.desc"))
             self.layoutChanged.emit()
         else:
-            self.descLabel.setText(self.tr("可直接试听预置音色，或加参考音频做声音克隆。"))
+            self.descLabel.setText(tr("dubbing.preview.desc_clone"))
             self._sync_clone_state()
         self.updateGeometry()
 
@@ -603,7 +613,7 @@ class PreviewPanel(ThemedSimpleCard):
         self.cloneTextInput.blockSignals(False)
 
     def setRecording(self, recording: bool):
-        self.recordButton.setText(self.tr("停止") if recording else self.tr("录制"))
+        self.recordButton.setText(tr("dubbing.btn.stop") if recording else tr("dubbing.clone.record"))
         self.chooseButton.setEnabled(not recording)
         self.playButton.setEnabled(False if recording else self._clone_audio_exists())
         self.clearButton.setEnabled(False if recording else bool(self._clone_audio_path))
@@ -620,7 +630,7 @@ class PreviewPanel(ThemedSimpleCard):
             if Path(path).exists():
                 self.cloneHintLabel.clear()
             else:
-                self.cloneHintLabel.setText(self.tr("参考音频文件不存在，请重新选择或清除。"))
+                self.cloneHintLabel.setText(tr("dubbing.clone.missing_file"))
         else:
             self.cloneHintLabel.clear()
 
@@ -631,7 +641,7 @@ class PreviewPanel(ThemedSimpleCard):
             return
         has_audio = bool(self._clone_audio_path)
         self.customPreviewButton.setText(
-            self.tr("生成克隆音频") if has_audio else self.tr("生成试听音频")
+            tr("dubbing.btn.generate_clone") if has_audio else tr("dubbing.btn.generate_preview")
         )
         self._update_clone_hint(self._clone_audio_path)
         self.cloneTextLabel.setVisible(has_audio)
@@ -649,7 +659,7 @@ class PreviewPanel(ThemedSimpleCard):
     def _format_file_line(self, path: str) -> str:
         """file-line 文案：「文件名 · 时长s」。"""
         if not path:
-            return self.tr("未选择参考音频")
+            return tr("dubbing.clone.no_audio")
         name = Path(path).name
         seconds = self._audio_seconds(path)
         return f"{name} · {seconds}s" if seconds else name
@@ -666,7 +676,7 @@ class PreviewPanel(ThemedSimpleCard):
             return 0
 
     def _update_count(self):
-        self.countLabel.setText(self.tr("{count} 字").format(count=len(self.text())))
+        self.countLabel.setText(tr("dubbing.preview.char_count", count=len(self.text())))
 
 
 class DubbingInterface(ScrollArea):
@@ -674,7 +684,7 @@ class DubbingInterface(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.setWindowTitle(self.tr("配音"))
+        self.setWindowTitle(tr("dubbing.title"))
         self.preview_thread: VoicePreviewThread | None = None
         self.player = QMediaPlayer(self)
         self.player.stateChanged.connect(self._on_player_state_changed)
@@ -716,11 +726,11 @@ class DubbingInterface(ScrollArea):
         headText = QVBoxLayout()
         headText.setContentsMargins(0, 0, 0, 0)
         headText.setSpacing(3)
-        self.titleLabel = QLabel(self.tr("配音"), self.headerWidget)
+        self.titleLabel = QLabel(tr("dubbing.title"), self.headerWidget)
         self.titleLabel.setObjectName("pageTitle")
         apply_font(self.titleLabel, 26, 860)
         self.subtitleLabel = QLabel(
-            self.tr("选择提供商和音色，输入一句自己的试听文案。"), self.headerWidget
+            tr("dubbing.subtitle"), self.headerWidget
         )
         self.subtitleLabel.setObjectName("pageSubtitle")
         apply_font(self.subtitleLabel, 13, 720)
@@ -728,7 +738,7 @@ class DubbingInterface(ScrollArea):
         headText.addWidget(self.subtitleLabel)
         headRow.addLayout(headText, 1)
         # 右侧：配音配置入口 + 当前提供商就绪状态
-        self.configButton = CompactButton(self.tr("配音配置"), AppIcon.SETTING, self.headerWidget)
+        self.configButton = CompactButton(tr("dubbing.btn.config"), AppIcon.SETTING, self.headerWidget)
         self.configButton.clicked.connect(self._open_dubbing_config)
         self.readyPill = StatusPill("", "neutral", self.headerWidget)
         headRow.addWidget(self.configButton, 0, Qt.AlignBottom)  # type: ignore[arg-type]
@@ -742,13 +752,13 @@ class DubbingInterface(ScrollArea):
         for option in DUBBING_PROVIDERS:
             card = SelectableCard(
                 option.key,
-                self.tr(option.title),
-                self.tr(option.description),
+                provider_title(option),
+                provider_desc(option),
                 _PROVIDER_ICONS.get(option.key),
                 self.providerPanel,
             )
             text, level = _provider_badge(option)
-            card.setBadge(self.tr(text), level)
+            card.setBadge(text, level)
             card.clicked.connect(self._on_provider_changed)
             providerLayout.addWidget(card, 1)
             self.providerCards[option.key] = card
@@ -904,10 +914,10 @@ class DubbingInterface(ScrollArea):
         cfg.set(cfg.dubbing_provider, provider)
         option = get_provider_option(provider)
         ready = {
-            "edge": (self.tr("免 Key 即用"), "ok"),
-            "gemini": (self.tr("需 API Key"), "neutral"),
-            "siliconflow": (self.tr("支持声音克隆"), "ok"),
-        }.get(provider, (self.tr("就绪"), "ok"))
+            "edge": (tr("dubbing.ready.no_key"), "ok"),
+            "gemini": (tr("dubbing.ready.need_key"), "neutral"),
+            "siliconflow": (tr("dubbing.ready.clone"), "ok"),
+        }.get(provider, (tr("dubbing.ready.default"), "ok"))
         self.readyPill.setState(*ready)
         if option.models and not cfg.dubbing_model.value:
             cfg.set(cfg.dubbing_model, option.models[0])
@@ -932,7 +942,7 @@ class DubbingInterface(ScrollArea):
     def _sync_filter_visibility(self, provider: str, voices: tuple[DubbingVoiceOption, ...]):
         supports_gender = any(GENDER_FILTER_TAGS.intersection(voice.tags) for voice in voices)
         supports_clone = any("克隆" in voice.tags for voice in voices)
-        heading = self.tr("中文音色") if provider == "siliconflow" else self.tr("音色库")
+        heading = tr("dubbing.voice.library_zh") if provider == "siliconflow" else tr("dubbing.voice.library")
         # 切换提供商时筛选项可能变化（如克隆 tab 出现/消失），统一回到「全部」
         self.genderFilter = "全部"
         self.voiceTable.configure(heading, show_gender=supports_gender, show_clone=supports_clone)
@@ -977,9 +987,9 @@ class DubbingInterface(ScrollArea):
             return
         path, _ = QFileDialog.getOpenFileName(
             self,
-            self.tr("选择参考音频"),
+            tr("dubbing.dialog.choose_audio"),
             "",
-            self.tr("音频文件 (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus);;所有文件 (*.*)"),
+            tr("dubbing.dialog.audio_filter"),
         )
         if not path:
             return
@@ -1016,8 +1026,8 @@ class DubbingInterface(ScrollArea):
             self._discard_clone_preview_cache()
             self._refresh_body_layout()
             InfoBar.success(
-                self.tr("录制完成"),
-                self.tr("已保存为参考音频"),
+                tr("dubbing.toast.record_done"),
+                tr("dubbing.toast.record_done_body"),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
@@ -1037,8 +1047,8 @@ class DubbingInterface(ScrollArea):
         path = cfg.dubbing_clone_audio.value.strip()
         if not path or not Path(path).exists():
             InfoBar.warning(
-                self.tr("参考音频不存在"),
-                self.tr("请重新上传或录制参考音频。"),
+                tr("dubbing.toast.audio_missing"),
+                tr("dubbing.toast.audio_missing_body"),
                 duration=3000,
                 parent=self,
             )
@@ -1065,8 +1075,8 @@ class DubbingInterface(ScrollArea):
         text = self.previewPanel.text()
         if not text:
             InfoBar.warning(
-                self.tr("请输入试听文本"),
-                self.tr("文本试听会使用你输入的内容实时生成音频。"),
+                tr("dubbing.toast.empty_text"),
+                tr("dubbing.toast.empty_text_body"),
                 duration=3000,
                 parent=self,
             )
@@ -1076,8 +1086,8 @@ class DubbingInterface(ScrollArea):
         clone_audio_text = cfg.dubbing_clone_text.value.strip() if clone_audio_path else ""
         if clone_audio_path and not clone_audio_text:
             InfoBar.warning(
-                self.tr("缺少参考文本"),
-                self.tr("请填写参考音频里实际朗读的文字，或清除参考音频后普通试听。"),
+                tr("dubbing.toast.missing_ref_text"),
+                tr("dubbing.toast.missing_ref_text_body"),
                 duration=3500,
                 parent=self,
             )
@@ -1099,7 +1109,7 @@ class DubbingInterface(ScrollArea):
         # 而非旧文案「试听这句话」，否则按钮标签会与右栏当前模式不一致。
         if button is self.previewPanel.customPreviewButton:
             return self.previewPanel.customButtonLabel()
-        return self.tr("试听")
+        return tr("dubbing.btn.audition")
 
     def _set_preview_button(self, button: QWidget | None, state: str):
         if button is None:
@@ -1107,11 +1117,11 @@ class DubbingInterface(ScrollArea):
         if state == "loading":
             button.setEnabled(False)
             if hasattr(button, "setText"):
-                button.setText(self.tr("合成中…"))
+                button.setText(tr("dubbing.btn.synthesizing"))
         elif state == "playing":
             button.setEnabled(True)
             if hasattr(button, "setText"):
-                button.setText(self.tr("停止"))
+                button.setText(tr("dubbing.btn.stop"))
             if hasattr(button, "setIcon"):
                 button.setIcon(AppIcon.CANCEL)
         else:
@@ -1162,8 +1172,8 @@ class DubbingInterface(ScrollArea):
         self._playing_button = None
         self._playing_path = ""
         InfoBar.error(
-            self.tr("播放失败"),
-            self.tr("当前系统缺少音频解码组件，且未找到可用的外部播放器。"),
+            tr("dubbing.toast.play_failed"),
+            tr("dubbing.toast.play_failed_body"),
             duration=INFOBAR_DURATION_ERROR,
             parent=self,
         )
@@ -1183,8 +1193,8 @@ class DubbingInterface(ScrollArea):
             return
         if self.preview_thread and self.preview_thread.isRunning():
             InfoBar.info(
-                self.tr("请稍候"),
-                self.tr("正在合成另一段试听。"),
+                tr("dubbing.toast.please_wait"),
+                tr("dubbing.toast.please_wait_body"),
                 duration=2000,
                 parent=self,
             )
@@ -1193,8 +1203,8 @@ class DubbingInterface(ScrollArea):
         requires_api = text or clone_audio_path or clone_audio_text or not bundled_voice_preview(preset_name)
         if preset.provider != "edge" and not cfg.dubbing_api_key.value.strip() and requires_api:
             InfoBar.warning(
-                self.tr("需要 API Key"),
-                self.tr("自定义文本试听需要真实请求，请先填写当前配音服务的 API Key。"),
+                tr("dubbing.toast.need_api_key"),
+                tr("dubbing.toast.need_api_key_body"),
                 duration=3500,
                 parent=self,
             )
@@ -1237,7 +1247,7 @@ class DubbingInterface(ScrollArea):
         self._set_preview_button(self._active_preview_button, "idle")
         self._active_preview_button = None
         InfoBar.error(
-            self.tr("试听失败"),
+            tr("dubbing.toast.preview_failed"),
             message,
             duration=INFOBAR_DURATION_ERROR,
             parent=self,

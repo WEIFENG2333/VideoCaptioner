@@ -32,7 +32,7 @@ def test_status_level_and_text_have_warning():
 def test_live_caption_missing_voxgate_is_amber_warning():
     # voxgate 缺失 → warn → 卡片 WARNING（琥珀），描述强调「可选」，而非红色「不可用」
     checks = [Check("live_caption.voxgate", "warn", "未找到 voxgate 转录程序")]
-    items = di._items_from_checks(checks, lambda s: s)
+    items = di._items_from_checks(checks)
     card = next(i for i in items if i.key == "live_caption")
     assert card.status == di.ItemStatus.WARNING
     assert "可选" in card.description
@@ -40,6 +40,6 @@ def test_live_caption_missing_voxgate_is_amber_warning():
 
 def test_live_caption_ready_is_ok():
     checks = [Check("live_caption.voxgate", "ok", "voxgate 已就绪：/usr/bin/voxgate")]
-    items = di._items_from_checks(checks, lambda s: s)
+    items = di._items_from_checks(checks)
     card = next(i for i in items if i.key == "live_caption")
     assert card.status == di.ItemStatus.OK

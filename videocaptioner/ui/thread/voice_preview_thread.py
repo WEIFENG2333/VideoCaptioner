@@ -13,10 +13,13 @@ from videocaptioner.core.speech import (
 )
 from videocaptioner.core.utils.logger import setup_logger
 from videocaptioner.ui.common.config import cfg
+from videocaptioner.ui.i18n import tr
 
 logger = setup_logger("voice_preview_thread")
 
-SAMPLE_TEXT = "你好，这是卡卡字幕助手的配音试听。"
+
+def _sample_text() -> str:
+    return tr("t_voice.sample_text")
 
 
 class VoicePreviewThread(QThread):
@@ -52,7 +55,7 @@ class VoicePreviewThread(QThread):
                 api_key = ""
                 api_base = ""
             elif not api_key:
-                raise ValueError(f"{preset.provider} 试听需要先在设置里填写配音 API Key")
+                raise ValueError(tr("t_voice.error.need_api_key", provider=preset.provider))
 
             core_config = build_dubbing_config(
                 provider=preset.provider,
@@ -90,7 +93,7 @@ class VoicePreviewThread(QThread):
             output = work / f"{self.preset_name}.wav"
             result = synthesizer.synthesize(
                 SynthesisRequest(
-                    text=self.text or SAMPLE_TEXT,
+                    text=self.text or _sample_text(),
                     output_path=str(output),
                     voice=core_config.voice,
                     style_prompt=core_config.style_prompt or None,

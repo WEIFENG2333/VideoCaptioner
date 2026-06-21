@@ -29,6 +29,7 @@ from PyQt5.QtWidgets import (
 
 from videocaptioner.ui.components.live_caption.typing import TYPE_INTERVAL_MS, next_visible
 from videocaptioner.ui.components.workbench import apply_font
+from videocaptioner.ui.i18n import tr
 
 # ----- 暗色玻璃配色 -----
 BRAND = "#28f08b"
@@ -661,7 +662,7 @@ class CaptionOverlay(QWidget):
         bar.setContentsMargins(12, 5, 12, 7)
         bar.setSpacing(2)
         # 暂停指示：暂停时常显（不靠 hover），居中，显隐不挤动左右按钮。
-        self._paused_label = QLabel("已暂停")
+        self._paused_label = QLabel(tr("overlay.paused"))
         apply_font(self._paused_label, 12, 750)
         self._paused_label.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
         self._paused_label.setStyleSheet(f"color:{WARN};background:transparent;")
@@ -818,7 +819,7 @@ class CaptionOverlay(QWidget):
         """
         row = self._current_row()
         if row is None:
-            self._cur_item.set_placeholder("监听中…")  # 空态朴素占位，不画卡片
+            self._cur_item.set_placeholder(tr("overlay.listening"))  # 空态朴素占位，不画卡片
             self._set_centered(True)  # 空态文字水平+垂直居中
             return
         self._set_centered(self._mode == MODE_STANDARD)  # 标准居中 / 转录底对齐

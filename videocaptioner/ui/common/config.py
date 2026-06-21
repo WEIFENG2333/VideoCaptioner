@@ -52,6 +52,7 @@ from videocaptioner.ui.common.settings_state import (
     SettingSerializer,
     SettingsState,
 )
+from videocaptioner.ui.i18n import tr
 
 DEFAULT_THEME_COLOR = "#ff00e889"
 
@@ -112,9 +113,20 @@ _SOURCE_LANG_LABELS = {
 }
 
 
+def source_language_i18n_map() -> dict[str, str]:
+    """识别语言 lclang.<code>→基准中文。key 动态拼成、pybabel 抽不到，由 i18n 工具链注入。"""
+    return {f"lclang.{code}": label for code, label in _SOURCE_LANG_LABELS.items()}
+
+
 def source_language_options(provider: str) -> list[tuple[str, str]]:
-    """该 provider 的识别语言下拉项 (code, 中文标签)；第一项总是「自动识别」。"""
-    return [(code, _SOURCE_LANG_LABELS.get(code, code)) for code in source_lang_codes(provider)]
+    """该 provider 的识别语言下拉项 (code, 译文标签)；第一项总是「自动识别」。
+
+    label 走 i18n（key=lclang.<code>）；_SOURCE_LANG_LABELS 为 zh 基准，未命中回落 code。
+    """
+    return [
+        (code, tr(f"lclang.{code}") if code in _SOURCE_LANG_LABELS else code)
+        for code in source_lang_codes(provider)
+    ]
 
 
 # 校验器接受所有 provider 支持语言的并集（任一 provider 的选择都能持久化）；UI 按当前 provider 取子集。

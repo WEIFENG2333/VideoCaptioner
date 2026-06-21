@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from PyQt5.QtCore import QT_TRANSLATE_NOOP
+from videocaptioner.ui.i18n import tr
 
 
 @dataclass(frozen=True)
@@ -133,75 +133,71 @@ def get_provider_voices(provider: str) -> tuple[DubbingVoiceOption, ...]:
     return DUBBING_VOICES.get(provider, DUBBING_VOICES["edge"])
 
 
-def _translation_catalog() -> tuple[str, ...]:
-    return (
-        QT_TRANSLATE_NOOP("DubbingInterface", "Edge 免费配音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "免 API Key，适合默认快速生成中文或英文配音。"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "Gemini TTS"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "Google Gemini 语音模型，适合英文自然表达。"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "SiliconFlow CosyVoice"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "CosyVoice 中文表现稳定，并支持参考音频克隆。"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "晓晓"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "清晰自然的普通话女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "云希"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "年轻自然的普通话男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "晓伊"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "温和明亮的普通话女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "云健"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "更适合演讲和旁白的男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "云扬"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "播报感更强的普通话男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "曉佳"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "粤语女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "雲龍"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "粤语男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "曉臾"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "台湾国语女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "雲哲"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "台湾国语男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "美式英语女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "美式英语男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "清爽自然的美式英语女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "清晰稳重的美式英语男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "柔和自然的美式英语女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "自然稳健的美式英语男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "英式英语女声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "英式英语男声"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "友好自然的英文表达"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "清晰稳定的自然英文"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "更有能量的英文表达"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "明亮清爽的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "明亮自然的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "均衡清晰的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "轻松自然的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "更沉稳的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "平滑自然的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "气声感更明显的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "清晰直给的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "低沉有力的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "成熟稳重的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "清澈稳定的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "轻快活泼的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "轻快明亮的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "旁白感更强的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "前置感更强的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "信息感更强的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "生动轻快的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "知识型表达的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "平稳均衡的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "温暖自然的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "温和柔顺的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "休闲自然的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "柔和的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "颗粒感更强的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "平滑的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "坚定清晰的英文声音"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "自然中文女声，可配合参考音频克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "自然中文男声，可配合参考音频克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "沉稳低沉的中文男声，可克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "磁性中文男声，可克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "欢快中文男声，可克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "热情中文女声，可克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "温柔中文女声，可克隆"),
-        QT_TRANSLATE_NOOP("DubbingInterface", "欢快中文女声，可克隆"),
-    )
+# ---------------- 显示辅助（i18n key-based） ----------------
+# dataclass 里的中文是 zh 基准 + 逻辑值（tags 参与筛选）；UI 展示一律走下面的辅助函数
+# 把 provider/voice/tag 翻成当前语言。key 由 provider.key / voice.preset 动态拼成
+# （pybabel 抽不到，靠翻译目录注入），未命中时回落原中文。
+
+# tag 既是逻辑筛选键（不可改原值），又要在 chip 上显示译文：这里只做「中文值 → key」映射。
+_TAG_KEYS = {
+    "中文": "dubbing.tag.zh",
+    "英文": "dubbing.tag.en",
+    "粤语": "dubbing.tag.yue",
+    "女声": "dubbing.tag.female",
+    "男声": "dubbing.tag.male",
+    "免费": "dubbing.tag.free",
+    "需 Key": "dubbing.tag.need_key",
+    "克隆": "dubbing.tag.clone",
+    "推荐": "dubbing.tag.recommended",
+    "Bright": "dubbing.tag.bright",
+    "Easy-going": "dubbing.tag.easy_going",
+    "Smooth": "dubbing.tag.smooth",
+    "Breathy": "dubbing.tag.breathy",
+    "Clear": "dubbing.tag.clear",
+    "Mature": "dubbing.tag.mature",
+    "Upbeat": "dubbing.tag.upbeat",
+    "Forward": "dubbing.tag.forward",
+    "Informative": "dubbing.tag.informative",
+    "Lively": "dubbing.tag.lively",
+    "Knowledgeable": "dubbing.tag.knowledgeable",
+    "Even": "dubbing.tag.even",
+    "Warm": "dubbing.tag.warm",
+    "Gentle": "dubbing.tag.gentle",
+    "Casual": "dubbing.tag.casual",
+    "Soft": "dubbing.tag.soft",
+    "Gravelly": "dubbing.tag.gravelly",
+    "Firm": "dubbing.tag.firm",
+}
+
+
+def provider_title(option: DubbingProviderOption) -> str:
+    return tr(f"dubbing.provider.{option.key}.title")
+
+
+def provider_desc(option: DubbingProviderOption) -> str:
+    return tr(f"dubbing.provider.{option.key}.desc")
+
+
+def voice_desc(option: DubbingVoiceOption) -> str:
+    return tr(f"dubbing.voice.{option.preset}.desc")
+
+
+def tag_label(tag: str) -> str:
+    """标签 chip 的显示译文；未知标签回落原值（逻辑判断仍用原中文 tag）。"""
+    key = _TAG_KEYS.get(tag)
+    return tr(key) if key else tag
+
+
+def i18n_base_map() -> dict[str, str]:
+    """provider/voice/tag 的 i18n key→基准中文。key 由数据动态拼成、pybabel 抽不到，
+    由 i18n 工具链注入翻译目录（见 scripts/i18n.py）。"""
+    m: dict[str, str] = {}
+    for option in DUBBING_PROVIDERS:
+        m[f"dubbing.provider.{option.key}.title"] = option.title
+        m[f"dubbing.provider.{option.key}.desc"] = option.description
+    for voices in DUBBING_VOICES.values():
+        for voice in voices:
+            m[f"dubbing.voice.{voice.preset}.desc"] = voice.description
+    for tag, key in _TAG_KEYS.items():
+        m[key] = tag
+    return m

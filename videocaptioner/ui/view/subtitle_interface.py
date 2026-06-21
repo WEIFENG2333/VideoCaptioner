@@ -74,6 +74,7 @@ from videocaptioner.core.translate.types import TargetLanguage
 from videocaptioner.core.utils.platform_utils import open_folder, reveal_in_explorer
 from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import cfg
+from videocaptioner.ui.common.enum_labels import enum_from_label, enum_label, enum_options
 from videocaptioner.ui.common.theme_tokens import app_palette, rgba
 from videocaptioner.ui.components.app_dialog import AppDialog, ConfirmDialog
 from videocaptioner.ui.components.workbench import (
@@ -97,6 +98,7 @@ from videocaptioner.ui.components.workbench import (
     icon_pixmap,
     to_qcolor,
 )
+from videocaptioner.ui.i18n import N_, tr
 from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.thread.subtitle_thread import RetranslateThread, SubtitleThread
 
@@ -208,7 +210,12 @@ class SubtitleTableModel(QAbstractTableModel):
     original_subtitle, translated_subtitle}, ...}。
     """
 
-    HEADERS = ("开始", "结束", "原文", "译文")
+    HEADER_KEYS = (
+        N_("subtitle.col.start"),
+        N_("subtitle.col.end"),
+        N_("subtitle.col.original"),
+        N_("subtitle.col.translated"),
+    )
 
     def __init__(self, data: Union[Dict[str, Any], None] = None):
         super().__init__()
@@ -328,7 +335,7 @@ class SubtitleTableModel(QAbstractTableModel):
 
     def headerData(self, section: int, orientation, role: int = Qt.DisplayRole):  # type: ignore[assignment]
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:  # type: ignore[attr-defined]
-            return self.HEADERS[section]
+            return tr(self.HEADER_KEYS[section])
         return None
 
     def flags(self, index: QModelIndex):
@@ -526,9 +533,9 @@ class TableBottomBar(QFrame):
             widget.setVisible(visible.get(name, False))
 
     def showReady(self, count: int):
-        self.infoLabel.setText(self.tr("共 {} 条").format(count))
-        self.hintLabel.setText(self.tr("右键可合并、删除、重新翻译"))
-        self.rightPill.setState(self.tr("已加载"), "ok")
+        self.infoLabel.setText(tr("subtitle.bottom.count", count=count))
+        self.hintLabel.setText(tr("subtitle.bottom.hint"))
+        self.rightPill.setState(tr("subtitle.bottom.loaded"), "ok")
         self._show(info=True, hint=True, right_pill=True)
 
     def showRunning(self, stage: str, percent: int, current: int, total: int):
@@ -536,7 +543,7 @@ class TableBottomBar(QFrame):
         self.progressLine.setValue(percent)
         self.percentLabel.setText(f"{percent}%")
         self.rightPill.setState(
-            self.tr("第 {} / {} 条").format(current, total), "warn"
+            tr("subtitle.bottom.progress", current=current, total=total), "warn"
         )
         self._show(info=True, progress=True, percent=True, right_pill=True)
 
@@ -546,8 +553,8 @@ class TableBottomBar(QFrame):
         self._show(left_pill=True, info=True)
 
     def showDone(self, output_name: str):
-        self.infoLabel.setText(self.tr("输出：{}").format(output_name))
-        self.rightPill.setState(self.tr("可进入合成"), "ok")
+        self.infoLabel.setText(tr("subtitle.bottom.output", name=output_name))
+        self.rightPill.setState(tr("subtitle.bottom.can_synthesize"), "ok")
         self._show(info=True, right_pill=True)
 
     def syncStyle(self):
@@ -589,35 +596,35 @@ class SubtitleTablePanel(WorkbenchPanel):
         self.fileIcon = QLabel(self.head)
         self.fileIcon.hide()
         head_layout.addWidget(self.fileIcon)
-        self.fileName = ElidedLabel(self.tr("未选择字幕文件"), self.head)
+        self.fileName = ElidedLabel(tr("subtitle.no_file"), self.head)
         self.fileName.setObjectName("tableFileName")
         apply_font(self.fileName, 20, 860)
         head_layout.addWidget(self.fileName, 1)
         head_layout.addSpacing(8)
 
-        self.saveButton = CompactButton(self.tr("保存"), AppIcon.SAVE, self.head)
+        self.saveButton = CompactButton(tr("common.save"), AppIcon.SAVE, self.head)
         self.saveButton.clicked.connect(self._show_save_menu)
         head_layout.addWidget(self.saveButton)
-        self.folderButton = CompactButton(self.tr("目录"), AppIcon.FOLDER, self.head)
+        self.folderButton = CompactButton(tr("subtitle.btn.folder"), AppIcon.FOLDER, self.head)
         self.folderButton.clicked.connect(self.openFolderRequested)
         head_layout.addWidget(self.folderButton)
-        self.replaceButton = CompactButton(self.tr("更换"), AppIcon.FOLDER_ADD, self.head)
+        self.replaceButton = CompactButton(tr("subtitle.btn.replace"), AppIcon.FOLDER_ADD, self.head)
         self.replaceButton.clicked.connect(self.browseRequested)
         head_layout.addWidget(self.replaceButton)
         # 清空当前字幕、回到初始态（报错/完成后可一键重来）
-        self.resetButton = DangerButton(self.tr("清空"), AppIcon.DELETE, self.head)
+        self.resetButton = DangerButton(tr("subtitle.btn.clear"), AppIcon.DELETE, self.head)
         self.resetButton.clicked.connect(self.resetRequested)
         head_layout.addWidget(self.resetButton)
         # 右栏折叠时的主操作入口（状态与右栏主按钮同步，32 高与头部按钮组一致）。
         self.headStartButton = WorkbenchButton(
-            self.tr("开始处理"), AppIcon.PLAY, primary=True, height=32, parent=self.head
+            tr("subtitle.btn.start"), AppIcon.PLAY, primary=True, height=32, parent=self.head
         )
         self.headStartButton.setMinimumWidth(104)
         self.headStartButton.hide()
         head_layout.addWidget(self.headStartButton)
         # 右栏折叠后的展开入口（固定在头部，位置不漂移）。
         self.expandButton = RoundIconButton(AppIcon.LAYOUT, diameter=32, parent=self.head)
-        self.expandButton.setToolTip(self.tr("展开处理设置"))
+        self.expandButton.setToolTip(tr("subtitle.tip.expand_settings"))
         self.expandButton.hide()
         head_layout.addWidget(self.expandButton)
         self.bodyLayout.addWidget(self.head)
@@ -627,8 +634,8 @@ class SubtitleTablePanel(WorkbenchPanel):
         # 空态与转录页完全同构：虚线框 + 辉光 + 同尺寸图标与标题。
         self.dropZone = DropZone(
             icon=AppIcon.SUBTITLE,
-            title=self.tr("拖入一个字幕文件"),
-            pick_text=self.tr("点击选择字幕"),
+            title=tr("subtitle.drop.title"),
+            pick_text=tr("subtitle.drop.pick"),
             pick_icon=AppIcon.FOLDER_ADD,
             formats_line=_FORMATS_PILL_TEXT.lower(),
             parent=self,
@@ -800,14 +807,14 @@ class ProcessSidePanel(WorkbenchPanel):
         self.bodyLayout.setSpacing(0)
 
         self.header = PanelHeader(
-            self.tr("处理设置"), inline=True, underline=True, parent=self
+            tr("subtitle.process_settings"), inline=True, underline=True, parent=self
         )
         self.collapseButton = RoundIconButton(AppIcon.RIGHT_ARROW, parent=self)
-        self.collapseButton.setToolTip(self.tr("收起设置栏"))
+        self.collapseButton.setToolTip(tr("subtitle.tip.collapse_settings"))
         self.collapseButton.clicked.connect(self.collapseRequested)
         self.header.addRight(self.collapseButton)
         self.configButton = RoundIconButton(AppIcon.SETTING, parent=self)
-        self.configButton.setToolTip(self.tr("打开处理配置"))
+        self.configButton.setToolTip(tr("subtitle.btn.open_config"))
         self.configButton.clicked.connect(self.settingsRequested)
         self.header.addRight(self.configButton)
         self.bodyLayout.addWidget(self.header)
@@ -820,7 +827,7 @@ class ProcessSidePanel(WorkbenchPanel):
         self.splitSwitch = ToggleSwitch(parent=self)
         self.languageSelect = PillSelect(self)
         self.layoutSelect = PillSelect(self)
-        self.promptChip = CompactButton(self.tr("未设置"), None, self)
+        self.promptChip = CompactButton(tr("subtitle.prompt.unset"), None, self)
         self.promptChip.clicked.connect(self.promptRequested)
 
         # 子布局统一间距：隐藏的卡片不再残留 addSpacing 导致间距叠加。
@@ -829,12 +836,12 @@ class ProcessSidePanel(WorkbenchPanel):
         options.setSpacing(14)
         options.addWidget(self.errorCard)
         cards = [
-            OptionCard(self.tr("字幕校正"), self.optimizeSwitch, self),
-            OptionCard(self.tr("字幕翻译"), self.translateSwitch, self),
-            OptionCard(self.tr("断句"), self.splitSwitch, self),
-            OptionCard(self.tr("翻译语言"), self.languageSelect, self),
-            OptionCard(self.tr("译文排布"), self.layoutSelect, self),
-            OptionCard(self.tr("文稿提示"), self.promptChip, self),
+            OptionCard(tr("subtitle.opt.optimize"), self.optimizeSwitch, self),
+            OptionCard(tr("subtitle.opt.translate"), self.translateSwitch, self),
+            OptionCard(tr("subtitle.opt.split"), self.splitSwitch, self),
+            OptionCard(tr("subtitle.opt.language"), self.languageSelect, self),
+            OptionCard(tr("subtitle.opt.layout"), self.layoutSelect, self),
+            OptionCard(tr("subtitle.opt.prompt"), self.promptChip, self),
         ]
         self.languageCard = cards[3]
         for card in cards:
@@ -842,13 +849,13 @@ class ProcessSidePanel(WorkbenchPanel):
         self.bodyLayout.addLayout(options)
 
         self.bodyLayout.addStretch(1)
-        self.cancelButton = WorkbenchButton(self.tr("取消"), AppIcon.CANCEL, parent=self)
+        self.cancelButton = WorkbenchButton(tr("common.cancel"), AppIcon.CANCEL, parent=self)
         self.cancelButton.clicked.connect(self.cancelRequested)
         self.cancelButton.hide()
         self.bodyLayout.addWidget(self.cancelButton)
         self.bodyLayout.addSpacing(10)
         self.primaryButton = WorkbenchButton(
-            self.tr("等待字幕"), AppIcon.FILE, primary=False, height=48, parent=self
+            tr("subtitle.btn.wait_subtitle"), AppIcon.FILE, primary=False, height=48, parent=self
         )
         self.primaryButton.setEnabled(False)
         self.primaryButton.clicked.connect(self.primaryRequested)
@@ -861,7 +868,7 @@ class ProcessSidePanel(WorkbenchPanel):
 
     def setPromptState(self, has_prompt: bool):
         self.promptChip.textLabel.setText(
-            self.tr("已设置") if has_prompt else self.tr("未设置")
+            tr("subtitle.prompt.set") if has_prompt else tr("subtitle.prompt.unset")
         )
 
     def setButton(self, text: str, *, icon: AppIcon, primary: bool, enabled: bool):
@@ -885,26 +892,16 @@ class PromptDialog(AppDialog):
     """文稿提示：术语表 / 原文稿 / 修正要求，辅助 LLM 校正与翻译。"""
 
     def __init__(self, parent: Optional[QWidget] = None):
-        super().__init__("文稿提示", icon=AppIcon.DOCUMENT, parent=parent, width=560)
+        super().__init__(tr("subtitle.opt.prompt"), icon=AppIcon.DOCUMENT, parent=parent, width=560)
         self.textEdit = AppTextEdit(parent=self.widget, min_height=360)
-        self.textEdit.setPlaceholderText(
-            self.tr(
-                "请输入文稿提示（辅助校正字幕和翻译）\n\n"
-                "支持以下内容:\n"
-                "1. 术语表 - 专业术语、人名、特定词语的修正对照表\n"
-                "示例:\n机器学习->Machine Learning\n马斯克->Elon Musk\n\n"
-                "2. 原字幕文稿 - 视频的原有文稿或相关内容\n"
-                "3. 修正要求 - 统一人称代词、规范专业术语等\n\n"
-                "注意: 使用小型 LLM 模型时建议控制文稿在 1 千字内。"
-            )
-        )
+        self.textEdit.setPlaceholderText(tr("subtitle.prompt.placeholder"))
         self.textEdit.setPlainText(cfg.custom_prompt_text.value)
         self.bodyLayout.addWidget(self.textEdit)
 
         self.addFooterStretch()
-        self.cancelButton = self.addFooterButton(self.tr("取消"))
+        self.cancelButton = self.addFooterButton(tr("common.cancel"))
         self.cancelButton.clicked.connect(lambda: self.done(0))
-        self.confirmButton = self.addFooterButton(self.tr("确定"), kind="accent")
+        self.confirmButton = self.addFooterButton(tr("common.ok"), kind="accent")
         self.confirmButton.clicked.connect(self._on_confirm)
 
     def _on_confirm(self):
@@ -963,7 +960,7 @@ class SubtitleInterface(QWidget):
         self.tablePanel.expandButton.setVisible(collapsed)
         if collapsed and self.state == PageState.RUNNING:
             head.setVisible(True)
-            head.setText(self.tr("取消"))
+            head.setText(tr("common.cancel"))
             head.setIcon(AppIcon.CANCEL)
             head.setPrimary(False)
             head.setEnabled(True)
@@ -1049,11 +1046,11 @@ class SubtitleInterface(QWidget):
         self.sidePanel.translateSwitch.setChecked(bool(cfg.need_translate.value))
         self.sidePanel.splitSwitch.setChecked(bool(cfg.need_split.value))
         self.sidePanel.languageSelect.setItems(
-            [lang.value for lang in TargetLanguage], cfg.target_language.value.value
+            enum_options(TargetLanguage), enum_label(cfg.target_language.value)
         )
         self.sidePanel.layoutSelect.setItems(
-            [layout.value for layout in SubtitleLayoutEnum],
-            cfg.subtitle_layout.value.value,
+            enum_options(SubtitleLayoutEnum),
+            enum_label(cfg.subtitle_layout.value),
         )
         self.sidePanel.languageCard.setVisible(bool(cfg.need_translate.value))
         self.sidePanel.setPromptState(bool(cfg.custom_prompt_text.value.strip()))
@@ -1073,18 +1070,14 @@ class SubtitleInterface(QWidget):
         self.sidePanel.languageCard.setVisible(bool(cfg.need_translate.value))
 
     def _on_language_selected(self, language_name: str):
-        for lang in TargetLanguage:
-            if lang.value == language_name:
-                if cfg.target_language.value != lang:
-                    cfg.set(cfg.target_language, lang)
-                break
+        lang = enum_from_label(TargetLanguage, language_name)
+        if lang is not None and cfg.target_language.value != lang:
+            cfg.set(cfg.target_language, lang)
 
     def _on_layout_selected(self, layout_name: str):
-        for layout in SubtitleLayoutEnum:
-            if layout.value == layout_name:
-                if cfg.subtitle_layout.value != layout:
-                    cfg.set(cfg.subtitle_layout, layout)
-                break
+        layout = enum_from_label(SubtitleLayoutEnum, layout_name)
+        if layout is not None and cfg.subtitle_layout.value != layout:
+            cfg.set(cfg.subtitle_layout, layout)
 
     # --------------------------------------------------------- state machine
 
@@ -1101,21 +1094,21 @@ class SubtitleInterface(QWidget):
         if state == PageState.READY:
             bar.showReady(count)
         elif state == PageState.FAILED:
-            bar.showFailed(self.tr("配置缺失") if self._failure_is_config else self.tr("处理失败"), error)
+            bar.showFailed(tr("subtitle.fail.config_missing") if self._failure_is_config else tr("subtitle.fail.process"), error)
         elif state == PageState.DONE:
             bar.showDone(Path(self._output_path).name if self._output_path else "")
         # RUNNING 的底部条由进度回调驱动
 
         buttons = {
-            PageState.EMPTY: (self.tr("等待字幕"), AppIcon.FILE, False, False),
-            PageState.READY: (self.tr("开始处理"), AppIcon.PLAY, True, True),
-            PageState.RUNNING: (self.tr("处理中"), AppIcon.SYNC, False, False),
-            PageState.DONE: (self.tr("进入合成"), AppIcon.RIGHT_ARROW, True, True),
+            PageState.EMPTY: (tr("subtitle.btn.wait_subtitle"), AppIcon.FILE, False, False),
+            PageState.READY: (tr("subtitle.btn.start"), AppIcon.PLAY, True, True),
+            PageState.RUNNING: (tr("subtitle.btn.processing"), AppIcon.SYNC, False, False),
+            PageState.DONE: (tr("subtitle.btn.enter_synthesis"), AppIcon.RIGHT_ARROW, True, True),
             # 配置缺失→「打开处理配置」(SETTING)；运行期失败→「重试」(SYNC)，文案与点击行为一致
             PageState.FAILED: (
-                (self.tr("打开处理配置"), AppIcon.SETTING, True, True)
+                (tr("subtitle.btn.open_config"), AppIcon.SETTING, True, True)
                 if self._failure_is_config
-                else (self.tr("重试"), AppIcon.SYNC, True, True)
+                else (tr("common.retry"), AppIcon.SYNC, True, True)
             ),
         }
         text, icon, primary, enabled = buttons[state]
@@ -1139,7 +1132,7 @@ class SubtitleInterface(QWidget):
             return
         formats = " ".join(f"*.{fmt}" for fmt in sorted(_SUBTITLE_FORMATS))
         file_path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("选择字幕文件"), "", f"{self.tr('字幕文件')} ({formats})"
+            self, tr("subtitle.dialog.choose_file"), "", f"{tr('subtitle.file_filter')} ({formats})"
         )
         if file_path:
             self.load_subtitle_file(file_path)
@@ -1149,7 +1142,7 @@ class SubtitleInterface(QWidget):
             asr_data = ASRData.from_subtitle_file(file_path)
         except Exception as exc:
             InfoBar.error(
-                self.tr("加载失败"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self
+                tr("subtitle.toast.load_failed"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self
             )
             return
         self.subtitle_path = file_path
@@ -1164,10 +1157,10 @@ class SubtitleInterface(QWidget):
         if self.state == PageState.RUNNING:
             return
         dialog = ConfirmDialog(
-            self.tr("清空当前字幕"),
-            self.tr("将清除已载入的字幕与未保存的编辑，回到初始状态。确定继续？"),
+            tr("subtitle.clear.title"),
+            tr("subtitle.clear.body"),
             self,
-            confirm_text=self.tr("清空"),
+            confirm_text=tr("subtitle.btn.clear"),
             danger=True,
             icon=AppIcon.DELETE,
         )
@@ -1177,7 +1170,7 @@ class SubtitleInterface(QWidget):
         self.task = None
         self._output_path = None
         self.model.replace_all({})
-        self.tablePanel.setFile(self.tr("未选择字幕文件"), loaded=False)
+        self.tablePanel.setFile(tr("subtitle.no_file"), loaded=False)
         self._apply_state(PageState.EMPTY)
 
     # ------------------------------------------------------- process flow
@@ -1187,7 +1180,7 @@ class SubtitleInterface(QWidget):
         task = TaskFactory.create_subtitle_task(file_path=self.subtitle_path or "")
         config = task.subtitle_config
         if config is None:
-            return self.tr("无法构建处理配置")
+            return tr("subtitle.error.no_config")
         # 校正、智能断句、LLM 翻译三者任一开启都依赖大模型配置。
         needs_llm = (
             bool(cfg.need_optimize.value)
@@ -1198,7 +1191,7 @@ class SubtitleInterface(QWidget):
             )
         )
         if needs_llm and not (config.api_key and config.base_url and config.llm_model):
-            return self.tr("需要先配置可用的大模型 API Key、接口地址和模型。")
+            return tr("subtitle.error.need_llm")
         return None
 
     def _on_primary_clicked(self):
@@ -1244,7 +1237,7 @@ class SubtitleInterface(QWidget):
         self.model.set_dim_from(0)
         self._apply_state(PageState.RUNNING)
         self.tablePanel.bottomBar.showRunning(
-            self.tr("准备处理"), 0, 0, self.model.rowCount()
+            tr("subtitle.status.preparing"), 0, 0, self.model.rowCount()
         )
 
     def _cancel_processing(self):
@@ -1287,8 +1280,8 @@ class SubtitleInterface(QWidget):
         self.model.merge_translations(result)
         self._apply_state(PageState.READY)
         InfoBar.success(
-            self.tr("翻译完成"),
-            self.tr("已更新选中行的翻译"),
+            tr("subtitle.toast.translate_done"),
+            tr("subtitle.toast.translate_done_body"),
             duration=INFOBAR_DURATION_SUCCESS,
             parent=self,
         )
@@ -1296,7 +1289,7 @@ class SubtitleInterface(QWidget):
     def _on_retranslate_failed(self, error: str):
         self._apply_state(PageState.READY)
         InfoBar.error(
-            self.tr("翻译失败"), error, duration=INFOBAR_DURATION_ERROR, parent=self
+            tr("subtitle.toast.translate_failed"), error, duration=INFOBAR_DURATION_ERROR, parent=self
         )
 
     def _enter_synthesis(self):
@@ -1305,8 +1298,8 @@ class SubtitleInterface(QWidget):
             self.finished.emit(video, self._output_path)
             return
         InfoBar.info(
-            self.tr("提示"),
-            self.tr("没有关联视频，请到「字幕视频合成」页选择视频文件"),
+            tr("common.tip"),
+            tr("subtitle.toast.no_video"),
             duration=INFOBAR_DURATION_WARNING,
             parent=self,
         )
@@ -1322,9 +1315,9 @@ class SubtitleInterface(QWidget):
         if not rows:
             return
         menu = RoundMenu(parent=self)
-        merge_action = Action(FIF.LINK, self.tr("合并"))
-        delete_action = Action(FIF.DELETE, self.tr("删除"))
-        retranslate_action = Action(FIF.SYNC, self.tr("重新翻译"))
+        merge_action = Action(FIF.LINK, tr("subtitle.menu.merge"))
+        delete_action = Action(FIF.DELETE, tr("common.delete"))
+        retranslate_action = Action(FIF.SYNC, tr("subtitle.menu.retranslate"))
         merge_action.setShortcut("Ctrl+M")
         delete_action.setShortcut("Delete")
         retranslate_action.setShortcut("Ctrl+T")
@@ -1363,7 +1356,7 @@ class SubtitleInterface(QWidget):
         file_name = Path(self.subtitle_path).name if self.subtitle_path else ""
         self.controller.retranslate(selected, task.subtitle_config, file_name)
         self.tablePanel.bottomBar.showRunning(
-            self.tr("重新翻译选中行"), 0, 0, len(rows)
+            tr("subtitle.status.retranslating"), 0, 0, len(rows)
         )
 
     def keyPressEvent(self, event):
@@ -1389,7 +1382,7 @@ class SubtitleInterface(QWidget):
             return
         default_name = Path(self.subtitle_path).stem if self.subtitle_path else "subtitle"
         file_path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("保存字幕文件"), default_name, f"*.{fmt}"
+            self, tr("subtitle.dialog.save_file"), default_name, f"*.{fmt}"
         )
         if not file_path:
             return
@@ -1403,12 +1396,12 @@ class SubtitleInterface(QWidget):
                 asr_data.save(file_path, layout=layout)
         except Exception as exc:
             InfoBar.error(
-                self.tr("保存失败"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self
+                tr("subtitle.toast.save_failed"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self
             )
             return
         InfoBar.success(
-            self.tr("保存成功"),
-            self.tr("字幕已保存至: ") + file_path,
+            tr("subtitle.toast.save_done"),
+            tr("subtitle.toast.saved_to") + file_path,
             duration=INFOBAR_DURATION_SUCCESS,
             parent=self,
         )
@@ -1442,16 +1435,16 @@ class SubtitleInterface(QWidget):
 
     def _warn_processing(self):
         InfoBar.warning(
-            self.tr("警告"),
-            self.tr("正在处理中，请等待当前任务完成"),
+            tr("common.warning"),
+            tr("subtitle.toast.processing_wait"),
             duration=INFOBAR_DURATION_WARNING,
             parent=self,
         )
 
     def _warn_no_subtitle(self):
         InfoBar.warning(
-            self.tr("警告"),
-            self.tr("请先加载字幕文件"),
+            tr("common.warning"),
+            tr("subtitle.toast.load_first"),
             duration=INFOBAR_DURATION_WARNING,
             parent=self,
         )
@@ -1468,7 +1461,7 @@ class SubtitleInterface(QWidget):
             self.model.replace_all(asr_data.to_json())
         except Exception as exc:
             InfoBar.error(
-                self.tr("加载失败"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self
+                tr("subtitle.toast.load_failed"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self
             )
             return
         self.tablePanel.setFile(Path(str(task.subtitle_path)).name, loaded=True)
@@ -1507,8 +1500,8 @@ class SubtitleInterface(QWidget):
                 self.load_subtitle_file(file_path)
                 return
             InfoBar.error(
-                self.tr("格式错误 ") + suffix,
-                self.tr("支持的字幕格式: ") + _FORMATS_PILL_TEXT,
+                tr("subtitle.toast.format_error") + suffix,
+                tr("subtitle.toast.supported_formats") + _FORMATS_PILL_TEXT,
                 duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )

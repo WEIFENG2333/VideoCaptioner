@@ -36,8 +36,13 @@ jobs:
       - name: Type check CLI
         run: uv run pyright videocaptioner/cli/
 
+      - name: i18n check (源码 key 集 == .pot；基准 zh_Hans 无空译文)
+        run: uv run python scripts/i18n.py check
+        env:
+          QT_QPA_PLATFORM: offscreen
+
       - name: Unit tests
-        run: uv run pytest tests/test_cli tests/test_dubbing -q
+        run: uv run pytest tests/test_cli tests/test_dubbing tests/test_i18n -q
 
       - name: Build package
         run: uv build

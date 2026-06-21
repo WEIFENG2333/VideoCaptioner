@@ -68,6 +68,7 @@ from videocaptioner.core.entities import (
 )
 from videocaptioner.ui.common.app_icons import AppIcon, render_svg_pixmap
 from videocaptioner.ui.common.theme_tokens import app_palette, is_dark_theme, rgba
+from videocaptioner.ui.i18n import tr
 
 _VIDEO_EXTENSIONS = {fmt.value for fmt in SupportedVideoFormats}
 _AUDIO_EXTENSIONS = {fmt.value for fmt in SupportedAudioFormats}
@@ -736,7 +737,7 @@ class DropZone(QFrame):
         pick_row = QHBoxLayout()
         pick_row.setSpacing(8)
         pick_row.addStretch(1)
-        self.orLabel = QLabel("或", self)
+        self.orLabel = QLabel(tr("workbench.drop.or"), self)
         self.orLabel.setObjectName("dropOr")
         apply_font(self.orLabel, 16, 400)
         pick_row.addWidget(self.orLabel)

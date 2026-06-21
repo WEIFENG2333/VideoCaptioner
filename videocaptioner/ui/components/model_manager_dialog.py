@@ -58,6 +58,7 @@ from videocaptioner.ui.components.workbench import (
     draw_rounded_surface,
     icon_pixmap,
 )
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.artifact_download_thread import (
     ArtifactDownloadThread,
     model_download_thread,
@@ -226,7 +227,7 @@ class _ProgramRow(QFrame):
         self.actionButton = AccentButton("", None, self)
         self.actionButton.clicked.connect(lambda: self.actionRequested.emit(self.variant))
         layout.addWidget(self.actionButton)
-        self.recheckButton = CompactButton(self.tr("重新检测"), AppIcon.SYNC, self)
+        self.recheckButton = CompactButton(tr("modelmgr.program.recheck"), AppIcon.SYNC, self)
         self.recheckButton.clicked.connect(self.recheckRequested)
         layout.addWidget(self.recheckButton)
         self.syncStyle()
@@ -235,23 +236,23 @@ class _ProgramRow(QFrame):
         status = self.variant.detect()
         if status.installed:
             self.nameLabel.setText(self.variant.title)
-            self.descLabel.setText(self.tr("已找到 {}").format(status.name or ""))
+            self.descLabel.setText(tr("modelmgr.program.found", name=status.name or ""))
             self.descLabel.setToolTip(status.path or "")
-            self.status.setState(self.tr("可用"), "ok")
+            self.status.setState(tr("modelmgr.program.available"), "ok")
             self.actionButton.hide()
         else:
             self.nameLabel.setText(self.variant.title)
-            self.descLabel.setText(self.tr(self.variant.description_missing))
+            self.descLabel.setText(self.variant.description_missing)
             self.descLabel.setToolTip("")
-            self.status.setState(self.tr("缺失"), "missing")
+            self.status.setState(tr("modelmgr.program.missing"), "missing")
             if self.variant.download is not None:
-                self.actionButton.setText(self.tr("下载"))
+                self.actionButton.setText(tr("modelmgr.action.download"))
                 self.actionButton.setIcon(AppIcon.DOWNLOAD)
                 self.actionButton.show()
             elif self.variant.command:
                 self.actionButton.hide()  # 命令行在下方 _CommandRow 展示
             elif self.variant.link:
-                self.actionButton.setText(self.tr("打开页面"))
+                self.actionButton.setText(tr("modelmgr.program.open_page"))
                 self.actionButton.setIcon(AppIcon.LINK)
                 self.actionButton.show()
             else:
@@ -260,8 +261,8 @@ class _ProgramRow(QFrame):
         self.recheckButton.setEnabled(not busy)
 
     def showDownloading(self):
-        self.status.setState(self.tr("下载中"), "neutral")
-        self.actionButton.setText(self.tr("取消"))
+        self.status.setState(tr("modelmgr.status.downloading"), "neutral")
+        self.actionButton.setText(tr("common.cancel"))
         self.actionButton.setIcon(AppIcon.CANCEL)
         self.actionButton.setEnabled(True)
         self.actionButton.show()
@@ -302,7 +303,7 @@ class _CommandRow(QFrame):
         self.commandLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)  # type: ignore[arg-type]
         apply_font(self.commandLabel, 13, 700)
         layout.addWidget(self.commandLabel, 1)
-        self.copyButton = AccentButton(self.tr("复制命令"), AppIcon.COPY, self)
+        self.copyButton = AccentButton(tr("modelmgr.command.copy"), AppIcon.COPY, self)
         self.copyButton.clicked.connect(self._copy)
         layout.addWidget(self.copyButton)
         self.syncStyle()
@@ -312,8 +313,8 @@ class _CommandRow(QFrame):
         from qfluentwidgets import InfoBar
 
         InfoBar.success(
-            self.tr("已复制安装命令"),
-            self.tr("在终端执行后点「重新检测」。"),
+            tr("modelmgr.command.copied_title"),
+            tr("modelmgr.command.copied_body"),
             duration=INFOBAR_DURATION_WARNING,
             parent=self.window(),
         )
@@ -394,16 +395,16 @@ class _ModelRow(QFrame):
         action_layout = QHBoxLayout(action_host)
         action_layout.setContentsMargins(0, 0, 0, 0)
         action_layout.addStretch(1)
-        self.downloadButton = AccentButton(self.tr("下载"), AppIcon.DOWNLOAD, action_host)
+        self.downloadButton = AccentButton(tr("modelmgr.action.download"), AppIcon.DOWNLOAD, action_host)
         self.downloadButton.clicked.connect(lambda: self.downloadRequested.emit(self.spec))
         action_layout.addWidget(self.downloadButton)
-        self.removeButton = DangerButton(self.tr("删除"), None, action_host)
+        self.removeButton = DangerButton(tr("common.delete"), None, action_host)
         self.removeButton.clicked.connect(lambda: self.removeRequested.emit(self.spec))
         action_layout.addWidget(self.removeButton)
-        self.currentButton = CompactButton(self.tr("当前"), None, action_host)
+        self.currentButton = CompactButton(tr("modelmgr.action.current"), None, action_host)
         self.currentButton.setEnabled(False)
         action_layout.addWidget(self.currentButton)
-        self.cancelButton = CompactButton(self.tr("取消"), None, action_host)
+        self.cancelButton = CompactButton(tr("common.cancel"), None, action_host)
         self.cancelButton.clicked.connect(self.cancelRequested)
         action_layout.addWidget(self.cancelButton)
         layout.addWidget(action_host)
@@ -424,21 +425,21 @@ class _ModelRow(QFrame):
         self._show_progress(False)
         self.descLabel.setText(self.spec.description)
         if state == "installed":
-            self.status.setState(self.tr("已下载"), "ok")
+            self.status.setState(tr("modelmgr.status.installed"), "ok")
             if is_current:
                 self._show_action(self.currentButton)
             else:
                 self._show_action(self.removeButton)
                 self.removeButton.setEnabled(not busy)
         elif state == "partial":
-            self.status.setState(self.tr("已暂停"), "neutral")
-            self.downloadButton.setText(self.tr("继续"))
+            self.status.setState(tr("modelmgr.status.paused"), "neutral")
+            self.downloadButton.setText(tr("modelmgr.action.resume"))
             self.downloadButton.setIcon(AppIcon.DOWNLOAD)
             self._show_action(self.downloadButton)
             self.downloadButton.setEnabled(not busy)
         else:
-            self.status.setState(self.tr("待下载"), "neutral")
-            self.downloadButton.setText(self.tr("下载"))
+            self.status.setState(tr("modelmgr.status.pending"), "neutral")
+            self.downloadButton.setText(tr("modelmgr.action.download"))
             self.downloadButton.setIcon(AppIcon.DOWNLOAD)
             self._show_action(self.downloadButton)
             self.downloadButton.setEnabled(not busy)
@@ -447,7 +448,7 @@ class _ModelRow(QFrame):
         self._show_progress(True)
         self.progressLine.setValue(0)
         self.percentLabel.setText("0%")
-        self.descLabel.setText(self.tr("正在连接镜像…"))
+        self.descLabel.setText(tr("modelmgr.progress.connecting"))
         self._show_action(self.cancelButton)
         self.cancelButton.setEnabled(True)
 
@@ -497,7 +498,7 @@ class ModelManagerDialog(AppDialog):
         self._command_rows: dict[str, _CommandRow] = {}
         self._containers: dict[str, QWidget] = {}
 
-        super().__init__("本地模型管理", icon=AppIcon.FOLDER_ADD, parent=parent, width=720)
+        super().__init__(tr("modelmgr.title"), icon=AppIcon.FOLDER_ADD, parent=parent, width=720)
         self._build_ui()
         self._switch_kind(self._kind)
 
@@ -520,7 +521,7 @@ class ModelManagerDialog(AppDialog):
             column.setContentsMargins(0, 0, 0, 0)
             column.setSpacing(10)
 
-            column.addWidget(_SectionLabel(self.tr("运行程序"), container))
+            column.addWidget(_SectionLabel(tr("modelmgr.section.programs"), container))
             program_rows = []
             for variant in program_variants(kind):
                 row = _ProgramRow(variant, container)
@@ -538,7 +539,7 @@ class ModelManagerDialog(AppDialog):
                 self._command_rows[kind] = command_row
 
             column.addSpacing(2)
-            column.addWidget(_SectionLabel(self.tr("模型文件"), container))
+            column.addWidget(_SectionLabel(tr("modelmgr.section.models"), container))
             table = QFrame(container)
             table.setObjectName("modelTable")
             table_layout = QVBoxLayout(table)
@@ -578,15 +579,15 @@ class ModelManagerDialog(AppDialog):
         # 底栏
         self.footIcon = QLabel(card)
         self.footerLayout.addWidget(self.footIcon)
-        self.footLabel = QLabel(self.tr("本地模型目录"), card)
+        self.footLabel = QLabel(tr("modelmgr.footer.model_dir"), card)
         self.footLabel.setObjectName("modelFootLabel")
         self.footLabel.setToolTip(str(MODEL_PATH))
         apply_font(self.footLabel, 12, 700)
         self.footerLayout.addWidget(self.footLabel)
         self.addFooterStretch()
-        self.openDirButton = self.addFooterButton(self.tr("打开目录"), icon=AppIcon.FOLDER)
+        self.openDirButton = self.addFooterButton(tr("modelmgr.footer.open_dir"), icon=AppIcon.FOLDER)
         self.openDirButton.clicked.connect(self._open_models_dir)
-        self.dismissButton = self.addFooterButton(self.tr("关闭"))
+        self.dismissButton = self.addFooterButton(tr("common.close"))
         self.dismissButton.clicked.connect(lambda: self.done(0))
         self.syncStyle()
 
@@ -598,10 +599,10 @@ class ModelManagerDialog(AppDialog):
         layout.setContentsMargins(13, 0, 13, 0)
         layout.setSpacing(12)
         for text, width in (
-            (self.tr("模型"), None),
-            (self.tr("大小"), SIZE_COLUMN),
-            (self.tr("状态"), STATUS_COLUMN),
-            (self.tr("操作"), ACTION_COLUMN),
+            (tr("modelmgr.col.model"), None),
+            (tr("modelmgr.col.size"), SIZE_COLUMN),
+            (tr("modelmgr.col.status"), STATUS_COLUMN),
+            (tr("modelmgr.col.action"), ACTION_COLUMN),
         ):
             label = QLabel(text, head)
             label.setObjectName("modelTableHeadText")
@@ -736,12 +737,10 @@ class ModelManagerDialog(AppDialog):
         if self._busy:
             return
         box = ConfirmDialog(
-            self.tr("删除模型"),
-            self.tr("将删除 {name}（{size}），需要时须重新下载。").format(
-                name=spec.display_name, size=spec.size_text
-            ),
+            tr("modelmgr.remove.title"),
+            tr("modelmgr.remove.body", name=spec.display_name, size=spec.size_text),
             self,
-            confirm_text=self.tr("删除"),
+            confirm_text=tr("common.delete"),
             danger=True,
             icon=AppIcon.DELETE,
         )
@@ -750,9 +749,9 @@ class ModelManagerDialog(AppDialog):
         try:
             remove_model(spec, self._models_dir(spec.kind))
         except OSError as exc:
-            self._error(self.tr("删除失败"), str(exc))
+            self._error(tr("modelmgr.remove.failed"), str(exc))
             return
-        self._info(self.tr("已删除"), spec.display_name)
+        self._info(tr("modelmgr.remove.done"), spec.display_name)
         self.modelsChanged.emit()
         self._refresh_current()
 
@@ -771,20 +770,20 @@ class ModelManagerDialog(AppDialog):
             self._start_program_download(variant, row)
         elif variant.link:
             QDesktopServices.openUrl(QUrl(variant.link))
-            self._info(self.tr("已在浏览器打开"), self.tr("下载安装后回来点「重新检测」。"))
+            self._info(tr("modelmgr.program.opened_title"), tr("modelmgr.program.opened_body"))
 
     def _on_recheck(self, row: _ProgramRow):
         self._refresh_current()
         status = row.variant.detect()
         if status.installed:
             self._info(
-                self.tr("运行程序可用"),
-                self.tr("已找到 {}。").format(status.name or row.variant.title),
+                tr("modelmgr.recheck.available_title"),
+                tr("modelmgr.recheck.available_body", name=status.name or row.variant.title),
             )
         else:
             self._warn(
-                self.tr("仍未检测到"),
-                self.tr(row.variant.description_missing),
+                tr("modelmgr.recheck.missing_title"),
+                row.variant.description_missing,
             )
 
     def _start_program_download(self, variant: ProgramVariant, row: _ProgramRow | None):
@@ -806,16 +805,16 @@ class ModelManagerDialog(AppDialog):
             from videocaptioner.ui.common.config import cfg
 
             cfg.set(cfg.faster_whisper_program, Path(path).name)
-        self._info(self.tr("运行程序已就绪"), self.tr("可以继续下载模型。"))
+        self._info(tr("modelmgr.program.ready_title"), tr("modelmgr.program.ready_body"))
 
     # ------------------------------------------------------------- 任务收尾
 
     def _on_download_done(self, spec: ModelSpec):
-        self._info(self.tr("模型已就绪"), self.tr("{} 下载完成。").format(spec.display_name))
+        self._info(tr("modelmgr.download.done_title"), tr("modelmgr.download.done_body", name=spec.display_name))
         self.modelsChanged.emit()
 
     def _on_download_error(self, message: str):
-        self._error(self.tr("下载失败"), message)
+        self._error(tr("modelmgr.download.failed"), message)
 
     def _on_thread_finished(self):
         thread = self._thread

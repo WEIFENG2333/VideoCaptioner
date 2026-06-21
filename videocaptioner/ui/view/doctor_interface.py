@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter, QPen
@@ -37,8 +36,7 @@ from videocaptioner.ui.components.workbench import (
     apply_font,
     draw_rounded_surface,
 )
-
-Translator = Callable[[str], str]
+from videocaptioner.ui.i18n import N_, tr
 
 
 class ItemStatus(Enum):
@@ -179,7 +177,7 @@ class StatusPill(WbStatusPill):
         self.setStatus(status)
 
     def setStatus(self, status: ItemStatus):
-        self.setState(self.tr(_status_text(status)), _WB_LEVELS[_status_level(status)])
+        self.setState(tr(_status_text(status)), _WB_LEVELS[_status_level(status)])
 
 
 class DiagnosticRow(QFrame):
@@ -254,7 +252,7 @@ class DiagnosticPanel(QFrame):
         header.setContentsMargins(18, 15, 16, 15)
         header.setSpacing(12)
         # 面板标题用第一方字体（不再用 qfluent SubtitleLabel），与全站面板头一致
-        title = QLabel(self.tr("检查清单"), self.headerFrame)
+        title = QLabel(tr("doctor.checklist"), self.headerFrame)
         title.setObjectName("diagnosticPanelTitle")  # 需显式着色，否则裸 QLabel 用默认色和深色面板不融合
         apply_font(title, 18, 760)
         header.addWidget(title, 1, Qt.AlignVCenter)
@@ -283,19 +281,19 @@ class DiagnosticPanel(QFrame):
         pending = sum(item.status == ItemStatus.PENDING for item in items)
         if errors:
             self.summaryPill.setState(
-                self.tr("{count} 项未通过").format(count=errors), "fail"
+                tr("doctor.summary.errors", count=errors), "fail"
             )
         elif checking:
-            self.summaryPill.setState(self.tr("检查中"), "neutral")
+            self.summaryPill.setState(tr("doctor.status.checking"), "neutral")
         elif warnings:
             self.summaryPill.setState(
-                self.tr("{count} 项需注意").format(count=warnings), "warn"
+                tr("doctor.summary.warnings", count=warnings), "warn"
             )
         elif finished:
-            self.summaryPill.setState(self.tr("全部通过"), "ok")
+            self.summaryPill.setState(tr("doctor.summary.all_passed"), "ok")
         else:
             self.summaryPill.setState(
-                self.tr("{count} 项待检查").format(count=pending), "neutral"
+                tr("doctor.summary.pending", count=pending), "neutral"
             )
 
         # 红错误置顶、琥珀警告其次、其余在后；行高与按钮列保持稳定
@@ -320,7 +318,7 @@ class DoctorInterface(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.setWindowTitle(self.tr("诊断"))
+        self.setWindowTitle(tr("doctor.title"))
         self._doctor_thread: DoctorThread | None = None
         self.has_results = False
         self.is_running = False
@@ -330,7 +328,7 @@ class DoctorInterface(ScrollArea):
         self.taskGrid = QGridLayout(self.taskStrip)
         self.panel = DiagnosticPanel(self.scrollWidget)
         self.runButton = WorkbenchButton(
-            self.tr("运行诊断"), AppIcon.SYNC, primary=True, parent=self.scrollWidget
+            tr("doctor.btn.run"), AppIcon.SYNC, primary=True, parent=self.scrollWidget
         )
         self._init_ui()
 
@@ -352,8 +350,8 @@ class DoctorInterface(ScrollArea):
         toolbarLayout.setSpacing(16)
         heading = QVBoxLayout()
         heading.setSpacing(0)
-        self.titleLabel = TitleLabel(self.tr("诊断"), toolbar)
-        self.subTitleLabel = CaptionLabel(self.tr("检查当前任务会用到的服务和工具。未启用的功能不会出现在清单里。"), toolbar)
+        self.titleLabel = TitleLabel(tr("doctor.title"), toolbar)
+        self.subTitleLabel = CaptionLabel(tr("doctor.subtitle"), toolbar)
         heading.addWidget(self.titleLabel)
         self.subTitleLabel.hide()
         toolbarLayout.addLayout(heading, 1)
@@ -387,7 +385,7 @@ class DoctorInterface(ScrollArea):
 
     def _refresh_task_strip(self, checks: list[Check] | None = None):
         _clear_layout(self.taskGrid)
-        chips = _task_chips(self.tr, checks)
+        chips = _task_chips(checks)
         columns = max(1, min(5, len(chips)))
         for index, chip in enumerate(chips):
             widget = TaskChip(chip, self.taskStrip)
@@ -398,9 +396,9 @@ class DoctorInterface(ScrollArea):
         self.has_results = False
         self.is_running = False
         self.runButton.setEnabled(True)
-        self.runButton.setText(self.tr("运行诊断"))
+        self.runButton.setText(tr("doctor.btn.run"))
         self._refresh_task_strip()
-        self.panel.setItems(_pending_items(self.tr))
+        self.panel.setItems(_pending_items())
 
     def _run(self):
         if self.is_running or (self._doctor_thread and self._doctor_thread.isRunning()):
@@ -408,9 +406,9 @@ class DoctorInterface(ScrollArea):
         self.has_results = False
         self.is_running = True
         self.runButton.setEnabled(False)
-        self.runButton.setText(self.tr("诊断中"))
+        self.runButton.setText(tr("doctor.btn.running"))
         self.panel.setItems(
-            _with_status(_base_items(self.tr), ItemStatus.CHECKING),
+            _with_status(_base_items(), ItemStatus.CHECKING),
             actions_enabled=False,
         )
         self._doctor_thread = DoctorThread()
@@ -430,30 +428,30 @@ class DoctorInterface(ScrollArea):
         self.has_results = True
         self.is_running = False
         self.runButton.setEnabled(True)
-        self.runButton.setText(self.tr("重新诊断"))
+        self.runButton.setText(tr("doctor.btn.rerun"))
         self._refresh_task_strip(checks)
-        items = _items_from_checks(checks, self.tr)
+        items = _items_from_checks(checks)
         self.panel.setItems(items, finished=True)
         errors = sum(item.status == ItemStatus.ERROR for item in items)
         warnings = sum(item.status == ItemStatus.WARNING for item in items)
         if errors:
             InfoBar.error(
-                self.tr("诊断完成"),
-                self.tr("发现 {count} 项需要处理").format(count=errors),
+                tr("doctor.done.title"),
+                tr("doctor.done.errors", count=errors),
                 duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )
         elif warnings:
             InfoBar.warning(
-                self.tr("诊断完成"),
-                self.tr("有 {count} 项可选项需注意（不影响主要流程）").format(count=warnings),
+                tr("doctor.done.title"),
+                tr("doctor.done.warnings", count=warnings),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
         else:
             InfoBar.success(
-                self.tr("诊断完成"),
-                self.tr("当前检查项全部通过"),
+                tr("doctor.done.title"),
+                tr("doctor.done.all_passed"),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
@@ -461,26 +459,23 @@ class DoctorInterface(ScrollArea):
     def _on_error(self, message: str):
         self.is_running = False
         self.runButton.setEnabled(True)
-        self.runButton.setText(self.tr("重新诊断"))
-        self.panel.setItems(_pending_items(self.tr))
-        InfoBar.error(self.tr("诊断失败"), message, duration=INFOBAR_DURATION_ERROR, parent=self)
+        self.runButton.setText(tr("doctor.btn.rerun"))
+        self.panel.setItems(_pending_items())
+        InfoBar.error(tr("doctor.failed.title"), message, duration=INFOBAR_DURATION_ERROR, parent=self)
 
     def _handle_action(self, action: ItemAction):
         if action == ItemAction.DOWNLOAD_HELP:
             InfoBar.info(
-                self.tr("视频下载"),
-                self.tr(
-                    "YouTube 需要可用的系统代理；哔哩哔哩提示风控（412）时稍等几分钟重试，"
-                    "或在浏览器登录后导出 cookies.txt 放到应用数据目录。"
-                ),
+                tr("doctor.download"),
+                tr("doctor.help.download"),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
             return
         if action == ItemAction.TOOL_HELP:
             InfoBar.info(
-                self.tr("FFmpeg"),
-                self.tr("ASS 硬字幕需要带 libass 的完整 FFmpeg。macOS 可安装 ffmpeg-full；也可以先切换为圆角背景。"),
+                "FFmpeg",
+                tr("doctor.help.ffmpeg"),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self,
             )
@@ -507,8 +502,8 @@ class DoctorInterface(ScrollArea):
         if hasattr(window, "openSettingsPage"):
             if window.openSettingsPage(page_key) is False:  # type: ignore[attr-defined]
                 InfoBar.error(
-                    self.tr("跳转失败"),
-                    self.tr("没有找到对应的设置页。"),
+                    tr("doctor.jump_failed.title"),
+                    tr("doctor.jump_failed.body"),
                     duration=INFOBAR_DURATION_ERROR,
                     parent=self,
                 )
@@ -525,11 +520,11 @@ def _clear_layout(layout):
 
 def _status_text(status: ItemStatus) -> str:
     return {
-        ItemStatus.OK: "正常",
-        ItemStatus.WARNING: "需注意",
-        ItemStatus.ERROR: "未通过",
-        ItemStatus.CHECKING: "检查中",
-        ItemStatus.PENDING: "待检查",
+        ItemStatus.OK: N_("doctor.status.ok"),
+        ItemStatus.WARNING: N_("doctor.status.warning"),
+        ItemStatus.ERROR: N_("doctor.status.error"),
+        ItemStatus.CHECKING: N_("doctor.status.checking"),
+        ItemStatus.PENDING: N_("doctor.status.pending"),
     }[status]
 
 
@@ -557,76 +552,76 @@ def _with_status(items: list[DiagnosticItem], status: ItemStatus) -> list[Diagno
     ]
 
 
-def _pending_items(tr: Translator) -> list[DiagnosticItem]:
-    return _base_items(tr)
+def _pending_items() -> list[DiagnosticItem]:
+    return _base_items()
 
 
-def _base_items(tr: Translator) -> list[DiagnosticItem]:
+def _base_items() -> list[DiagnosticItem]:
     items = [
         DiagnosticItem(
             key="ffmpeg",
             title="FFmpeg / FFprobe",
-            description=tr("生成视频、压入字幕、合入配音都需要它。"),
+            description=tr("doctor.ffmpeg.desc"),
             action=ItemAction.TOOL_HELP,
-            button_text=tr("安装工具"),
+            button_text=tr("doctor.btn.install_tool"),
         ),
         DiagnosticItem(
             key="transcribe",
-            title=tr("转录服务"),
-            description=_transcribe_description(tr),
+            title=tr("doctor.transcribe.title"),
+            description=_transcribe_description(),
             action=ItemAction.TRANSCRIBE_SETTINGS,
-            button_text=tr("转录配置"),
+            button_text=tr("doctor.btn.transcribe_settings"),
         ),
         DiagnosticItem(
             key="download",
-            title=tr("视频下载"),
-            description=tr("解析 YouTube 与哔哩哔哩链接，验证在线视频能否下载。"),
+            title=tr("doctor.download"),
+            description=tr("doctor.download.desc"),
             action=ItemAction.DOWNLOAD_HELP,
-            button_text=tr("使用说明"),
+            button_text=tr("doctor.btn.usage"),
         ),
     ]
     if _needs_llm():
         items.append(
             DiagnosticItem(
                 key="llm",
-                title=_llm_item_title(tr),
-                description=_llm_description(tr),
+                title=_llm_item_title(),
+                description=_llm_description(),
                 action=ItemAction.LLM_SETTINGS,
-                button_text=tr("大模型配置"),
+                button_text=tr("doctor.btn.llm_settings"),
             )
         )
     if cfg.need_translate.value:
         items.append(
             DiagnosticItem(
                 key="translate",
-                title=tr("翻译服务"),
-                description=_translate_description(tr),
+                title=tr("doctor.translate.title"),
+                description=_translate_description(),
                 action=ItemAction.TRANSLATE_SETTINGS,
-                button_text=tr("翻译配置"),
+                button_text=tr("doctor.btn.translate_settings"),
             )
         )
     items.append(
         DiagnosticItem(
             key="dubbing",
-            title=tr("配音服务"),
-            description=_dubbing_description(tr),
+            title=tr("doctor.dubbing.title"),
+            description=_dubbing_description(),
             action=ItemAction.DUBBING_SETTINGS,
-            button_text=tr("配音配置"),
+            button_text=tr("doctor.btn.dubbing_settings"),
         )
     )
     items.append(
         DiagnosticItem(
             key="live_caption",
-            title=tr("实时字幕"),
-            description=tr("实时转录需要本机 voxgate 转录程序，或一个外部实时服务。"),
+            title=tr("doctor.live_caption.title"),
+            description=tr("doctor.live_caption.desc"),
             action=ItemAction.LIVE_CAPTION_SETTINGS,
-            button_text=tr("实时字幕配置"),
+            button_text=tr("doctor.btn.live_caption_settings"),
         )
     )
     return items
 
 
-def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticItem]:
+def _items_from_checks(checks: list[Check]) -> list[DiagnosticItem]:
     checks_by_name = {check.name: check for check in checks}
     items: list[DiagnosticItem] = []
 
@@ -639,26 +634,26 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
         DiagnosticItem(
             key="ffmpeg",
             title=(
-                tr("FFmpeg 不支持 ASS 硬字幕")
+                tr("doctor.ffmpeg.no_ass.title")
                 if ffmpeg_ass_failed
-                else tr("缺少 FFmpeg / FFprobe")
+                else tr("doctor.ffmpeg.missing.title")
                 if _is_problem(ffmpeg_status)
                 else "FFmpeg / FFprobe"
             ),
             description=(
-                tr("当前 FFmpeg 缺少 ASS 字幕滤镜。请安装完整版本，或把字幕渲染模式切换为圆角背景。")
+                tr("doctor.ffmpeg.no_ass.desc")
                 if ffmpeg_ass_failed
-                else tr("缺少后无法生成视频、压入字幕或合入配音。")
+                else tr("doctor.ffmpeg.missing.desc")
                 if _is_problem(ffmpeg_status)
-                else tr("工具完整，可生成视频和配音视频。")
+                else tr("doctor.ffmpeg.ok.desc")
             ),
             action=ItemAction.DOWNLOAD_DEPENDENCIES if ffmpeg_missing else ItemAction.TOOL_HELP,
             button_text=(
-                tr("下载安装")
+                tr("doctor.btn.download_install")
                 if ffmpeg_missing
-                else tr("处理方式")
+                else tr("doctor.btn.how_to_handle")
                 if ffmpeg_ass_failed
-                else tr("安装工具")
+                else tr("doctor.btn.install_tool")
             ),
             status=ffmpeg_status,
         )
@@ -671,14 +666,14 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
     items.append(
         DiagnosticItem(
             key="transcribe",
-            title=tr("转录服务"),
+            title=tr("doctor.transcribe.title"),
             description=(
-                tr("当前转录方式不可用，请检查网络、Key 或本地模型。")
+                tr("doctor.transcribe.fail.desc")
                 if _is_problem(transcribe_status)
-                else tr("当前转录方式可用，可生成原文字幕。")
+                else tr("doctor.transcribe.ok.desc")
             ),
             action=ItemAction.TRANSCRIBE_SETTINGS,
-            button_text=tr("转录配置"),
+            button_text=tr("doctor.btn.transcribe_settings"),
             status=transcribe_status,
         )
     )
@@ -690,18 +685,18 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
             # 检查与真实下载共用同一条回退链路（含浏览器登录态），
             # 走到这里说明兜底也被拒绝，是真不可用。
             detail = "；".join(f"{check.message}" for check in failed)
-            description = tr("站点当前不可用（浏览器登录态兜底也已尝试）：{}").format(detail)
+            description = tr("doctor.download.unavailable", detail=detail)
         elif any("登录态" in check.message for check in download_checks):
-            description = tr("YouTube 与哔哩哔哩解析正常（部分站点通过浏览器登录态），可直接粘贴链接下载。")
+            description = tr("doctor.download.ok_login")
         else:
-            description = tr("YouTube 与哔哩哔哩解析正常，可直接粘贴链接下载。")
+            description = tr("doctor.download.ok")
         items.append(
             DiagnosticItem(
                 key="download",
-                title=tr("视频下载"),
+                title=tr("doctor.download"),
                 description=description,
                 action=ItemAction.DOWNLOAD_HELP,
-                button_text=tr("使用说明"),
+                button_text=tr("doctor.btn.usage"),
                 status=_combined_status(download_checks),
             )
         )
@@ -712,14 +707,14 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
         items.append(
             DiagnosticItem(
                 key="llm",
-                title=tr("大模型配置不可用") if _is_problem(llm_status) else _llm_item_title(tr),
+                title=tr("doctor.llm.unavailable.title") if _is_problem(llm_status) else _llm_item_title(),
                 description=(
-                    tr("字幕校正、术语修正和智能断句需要可用 Key。")
+                    tr("doctor.llm.fail.desc")
                     if _is_problem(llm_status)
-                    else tr("大模型配置可用，可用于字幕增强。")
+                    else tr("doctor.llm.ok.desc")
                 ),
                 action=ItemAction.LLM_SETTINGS,
-                button_text=tr("大模型配置"),
+                button_text=tr("doctor.btn.llm_settings"),
                 status=llm_status,
             )
         )
@@ -728,14 +723,14 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
         items.append(
             DiagnosticItem(
                 key="translate",
-                title=tr("翻译服务"),
+                title=tr("doctor.translate.title"),
                 description=(
-                    tr("大模型翻译会复用 LLM Key。")
+                    tr("doctor.translate.uses_llm.desc")
                     if _translate_uses_llm()
-                    else tr("翻译服务可用，可生成目标语言字幕。")
+                    else tr("doctor.translate.ok.desc")
                 ),
                 action=ItemAction.TRANSLATE_SETTINGS,
-                button_text=tr("翻译配置"),
+                button_text=tr("doctor.btn.translate_settings"),
                 status=ItemStatus.OK,
             )
         )
@@ -745,14 +740,14 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
     items.append(
         DiagnosticItem(
             key="dubbing",
-            title=tr("配音服务"),
+            title=tr("doctor.dubbing.title"),
             description=(
-                tr("Gemini / SiliconFlow 需要配音 Key；Edge 可免 Key。")
+                tr("doctor.dubbing.fail.desc")
                 if _is_problem(dubbing_status)
-                else tr("当前配音配置可用，可继续生成配音。")
+                else tr("doctor.dubbing.ok.desc")
             ),
             action=ItemAction.DUBBING_SETTINGS,
-            button_text=tr("配音配置"),
+            button_text=tr("doctor.btn.dubbing_settings"),
             status=dubbing_status,
         )
     )
@@ -766,19 +761,19 @@ def _items_from_checks(checks: list[Check], tr: Translator) -> list[DiagnosticIt
     lc_is_funasr = any(c.name == "live_caption.funasr" for c in live_caption_checks)
     if _is_problem(live_caption_status):
         lc_desc = (
-            tr("Fun-ASR 实时缺少百炼 API Key，去设置里填写即可。")
+            tr("doctor.live_caption.funasr_no_key.desc")
             if lc_is_funasr
-            else tr("可选功能：未找到 voxgate 转录程序或外部实时服务，需要时再配置即可。")
+            else tr("doctor.live_caption.not_found.desc")
         )
     else:
-        lc_desc = tr("实时字幕后端就绪，可开始实时转录与翻译。")
+        lc_desc = tr("doctor.live_caption.ok.desc")
     items.append(
         DiagnosticItem(
             key="live_caption",
-            title=tr("实时字幕"),
+            title=tr("doctor.live_caption.title"),
             description=lc_desc,
             action=ItemAction.DOWNLOAD_DEPENDENCIES if lc_needs_download else ItemAction.LIVE_CAPTION_SETTINGS,
-            button_text=tr("下载 voxgate") if lc_needs_download else tr("实时字幕配置"),
+            button_text=tr("doctor.btn.download_voxgate") if lc_needs_download else tr("doctor.btn.live_caption_settings"),
             status=live_caption_status,
         )
     )
@@ -822,16 +817,16 @@ def _check_status(check: Check | None) -> ItemStatus:
     return ItemStatus.OK
 
 
-def _task_chips(tr: Translator, checks: list[Check] | None = None) -> list[TaskChipData]:
+def _task_chips(checks: list[Check] | None = None) -> list[TaskChipData]:
     chips = [
-        TaskChipData(tr("转录"), _transcribe_label()),
+        TaskChipData(tr("doctor.chip.transcribe"), _transcribe_label()),
     ]
     if cfg.need_optimize.value or cfg.need_split.value:
-        chips.append(TaskChipData(tr("字幕处理"), _subtitle_processing_label(tr)))
+        chips.append(TaskChipData(tr("doctor.chip.subtitle"), _subtitle_processing_label()))
     if cfg.need_translate.value:
-        chips.append(TaskChipData(tr("翻译"), cfg.translator_service.value.value))
-    chips.append(TaskChipData(tr("配音"), _dubbing_label(tr)))
-    chips.append(TaskChipData(tr("导出"), _export_label(tr)))
+        chips.append(TaskChipData(tr("doctor.chip.translate"), cfg.translator_service.value.value))
+    chips.append(TaskChipData(tr("doctor.chip.dubbing"), _dubbing_label()))
+    chips.append(TaskChipData(tr("doctor.chip.export"), _export_label()))
     return chips
 
 
@@ -839,27 +834,27 @@ def _transcribe_label() -> str:
     return getattr(cfg.transcribe_model.value, "value", str(cfg.transcribe_model.value))
 
 
-def _subtitle_processing_label(tr: Translator) -> str:
+def _subtitle_processing_label() -> str:
     parts = []
     if cfg.need_optimize.value:
-        parts.append(tr("校正"))
+        parts.append(tr("doctor.label.optimize"))
     if cfg.need_split.value:
-        parts.append(tr("智能断句"))
-    return " + ".join(parts) or tr("未启用")
+        parts.append(tr("doctor.label.split"))
+    return " + ".join(parts) or tr("doctor.label.disabled")
 
 
-def _dubbing_label(tr: Translator) -> str:
-    return tr(get_provider_option(cfg.dubbing_provider.value).title)
+def _dubbing_label() -> str:
+    return get_provider_option(cfg.dubbing_provider.value).title
 
 
-def _export_label(tr: Translator) -> str:
-    pieces = [tr("字幕")]
+def _export_label() -> str:
+    pieces = [tr("doctor.label.subtitle")]
     if cfg.need_video.value:
-        pieces.insert(0, tr("视频"))
+        pieces.insert(0, tr("doctor.label.video"))
     if cfg.dubbing_enabled.value:
-        pieces.append(tr("配音"))
+        pieces.append(tr("doctor.label.dubbing"))
     if not cfg.need_video.value and not cfg.dubbing_enabled.value:
-        return tr("字幕文件")
+        return tr("doctor.label.subtitle_file")
     return " + ".join(pieces)
 
 
@@ -871,38 +866,38 @@ def _translate_uses_llm() -> bool:
     return cfg.need_translate.value and cfg.translator_service.value == TranslatorServiceEnum.OPENAI
 
 
-def _llm_item_title(tr: Translator) -> str:
+def _llm_item_title() -> str:
     if cfg.need_optimize.value and cfg.need_split.value:
-        return tr("字幕校正与智能断句")
+        return tr("doctor.llm.title.optimize_split")
     if cfg.need_optimize.value:
-        return tr("字幕校正")
+        return tr("doctor.llm.title.optimize")
     if cfg.need_split.value:
-        return tr("智能断句")
-    return tr("大模型翻译")
+        return tr("doctor.llm.title.split")
+    return tr("doctor.llm.title.translate")
 
 
-def _llm_description(tr: Translator) -> str:
+def _llm_description() -> str:
     if _translate_uses_llm() and not (cfg.need_optimize.value or cfg.need_split.value):
-        return tr("当前翻译会调用大模型，需要可用 Key。")
-    return tr("校正、术语修正、智能断句需要可用 Key。")
+        return tr("doctor.llm.desc.translate")
+    return tr("doctor.llm.desc.default")
 
 
-def _transcribe_description(tr: Translator) -> str:
+def _transcribe_description() -> str:
     if cfg.transcribe_model.value.name in {"BIJIAN", "JIANYING"}:
-        return tr("把视频或音频转成原文字幕，免费接口需要网络。")
+        return tr("doctor.transcribe.desc.free")
     if cfg.transcribe_model.value.name == "WHISPER_API":
-        return tr("把视频或音频转成原文字幕，需要 Whisper Key。")
-    return tr("把视频或音频转成原文字幕，需要本地模型。")
+        return tr("doctor.transcribe.desc.whisper")
+    return tr("doctor.transcribe.desc.local")
 
 
-def _translate_description(tr: Translator) -> str:
+def _translate_description() -> str:
     if _translate_uses_llm():
-        return tr("生成目标语言字幕，大模型翻译会复用 LLM Key。")
-    return tr("生成目标语言字幕，失败只影响译文。")
+        return tr("doctor.translate.desc.uses_llm")
+    return tr("doctor.translate.desc.default")
 
 
-def _dubbing_description(tr: Translator) -> str:
-    return tr("按当前提供商和音色生成配音；部分服务需要 Key。")
+def _dubbing_description() -> str:
+    return tr("doctor.dubbing.desc")
 
 
 def _settings_page_for_action(action: ItemAction) -> str | None:

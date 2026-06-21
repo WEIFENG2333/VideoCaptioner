@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import sys
 import webbrowser
 from pathlib import Path
 from typing import Any
 
 from PyQt5.QtCore import (
     QEasingCurve,
+    QProcess,
     QPropertyAnimation,
     QRectF,
     Qt,
@@ -16,6 +18,7 @@ from PyQt5.QtCore import (
 )
 from PyQt5.QtGui import QColor, QDesktopServices, QPainterPath, QRegion
 from PyQt5.QtWidgets import (
+    QApplication,
     QDialog,
     QFileDialog,
     QGraphicsOpacityEffect,
@@ -76,12 +79,14 @@ from videocaptioner.ui.common.dubbing_options import (
     get_provider_option,
     get_provider_voices,
     is_provider_default_base,
+    provider_title,
 )
 from videocaptioner.ui.common.model_options import (
     FUN_ASR_MODEL_OPTIONS,
     WHISPER_API_MODEL_OPTIONS,
 )
 from videocaptioner.ui.common.theme_tokens import app_palette
+from videocaptioner.ui.components.app_dialog import ConfirmDialog
 from videocaptioner.ui.components.model_manager_dialog import ModelManagerDialog
 from videocaptioner.ui.components.settings_controls import (
     CONTROL_WIDTH,
@@ -101,6 +106,7 @@ from videocaptioner.ui.components.settings_controls import (
     options_from,
 )
 from videocaptioner.ui.components.workbench import CompactButton, RoundIconButton
+from videocaptioner.ui.i18n import tr
 
 SETTINGS_PAGE_ALIASES = {
     "asr": "transcribe",
@@ -150,7 +156,7 @@ class SettingInterface(SettingsShell):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.setWindowTitle(self.tr("设置"))
+        self.setWindowTitle(tr("settings.title"))
         self._threads: list[QThread] = []
 
         self._build_pages()
@@ -165,16 +171,16 @@ class SettingInterface(SettingsShell):
         self.setCurrentPage("transcribe")
 
     def _build_pages(self) -> None:
-        self.transcribePage = self.addPage("transcribe", "转录配置")
-        self.llmPage = self.addPage("llm", "LLM 配置")
-        self.translateServicePage = self.addPage("translate-service", "翻译服务")
-        self.translatePage = self.addPage("translate", "翻译与优化")
-        self.subtitlePage = self.addPage("subtitle", "字幕合成配置")
-        self.dubbingPage = self.addPage("dubbing", "配音配置")
-        self.liveCaptionPage = self.addPage("live-caption", "实时字幕配置")
-        self.savePage = self.addPage("save", "保存配置")
-        self.personalPage = self.addPage("personal", "个性化")
-        self.aboutPage = self.addPage("about", "关于")
+        self.transcribePage = self.addPage("transcribe", tr("settings.page.transcribe"))
+        self.llmPage = self.addPage("llm", tr("settings.page.llm"))
+        self.translateServicePage = self.addPage("translate-service", tr("settings.page.translate_service"))
+        self.translatePage = self.addPage("translate", tr("settings.page.translate"))
+        self.subtitlePage = self.addPage("subtitle", tr("settings.page.subtitle"))
+        self.dubbingPage = self.addPage("dubbing", tr("settings.page.dubbing"))
+        self.liveCaptionPage = self.addPage("live-caption", tr("settings.page.live_caption"))
+        self.savePage = self.addPage("save", tr("settings.page.save"))
+        self.personalPage = self.addPage("personal", tr("settings.page.personal"))
+        self.aboutPage = self.addPage("about", tr("settings.page.about"))
 
         self._build_transcribe_page()
         self._build_llm_page()
@@ -199,8 +205,8 @@ class SettingInterface(SettingsShell):
         )
         self.transcribeModelRow = group.addRow(
             SettingRow(
-                self.tr("转录模型"),
-                self.tr("选择生成原始字幕时使用的语音识别服务。"),
+                tr("settings.transcribe.model"),
+                tr("settings.transcribe.model.desc"),
                 self.transcribeModelControl,
                 group,
             )
@@ -208,8 +214,8 @@ class SettingInterface(SettingsShell):
 
         self.transcribeOutputRow = group.addRow(
             SettingRow(
-                self.tr("输出格式"),
-                self.tr("转录完成后保存的字幕文件格式。"),
+                tr("settings.transcribe.output_format"),
+                tr("settings.transcribe.output_format.desc"),
                 BoundComboBox(
                     cfg.transcribe_output_format,
                     options_from(cfg.transcribe_output_format.validator.options),
@@ -225,8 +231,8 @@ class SettingInterface(SettingsShell):
         )
         self.transcribeLanguageRow = group.addRow(
             SettingRow(
-                self.tr("源语言"),
-                self.tr("音视频中说话的语言，不确定时保持自动检测。"),
+                tr("settings.transcribe.source_language"),
+                tr("settings.transcribe.source_language.desc"),
                 self.transcribeLanguageControl,
                 group,
             )
@@ -234,16 +240,16 @@ class SettingInterface(SettingsShell):
 
         self.whisperApiBaseRow = group.addRow(
             SettingRow(
-                self.tr("Whisper API Base URL"),
-                self.tr("使用 Whisper API 时请求的服务地址。"),
+                tr("settings.transcribe.whisper_api.base"),
+                tr("settings.transcribe.whisper_api.base.desc"),
                 BoundLineEdit(cfg.whisper_api_base, "https://api.openai.com/v1", group),
                 group,
             )
         )
         self.whisperApiKeyRow = group.addRow(
             SettingRow(
-                self.tr("Whisper API Key"),
-                self.tr("使用 Whisper API 转录时需要填写。"),
+                tr("settings.transcribe.whisper_api.key"),
+                tr("settings.transcribe.whisper_api.key.desc"),
                 BoundLineEdit(cfg.whisper_api_key, "sk-", group, password=True),
                 group,
             )
@@ -255,17 +261,17 @@ class SettingInterface(SettingsShell):
         )
         self.whisperApiModelRow = group.addRow(
             SettingRow(
-                self.tr("Whisper 模型"),
-                self.tr("填写服务商支持的音频转录模型名。"),
+                tr("settings.transcribe.whisper_api.model"),
+                tr("settings.transcribe.whisper_api.model.desc"),
                 self.whisperApiModelControl,
                 group,
             )
         )
         self.whisperApiPromptRow = group.addRow(
             SettingRow(
-                self.tr("提示词"),
-                self.tr("可选的转录提示词，默认空。"),
-                BoundLineEdit(cfg.whisper_api_prompt, self.tr("未填写"), group),
+                tr("settings.transcribe.prompt"),
+                tr("settings.transcribe.prompt.desc"),
+                BoundLineEdit(cfg.whisper_api_prompt, tr("settings.placeholder.empty"), group),
                 group,
             )
         )
@@ -278,19 +284,19 @@ class SettingInterface(SettingsShell):
         )
         self.whisperCppModelRow = group.addRow(
             SettingRow(
-                self.tr("WhisperCpp 模型"),
-                self.tr("选择已下载的 whisper.cpp 转录模型。"),
+                tr("settings.transcribe.whisper_cpp.model"),
+                tr("settings.transcribe.whisper_cpp.model.desc"),
                 self.whisperCppModelControl,
                 group,
             )
         )
         # 程序安装与模型下载集中在「管理模型」弹窗；状态写进行描述，
         # 不与上方模型选择重复（需要行动时按钮转主题色）。
-        self.whisperCppManageButton = make_button(self.tr("管理模型"), parent=group)
+        self.whisperCppManageButton = make_button(tr("settings.transcribe.manage_models"), parent=group)
         self.whisperCppModelEntryRow = group.addRow(
             SettingRow(
-                self.tr("本地模型"),
-                self.tr("查看运行程序状态、下载和管理模型文件。"),
+                tr("settings.transcribe.local_model"),
+                tr("settings.transcribe.local_model.desc"),
                 self.whisperCppManageButton,
                 group,
             )
@@ -303,35 +309,35 @@ class SettingInterface(SettingsShell):
         )
         self.fasterWhisperModelRow = group.addRow(
             SettingRow(
-                self.tr("Faster Whisper 模型"),
-                self.tr("选择已下载的 Faster Whisper 模型。"),
+                tr("settings.transcribe.faster_whisper.model"),
+                tr("settings.transcribe.faster_whisper.model.desc"),
                 self.fasterWhisperModelControl,
                 group,
             )
         )
-        self.fasterWhisperDirControl = FolderPickerControl(group, placeholder=self.tr("未选择"))
+        self.fasterWhisperDirControl = FolderPickerControl(group, placeholder=tr("settings.placeholder.not_selected"))
         self.fasterWhisperDirControl.setPath(str(cfg.faster_whisper_model_dir.value or ""))
         self.fasterWhisperDirRow = group.addRow(
             SettingRow(
-                self.tr("模型目录"),
-                self.tr("Faster Whisper 模型所在文件夹。"),
+                tr("settings.transcribe.faster_whisper.model_dir"),
+                tr("settings.transcribe.faster_whisper.model_dir.desc"),
                 self.fasterWhisperDirControl,
                 group,
             )
         )
-        self.fasterWhisperManageButton = make_button(self.tr("管理模型"), parent=group)
+        self.fasterWhisperManageButton = make_button(tr("settings.transcribe.manage_models"), parent=group)
         self.fasterWhisperModelEntryRow = group.addRow(
             SettingRow(
-                self.tr("本地模型"),
-                self.tr("查看运行程序状态、下载和管理模型文件。"),
+                tr("settings.transcribe.local_model"),
+                tr("settings.transcribe.local_model.desc"),
                 self.fasterWhisperManageButton,
                 group,
             )
         )
         self.fasterWhisperDeviceRow = group.addRow(
             SettingRow(
-                self.tr("运行设备"),
-                self.tr("模型运行设备，通常保持 auto。"),
+                tr("settings.transcribe.faster_whisper.device"),
+                tr("settings.transcribe.faster_whisper.device.desc"),
                 BoundComboBox(
                     cfg.faster_whisper_device,
                     options_from(cfg.faster_whisper_device.validator.options),
@@ -342,24 +348,24 @@ class SettingInterface(SettingsShell):
         )
         self.fasterWhisperVadFilterRow = group.addRow(
             SettingRow(
-                self.tr("VAD 过滤"),
-                self.tr("过滤无人声片段，减少识别幻觉。"),
+                tr("settings.transcribe.faster_whisper.vad_filter"),
+                tr("settings.transcribe.faster_whisper.vad_filter.desc"),
                 BoundSwitch(cfg.faster_whisper_vad_filter, group),
                 group,
             )
         )
         self.fasterWhisperVadThresholdRow = group.addRow(
             SettingRow(
-                self.tr("VAD 阈值"),
-                self.tr("语音概率阈值，高于此值视为语音。"),
+                tr("settings.transcribe.faster_whisper.vad_threshold"),
+                tr("settings.transcribe.faster_whisper.vad_threshold.desc"),
                 BoundFloatSlider(cfg.faster_whisper_vad_threshold, 2, group),
                 group,
             )
         )
         self.fasterWhisperVadMethodRow = group.addRow(
             SettingRow(
-                self.tr("VAD 方法"),
-                self.tr("选择语音活动检测方法。"),
+                tr("settings.transcribe.faster_whisper.vad_method"),
+                tr("settings.transcribe.faster_whisper.vad_method.desc"),
                 BoundComboBox(
                     cfg.faster_whisper_vad_method,
                     options_from(cfg.faster_whisper_vad_method.validator.options),
@@ -370,33 +376,33 @@ class SettingInterface(SettingsShell):
         )
         self.fasterWhisperVoiceExtractionRow = group.addRow(
             SettingRow(
-                self.tr("人声分离"),
-                self.tr("处理前分离人声和背景音乐。"),
+                tr("settings.transcribe.faster_whisper.voice_extraction"),
+                tr("settings.transcribe.faster_whisper.voice_extraction.desc"),
                 BoundSwitch(cfg.faster_whisper_ff_mdx_kim2, group),
                 group,
             )
         )
         self.fasterWhisperOneWordRow = group.addRow(
             SettingRow(
-                self.tr("单字时间戳"),
-                self.tr("开启后生成单字级时间戳。"),
+                tr("settings.transcribe.faster_whisper.one_word"),
+                tr("settings.transcribe.faster_whisper.one_word.desc"),
                 BoundSwitch(cfg.faster_whisper_one_word, group),
                 group,
             )
         )
         self.fasterWhisperPromptRow = group.addRow(
             SettingRow(
-                self.tr("提示词"),
-                self.tr("可选的转录提示词，默认空。"),
-                BoundLineEdit(cfg.faster_whisper_prompt, self.tr("未填写"), group),
+                tr("settings.transcribe.prompt"),
+                tr("settings.transcribe.prompt.desc"),
+                BoundLineEdit(cfg.faster_whisper_prompt, tr("settings.placeholder.empty"), group),
                 group,
             )
         )
 
         self.funAsrKeyRow = group.addRow(
             SettingRow(
-                self.tr("百炼 API Key"),
-                self.tr("百炼 Fun-ASR 转录需要填写。"),
+                tr("settings.transcribe.fun_asr.key"),
+                tr("settings.transcribe.fun_asr.key.desc"),
                 BoundLineEdit(cfg.fun_asr_api_key, "sk-", group, password=True),
                 group,
             )
@@ -408,19 +414,19 @@ class SettingInterface(SettingsShell):
         )
         self.funAsrModelRow = group.addRow(
             SettingRow(
-                self.tr("百炼 ASR 模型"),
-                self.tr("填写百炼控制台里可用的语音识别模型 Code。"),
+                tr("settings.transcribe.fun_asr.model"),
+                tr("settings.transcribe.fun_asr.model.desc"),
                 self.funAsrModelControl,
                 group,
             )
         )
         # 统一的真实转录测试：对所有服务（含 B/J 接口与本地模型）可用，
         # 与 doctor --check-api 共用 core 的 check_transcribe 入口。
-        self.checkTranscribeButton = make_button(self.tr("测试转录"), parent=group)
+        self.checkTranscribeButton = make_button(tr("settings.test_transcribe"), parent=group)
         self.checkTranscribeRow = group.addRow(
             SettingRow(
-                self.tr("测试转录"),
-                self.tr("用内置短音频真实转录一次，验证当前服务能跑通。"),
+                tr("settings.test_transcribe"),
+                tr("settings.transcribe.test.desc"),
                 self.checkTranscribeButton,
                 group,
             )
@@ -436,8 +442,8 @@ class SettingInterface(SettingsShell):
         )
         self.llmServiceRow = group.addRow(
             SettingRow(
-                self.tr("LLM 提供商"),
-                self.tr("用于字幕断句、校正和 LLM 翻译。"),
+                tr("settings.llm.provider"),
+                tr("settings.llm.provider.desc"),
                 self.llmServiceControl,
                 group,
             )
@@ -458,24 +464,24 @@ class SettingInterface(SettingsShell):
             )
             api_key_row = group.addRow(
                 SettingRow(
-                    self.tr("API Key"),
-                    self.tr("{service} 调用大模型时使用。").format(service=service.value),
+                    tr("settings.llm.api_key"),
+                    tr("settings.llm.api_key.desc", service=service.value),
                     api_key,
                     group,
                 )
             )
             api_base_row = group.addRow(
                 SettingRow(
-                    self.tr("Base URL"),
-                    self.tr("仅 OpenAI 兼容或本地服务需要修改。"),
+                    tr("settings.llm.base_url"),
+                    tr("settings.llm.base_url.desc"),
                     api_base,
                     group,
                 )
             )
             model_row = group.addRow(
                 SettingRow(
-                    self.tr("模型"),
-                    self.tr("用于断句、校正、翻译的大模型名称。"),
+                    tr("settings.llm.model"),
+                    tr("settings.llm.model.desc"),
                     model,
                     group,
                 )
@@ -490,12 +496,12 @@ class SettingInterface(SettingsShell):
                 "model": model,
             }
 
-        self.loadLLMModelsButton = make_button(self.tr("加载模型"), parent=group)
-        self.checkLLMButton = make_button(self.tr("测试连接"), parent=group)
+        self.loadLLMModelsButton = make_button(tr("settings.llm.load_models"), parent=group)
+        self.checkLLMButton = make_button(tr("settings.llm.test_connection"), parent=group)
         self.checkLLMRow = group.addRow(
             SettingRow(
-                self.tr("模型服务"),
-                self.tr("先加载可用模型，再用当前模型测试连通性。"),
+                tr("settings.llm.model_service"),
+                tr("settings.llm.model_service.desc"),
                 self._two_controls(self.loadLLMModelsButton, self.checkLLMButton, group),
                 group,
             )
@@ -511,40 +517,40 @@ class SettingInterface(SettingsShell):
         )
         self.translatorServiceRow = group.addRow(
             SettingRow(
-                self.tr("翻译服务"),
-                self.tr("选择字幕翻译使用的服务。"),
+                tr("settings.translate_service.service"),
+                tr("settings.translate_service.service.desc"),
                 self.translatorServiceControl,
                 group,
             )
         )
         self.needReflectTranslateRow = group.addRow(
             SettingRow(
-                self.tr("反思翻译"),
-                self.tr("仅 LLM 翻译时使用，会增加模型调用量。"),
+                tr("settings.translate_service.reflect"),
+                tr("settings.translate_service.reflect.desc"),
                 BoundSwitch(cfg.need_reflect_translate, group),
                 group,
             )
         )
         self.deeplxEndpointRow = group.addRow(
             SettingRow(
-                self.tr("DeepLx 后端"),
-                self.tr("选择 DeepLx 翻译时需要填写。"),
+                tr("settings.translate_service.deeplx_endpoint"),
+                tr("settings.translate_service.deeplx_endpoint.desc"),
                 BoundLineEdit(cfg.deeplx_endpoint, "https://api.deeplx.org/translate", group),
                 group,
             )
         )
         self.batchSizeRow = group.addRow(
             SettingRow(
-                self.tr("批处理大小"),
-                self.tr("LLM 翻译每批处理的字幕数量。"),
+                tr("settings.translate_service.batch_size"),
+                tr("settings.translate_service.batch_size.desc"),
                 BoundSlider(cfg.batch_size, group),
                 group,
             )
         )
         self.threadNumRow = group.addRow(
             SettingRow(
-                self.tr("并发数"),
-                self.tr("模型服务允许的情况下可以调高。"),
+                tr("settings.translate_service.thread_num"),
+                tr("settings.translate_service.thread_num.desc"),
                 BoundSlider(cfg.thread_num, group),
                 group,
             )
@@ -555,32 +561,32 @@ class SettingInterface(SettingsShell):
         group = SettingsGroup("", self.translatePage.container)
         group.addRow(
             SettingRow(
-                self.tr("字幕校正"),
-                self.tr("处理字幕时修正识别错误和专有名词。"),
+                tr("settings.translate.optimize"),
+                tr("settings.translate.optimize.desc"),
                 BoundSwitch(cfg.need_optimize, group),
                 group,
             )
         )
         group.addRow(
             SettingRow(
-                self.tr("字幕翻译"),
-                self.tr("处理字幕时生成目标语言译文。"),
+                tr("settings.translate.translate"),
+                tr("settings.translate.translate.desc"),
                 BoundSwitch(cfg.need_translate, group),
                 group,
             )
         )
         group.addRow(
             SettingRow(
-                self.tr("字幕断句"),
-                self.tr("按字数和语义重新切分长字幕。"),
+                tr("settings.translate.split"),
+                tr("settings.translate.split.desc"),
                 BoundSwitch(cfg.need_split, group),
                 group,
             )
         )
         group.addRow(
             SettingRow(
-                self.tr("目标语言"),
-                self.tr("翻译字幕输出的目标语言。"),
+                tr("settings.translate.target_language"),
+                tr("settings.translate.target_language.desc"),
                 BoundComboBox(
                     cfg.target_language,
                     options_from(cfg.target_language.validator.options),
@@ -591,25 +597,25 @@ class SettingInterface(SettingsShell):
         )
         group.addRow(
             SettingRow(
-                self.tr("中文字幕长度"),
-                self.tr("断句时每条字幕的中文最大字数。"),
+                tr("settings.translate.cjk_length"),
+                tr("settings.translate.cjk_length.desc"),
                 BoundSlider(cfg.max_word_count_cjk, group),
                 group,
             )
         )
         group.addRow(
             SettingRow(
-                self.tr("英文字幕长度"),
-                self.tr("断句时每条字幕的英文最大词数。"),
+                tr("settings.translate.english_length"),
+                tr("settings.translate.english_length.desc"),
                 BoundSlider(cfg.max_word_count_english, group),
                 group,
             )
         )
         group.addRow(
             SettingRow(
-                self.tr("自定义提示词"),
-                self.tr("补充给字幕校正和翻译的大模型提示。"),
-                BoundLineEdit(cfg.custom_prompt_text, self.tr("未填写"), group),
+                tr("settings.translate.custom_prompt"),
+                tr("settings.translate.custom_prompt.desc"),
+                BoundLineEdit(cfg.custom_prompt_text, tr("settings.placeholder.empty"), group),
                 group,
             )
         )
@@ -617,19 +623,19 @@ class SettingInterface(SettingsShell):
 
     def _build_subtitle_page(self) -> None:
         synth_group = SettingsGroup("", self.subtitlePage.container)
-        self.subtitleStyleButton = make_button(self.tr("打开样式页"), parent=synth_group)
+        self.subtitleStyleButton = make_button(tr("settings.subtitle.open_style"), parent=synth_group)
         synth_group.addRow(
             SettingRow(
-                self.tr("字幕样式"),
-                self.tr("字体、颜色和预览图在样式页调整。"),
+                tr("settings.subtitle.style"),
+                tr("settings.subtitle.style.desc"),
                 self.subtitleStyleButton,
                 synth_group,
             )
         )
         synth_group.addRow(
             SettingRow(
-                self.tr("字幕布局"),
-                self.tr("选择单语、双语以及原文译文位置。"),
+                tr("settings.subtitle.layout"),
+                tr("settings.subtitle.layout.desc"),
                 BoundComboBox(
                     cfg.subtitle_layout,
                     options_from(cfg.subtitle_layout.validator.options),
@@ -640,8 +646,8 @@ class SettingInterface(SettingsShell):
         )
         synth_group.addRow(
             SettingRow(
-                self.tr("渲染模式"),
-                self.tr("选择 ASS 样式或圆角背景渲染。"),
+                tr("settings.subtitle.render_mode"),
+                tr("settings.subtitle.render_mode.desc"),
                 BoundComboBox(
                     cfg.subtitle_render_mode,
                     options_from(cfg.subtitle_render_mode.validator.options),
@@ -652,24 +658,24 @@ class SettingInterface(SettingsShell):
         )
         synth_group.addRow(
             SettingRow(
-                self.tr("合成视频"),
-                self.tr("关闭后只输出字幕文件，不生成成片。"),
+                tr("settings.subtitle.need_video"),
+                tr("settings.subtitle.need_video.desc"),
                 BoundSwitch(cfg.need_video, synth_group),
                 synth_group,
             )
         )
         synth_group.addRow(
             SettingRow(
-                self.tr("软字幕"),
-                self.tr("开启后字幕不烧录进画面。"),
+                tr("settings.subtitle.soft"),
+                tr("settings.subtitle.soft.desc"),
                 BoundSwitch(cfg.soft_subtitle, synth_group),
                 synth_group,
             )
         )
         synth_group.addRow(
             SettingRow(
-                self.tr("视频质量"),
-                self.tr("硬字幕合成时使用的编码质量。"),
+                tr("settings.subtitle.video_quality"),
+                tr("settings.subtitle.video_quality.desc"),
                 BoundComboBox(
                     cfg.video_quality,
                     options_from(cfg.video_quality.validator.options),
@@ -684,21 +690,21 @@ class SettingInterface(SettingsShell):
         group = SettingsGroup("", self.dubbingPage.container)
         group.addRow(
             SettingRow(
-                self.tr("默认添加配音"),
-                self.tr("开启后，全流程处理默认生成配音音轨。"),
+                tr("settings.dubbing.enabled"),
+                tr("settings.dubbing.enabled.desc"),
                 BoundSwitch(cfg.dubbing_enabled, group),
                 group,
             )
         )
         self.dubbingProviderControl = BoundComboBox(
             cfg.dubbing_provider,
-            [Option(option.key, option.title) for option in self._dubbing_provider_options()],
+            [Option(option.key, provider_title(option)) for option in self._dubbing_provider_options()],
             group,
         )
         self.dubbingProviderRow = group.addRow(
             SettingRow(
-                self.tr("配音提供商"),
-                self.tr("Edge 免 Key；Gemini 和 SiliconFlow 需要 API Key。"),
+                tr("settings.dubbing.provider"),
+                tr("settings.dubbing.provider.desc"),
                 self.dubbingProviderControl,
                 group,
             )
@@ -706,22 +712,22 @@ class SettingInterface(SettingsShell):
         self.dubbingPresetControl = BoundComboBox(cfg.dubbing_preset, [], group)
         self.dubbingPresetRow = group.addRow(
             SettingRow(
-                self.tr("默认音色"),
-                self.tr("保存后会作为配音页和全流程的默认音色。"),
+                tr("settings.dubbing.preset"),
+                tr("settings.dubbing.preset.desc"),
                 self.dubbingPresetControl,
                 group,
             )
         )
         group.addRow(
             SettingRow(
-                self.tr("配音文本轨道"),
-                self.tr("选择用原文、译文，或自动判断生成配音。"),
+                tr("settings.dubbing.text_track"),
+                tr("settings.dubbing.text_track.desc"),
                 BoundComboBox(
                     cfg.dubbing_text_track,
                     [
-                        Option("auto", self.tr("自动选择")),
-                        Option("first", self.tr("第一行")),
-                        Option("second", self.tr("第二行")),
+                        Option("auto", tr("settings.dubbing.text_track.auto")),
+                        Option("first", tr("settings.dubbing.text_track.first")),
+                        Option("second", tr("settings.dubbing.text_track.second")),
                     ],
                     group,
                 ),
@@ -730,15 +736,15 @@ class SettingInterface(SettingsShell):
         )
         group.addRow(
             SettingRow(
-                self.tr("时间对齐"),
-                self.tr("控制配音语速与字幕时间轴的贴合程度。"),
+                tr("settings.dubbing.timing"),
+                tr("settings.dubbing.timing.desc"),
                 BoundComboBox(
                     cfg.dubbing_timing,
                     [
-                        Option("natural", self.tr("自然")),
-                        Option("balanced", self.tr("均衡")),
-                        Option("strict", self.tr("严格")),
-                        Option("none", self.tr("不变速")),
+                        Option("natural", tr("settings.dubbing.timing.natural")),
+                        Option("balanced", tr("settings.dubbing.timing.balanced")),
+                        Option("strict", tr("settings.dubbing.timing.strict")),
+                        Option("none", tr("settings.dubbing.timing.none")),
                     ],
                     group,
                 ),
@@ -747,14 +753,14 @@ class SettingInterface(SettingsShell):
         )
         group.addRow(
             SettingRow(
-                self.tr("原声处理"),
-                self.tr("生成视频时如何处理原视频声音。"),
+                tr("settings.dubbing.audio_mode"),
+                tr("settings.dubbing.audio_mode.desc"),
                 BoundComboBox(
                     cfg.dubbing_audio_mode,
                     [
-                        Option("replace", self.tr("替换原声")),
-                        Option("mix", self.tr("混合原声")),
-                        Option("duck", self.tr("压低原声")),
+                        Option("replace", tr("settings.dubbing.audio_mode.replace")),
+                        Option("mix", tr("settings.dubbing.audio_mode.mix")),
+                        Option("duck", tr("settings.dubbing.audio_mode.duck")),
                     ],
                     group,
                 ),
@@ -766,8 +772,8 @@ class SettingInterface(SettingsShell):
         )
         self.dubbingApiKeyRow = group.addRow(
             SettingRow(
-                self.tr("配音 API Key"),
-                self.tr("Gemini 或 SiliconFlow 配音需要填写。"),
+                tr("settings.dubbing.api_key"),
+                tr("settings.dubbing.api_key.desc"),
                 self.dubbingApiKeyControl,
                 group,
             )
@@ -775,25 +781,25 @@ class SettingInterface(SettingsShell):
         self.dubbingModelControl = BoundEditableComboBox(cfg.dubbing_model, [], group)
         self.dubbingModelRow = group.addRow(
             SettingRow(
-                self.tr("配音模型"),
-                self.tr("当前配音提供商使用的文字转语音模型。"),
+                tr("settings.dubbing.model"),
+                tr("settings.dubbing.model.desc"),
                 self.dubbingModelControl,
                 group,
             )
         )
         self.dubbingWorkersRow = group.addRow(
             SettingRow(
-                self.tr("配音并发"),
-                self.tr("同时合成的字幕行数。"),
+                tr("settings.dubbing.workers"),
+                tr("settings.dubbing.workers.desc"),
                 BoundSlider(cfg.dubbing_tts_workers, group),
                 group,
             )
         )
-        self.checkDubbingButton = make_button(self.tr("测试配音"), parent=group)
+        self.checkDubbingButton = make_button(tr("settings.dubbing.test_button"), parent=group)
         self.checkDubbingRow = group.addRow(
             SettingRow(
-                self.tr("配音测试"),
-                self.tr("用当前音色合成一句试听音频。"),
+                tr("settings.dubbing.test"),
+                tr("settings.dubbing.test.desc"),
                 self.checkDubbingButton,
                 group,
             )
@@ -801,17 +807,24 @@ class SettingInterface(SettingsShell):
         self.dubbingPage.addGroup(group)
 
     def _build_live_caption_page(self) -> None:
-        display_labels = {"bilingual": "双语", "target": "仅译文", "source": "仅原文"}
-        bg_labels = {"translucent": "半透明", "black": "纯黑"}
+        display_labels = {
+            "bilingual": tr("settings.live_caption.display.bilingual"),
+            "target": tr("settings.live_caption.display.target"),
+            "source": tr("settings.live_caption.display.source"),
+        }
+        bg_labels = {
+            "translucent": tr("settings.live_caption.bg.translucent"),
+            "black": tr("settings.live_caption.bg.black"),
+        }
         # 下拉项只显引擎名 / 模型名，不带括号解释（说明留给行副标题）。
         provider_labels = {"voxgate": "voxgate", "fun-asr": "Fun-ASR", "qwen-asr": "Qwen-ASR"}
 
         # 1) 转录引擎（Provider）：voxgate 本地免费无密钥；fun-asr 阿里云实时（需 Key，中英日更准）
-        engine_group = SettingsGroup(self.tr("转录引擎"), self.liveCaptionPage.container)
+        engine_group = SettingsGroup(tr("settings.live_caption.engine.group"), self.liveCaptionPage.container)
         engine_group.addRow(
             SettingRow(
-                self.tr("转录引擎"),
-                self.tr("实时语音转文字所用的识别引擎。"),
+                tr("settings.live_caption.engine"),
+                tr("settings.live_caption.engine.desc"),
                 BoundComboBox(
                     cfg.live_caption_provider,
                     options_from(
@@ -824,12 +837,12 @@ class SettingInterface(SettingsShell):
             )
         )
         # voxgate：下载/检测本地程序
-        deps_button = CompactButton(self.tr("下载 / 检测"), AppIcon.DOWNLOAD, engine_group)
+        deps_button = CompactButton(tr("settings.live_caption.deps_button"), AppIcon.DOWNLOAD, engine_group)
         deps_button.clicked.connect(self._open_live_caption_deps)
         self.lcVoxgateRow = engine_group.addRow(
             SettingRow(
-                self.tr("转录程序"),
-                self.tr("voxgate 本地转录程序，未安装时点此下载或检测。"),
+                tr("settings.live_caption.voxgate"),
+                tr("settings.live_caption.voxgate.desc"),
                 deps_button,
                 engine_group,
             )
@@ -837,16 +850,16 @@ class SettingInterface(SettingsShell):
         # fun-asr / qwen-asr：API Key（复用百炼 Key）/ 模型 / 识别语言
         self.lcFunKeyRow = engine_group.addRow(
             SettingRow(
-                self.tr("百炼 API Key"),
-                self.tr("Fun-ASR / Qwen-ASR 调用阿里云百炼所需的密钥，与转录配置共用同一个。"),
+                tr("settings.live_caption.fun_key"),
+                tr("settings.live_caption.fun_key.desc"),
                 BoundLineEdit(cfg.fun_asr_api_key, "sk-", engine_group, password=True),
                 engine_group,
             )
         )
         self.lcFunModelRow = engine_group.addRow(
             SettingRow(
-                self.tr("识别模型"),
-                self.tr("Fun-ASR 识别模型；多语种模型可自动识别多种语言。"),
+                tr("settings.live_caption.asr_model"),
+                tr("settings.live_caption.asr_model.desc"),
                 BoundComboBox(
                     cfg.live_caption_fun_asr_model,
                     options_from(cfg.live_caption_fun_asr_model.validator.options),
@@ -865,19 +878,19 @@ class SettingInterface(SettingsShell):
         )
         self.lcSourceLangRow = engine_group.addRow(
             SettingRow(
-                self.tr("识别语言"),
-                self.tr("你说话所用的语言；识别引擎据此进行转写。自动识别可让引擎按音频判定语言。"),
+                tr("settings.live_caption.source_language"),
+                tr("settings.live_caption.source_language.desc"),
                 self.lcSourceLangCombo,
                 engine_group,
             )
         )
         # 统一的真实转录测试：对所选引擎（voxgate / Fun-ASR）用内置短音频真实跑一次，
         # 与转录配置页的「测试转录」同思路，但走实时后端（core.realtime.check）。
-        self.checkLiveCaptionButton = make_button(self.tr("测试转录"), parent=engine_group)
+        self.checkLiveCaptionButton = make_button(tr("settings.test_transcribe"), parent=engine_group)
         engine_group.addRow(
             SettingRow(
-                self.tr("测试转录"),
-                self.tr("用内置短音频真实转录一次，验证当前引擎能跑通。"),
+                tr("settings.test_transcribe"),
+                tr("settings.live_caption.test.desc"),
                 self.checkLiveCaptionButton,
                 engine_group,
             )
@@ -885,19 +898,19 @@ class SettingInterface(SettingsShell):
         self.liveCaptionPage.addGroup(engine_group)
 
         # 2) 翻译
-        translate_group = SettingsGroup(self.tr("翻译"), self.liveCaptionPage.container)
+        translate_group = SettingsGroup(tr("settings.live_caption.translate.group"), self.liveCaptionPage.container)
         translate_group.addRow(
             SettingRow(
-                self.tr("实时翻译"),
-                self.tr("开启后对转录文本即时翻译；关闭则只显示原文。"),
+                tr("settings.live_caption.translate"),
+                tr("settings.live_caption.translate.desc"),
                 BoundSwitch(cfg.live_caption_translate, translate_group),
                 translate_group,
             )
         )
         translate_group.addRow(
             SettingRow(
-                self.tr("目标语言"),
-                self.tr("译文翻译成的语言。"),
+                tr("settings.live_caption.target_language"),
+                tr("settings.live_caption.target_language.desc"),
                 BoundComboBox(
                     cfg.live_caption_target_language,
                     options_from(cfg.live_caption_target_language.validator.options),
@@ -908,8 +921,8 @@ class SettingInterface(SettingsShell):
         )
         translate_group.addRow(
             SettingRow(
-                self.tr("翻译引擎"),
-                self.tr("生成译文所用的翻译服务。"),
+                tr("settings.live_caption.translator_service"),
+                tr("settings.live_caption.translator_service.desc"),
                 BoundComboBox(
                     cfg.live_caption_translator_service,
                     options_from(cfg.live_caption_translator_service.validator.options),
@@ -921,11 +934,11 @@ class SettingInterface(SettingsShell):
         self.liveCaptionPage.addGroup(translate_group)
 
         # 3) 浮窗显示
-        overlay_group = SettingsGroup(self.tr("浮窗显示"), self.liveCaptionPage.container)
+        overlay_group = SettingsGroup(tr("settings.live_caption.overlay.group"), self.liveCaptionPage.container)
         overlay_group.addRow(
             SettingRow(
-                self.tr("显示内容"),
-                self.tr("浮窗默认显示的内容"),
+                tr("settings.live_caption.display_mode"),
+                tr("settings.live_caption.display_mode.desc"),
                 BoundComboBox(
                     cfg.live_caption_display_mode,
                     options_from(
@@ -939,8 +952,8 @@ class SettingInterface(SettingsShell):
         )
         overlay_group.addRow(
             SettingRow(
-                self.tr("底色样式"),
-                self.tr("浮窗底色风格"),
+                tr("settings.live_caption.bg_style"),
+                tr("settings.live_caption.bg_style.desc"),
                 BoundComboBox(
                     cfg.live_caption_bg_style,
                     options_from(
@@ -954,8 +967,8 @@ class SettingInterface(SettingsShell):
         )
         overlay_group.addRow(
             SettingRow(
-                self.tr("字号"),
-                self.tr("浮窗译文字号"),
+                tr("settings.live_caption.font_scale"),
+                tr("settings.live_caption.font_scale.desc"),
                 BoundSlider(cfg.live_caption_font_scale, overlay_group),
                 overlay_group,
             )
@@ -993,24 +1006,24 @@ class SettingInterface(SettingsShell):
         self.workDirControl.setPath(str(cfg.work_dir.value or ""))
         save_group.addRow(
             SettingRow(
-                self.tr("工作目录"),
-                self.tr("下载视频与处理任务的中间文件会写入这里。"),
+                tr("settings.save.work_dir"),
+                tr("settings.save.work_dir.desc"),
                 self.workDirControl,
                 save_group,
             )
         )
         save_group.addRow(
             SettingRow(
-                self.tr("保留中间文件"),
-                self.tr("处理成功后保留任务目录里的原始转录、样式字幕等中间产物；默认跑完即清。"),
+                tr("settings.save.keep_intermediates"),
+                tr("settings.save.keep_intermediates.desc"),
                 BoundSwitch(cfg.keep_intermediates, save_group),
                 save_group,
             )
         )
         save_group.addRow(
             SettingRow(
-                self.tr("启用缓存"),
-                self.tr("相同配置下复用 ASR、翻译和配音合成结果。"),
+                tr("settings.save.cache"),
+                tr("settings.save.cache.desc"),
                 BoundSwitch(cfg.cache_enabled, save_group),
                 save_group,
             )
@@ -1025,15 +1038,15 @@ class SettingInterface(SettingsShell):
                 Option(option, text)
                 for option, text in zip(
                     cfg.themeMode.validator.options,
-                    [self.tr("浅色"), self.tr("深色"), self.tr("跟随系统")],
+                    [tr("settings.personal.theme.light"), tr("settings.personal.theme.dark"), tr("settings.personal.follow_system")],
                 )
             ],
             ui_group,
         )
         ui_group.addRow(
             SettingRow(
-                self.tr("应用主题"),
-                self.tr("切换浅色、深色或跟随系统。"),
+                tr("settings.personal.theme"),
+                tr("settings.personal.theme.desc"),
                 self.themeControl,
                 ui_group,
             )
@@ -1042,12 +1055,12 @@ class SettingInterface(SettingsShell):
             cfg.themeColor.value if isinstance(cfg.themeColor.value, QColor) else QColor(str(cfg.themeColor.value)),
             ui_group,
         )
-        self.themeColorResetButton = make_button(self.tr("恢复默认"), parent=ui_group)
-        self.themeColorResetButton.setToolTip(self.tr("恢复为项目默认绿色"))
+        self.themeColorResetButton = make_button(tr("settings.personal.theme_color.reset"), parent=ui_group)
+        self.themeColorResetButton.setToolTip(tr("settings.personal.theme_color.reset_tip"))
         ui_group.addRow(
             SettingRow(
-                self.tr("主题颜色"),
-                self.tr("影响按钮、高亮和选中状态。"),
+                tr("settings.personal.theme_color"),
+                tr("settings.personal.theme_color.desc"),
                 self._two_controls(self.themeColorSwatch, self.themeColorResetButton, ui_group),
                 ui_group,
             )
@@ -1060,14 +1073,14 @@ class SettingInterface(SettingsShell):
                 Option(1.5, "150%"),
                 Option(1.75, "175%"),
                 Option(2, "200%"),
-                Option("Auto", self.tr("跟随系统")),
+                Option("Auto", tr("settings.personal.follow_system")),
             ],
             ui_group,
         )
         ui_group.addRow(
             SettingRow(
-                self.tr("界面缩放"),
-                self.tr("修改后需要重启应用。"),
+                tr("settings.personal.zoom"),
+                tr("settings.personal.restart_required"),
                 self.zoomControl,
                 ui_group,
             )
@@ -1078,15 +1091,15 @@ class SettingInterface(SettingsShell):
                 Option(option, text)
                 for option, text in zip(
                     cfg.language.validator.options,
-                    ["简体中文", "繁體中文", "English", self.tr("跟随系统")],
+                    ["简体中文", "繁體中文", "English", tr("settings.personal.follow_system")],
                 )
             ],
             ui_group,
         )
         ui_group.addRow(
             SettingRow(
-                self.tr("语言"),
-                self.tr("修改后需要重启应用。"),
+                tr("settings.personal.language"),
+                tr("settings.personal.restart_required"),
                 self.languageControl,
                 ui_group,
             )
@@ -1095,29 +1108,29 @@ class SettingInterface(SettingsShell):
 
     def _build_about_page(self) -> None:
         about_group = SettingsGroup("", self.aboutPage.container)
-        self.helpButton = make_button(self.tr("打开帮助"), parent=about_group)
+        self.helpButton = make_button(tr("settings.about.help_button"), parent=about_group)
         about_group.addRow(
             SettingRow(
-                self.tr("帮助"),
-                self.tr("查看使用说明和常见问题。"),
+                tr("settings.about.help"),
+                tr("settings.about.help.desc"),
                 self.helpButton,
                 about_group,
             )
         )
-        self.feedbackButton = make_button(self.tr("提交反馈"), primary=True, parent=about_group)
+        self.feedbackButton = make_button(tr("settings.about.feedback_button"), primary=True, parent=about_group)
         about_group.addRow(
             SettingRow(
-                self.tr("反馈"),
-                self.tr("遇到问题时提交反馈。"),
+                tr("settings.about.feedback"),
+                tr("settings.about.feedback.desc"),
                 self.feedbackButton,
                 about_group,
             )
         )
-        self.updateButton = make_button(self.tr("检查更新"), primary=True, parent=about_group)
+        self.updateButton = make_button(tr("settings.about.update_button"), primary=True, parent=about_group)
         about_group.addRow(
             SettingRow(
-                self.tr("版本"),
-                f"© {YEAR}, {AUTHOR}. {self.tr('当前版本')} {VERSION}",
+                tr("settings.about.version"),
+                f"© {YEAR}, {AUTHOR}. {tr('settings.about.current_version')} {VERSION}",
                 self.updateButton,
                 about_group,
             )
@@ -1285,13 +1298,13 @@ class SettingInterface(SettingsShell):
         for kind, (row, button) in entries.items():
             _name, models_dir = self._model_entry_target(kind)
             if not detect_program(kind).installed:
-                desc = self.tr("运行程序未安装，先在「管理模型」里完成安装。")
+                desc = tr("settings.transcribe.local_model.not_installed")
                 needs_action = True
             elif not self._installed_model_options(kind):
-                desc = self.tr("还没有下载模型，打开「管理模型」选择下载。")
+                desc = tr("settings.transcribe.local_model.no_model")
                 needs_action = True
             else:
-                desc = self.tr("查看运行程序状态、下载和管理模型文件。")
+                desc = tr("settings.transcribe.local_model.desc")
                 needs_action = False
             row.descLabel.setText(desc)
             button.setProperty("settingsPrimary", needs_action)
@@ -1363,7 +1376,7 @@ class SettingInterface(SettingsShell):
             cfg.set(cfg.dubbing_api_base, preset.api_base or option.default_base)
 
     def _choose_work_dir(self) -> None:
-        folder = QFileDialog.getExistingDirectory(self, self.tr("选择工作目录"), cfg.work_dir.value)
+        folder = QFileDialog.getExistingDirectory(self, tr("settings.save.choose_work_dir"), cfg.work_dir.value)
         if not folder:
             return
         cfg.set(cfg.work_dir, folder)
@@ -1371,7 +1384,7 @@ class SettingInterface(SettingsShell):
     def _choose_faster_whisper_dir(self) -> None:
         folder = QFileDialog.getExistingDirectory(
             self,
-            self.tr("选择 Faster Whisper 模型目录"),
+            tr("settings.transcribe.faster_whisper.choose_dir"),
             cfg.faster_whisper_model_dir.value or cfg.work_dir.value,
         )
         if not folder:
@@ -1382,16 +1395,16 @@ class SettingInterface(SettingsShell):
         if enabled:
             enable_cache()
             InfoBar.success(
-                self.tr("缓存已启用"),
-                self.tr("后续任务会优先复用已有结果。"),
+                tr("settings.save.cache_enabled"),
+                tr("settings.save.cache_enabled.detail"),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self._toast_parent(),
             )
         else:
             disable_cache()
             InfoBar.warning(
-                self.tr("缓存已禁用"),
-                self.tr("后续任务会重新生成结果。"),
+                tr("settings.save.cache_disabled"),
+                tr("settings.save.cache_disabled.detail"),
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
             )
@@ -1400,7 +1413,7 @@ class SettingInterface(SettingsShell):
         from videocaptioner.ui.components.color_picker import ColorPickerDialog
 
         color = ColorPickerDialog.get_color(
-            cfg.themeColor.value, parent=self._toast_parent(), alpha=False, title=self.tr("选择主题颜色")
+            cfg.themeColor.value, parent=self._toast_parent(), alpha=False, title=tr("settings.personal.choose_theme_color")
         )
         if color is None or not color.isValid():
             return
@@ -1428,16 +1441,16 @@ class SettingInterface(SettingsShell):
             color = QColor(DEFAULT_THEME_COLOR)
         self.themeColorSwatch.setColor(color)
         self.themeColorSwatch.setToolTip(
-            self.tr("点击选择主题颜色：{color}").format(color=color.name(QColor.HexRgb))
+            tr("settings.personal.theme_color.pick_tip", color=color.name(QColor.HexRgb))
         )
         if hasattr(self, "themeColorResetButton"):
             default_color = QColor(DEFAULT_THEME_COLOR).name(QColor.HexRgb).lower()
             is_default = color.name(QColor.HexRgb).lower() == default_color
             self.themeColorResetButton.setEnabled(not is_default)
             self.themeColorResetButton.setToolTip(
-                self.tr("当前已经是项目默认绿色")
+                tr("settings.personal.theme_color.is_default")
                 if is_default
-                else self.tr("恢复为项目默认绿色")
+                else tr("settings.personal.theme_color.reset_tip")
             )
 
     def _sync_visual_style(self) -> None:
@@ -1450,12 +1463,17 @@ class SettingInterface(SettingsShell):
         self.openStylePageRequested.emit()
 
     def _show_restart_tip(self) -> None:
-        InfoBar.success(
-            self.tr("更新成功"),
-            self.tr("这项设置将在重启后生效。"),
-            duration=INFOBAR_DURATION_SUCCESS,
-            parent=self._toast_parent(),
-        )
+        # 语言/显示等 restart 项变更后：确认即真重启（QProcess 重拉 + 退出），不再只弹提示。
+        confirmed = ConfirmDialog(
+            tr("settings.restart.title"),
+            tr("settings.restart.message"),
+            parent=self,
+            confirm_text=tr("settings.restart.confirm"),
+            cancel_text=tr("settings.restart.later"),
+        ).exec()
+        if confirmed:
+            QProcess.startDetached(sys.executable, sys.argv)
+            QApplication.quit()
 
     def check_llm_connection(self) -> None:
         service = cfg.llm_service.value
@@ -1467,16 +1485,16 @@ class SettingInterface(SettingsShell):
         model = controls["model"].currentText().strip()
         if not api_base or not api_key or not model:
             InfoBar.warning(
-                self.tr("配置不完整"),
-                self.tr("请先填写当前提供商的 Base URL、API Key 和模型。"),
+                tr("settings.warn.incomplete"),
+                tr("settings.llm.warn.need_all"),
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
             )
             return
         self._run_button_thread(
             self.checkLLMButton,
-            self.tr("测试连接"),
-            self.tr("正在测试..."),
+            tr("settings.llm.test_connection"),
+            tr("settings.busy.testing"),
             LLMConnectionThread(api_base, api_key, model),
             self._on_llm_check_finished,
             self._on_llm_check_error,
@@ -1491,16 +1509,16 @@ class SettingInterface(SettingsShell):
         api_key = controls["api_key"].text().strip()
         if not api_base or not api_key:
             InfoBar.warning(
-                self.tr("配置不完整"),
-                self.tr("请先填写当前提供商的 Base URL 和 API Key。"),
+                tr("settings.warn.incomplete"),
+                tr("settings.llm.warn.need_base_key"),
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
             )
             return
         self._run_button_thread(
             self.loadLLMModelsButton,
-            self.tr("加载模型"),
-            self.tr("正在加载..."),
+            tr("settings.llm.load_models"),
+            tr("settings.busy.loading"),
             LLMModelLoadThread(service, api_base, api_key),
             self._on_llm_models_loaded,
             self._on_llm_models_load_error,
@@ -1509,14 +1527,14 @@ class SettingInterface(SettingsShell):
     def _on_llm_check_finished(self, success: bool, message: str) -> None:
         if success:
             InfoBar.success(
-                self.tr("LLM 连接成功"),
+                tr("settings.llm.connect_success"),
                 message,
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self._toast_parent(),
             )
         else:
             InfoBar.error(
-                self.tr("LLM 连接失败"),
+                tr("settings.llm.connect_failed"),
                 message,
                 duration=INFOBAR_DURATION_ERROR,
                 parent=self._toast_parent(),
@@ -1524,7 +1542,7 @@ class SettingInterface(SettingsShell):
 
     def _on_llm_check_error(self, message: str) -> None:
         InfoBar.error(
-            self.tr("LLM 连接错误"),
+            tr("settings.llm.connect_error"),
             message,
             duration=INFOBAR_DURATION_ERROR,
             parent=self._toast_parent(),
@@ -1538,8 +1556,8 @@ class SettingInterface(SettingsShell):
         models = self._clean_model_options(models)
         if not models:
             InfoBar.warning(
-                self.tr("没有可用模型"),
-                self.tr("没有从当前提供商获取到模型列表，请检查 Base URL 和 API Key。"),
+                tr("settings.llm.no_models"),
+                tr("settings.llm.no_models.desc"),
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
             )
@@ -1548,15 +1566,15 @@ class SettingInterface(SettingsShell):
         if cfg.llm_service.value == service:
             self._apply_llm_model_options(service, models)
         InfoBar.success(
-            self.tr("模型已加载"),
-            self.tr("已加载 {count} 个模型。").format(count=len(models)),
+            tr("settings.llm.models_loaded"),
+            tr("settings.llm.models_loaded.desc", count=len(models)),
             duration=INFOBAR_DURATION_SUCCESS,
             parent=self._toast_parent(),
         )
 
     def _on_llm_models_load_error(self, message: str) -> None:
         InfoBar.error(
-            self.tr("模型加载失败"),
+            tr("settings.llm.models_load_failed"),
             message,
             duration=INFOBAR_DURATION_ERROR,
             parent=self._toast_parent(),
@@ -1567,7 +1585,7 @@ class SettingInterface(SettingsShell):
         missing = self._transcribe_check_missing()
         if missing:
             InfoBar.warning(
-                self.tr("配置不完整"),
+                tr("settings.warn.incomplete"),
                 missing,
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
@@ -1580,8 +1598,8 @@ class SettingInterface(SettingsShell):
         )
         self._run_button_thread(
             self.checkTranscribeButton,
-            self.tr("测试转录"),
-            self.tr("正在转录..."),
+            tr("settings.test_transcribe"),
+            tr("settings.busy.transcribing"),
             TranscribeCheckThread(config),
             self._on_transcribe_check_finished,
             self._on_transcribe_check_error,
@@ -1596,30 +1614,30 @@ class SettingInterface(SettingsShell):
                 and cfg.whisper_api_key.value.strip()
                 and cfg.whisper_api_model.value.strip()
             ):
-                return self.tr("请先填写 Whisper Base URL、API Key 和模型。")
+                return tr("settings.transcribe.missing.whisper_api")
         elif model == TranscribeModelEnum.BAILIAN_FUN_ASR:
             if not cfg.fun_asr_api_key.value.strip():
-                return self.tr("请先填写百炼 API Key。")
+                return tr("settings.transcribe.missing.fun_asr_key")
         elif model == TranscribeModelEnum.WHISPER_CPP:
             if not self._installed_model_options("whisper-cpp"):
-                return self.tr("还没有可用的本地模型，请先在「管理模型」中下载。")
+                return tr("settings.transcribe.missing.local_model")
         elif model == TranscribeModelEnum.FASTER_WHISPER:
             if not self._installed_model_options("faster-whisper"):
-                return self.tr("还没有可用的本地模型，请先在「管理模型」中下载。")
+                return tr("settings.transcribe.missing.local_model")
         return ""
 
     def _on_transcribe_check_finished(self, success: bool, detail: str) -> None:
         if success:
             text = detail if len(detail) <= 80 else detail[:79] + "…"
             InfoBar.success(
-                self.tr("转录测试成功"),
-                self.tr("识别结果：{}").format(text),
+                tr("settings.transcribe.test_success"),
+                tr("settings.transcribe.test_result", text=text),
                 duration=INFOBAR_DURATION_SUCCESS,
                 parent=self._toast_parent(),
             )
         else:
             InfoBar.error(
-                self.tr("转录测试失败"),
+                tr("settings.transcribe.test_failed"),
                 detail,
                 duration=INFOBAR_DURATION_ERROR,
                 parent=self._toast_parent(),
@@ -1627,14 +1645,14 @@ class SettingInterface(SettingsShell):
 
     def _on_transcribe_check_error(self, message: str) -> None:
         InfoBar.error(
-            self.tr("转录测试错误"), message, duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent()
+            tr("settings.transcribe.test_error"), message, duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent()
         )
 
     def check_live_caption_connection(self) -> None:
         if cfg.live_caption_provider.value in ("fun-asr", "qwen-asr") and not cfg.fun_asr_api_key.value.strip():
             InfoBar.warning(
-                self.tr("配置不完整"),
-                self.tr("请先填写百炼 API Key。"),
+                tr("settings.warn.incomplete"),
+                tr("settings.transcribe.missing.fun_asr_key"),
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
             )
@@ -1649,8 +1667,8 @@ class SettingInterface(SettingsShell):
         )
         self._run_button_thread(
             self.checkLiveCaptionButton,
-            self.tr("测试转录"),
-            self.tr("正在转录..."),
+            tr("settings.test_transcribe"),
+            tr("settings.busy.transcribing"),
             LiveCaptionCheckThread(config),
             self._on_transcribe_check_finished,
             self._on_transcribe_check_error,
@@ -1661,7 +1679,7 @@ class SettingInterface(SettingsShell):
         try:
             preset = get_dubbing_preset(preset_name)
         except ValueError as exc:
-            InfoBar.error(self.tr("配音配置错误"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent())
+            InfoBar.error(tr("settings.dubbing.config_error"), str(exc), duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent())
             return
 
         api_key = cfg.dubbing_api_key.value.strip()
@@ -1669,8 +1687,8 @@ class SettingInterface(SettingsShell):
         model = cfg.dubbing_model.value.strip() or preset.model
         if preset.provider != "edge" and not api_key:
             InfoBar.warning(
-                self.tr("配置不完整"),
-                self.tr("当前配音提供商需要 API Key。"),
+                tr("settings.warn.incomplete"),
+                tr("settings.dubbing.need_api_key"),
                 duration=INFOBAR_DURATION_WARNING,
                 parent=self._toast_parent(),
             )
@@ -1681,8 +1699,8 @@ class SettingInterface(SettingsShell):
         output_path = output_dir / f"{preset_name}.wav"
         self._run_button_thread(
             self.checkDubbingButton,
-            self.tr("测试配音"),
-            self.tr("正在测试..."),
+            tr("settings.dubbing.test_button"),
+            tr("settings.busy.testing"),
             DubbingConnectionThread(
                 provider=preset.provider,
                 api_key=api_key if preset.provider != "edge" else "",
@@ -1698,14 +1716,14 @@ class SettingInterface(SettingsShell):
 
     def _on_dubbing_check_finished(self, audio_path: str, provider: str) -> None:
         InfoBar.success(
-            self.tr("配音测试成功"),
-            self.tr("{provider} 已生成试听音频：{path}").format(provider=provider, path=audio_path),
+            tr("settings.dubbing.test_success"),
+            tr("settings.dubbing.test_success.detail", provider=provider, path=audio_path),
             duration=INFOBAR_DURATION_SUCCESS,
             parent=self._toast_parent(),
         )
 
     def _on_dubbing_check_error(self, message: str) -> None:
-        InfoBar.error(self.tr("配音测试失败"), message, duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent())
+        InfoBar.error(tr("settings.dubbing.test_failed"), message, duration=INFOBAR_DURATION_ERROR, parent=self._toast_parent())
 
     def _toast_parent(self):
         """toast / 弹窗的 parent。

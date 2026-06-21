@@ -18,6 +18,12 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PyQt5.QtWidgets import QApplication  # noqa: E402
 
+from videocaptioner.config import I18N_PATH  # noqa: E402
+from videocaptioner.ui.i18n import init as _init_i18n  # noqa: E402
+
+# 与 ui/main.py 一致装载 UI 翻译；缺了页面会显示 tr key 而非中文，断言会失败。
+_init_i18n(I18N_PATH, "zh_CN")
+
 _HELD_APP = None  # 进程级强引用：阻止 QApplication 被 GC
 
 

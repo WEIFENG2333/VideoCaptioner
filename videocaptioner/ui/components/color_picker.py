@@ -27,6 +27,7 @@ from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.theme_tokens import app_palette, rgba
 from videocaptioner.ui.components.app_dialog import AppDialog
 from videocaptioner.ui.components.workbench import AppLineEdit, apply_font
+from videocaptioner.ui.i18n import tr
 
 # 常用字幕色：取自真实字幕实践——白是最常见默认色、黑用于描边、经典电影黄(#FFFF00)，
 # 加上 CEA-608/708 闭合字幕标准色（黄/青/绿/蓝/红/品红）与短视频常见柔色，而非泛色盘。
@@ -316,10 +317,15 @@ class ColorPickerDialog(AppDialog):
         initial: QColor | str | None = None,
         *,
         alpha: bool = False,
-        title: str = "选择颜色",
+        title: str | None = None,
         parent=None,
     ):
-        super().__init__(title, icon=AppIcon.PALETTE, parent=parent, width=420)
+        super().__init__(
+            title if title is not None else tr("colorpicker.title"),
+            icon=AppIcon.PALETTE,
+            parent=parent,
+            width=420,
+        )
         self._alpha_enabled = alpha
         color = QColor(initial) if initial is not None else QColor("#ffffff")
         if not color.isValid():
@@ -335,9 +341,9 @@ class ColorPickerDialog(AppDialog):
         self._refresh()
 
         self.addFooterStretch()
-        self.cancelButton = self.addFooterButton(self.tr("取消"))
+        self.cancelButton = self.addFooterButton(tr("common.cancel"))
         self.cancelButton.clicked.connect(lambda: self.done(0))
-        self.confirmButton = self.addFooterButton(self.tr("确定"), kind="accent")
+        self.confirmButton = self.addFooterButton(tr("common.ok"), kind="accent")
         self.confirmButton.clicked.connect(lambda: self.done(1))
 
     # ----------------------------------------------------------------- build
@@ -372,11 +378,11 @@ class ColorPickerDialog(AppDialog):
         row.addWidget(self.alphaLabel)
         self.bodyLayout.addLayout(row)
 
-        self.bodyLayout.addLayout(self._section(self.tr("常用字幕色")))
+        self.bodyLayout.addLayout(self._section(tr("colorpicker.section.presets")))
         self.bodyLayout.addLayout(self._preset_grid())
 
-        recent_head = self._section(self.tr("最近使用"))
-        self.clearRecent = _ClickLabel(self.tr("清除"))
+        recent_head = self._section(tr("colorpicker.section.recent"))
+        self.clearRecent = _ClickLabel(tr("colorpicker.clear"))
         apply_font(self.clearRecent, 12, 760)
         self.clearRecent.setCursor(Qt.PointingHandCursor)  # type: ignore[arg-type]
         self.clearRecent.clicked.connect(self._clear_recents)
@@ -530,7 +536,7 @@ class ColorPickerDialog(AppDialog):
         initial: QColor | str | None = None,
         parent=None,
         alpha: bool = False,
-        title: str = "选择颜色",
+        title: str | None = None,
     ) -> Optional[QColor]:
         """打开取色器，返回选中颜色（取消返回 None）。对齐 QColorDialog.getColor。"""
         dialog = ColorPickerDialog(initial, alpha=alpha, title=title, parent=parent)

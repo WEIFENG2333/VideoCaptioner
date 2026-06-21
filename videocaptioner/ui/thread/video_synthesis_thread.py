@@ -16,6 +16,7 @@ from videocaptioner.core.asr.asr_data import ASRData
 from videocaptioner.core.entities import SynthesisTask
 from videocaptioner.core.utils.logger import setup_logger
 from videocaptioner.core.utils.video_utils import add_subtitles, add_subtitles_with_style
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.worker import WorkerThread
 
 logger = setup_logger("video_synthesis_thread")
@@ -34,18 +35,18 @@ class VideoSynthesisThread(WorkerThread):
         logger.info("\n%s", config.print_config())
 
         if not config.need_video:
-            self.progress.emit(100, "合成完成")
+            self.progress.emit(100, tr("t_synth.status.done"))
             self.finished.emit(self.task)
             return
 
         if not self.task.video_path:
-            raise ValueError("视频路径为空")
+            raise ValueError(tr("t_synth.error.no_video_path"))
         if not self.task.subtitle_path:
-            raise ValueError("字幕路径为空")
+            raise ValueError(tr("t_synth.error.no_subtitle_path"))
         if not self.task.output_path:
-            raise ValueError("输出路径为空")
+            raise ValueError(tr("t_synth.error.no_output_path"))
 
-        self.progress.emit(5, "正在合成")
+        self.progress.emit(5, tr("t_synth.status.synthesizing"))
         logger.info("开始合成视频: %s", self.task.video_path)
         asr_data = ASRData.from_subtitle_file(self.task.subtitle_path)
         self.checkpoint()
@@ -70,7 +71,7 @@ class VideoSynthesisThread(WorkerThread):
                 progress_callback=self._progress_callback,
             )
 
-        self.progress.emit(100, "合成完成")
+        self.progress.emit(100, tr("t_synth.status.done"))
         logger.info("视频合成完成，保存路径: %s", self.task.output_path)
         self.finished.emit(self.task)
 

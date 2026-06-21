@@ -1,0 +1,4336 @@
+# Chinese (Traditional) translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-06-22 00:04+0800\n"
+"PO-Revision-Date: 2026-06-21 23:08+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_Hant\n"
+"Language-Team: zh_Hant <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "app.announcement.got_it"
+msgstr "我知道了"
+
+msgid "app.announcement.title"
+msgstr "公告"
+
+msgid "app.ffmpeg.missing_body"
+msgstr "軟件處理音訊及影片檔案時需要 FFmpeg，請先安裝"
+
+msgid "app.ffmpeg.missing_title"
+msgstr "尚未安裝 FFmpeg"
+
+msgid "app.github.body"
+msgstr ""
+"VideoCaptioner 由本人在課餘時間獨立開發完成，目前託管於 GitHub，歡迎 Star 和 "
+"Fork。項目仍有不少地方需要完善，如遇到軟件問題或 BUG，歡迎提交 Issue。\n"
+"\n"
+" https://github.com/WEIFENG2333/VideoCaptioner"
+
+msgid "app.github.open"
+msgstr "開啟 GitHub"
+
+msgid "app.github.support_author"
+msgstr "支持作者"
+
+msgid "app.github.title"
+msgstr "GitHub 資訊"
+
+msgid "app.nav.batch"
+msgstr "批量處理"
+
+msgid "app.nav.doctor"
+msgstr "診斷"
+
+msgid "app.nav.dubbing"
+msgstr "配音"
+
+msgid "app.nav.hardsub"
+msgstr "硬字幕擷取"
+
+msgid "app.nav.home"
+msgstr "主頁"
+
+msgid "app.nav.live_caption"
+msgstr "即時字幕"
+
+msgid "app.nav.request_logs"
+msgstr "請求日誌"
+
+msgid "app.nav.settings"
+msgstr "設定"
+
+msgid "app.nav.subtitle_style"
+msgstr "字幕樣式"
+
+msgid "app.update.body"
+msgstr ""
+"發現新版本 {version}\n"
+"\n"
+"{update_info}"
+
+msgid "app.update.body_required"
+msgstr ""
+"發現新版本 {version}\n"
+"\n"
+"更新內容：\n"
+"{update_info}"
+
+msgid "app.update.disabled_body"
+msgstr "目前版本部分功能已被停用。請盡快更新。"
+
+msgid "app.update.disabled_title"
+msgstr "需要更新"
+
+msgid "app.update.later"
+msgstr "稍後再說"
+
+msgid "app.update.now"
+msgstr "立即更新"
+
+msgid "app.update.title"
+msgstr "發現新版本"
+
+msgid "app.update.title_required"
+msgstr "發現新版本，需要更新"
+
+msgid "app.window_title"
+msgstr "卡卡字幕助手 -- VideoCaptioner"
+
+msgid "batch.added.count"
+msgstr "已加入 {n} 個檔案"
+
+msgid "batch.added.duplicated"
+msgstr "{n} 個已在隊列"
+
+msgid "batch.added.ignored"
+msgstr "已忽略 {n} 個不支援的檔案"
+
+msgid "batch.added.title"
+msgstr "加入完成"
+
+msgid "batch.btn.add_file"
+msgstr "加入檔案"
+
+msgid "batch.btn.add_folder"
+msgstr "加入資料夾"
+
+msgid "batch.btn.clear"
+msgstr "清空列表"
+
+msgid "batch.btn.pause"
+msgstr "暫停隊列"
+
+msgid "batch.btn.resume"
+msgstr "繼續處理"
+
+msgid "batch.btn.start"
+msgstr "開始處理"
+
+msgid "batch.cannot_retry"
+msgstr "無法重試"
+
+msgid "batch.cannot_start"
+msgstr "無法開始"
+
+msgid "batch.concurrency"
+msgstr "並發 {n}"
+
+msgid "batch.count"
+msgstr "{n} 個任務"
+
+msgid "batch.detail.error"
+msgstr ""
+"錯誤資訊：\n"
+"{error}"
+
+msgid "batch.detail.file"
+msgstr "檔案：{path}"
+
+msgid "batch.detail.got_it"
+msgstr "我知道了"
+
+msgid "batch.detail.outputs"
+msgstr "輸出檔案："
+
+msgid "batch.detail.progress"
+msgstr "進度：{note}"
+
+msgid "batch.detail.status"
+msgstr "狀態：{status} · {progress}%"
+
+msgid "batch.detail.title"
+msgstr "任務詳情"
+
+msgid "batch.dialog.pick_files"
+msgstr "選擇檔案"
+
+msgid "batch.dialog.pick_folder"
+msgstr "選擇資料夾"
+
+msgid "batch.done.body"
+msgstr "{completed} 個任務全部完成"
+
+msgid "batch.done.title"
+msgstr "批量處理完成"
+
+msgid "batch.drop.format"
+msgstr "目前模式：{mode} · 支援{kinds}，可拖入資料夾"
+
+msgid "batch.drop.media_kinds"
+msgstr "音訊、影片"
+
+msgid "batch.drop.subtitle_kinds"
+msgstr "字幕檔案"
+
+msgid "batch.drop.title"
+msgstr "拖入檔案或資料夾"
+
+msgid "batch.empty.duplicated"
+msgstr "檔案已在佇列中"
+
+msgid "batch.empty.no_media"
+msgstr "找不到支援的音訊或影片檔案"
+
+msgid "batch.empty.no_subtitle"
+msgstr "找不到字幕檔案"
+
+msgid "batch.empty.title"
+msgstr "未加入任何檔案"
+
+msgid "batch.error.empty_output"
+msgstr "{stage}：輸出路徑為空"
+
+msgid "batch.error.empty_video_output"
+msgstr "{stage}：輸出影片路徑為空"
+
+msgid "batch.filter.all"
+msgstr "全部"
+
+msgid "batch.filter.empty"
+msgstr "沒有符合目前篩選的任務"
+
+msgid "batch.filter.media"
+msgstr "音影片檔案 ({patterns})"
+
+msgid "batch.filter.subtitle"
+msgstr "字幕檔案 ({patterns})"
+
+msgid "batch.filtered.body"
+msgstr "{n} 個檔案與「{mode}」輸入類型不符，已移出佇列"
+
+msgid "batch.filtered.title"
+msgstr "已篩選佇列"
+
+msgid "batch.finished.body"
+msgstr "{completed} 個完成，{failed} 個失敗，可在清單中重試"
+
+msgid "batch.finished.title"
+msgstr "批量處理結束"
+
+msgid "batch.metric.concurrency"
+msgstr "並行數"
+
+msgid "batch.metric.progress"
+msgstr "目前進度"
+
+msgid "batch.metric.queue"
+msgstr "佇列任務"
+
+msgid "batch.metric.success_rate"
+msgstr "成功率"
+
+msgid "batch.mode.full.desc"
+msgstr "轉錄、翻譯、合成影片"
+
+msgid "batch.mode.full.title"
+msgstr "全流程處理"
+
+msgid "batch.mode.subtitle.desc"
+msgstr "優化、翻譯現有字幕"
+
+msgid "batch.mode.subtitle.title"
+msgstr "批量字幕翻譯"
+
+msgid "batch.mode.trans_sub.desc"
+msgstr "生成字幕並翻譯優化"
+
+msgid "batch.mode.trans_sub.title"
+msgstr "轉錄 + 字幕"
+
+msgid "batch.mode.transcribe.desc"
+msgstr "從音影片生成字幕"
+
+msgid "batch.mode.transcribe.title"
+msgstr "批量轉錄"
+
+msgid "batch.note.completed"
+msgstr "處理完成"
+
+msgid "batch.note.failed"
+msgstr "處理失敗"
+
+msgid "batch.note.output"
+msgstr "已輸出 {name}"
+
+msgid "batch.panel.ended"
+msgstr "已結束"
+
+msgid "batch.panel.not_started"
+msgstr "未開始"
+
+msgid "batch.panel.paused"
+msgstr "已暫停"
+
+msgid "batch.panel.ready"
+msgstr "可開始"
+
+msgid "batch.panel.running"
+msgstr "運行中"
+
+msgid "batch.panel.title"
+msgstr "本批任務"
+
+msgid "batch.preflight.dubbing_key"
+msgstr "目前配音音色需要 API Key，請檢查配音設定或切換至 Edge 免費音色"
+
+msgid "batch.preflight.ffmpeg"
+msgstr "影片合成需要 FFmpeg：請先安裝並確保 ffmpeg 在 PATH 中"
+
+msgid "batch.preflight.ffprobe"
+msgstr "配音需要 ffprobe 讀取音訊時長，請確認 FFmpeg 套件完整"
+
+msgid "batch.preflight.llm"
+msgstr "字幕處理需要大模型：請先設定可用的 API Key、介面地址和模型"
+
+msgid "batch.row.details_tip"
+msgstr "點擊查看任務詳情"
+
+msgid "batch.row.open_output"
+msgstr "開啟輸出目錄"
+
+msgid "batch.row.remove"
+msgstr "移除任務"
+
+msgid "batch.row.retry"
+msgstr "重試任務"
+
+msgid "batch.stage.dubbing.desc"
+msgstr "按字幕生成音軌"
+
+msgid "batch.stage.dubbing.title"
+msgstr "配音"
+
+msgid "batch.stage.settings_tip"
+msgstr "{title}設定"
+
+msgid "batch.stage.subtitle.desc"
+msgstr "斷句、優化、翻譯"
+
+msgid "batch.stage.subtitle.title"
+msgstr "字幕處理"
+
+msgid "batch.stage.synthesis.desc"
+msgstr "輸出影片"
+
+msgid "batch.stage.synthesis.title"
+msgstr "影片合成"
+
+msgid "batch.stage.transcribe.desc"
+msgstr "生成原始字幕"
+
+msgid "batch.stage.transcribe.title"
+msgstr "語音轉錄"
+
+msgid "batch.status.completed"
+msgstr "已完成"
+
+msgid "batch.status.failed"
+msgstr "失敗"
+
+msgid "batch.status.preparing"
+msgstr "準備中"
+
+msgid "batch.status.running"
+msgstr "處理中"
+
+msgid "batch.status.waiting"
+msgstr "等待中"
+
+msgid "batch.subtitle.done"
+msgstr "批次任務完成"
+
+msgid "batch.subtitle.done_failed"
+msgstr "批次任務完成，{n} 個檔案需要處理"
+
+msgid "batch.subtitle.empty"
+msgstr "拖入一批檔案，選擇處理類型後開始"
+
+msgid "batch.subtitle.paused"
+msgstr "已暫停 · 處理中的任務完成後停止"
+
+msgid "batch.subtitle.ready"
+msgstr "{n} 個檔案已加入佇列"
+
+msgid "batch.subtitle.running"
+msgstr "正按佇列順序處理"
+
+msgid "batch.switch.busy_body"
+msgstr "請先暫停並等待目前任務結束，再切換處理類型"
+
+msgid "batch.switch.busy_title"
+msgstr "處理中"
+
+msgid "batch.switched.body"
+msgstr "根據檔案類型切換為「{mode}」"
+
+msgid "batch.switched.title"
+msgstr "已切換處理類型"
+
+msgid "batch.title"
+msgstr "批量處理"
+
+msgid "colorpicker.clear"
+msgstr "清除"
+
+msgid "colorpicker.section.presets"
+msgstr "常用字幕顏色"
+
+msgid "colorpicker.section.recent"
+msgstr "最近使用"
+
+msgid "colorpicker.title"
+msgstr "選擇顏色"
+
+msgid "common.cancel"
+msgstr "取消"
+
+msgid "common.close"
+msgstr "關閉"
+
+msgid "common.copy"
+msgstr "複製"
+
+msgid "common.delete"
+msgstr "刪除"
+
+msgid "common.error"
+msgstr "錯誤"
+
+msgid "common.ok"
+msgstr "確定"
+
+msgid "common.open_folder"
+msgstr "開啟資料夾"
+
+msgid "common.retry"
+msgstr "重試"
+
+msgid "common.save"
+msgstr "儲存"
+
+msgid "common.tip"
+msgstr "提示"
+
+msgid "common.warning"
+msgstr "警告"
+
+msgid "ctrl.change"
+msgstr "更改"
+
+msgid "ctrl.open"
+msgstr "開啟"
+
+msgid "ctrl.settings_title"
+msgstr "設定"
+
+msgid "depdl.body.intro"
+msgstr "會按你的系統自動選擇合適版本下載到本機；內地網絡會優先使用加速鏡像。"
+
+msgid "depdl.btn.done"
+msgstr "完成"
+
+msgid "depdl.btn.download"
+msgstr "下載"
+
+msgid "depdl.btn.install_all_missing"
+msgstr "一鍵安裝缺失項目"
+
+msgid "depdl.btn.open_install_dir"
+msgstr "開啟安裝目錄"
+
+msgid "depdl.error.download_failed"
+msgstr "下載失敗"
+
+msgid "depdl.info.done_body"
+msgstr "{name} 下載完成。"
+
+msgid "depdl.info.nothing_body"
+msgstr "所有依賴都已就緒。"
+
+msgid "depdl.info.nothing_title"
+msgstr "無需安裝"
+
+msgid "depdl.status.connecting"
+msgstr "正在連接鏡像…"
+
+msgid "depdl.status.failed"
+msgstr "失敗"
+
+msgid "depdl.status.installed"
+msgstr "已安裝"
+
+msgid "depdl.status.unsupported"
+msgstr "暫不支援"
+
+msgid "depdl.title"
+msgstr "下載運行依賴"
+
+msgid "doctor.btn.download_install"
+msgstr "下載安裝"
+
+msgid "doctor.btn.download_voxgate"
+msgstr "下載 voxgate"
+
+msgid "doctor.btn.dubbing_settings"
+msgstr "配音配置"
+
+msgid "doctor.btn.how_to_handle"
+msgstr "處理方式"
+
+msgid "doctor.btn.install_tool"
+msgstr "安裝工具"
+
+msgid "doctor.btn.live_caption_settings"
+msgstr "實時字幕配置"
+
+msgid "doctor.btn.llm_settings"
+msgstr "大模型配置"
+
+msgid "doctor.btn.rerun"
+msgstr "重新診斷"
+
+msgid "doctor.btn.run"
+msgstr "執行診斷"
+
+msgid "doctor.btn.running"
+msgstr "診斷中"
+
+msgid "doctor.btn.transcribe_settings"
+msgstr "轉錄配置"
+
+msgid "doctor.btn.translate_settings"
+msgstr "翻譯配置"
+
+msgid "doctor.btn.usage"
+msgstr "使用說明"
+
+msgid "doctor.checklist"
+msgstr "檢查清單"
+
+msgid "doctor.chip.dubbing"
+msgstr "配音"
+
+msgid "doctor.chip.export"
+msgstr "匯出"
+
+msgid "doctor.chip.subtitle"
+msgstr "字幕處理"
+
+msgid "doctor.chip.transcribe"
+msgstr "轉錄"
+
+msgid "doctor.chip.translate"
+msgstr "翻譯"
+
+msgid "doctor.done.all_passed"
+msgstr "目前檢查項目全部通過"
+
+msgid "doctor.done.errors"
+msgstr "發現 {count} 項需要處理"
+
+msgid "doctor.done.title"
+msgstr "診斷完成"
+
+msgid "doctor.done.warnings"
+msgstr "有 {count} 項可選項需注意（不影響主要流程）"
+
+msgid "doctor.download"
+msgstr "影片下載"
+
+msgid "doctor.download.desc"
+msgstr "解析 YouTube 與哔哩哔哩連結，驗證線上影片能否下載。"
+
+msgid "doctor.download.ok"
+msgstr "YouTube 與哔哩哔哩解析正常，可直接貼上連結下載。"
+
+msgid "doctor.download.ok_login"
+msgstr "YouTube 與哔哩哔哩解析正常（部分網站透過瀏覽器登入狀態），可直接貼上連結下載。"
+
+msgid "doctor.download.unavailable"
+msgstr "網站目前不可用（亦已嘗試以瀏覽器登入狀態作後備）：{detail}"
+
+msgid "doctor.dubbing.desc"
+msgstr "按目前提供商及音色生成配音；部分服務需要 Key。"
+
+msgid "doctor.dubbing.fail.desc"
+msgstr "Gemini / SiliconFlow 需要配音 Key；Edge 可免 Key。"
+
+msgid "doctor.dubbing.ok.desc"
+msgstr "目前配音設定可用，可繼續生成配音。"
+
+msgid "doctor.dubbing.title"
+msgstr "配音服務"
+
+msgid "doctor.failed.title"
+msgstr "診斷失敗"
+
+msgid "doctor.ffmpeg.desc"
+msgstr "生成影片、壓入字幕、合入配音都需要它。"
+
+msgid "doctor.ffmpeg.missing.desc"
+msgstr "缺少後將無法生成影片、壓入字幕或合入配音。"
+
+msgid "doctor.ffmpeg.missing.title"
+msgstr "缺少 FFmpeg / FFprobe"
+
+msgid "doctor.ffmpeg.no_ass.desc"
+msgstr "目前 FFmpeg 缺少 ASS 字幕濾鏡。請安裝完整版本，或將字幕渲染模式切換為圓角背景。"
+
+msgid "doctor.ffmpeg.no_ass.title"
+msgstr "FFmpeg 不支援 ASS 硬字幕"
+
+msgid "doctor.ffmpeg.ok.desc"
+msgstr "工具完整，可生成影片和配音影片。"
+
+msgid "doctor.help.download"
+msgstr ""
+"YouTube 需要可用的系統代理；哔哩哔哩提示風控（412）時請稍等幾分鐘再試，或在瀏覽器登入後匯出 cookies.txt "
+"並放到應用程式資料目錄。"
+
+msgid "doctor.help.ffmpeg"
+msgstr "ASS 硬字幕需要帶 libass 的完整 FFmpeg。macOS 可安裝 ffmpeg-full；亦可先切換為圓角背景。"
+
+msgid "doctor.jump_failed.body"
+msgstr "找不到對應的設定頁。"
+
+msgid "doctor.jump_failed.title"
+msgstr "跳轉失敗"
+
+msgid "doctor.label.disabled"
+msgstr "未啟用"
+
+msgid "doctor.label.dubbing"
+msgstr "配音"
+
+msgid "doctor.label.optimize"
+msgstr "校正"
+
+msgid "doctor.label.split"
+msgstr "智能斷句"
+
+msgid "doctor.label.subtitle"
+msgstr "字幕"
+
+msgid "doctor.label.subtitle_file"
+msgstr "字幕檔案"
+
+msgid "doctor.label.video"
+msgstr "影片"
+
+msgid "doctor.live_caption.desc"
+msgstr "實時轉錄需要本機 voxgate 轉錄程式，或外部實時服務。"
+
+msgid "doctor.live_caption.funasr_no_key.desc"
+msgstr "Fun-ASR 實時缺少百煉 API Key，請到設定填寫。"
+
+msgid "doctor.live_caption.not_found.desc"
+msgstr "可選功能：未找到 voxgate 轉錄程式或外部實時服務，需要時再配置即可。"
+
+msgid "doctor.live_caption.ok.desc"
+msgstr "實時字幕後端已就緒，可開始實時轉錄與翻譯。"
+
+msgid "doctor.live_caption.title"
+msgstr "實時字幕"
+
+msgid "doctor.llm.desc.default"
+msgstr "校正、術語修正、智能斷句需要可用 Key。"
+
+msgid "doctor.llm.desc.translate"
+msgstr "目前翻譯會調用大模型，需要可用 Key。"
+
+msgid "doctor.llm.fail.desc"
+msgstr "字幕校正、術語修正和智能斷句需要可用 Key。"
+
+msgid "doctor.llm.ok.desc"
+msgstr "大模型配置可用，可用於字幕增強。"
+
+msgid "doctor.llm.title.optimize"
+msgstr "字幕校正"
+
+msgid "doctor.llm.title.optimize_split"
+msgstr "字幕校正與智能斷句"
+
+msgid "doctor.llm.title.split"
+msgstr "智能斷句"
+
+msgid "doctor.llm.title.translate"
+msgstr "大模型翻譯"
+
+msgid "doctor.llm.unavailable.title"
+msgstr "大模型配置不可用"
+
+msgid "doctor.status.checking"
+msgstr "檢查中"
+
+msgid "doctor.status.error"
+msgstr "未通過"
+
+msgid "doctor.status.ok"
+msgstr "正常"
+
+msgid "doctor.status.pending"
+msgstr "待檢查"
+
+msgid "doctor.status.warning"
+msgstr "需注意"
+
+msgid "doctor.subtitle"
+msgstr "檢查目前任務會用到的服務和工具。未啟用的功能不會出現在清單中。"
+
+msgid "doctor.summary.all_passed"
+msgstr "全部通過"
+
+msgid "doctor.summary.errors"
+msgstr "{count} 項未通過"
+
+msgid "doctor.summary.pending"
+msgstr "{count} 項待檢查"
+
+msgid "doctor.summary.warnings"
+msgstr "{count} 項需注意"
+
+msgid "doctor.title"
+msgstr "診斷"
+
+msgid "doctor.transcribe.desc.free"
+msgstr "將影片或音訊轉成原文字幕，免費接口需要網絡。"
+
+msgid "doctor.transcribe.desc.local"
+msgstr "將影片或音訊轉成原文字幕，需要本地模型。"
+
+msgid "doctor.transcribe.desc.whisper"
+msgstr "將影片或音訊轉成原文字幕，需要 Whisper Key。"
+
+msgid "doctor.transcribe.fail.desc"
+msgstr "目前轉錄方式不可用，請檢查網絡、Key 或本地模型。"
+
+msgid "doctor.transcribe.ok.desc"
+msgstr "目前轉錄方式可用，可產生原文字幕。"
+
+msgid "doctor.transcribe.title"
+msgstr "轉錄服務"
+
+msgid "doctor.translate.desc.default"
+msgstr "產生目標語言字幕，失敗只會影響譯文。"
+
+msgid "doctor.translate.desc.uses_llm"
+msgstr "產生目標語言字幕，大模型翻譯會重用 LLM Key。"
+
+msgid "doctor.translate.ok.desc"
+msgstr "翻譯服務可用，可產生目標語言字幕。"
+
+msgid "doctor.translate.title"
+msgstr "翻譯服務"
+
+msgid "doctor.translate.uses_llm.desc"
+msgstr "大模型翻譯會重用 LLM Key。"
+
+msgid "donate.alipay"
+msgstr "支付寶"
+
+msgid "donate.desc"
+msgstr ""
+"目前我精力有限，您的支持讓我有動力繼續鑽研這個項目！\n"
+"感謝您對開源事業的熱愛與支持！"
+
+msgid "donate.title"
+msgstr "支持作者"
+
+msgid "donate.wechat"
+msgstr "微信"
+
+msgid "dubbing.badge.clone"
+msgstr "可複製"
+
+msgid "dubbing.badge.need_key"
+msgstr "需 Key"
+
+msgid "dubbing.badge.no_key"
+msgstr "免 Key"
+
+msgid "dubbing.btn.audition"
+msgstr "試聽"
+
+msgid "dubbing.btn.config"
+msgstr "配音設定"
+
+msgid "dubbing.btn.generate_clone"
+msgstr "生成複製音訊"
+
+msgid "dubbing.btn.generate_preview"
+msgstr "生成試聽音訊"
+
+msgid "dubbing.btn.stop"
+msgstr "停止"
+
+msgid "dubbing.btn.synthesizing"
+msgstr "合成中…"
+
+msgid "dubbing.clone.clear"
+msgstr "清除"
+
+msgid "dubbing.clone.hint"
+msgstr "未上載參考音訊時，會直接用上方文案試聽當前音色。"
+
+msgid "dubbing.clone.missing_file"
+msgstr "參考音訊檔案不存在，請重新選擇或清除。"
+
+msgid "dubbing.clone.no_audio"
+msgstr "未選擇參考音訊"
+
+msgid "dubbing.clone.record"
+msgstr "錄製"
+
+msgid "dubbing.clone.ref_text"
+msgstr "參考文字"
+
+msgid "dubbing.clone.ref_text_placeholder"
+msgstr "輸入參考音訊中實際朗讀的文字"
+
+msgid "dubbing.clone.title"
+msgstr "聲音克隆"
+
+msgid "dubbing.clone.upload"
+msgstr "上載"
+
+msgid "dubbing.clone.uploaded"
+msgstr "已上載"
+
+msgid "dubbing.dialog.audio_filter"
+msgstr "音訊檔案 (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus);;所有檔案 (*.*)"
+
+msgid "dubbing.dialog.choose_audio"
+msgstr "選擇參考音訊"
+
+msgid "dubbing.filter.all"
+msgstr "全部"
+
+msgid "dubbing.filter.clone"
+msgstr "克隆"
+
+msgid "dubbing.filter.female"
+msgstr "女聲"
+
+msgid "dubbing.filter.male"
+msgstr "男聲"
+
+msgid "dubbing.form.current_voice"
+msgstr "目前音色"
+
+msgid "dubbing.form.gen_type"
+msgstr "生成類型"
+
+msgid "dubbing.form.not_selected"
+msgstr "未選擇"
+
+msgid "dubbing.form.type_preview"
+msgstr "試聽音訊"
+
+msgid "dubbing.preview.char_count"
+msgstr "{count} 字"
+
+msgid "dubbing.preview.desc"
+msgstr "填寫測試文案，生成音訊後確認聲音和語氣。"
+
+msgid "dubbing.preview.desc_clone"
+msgstr "可直接試聽預設音色，或加入參考音訊進行聲音克隆。"
+
+msgid "dubbing.preview.input_placeholder"
+msgstr "輸入一句話，試聽所選音色"
+
+msgid "dubbing.preview.sample_text"
+msgstr "你好，這是我想用作測試的配音文案。請用自然清晰的語氣朗讀這句話。"
+
+msgid "dubbing.preview.title"
+msgstr "配音文案"
+
+msgid "dubbing.provider.edge.desc"
+msgstr "免 API Key，適合預設快速生成中文或英文配音。"
+
+msgid "dubbing.provider.edge.title"
+msgstr "Edge 免費配音"
+
+msgid "dubbing.provider.gemini.desc"
+msgstr "Google Gemini 語音模型，適合英文自然表達。"
+
+msgid "dubbing.provider.gemini.title"
+msgstr "Gemini TTS"
+
+msgid "dubbing.provider.siliconflow.desc"
+msgstr "CosyVoice 中文表現穩定，並支援參考音訊克隆。"
+
+msgid "dubbing.provider.siliconflow.title"
+msgstr "SiliconFlow CosyVoice"
+
+msgid "dubbing.ready.clone"
+msgstr "支援聲音克隆"
+
+msgid "dubbing.ready.default"
+msgstr "就緒"
+
+msgid "dubbing.ready.need_key"
+msgstr "需要 API Key"
+
+msgid "dubbing.ready.no_key"
+msgstr "免 Key 即用"
+
+msgid "dubbing.subtitle"
+msgstr "選擇提供商和音色，輸入一句自己的試聽文案。"
+
+msgid "dubbing.tag.breathy"
+msgstr "Breathy"
+
+msgid "dubbing.tag.bright"
+msgstr "Bright"
+
+msgid "dubbing.tag.casual"
+msgstr "Casual"
+
+msgid "dubbing.tag.clear"
+msgstr "Clear"
+
+msgid "dubbing.tag.clone"
+msgstr "克隆"
+
+msgid "dubbing.tag.easy_going"
+msgstr "Easy-going"
+
+msgid "dubbing.tag.en"
+msgstr "英文"
+
+msgid "dubbing.tag.even"
+msgstr "Even"
+
+msgid "dubbing.tag.female"
+msgstr "女聲"
+
+msgid "dubbing.tag.firm"
+msgstr "Firm"
+
+msgid "dubbing.tag.forward"
+msgstr "Forward"
+
+msgid "dubbing.tag.free"
+msgstr "免費"
+
+msgid "dubbing.tag.gentle"
+msgstr "Gentle"
+
+msgid "dubbing.tag.gravelly"
+msgstr "Gravelly"
+
+msgid "dubbing.tag.informative"
+msgstr "Informative"
+
+msgid "dubbing.tag.knowledgeable"
+msgstr "Knowledgeable"
+
+msgid "dubbing.tag.lively"
+msgstr "Lively"
+
+msgid "dubbing.tag.male"
+msgstr "男聲"
+
+msgid "dubbing.tag.mature"
+msgstr "Mature"
+
+msgid "dubbing.tag.need_key"
+msgstr "需 Key"
+
+msgid "dubbing.tag.recommended"
+msgstr "推薦"
+
+msgid "dubbing.tag.smooth"
+msgstr "Smooth"
+
+msgid "dubbing.tag.soft"
+msgstr "Soft"
+
+msgid "dubbing.tag.upbeat"
+msgstr "Upbeat"
+
+msgid "dubbing.tag.warm"
+msgstr "Warm"
+
+msgid "dubbing.tag.yue"
+msgstr "粵語"
+
+msgid "dubbing.tag.zh"
+msgstr "中文"
+
+msgid "dubbing.title"
+msgstr "配音"
+
+msgid "dubbing.toast.audio_missing"
+msgstr "參考音訊不存在"
+
+msgid "dubbing.toast.audio_missing_body"
+msgstr "請重新上載或錄製參考音訊。"
+
+msgid "dubbing.toast.empty_text"
+msgstr "請輸入試聽文字"
+
+msgid "dubbing.toast.empty_text_body"
+msgstr "文字試聽會使用你輸入的內容即時生成音訊。"
+
+msgid "dubbing.toast.missing_ref_text"
+msgstr "缺少參考文字"
+
+msgid "dubbing.toast.missing_ref_text_body"
+msgstr "請填寫參考音訊中實際朗讀的文字，或清除參考音訊後進行普通試聽。"
+
+msgid "dubbing.toast.need_api_key"
+msgstr "需要 API Key"
+
+msgid "dubbing.toast.need_api_key_body"
+msgstr "自訂文字試聽需要發出真實請求，請先填寫目前配音服務的 API Key。"
+
+msgid "dubbing.toast.play_failed"
+msgstr "播放失敗"
+
+msgid "dubbing.toast.play_failed_body"
+msgstr "目前系統缺少音訊解碼組件，且找不到可用的外部播放器。"
+
+msgid "dubbing.toast.please_wait"
+msgstr "請稍候"
+
+msgid "dubbing.toast.please_wait_body"
+msgstr "正在合成另一段試聽。"
+
+msgid "dubbing.toast.preview_failed"
+msgstr "試聽失敗"
+
+msgid "dubbing.toast.record_done"
+msgstr "錄製完成"
+
+msgid "dubbing.toast.record_done_body"
+msgstr "已儲存為參考音訊"
+
+msgid "dubbing.voice.edge-cn-female.desc"
+msgstr "清晰自然的普通話女聲"
+
+msgid "dubbing.voice.edge-cn-male.desc"
+msgstr "年輕自然的普通話男聲"
+
+msgid "dubbing.voice.edge-cn-xiaoyi.desc"
+msgstr "溫和明亮的普通話女聲"
+
+msgid "dubbing.voice.edge-cn-yunjian.desc"
+msgstr "更適合演講和旁白的男聲"
+
+msgid "dubbing.voice.edge-cn-yunyang.desc"
+msgstr "播報感更強的普通話男聲"
+
+msgid "dubbing.voice.edge-en-andrew.desc"
+msgstr "清晰穩重的美式英語男聲"
+
+msgid "dubbing.voice.edge-en-ava.desc"
+msgstr "清爽自然的美式英語女聲"
+
+msgid "dubbing.voice.edge-en-brian.desc"
+msgstr "自然穩健的美式英語男聲"
+
+msgid "dubbing.voice.edge-en-emma.desc"
+msgstr "柔和自然的美式英語女聲"
+
+msgid "dubbing.voice.edge-en-female.desc"
+msgstr "美式英語女聲"
+
+msgid "dubbing.voice.edge-en-libby.desc"
+msgstr "英式英語女聲"
+
+msgid "dubbing.voice.edge-en-male.desc"
+msgstr "美式英語男聲"
+
+msgid "dubbing.voice.edge-en-ryan.desc"
+msgstr "英式英語男聲"
+
+msgid "dubbing.voice.edge-hk-hiugaai.desc"
+msgstr "廣東話女聲"
+
+msgid "dubbing.voice.edge-hk-wanlung.desc"
+msgstr "廣東話男聲"
+
+msgid "dubbing.voice.edge-tw-hsiaoyu.desc"
+msgstr "台灣國語女聲"
+
+msgid "dubbing.voice.edge-tw-yunjhe.desc"
+msgstr "台灣國語男聲"
+
+msgid "dubbing.voice.gemini-achernar.desc"
+msgstr "柔和的英文聲音"
+
+msgid "dubbing.voice.gemini-algenib.desc"
+msgstr "顆粒感較強的英文聲音"
+
+msgid "dubbing.voice.gemini-algieba.desc"
+msgstr "平滑的英文聲音"
+
+msgid "dubbing.voice.gemini-alnilam.desc"
+msgstr "堅定清晰的英文聲音"
+
+msgid "dubbing.voice.gemini-aoede.desc"
+msgstr "明亮自然的英文聲音"
+
+msgid "dubbing.voice.gemini-autonoe.desc"
+msgstr "均衡清晰的英文聲音"
+
+msgid "dubbing.voice.gemini-callirrhoe.desc"
+msgstr "輕鬆自然的英文聲音"
+
+msgid "dubbing.voice.gemini-charon.desc"
+msgstr "較沉穩的英文聲音"
+
+msgid "dubbing.voice.gemini-despina.desc"
+msgstr "平滑自然的英文聲音"
+
+msgid "dubbing.voice.gemini-en-friendly.desc"
+msgstr "友善自然的英文表達"
+
+msgid "dubbing.voice.gemini-en-neutral.desc"
+msgstr "清晰穩定的自然英文"
+
+msgid "dubbing.voice.gemini-en-upbeat.desc"
+msgstr "更有活力的英文表達"
+
+msgid "dubbing.voice.gemini-enceladus.desc"
+msgstr "氣聲感更明顯的英文聲音"
+
+msgid "dubbing.voice.gemini-erinome.desc"
+msgstr "清晰直接的英文聲音"
+
+msgid "dubbing.voice.gemini-fenrir.desc"
+msgstr "低沉有力的英文聲音"
+
+msgid "dubbing.voice.gemini-gacrux.desc"
+msgstr "成熟穩重的英文聲音"
+
+msgid "dubbing.voice.gemini-iapetus.desc"
+msgstr "清澈穩定的英文聲音"
+
+msgid "dubbing.voice.gemini-laomedeia.desc"
+msgstr "輕快活潑的英文聲音"
+
+msgid "dubbing.voice.gemini-leda.desc"
+msgstr "輕快明亮的英文聲音"
+
+msgid "dubbing.voice.gemini-orus.desc"
+msgstr "旁白感更強的英文聲音"
+
+msgid "dubbing.voice.gemini-pulcherrima.desc"
+msgstr "前置感更強的英文聲音"
+
+msgid "dubbing.voice.gemini-rasalgethi.desc"
+msgstr "資訊感更強的英文聲音"
+
+msgid "dubbing.voice.gemini-sadachbia.desc"
+msgstr "生動輕快的英文聲音"
+
+msgid "dubbing.voice.gemini-sadaltager.desc"
+msgstr "知識型表達的英文聲音"
+
+msgid "dubbing.voice.gemini-schedar.desc"
+msgstr "平穩均衡的英文聲音"
+
+msgid "dubbing.voice.gemini-sulafat.desc"
+msgstr "溫暖自然的英文聲音"
+
+msgid "dubbing.voice.gemini-umbriel.desc"
+msgstr "輕鬆自然的英文聲音"
+
+msgid "dubbing.voice.gemini-vindemiatrix.desc"
+msgstr "溫和柔順的英文聲音"
+
+msgid "dubbing.voice.gemini-zephyr.desc"
+msgstr "明亮清爽的英文聲音"
+
+msgid "dubbing.voice.gemini-zubenelgenubi.desc"
+msgstr "休閒自然的英文聲音"
+
+msgid "dubbing.voice.library"
+msgstr "音色庫"
+
+msgid "dubbing.voice.library_zh"
+msgstr "中文音色"
+
+msgid "dubbing.voice.siliconflow-cn-bella.desc"
+msgstr "熱情中文女聲，可克隆"
+
+msgid "dubbing.voice.siliconflow-cn-charles.desc"
+msgstr "磁性中文男聲，可克隆"
+
+msgid "dubbing.voice.siliconflow-cn-claire.desc"
+msgstr "溫柔中文女聲，可克隆"
+
+msgid "dubbing.voice.siliconflow-cn-david.desc"
+msgstr "歡快中文男聲，可克隆"
+
+msgid "dubbing.voice.siliconflow-cn-deep-male.desc"
+msgstr "沉穩低沉的中文男聲，可克隆"
+
+msgid "dubbing.voice.siliconflow-cn-diana.desc"
+msgstr "歡快中文女聲，可克隆"
+
+msgid "dubbing.voice.siliconflow-cn-female.desc"
+msgstr "自然中文女聲，可配合參考音訊克隆"
+
+msgid "dubbing.voice.siliconflow-cn-male.desc"
+msgstr "自然中文男聲，可配合參考音訊克隆"
+
+msgid "enum.FasterWhisperModelEnum.BASE"
+msgstr "base"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V1"
+msgstr "large-v1"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V2"
+msgstr "large-v2"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V3"
+msgstr "large-v3"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V3_TURBO"
+msgstr "large-v3-turbo"
+
+msgid "enum.FasterWhisperModelEnum.MEDIUM"
+msgstr "medium"
+
+msgid "enum.FasterWhisperModelEnum.SMALL"
+msgstr "small"
+
+msgid "enum.FasterWhisperModelEnum.TINY"
+msgstr "tiny"
+
+msgid "enum.LLMServiceEnum.CHATGLM"
+msgstr "ChatGLM"
+
+msgid "enum.LLMServiceEnum.DEEPSEEK"
+msgstr "DeepSeek"
+
+msgid "enum.LLMServiceEnum.GEMINI"
+msgstr "Gemini"
+
+msgid "enum.LLMServiceEnum.LM_STUDIO"
+msgstr "LM Studio"
+
+msgid "enum.LLMServiceEnum.OLLAMA"
+msgstr "Ollama"
+
+msgid "enum.LLMServiceEnum.OPENAI"
+msgstr "OpenAI 兼容"
+
+msgid "enum.LLMServiceEnum.SILICON_CLOUD"
+msgstr "SiliconCloud"
+
+msgid "enum.SubtitleLayoutEnum.ONLY_ORIGINAL"
+msgstr "只顯示原文"
+
+msgid "enum.SubtitleLayoutEnum.ONLY_TRANSLATE"
+msgstr "只顯示譯文"
+
+msgid "enum.SubtitleLayoutEnum.ORIGINAL_ON_TOP"
+msgstr "原文在上"
+
+msgid "enum.SubtitleLayoutEnum.TRANSLATE_ON_TOP"
+msgstr "譯文在上"
+
+msgid "enum.SubtitleRenderModeEnum.ASS_STYLE"
+msgstr "ASS 樣式"
+
+msgid "enum.SubtitleRenderModeEnum.ROUNDED_BG"
+msgstr "圓角背景"
+
+msgid "enum.TargetLanguage.ARABIC"
+msgstr "阿拉伯文"
+
+msgid "enum.TargetLanguage.BULGARIAN"
+msgstr "保加利亞文"
+
+msgid "enum.TargetLanguage.CANTONESE"
+msgstr "粵語"
+
+msgid "enum.TargetLanguage.CZECH"
+msgstr "捷克文"
+
+msgid "enum.TargetLanguage.DANISH"
+msgstr "丹麥文"
+
+msgid "enum.TargetLanguage.DUTCH"
+msgstr "荷蘭文"
+
+msgid "enum.TargetLanguage.ENGLISH"
+msgstr "英文"
+
+msgid "enum.TargetLanguage.ENGLISH_UK"
+msgstr "英文（英國）"
+
+msgid "enum.TargetLanguage.ENGLISH_US"
+msgstr "英文（美國）"
+
+msgid "enum.TargetLanguage.FINNISH"
+msgstr "芬蘭文"
+
+msgid "enum.TargetLanguage.FRENCH"
+msgstr "法文"
+
+msgid "enum.TargetLanguage.GERMAN"
+msgstr "德文"
+
+msgid "enum.TargetLanguage.GREEK"
+msgstr "希臘文"
+
+msgid "enum.TargetLanguage.HEBREW"
+msgstr "希伯來文"
+
+msgid "enum.TargetLanguage.HUNGARIAN"
+msgstr "匈牙利文"
+
+msgid "enum.TargetLanguage.INDONESIAN"
+msgstr "印尼文"
+
+msgid "enum.TargetLanguage.ITALIAN"
+msgstr "意大利文"
+
+msgid "enum.TargetLanguage.JAPANESE"
+msgstr "日文"
+
+msgid "enum.TargetLanguage.KOREAN"
+msgstr "韓文"
+
+msgid "enum.TargetLanguage.MALAY"
+msgstr "馬來文"
+
+msgid "enum.TargetLanguage.NORWEGIAN"
+msgstr "挪威文"
+
+msgid "enum.TargetLanguage.PERSIAN"
+msgstr "波斯文"
+
+msgid "enum.TargetLanguage.POLISH"
+msgstr "波蘭文"
+
+msgid "enum.TargetLanguage.PORTUGUESE"
+msgstr "葡萄牙文"
+
+msgid "enum.TargetLanguage.PORTUGUESE_BR"
+msgstr "葡萄牙文（巴西）"
+
+msgid "enum.TargetLanguage.PORTUGUESE_PT"
+msgstr "葡萄牙文（葡萄牙）"
+
+msgid "enum.TargetLanguage.ROMANIAN"
+msgstr "羅馬尼亞文"
+
+msgid "enum.TargetLanguage.RUSSIAN"
+msgstr "俄文"
+
+msgid "enum.TargetLanguage.SIMPLIFIED_CHINESE"
+msgstr "簡體中文"
+
+msgid "enum.TargetLanguage.SPANISH"
+msgstr "西班牙文"
+
+msgid "enum.TargetLanguage.SPANISH_LATAM"
+msgstr "西班牙文（拉丁美洲）"
+
+msgid "enum.TargetLanguage.SWEDISH"
+msgstr "瑞典文"
+
+msgid "enum.TargetLanguage.TAGALOG"
+msgstr "菲律賓文"
+
+msgid "enum.TargetLanguage.THAI"
+msgstr "泰文"
+
+msgid "enum.TargetLanguage.TRADITIONAL_CHINESE"
+msgstr "繁體中文"
+
+msgid "enum.TargetLanguage.TURKISH"
+msgstr "土耳其文"
+
+msgid "enum.TargetLanguage.UKRAINIAN"
+msgstr "烏克蘭文"
+
+msgid "enum.TargetLanguage.VIETNAMESE"
+msgstr "越南文"
+
+msgid "enum.TranscribeLanguageEnum.AFRIKAANS"
+msgstr "Afrikaans"
+
+msgid "enum.TranscribeLanguageEnum.ALBANIAN"
+msgstr "Albanian"
+
+msgid "enum.TranscribeLanguageEnum.AMHARIC"
+msgstr "Amharic"
+
+msgid "enum.TranscribeLanguageEnum.ARABIC"
+msgstr "Arabic"
+
+msgid "enum.TranscribeLanguageEnum.ARMENIAN"
+msgstr "Armenian"
+
+msgid "enum.TranscribeLanguageEnum.ASSAMESE"
+msgstr "Assamese"
+
+msgid "enum.TranscribeLanguageEnum.AUTO"
+msgstr "自動偵測"
+
+msgid "enum.TranscribeLanguageEnum.AZERBAIJANI"
+msgstr "Azerbaijani"
+
+msgid "enum.TranscribeLanguageEnum.BASHKIR"
+msgstr "Bashkir"
+
+msgid "enum.TranscribeLanguageEnum.BASQUE"
+msgstr "Basque"
+
+msgid "enum.TranscribeLanguageEnum.BELARUSIAN"
+msgstr "白俄羅斯文"
+
+msgid "enum.TranscribeLanguageEnum.BENGALI"
+msgstr "孟加拉文"
+
+msgid "enum.TranscribeLanguageEnum.BOSNIAN"
+msgstr "波斯尼亞文"
+
+msgid "enum.TranscribeLanguageEnum.BRETON"
+msgstr "布列塔尼文"
+
+msgid "enum.TranscribeLanguageEnum.BULGARIAN"
+msgstr "保加利亞文"
+
+msgid "enum.TranscribeLanguageEnum.CANTONESE"
+msgstr "廣東話"
+
+msgid "enum.TranscribeLanguageEnum.CATALAN"
+msgstr "加泰羅尼亞文"
+
+msgid "enum.TranscribeLanguageEnum.CHINESE"
+msgstr "中文"
+
+msgid "enum.TranscribeLanguageEnum.CROATIAN"
+msgstr "克羅地亞文"
+
+msgid "enum.TranscribeLanguageEnum.CZECH"
+msgstr "捷克文"
+
+msgid "enum.TranscribeLanguageEnum.DANISH"
+msgstr "丹麥文"
+
+msgid "enum.TranscribeLanguageEnum.DUTCH"
+msgstr "荷蘭文"
+
+msgid "enum.TranscribeLanguageEnum.ENGLISH"
+msgstr "英文"
+
+msgid "enum.TranscribeLanguageEnum.ESTONIAN"
+msgstr "愛沙尼亞文"
+
+msgid "enum.TranscribeLanguageEnum.FAROESE"
+msgstr "法羅文"
+
+msgid "enum.TranscribeLanguageEnum.FINNISH"
+msgstr "芬蘭文"
+
+msgid "enum.TranscribeLanguageEnum.FRENCH"
+msgstr "法文"
+
+msgid "enum.TranscribeLanguageEnum.GALICIAN"
+msgstr "加利西亞文"
+
+msgid "enum.TranscribeLanguageEnum.GEORGIAN"
+msgstr "格魯吉亞文"
+
+msgid "enum.TranscribeLanguageEnum.GERMAN"
+msgstr "德文"
+
+msgid "enum.TranscribeLanguageEnum.GREEK"
+msgstr "希臘文"
+
+msgid "enum.TranscribeLanguageEnum.GUJARATI"
+msgstr "古吉拉特文"
+
+msgid "enum.TranscribeLanguageEnum.HAITIAN_CREOLE"
+msgstr "海地克里奧爾文"
+
+msgid "enum.TranscribeLanguageEnum.HAUSA"
+msgstr "豪薩文"
+
+msgid "enum.TranscribeLanguageEnum.HAWAIIAN"
+msgstr "夏威夷文"
+
+msgid "enum.TranscribeLanguageEnum.HEBREW"
+msgstr "希伯來文"
+
+msgid "enum.TranscribeLanguageEnum.HINDI"
+msgstr "印地文"
+
+msgid "enum.TranscribeLanguageEnum.HUNGARIAN"
+msgstr "匈牙利文"
+
+msgid "enum.TranscribeLanguageEnum.ICELANDIC"
+msgstr "冰島文"
+
+msgid "enum.TranscribeLanguageEnum.INDONESIAN"
+msgstr "印尼文"
+
+msgid "enum.TranscribeLanguageEnum.ITALIAN"
+msgstr "意大利文"
+
+msgid "enum.TranscribeLanguageEnum.JAPANESE"
+msgstr "日文"
+
+msgid "enum.TranscribeLanguageEnum.JAVANESE"
+msgstr "爪哇文"
+
+msgid "enum.TranscribeLanguageEnum.KANNADA"
+msgstr "卡納達文"
+
+msgid "enum.TranscribeLanguageEnum.KAZAKH"
+msgstr "哈薩克文"
+
+msgid "enum.TranscribeLanguageEnum.KHMER"
+msgstr "高棉文"
+
+msgid "enum.TranscribeLanguageEnum.KOREAN"
+msgstr "韓文"
+
+msgid "enum.TranscribeLanguageEnum.LAO"
+msgstr "老撾文"
+
+msgid "enum.TranscribeLanguageEnum.LATIN"
+msgstr "拉丁文"
+
+msgid "enum.TranscribeLanguageEnum.LATVIAN"
+msgstr "拉脫維亞文"
+
+msgid "enum.TranscribeLanguageEnum.LINGALA"
+msgstr "林格拉文"
+
+msgid "enum.TranscribeLanguageEnum.LITHUANIAN"
+msgstr "立陶宛文"
+
+msgid "enum.TranscribeLanguageEnum.LUXEMBOURGISH"
+msgstr "盧森堡文"
+
+msgid "enum.TranscribeLanguageEnum.MACEDONIAN"
+msgstr "馬其頓文"
+
+msgid "enum.TranscribeLanguageEnum.MALAGASY"
+msgstr "馬達加斯加文"
+
+msgid "enum.TranscribeLanguageEnum.MALAY"
+msgstr "馬來文"
+
+msgid "enum.TranscribeLanguageEnum.MALAYALAM"
+msgstr "馬拉雅拉姆文"
+
+msgid "enum.TranscribeLanguageEnum.MALTESE"
+msgstr "馬耳他文"
+
+msgid "enum.TranscribeLanguageEnum.MAORI"
+msgstr "毛利文"
+
+msgid "enum.TranscribeLanguageEnum.MARATHI"
+msgstr "馬拉地文"
+
+msgid "enum.TranscribeLanguageEnum.MONGOLIAN"
+msgstr "蒙古文"
+
+msgid "enum.TranscribeLanguageEnum.MYANMAR"
+msgstr "緬甸文"
+
+msgid "enum.TranscribeLanguageEnum.NEPALI"
+msgstr "尼泊爾文"
+
+msgid "enum.TranscribeLanguageEnum.NORWEGIAN"
+msgstr "挪威文"
+
+msgid "enum.TranscribeLanguageEnum.NYNORSK"
+msgstr "新挪威文"
+
+msgid "enum.TranscribeLanguageEnum.OCCITAN"
+msgstr "奧克文"
+
+msgid "enum.TranscribeLanguageEnum.PASHTO"
+msgstr "普什圖文"
+
+msgid "enum.TranscribeLanguageEnum.PERSIAN"
+msgstr "波斯文"
+
+msgid "enum.TranscribeLanguageEnum.POLISH"
+msgstr "波蘭文"
+
+msgid "enum.TranscribeLanguageEnum.PORTUGUESE"
+msgstr "葡萄牙文"
+
+msgid "enum.TranscribeLanguageEnum.PUNJABI"
+msgstr "旁遮普語"
+
+msgid "enum.TranscribeLanguageEnum.ROMANIAN"
+msgstr "羅馬尼亞語"
+
+msgid "enum.TranscribeLanguageEnum.RUSSIAN"
+msgstr "俄語"
+
+msgid "enum.TranscribeLanguageEnum.SANSKRIT"
+msgstr "梵語"
+
+msgid "enum.TranscribeLanguageEnum.SERBIAN"
+msgstr "塞爾維亞語"
+
+msgid "enum.TranscribeLanguageEnum.SHONA"
+msgstr "紹納語"
+
+msgid "enum.TranscribeLanguageEnum.SINDHI"
+msgstr "信德語"
+
+msgid "enum.TranscribeLanguageEnum.SINHALA"
+msgstr "僧伽羅語"
+
+msgid "enum.TranscribeLanguageEnum.SLOVAK"
+msgstr "斯洛伐克語"
+
+msgid "enum.TranscribeLanguageEnum.SLOVENIAN"
+msgstr "斯洛文尼亞語"
+
+msgid "enum.TranscribeLanguageEnum.SOMALI"
+msgstr "索馬里語"
+
+msgid "enum.TranscribeLanguageEnum.SPANISH"
+msgstr "西班牙語"
+
+msgid "enum.TranscribeLanguageEnum.SUNDANESE"
+msgstr "巽他語"
+
+msgid "enum.TranscribeLanguageEnum.SWAHILI"
+msgstr "斯瓦希里語"
+
+msgid "enum.TranscribeLanguageEnum.SWEDISH"
+msgstr "瑞典語"
+
+msgid "enum.TranscribeLanguageEnum.TAGALOG"
+msgstr "他加祿語"
+
+msgid "enum.TranscribeLanguageEnum.TAJIK"
+msgstr "塔吉克語"
+
+msgid "enum.TranscribeLanguageEnum.TAMIL"
+msgstr "泰米爾語"
+
+msgid "enum.TranscribeLanguageEnum.TATAR"
+msgstr "韃靼語"
+
+msgid "enum.TranscribeLanguageEnum.TELUGU"
+msgstr "泰盧固語"
+
+msgid "enum.TranscribeLanguageEnum.THAI"
+msgstr "Thai"
+
+msgid "enum.TranscribeLanguageEnum.TIBETAN"
+msgstr "Tibetan"
+
+msgid "enum.TranscribeLanguageEnum.TURKISH"
+msgstr "土耳其文"
+
+msgid "enum.TranscribeLanguageEnum.TURKMEN"
+msgstr "Turkmen"
+
+msgid "enum.TranscribeLanguageEnum.UKRAINIAN"
+msgstr "Ukrainian"
+
+msgid "enum.TranscribeLanguageEnum.URDU"
+msgstr "Urdu"
+
+msgid "enum.TranscribeLanguageEnum.UZBEK"
+msgstr "Uzbek"
+
+msgid "enum.TranscribeLanguageEnum.VIETNAMESE"
+msgstr "Vietnamese"
+
+msgid "enum.TranscribeLanguageEnum.WELSH"
+msgstr "Welsh"
+
+msgid "enum.TranscribeLanguageEnum.YIDDISH"
+msgstr "Yiddish"
+
+msgid "enum.TranscribeLanguageEnum.YORUBA"
+msgstr "Yoruba"
+
+msgid "enum.TranscribeLanguageEnum.YUE"
+msgstr "廣東話"
+
+msgid "enum.TranscribeModelEnum.BAILIAN_FUN_ASR"
+msgstr "百煉 Fun-ASR"
+
+msgid "enum.TranscribeModelEnum.BIJIAN"
+msgstr "B 接口"
+
+msgid "enum.TranscribeModelEnum.FASTER_WHISPER"
+msgstr "FasterWhisper"
+
+msgid "enum.TranscribeModelEnum.JIANYING"
+msgstr "J 接口"
+
+msgid "enum.TranscribeModelEnum.WHISPER_API"
+msgstr "Whisper [API]"
+
+msgid "enum.TranscribeModelEnum.WHISPER_CPP"
+msgstr "WhisperCpp"
+
+msgid "enum.TranscribeOutputFormatEnum.ALL"
+msgstr "全部"
+
+msgid "enum.TranscribeOutputFormatEnum.ASS"
+msgstr "ASS"
+
+msgid "enum.TranscribeOutputFormatEnum.SRT"
+msgstr "SRT"
+
+msgid "enum.TranscribeOutputFormatEnum.TXT"
+msgstr "TXT"
+
+msgid "enum.TranscribeOutputFormatEnum.VTT"
+msgstr "VTT"
+
+msgid "enum.TranslatorServiceEnum.BING"
+msgstr "微軟翻譯"
+
+msgid "enum.TranslatorServiceEnum.DEEPLX"
+msgstr "DeepLx 翻譯"
+
+msgid "enum.TranslatorServiceEnum.GOOGLE"
+msgstr "Google 翻譯"
+
+msgid "enum.TranslatorServiceEnum.OPENAI"
+msgstr "LLM 大模型翻譯"
+
+msgid "enum.VadMethodEnum.AUDITOK"
+msgstr "auditok"
+
+msgid "enum.VadMethodEnum.PYANNOTE_ONNX_V3"
+msgstr "pyannote_onnx_v3"
+
+msgid "enum.VadMethodEnum.PYANNOTE_V3"
+msgstr "pyannote_v3"
+
+msgid "enum.VadMethodEnum.SILERO_V3"
+msgstr "silero_v3"
+
+msgid "enum.VadMethodEnum.SILERO_V4"
+msgstr "silero_v4"
+
+msgid "enum.VadMethodEnum.SILERO_V4_FW"
+msgstr "silero_v4_fw"
+
+msgid "enum.VadMethodEnum.SILERO_V5"
+msgstr "silero_v5"
+
+msgid "enum.VadMethodEnum.WEBRTC"
+msgstr "webrtc"
+
+msgid "enum.VideoQualityEnum.HIGH"
+msgstr "高品質"
+
+msgid "enum.VideoQualityEnum.LOW"
+msgstr "低品質"
+
+msgid "enum.VideoQualityEnum.MEDIUM"
+msgstr "中等品質"
+
+msgid "enum.VideoQualityEnum.ULTRA_HIGH"
+msgstr "極高品質"
+
+msgid "enum.WhisperModelEnum.BASE"
+msgstr "base"
+
+msgid "enum.WhisperModelEnum.LARGE_V1"
+msgstr "large-v1"
+
+msgid "enum.WhisperModelEnum.LARGE_V2"
+msgstr "large-v2"
+
+msgid "enum.WhisperModelEnum.MEDIUM"
+msgstr "medium"
+
+msgid "enum.WhisperModelEnum.SMALL"
+msgstr "small"
+
+msgid "enum.WhisperModelEnum.TINY"
+msgstr "tiny"
+
+msgid "hardsub.btn.auto_region"
+msgstr "自動識別區域"
+
+msgid "hardsub.btn.export"
+msgstr "匯出字幕"
+
+msgid "hardsub.btn.redo"
+msgstr "重新擷取"
+
+msgid "hardsub.btn.replace_video"
+msgstr "更換影片"
+
+msgid "hardsub.btn.send_optimize"
+msgstr "送入字幕優化"
+
+msgid "hardsub.btn.start"
+msgstr "開始擷取"
+
+msgid "hardsub.busy.detecting_region"
+msgstr "正在識別字幕區域…"
+
+msgid "hardsub.busy.detecting_region_pct"
+msgstr "正在識別字幕區域… {percent}%"
+
+msgid "hardsub.busy.loading_video"
+msgstr "正在載入影片…"
+
+msgid "hardsub.col.end"
+msgstr "結束"
+
+msgid "hardsub.col.start"
+msgstr "開始"
+
+msgid "hardsub.col.text"
+msgstr "文字"
+
+msgid "hardsub.count.recognized"
+msgstr "已識別 {n} 條"
+
+msgid "hardsub.count.total"
+msgstr "共 {n} 條"
+
+msgid "hardsub.dialog.export"
+msgstr "匯出字幕"
+
+msgid "hardsub.dialog.pick_video"
+msgstr "選擇影片"
+
+msgid "hardsub.drop.pick"
+msgstr "選擇影片"
+
+msgid "hardsub.drop.title"
+msgstr "拖入帶硬字幕的影片"
+
+msgid "hardsub.engine.card_title"
+msgstr "引擎未就緒"
+
+msgid "hardsub.engine.desc"
+msgstr "提取硬字幕需要 OCR 引擎依賴（rapidocr / onnxruntime）。"
+
+msgid "hardsub.engine.title"
+msgstr "OCR 引擎未就緒"
+
+msgid "hardsub.error.read_video"
+msgstr "無法讀取此影片：{msg}"
+
+msgid "hardsub.menu.delete_row"
+msgstr "刪除此行"
+
+msgid "hardsub.menu.locate"
+msgstr "定位到此畫面"
+
+msgid "hardsub.note.done"
+msgstr "雙擊修改文字 / 時間，右鍵刪除行；可送入字幕優化或匯出。"
+
+msgid "hardsub.note.empty"
+msgstr "選擇影片後自動識別字幕區域"
+
+msgid "hardsub.note.engine_missing"
+msgstr "OCR 引擎依賴未安裝"
+
+msgid "hardsub.note.no_subtitle"
+msgstr "沒有穩定區域時，手動框選後再識別。"
+
+msgid "hardsub.note.processing"
+msgstr "識別到的字幕會持續寫入右側表格。"
+
+msgid "hardsub.note.region"
+msgstr "區域不準時，直接在影片畫面上拖動框選。"
+
+msgid "hardsub.ph.empty.sub"
+msgstr "字幕結果會顯示在這裏。"
+
+msgid "hardsub.ph.empty.title"
+msgstr "等待影片"
+
+msgid "hardsub.ph.engine_missing.sub"
+msgstr "請先安裝識別引擎依賴。"
+
+msgid "hardsub.ph.engine_missing.title"
+msgstr "OCR 引擎未就緒"
+
+msgid "hardsub.ph.no_subtitle.sub"
+msgstr "可在左側影片上手動框選後重試。"
+
+msgid "hardsub.ph.no_subtitle.title"
+msgstr "未識別到字幕"
+
+msgid "hardsub.ph.region.sub"
+msgstr "確認區域後開始擷取。"
+
+msgid "hardsub.ph.region.title"
+msgstr "已找到字幕區域"
+
+msgid "hardsub.progress.title"
+msgstr "字幕識別"
+
+msgid "hardsub.result.title"
+msgstr "字幕結果"
+
+msgid "hardsub.stage.video_preview"
+msgstr "影片預覽"
+
+msgid "hardsub.status.done"
+msgstr "已完成"
+
+msgid "hardsub.status.engine_missing"
+msgstr "引擎未就緒"
+
+msgid "hardsub.status.need_action"
+msgstr "需要處理"
+
+msgid "hardsub.status.processing"
+msgstr "擷取中"
+
+msgid "hardsub.status.region_detected"
+msgstr "已識別區域"
+
+msgid "hardsub.status.waiting_video"
+msgstr "等待影片"
+
+msgid "hardsub.subtitle"
+msgstr "從影片畫面識別硬字幕，框選區域後匯出為可編輯字幕。"
+
+msgid "hardsub.title"
+msgstr "硬字幕擷取"
+
+msgid "hardsub.toast.exported"
+msgstr "已匯出：{name}"
+
+msgid "hardsub.toast.no_auto_region"
+msgstr "未能自動偵測字幕區域，請在畫面上手動框選字幕所在位置。"
+
+msgid "home.btn.browse"
+msgstr "選擇檔案"
+
+msgid "home.btn.start"
+msgstr "開始處理"
+
+msgid "home.confirm.has_subtitle"
+msgstr "含字幕"
+
+msgid "home.confirm.quality"
+msgstr "清晰度"
+
+msgid "home.confirm.quality.best"
+msgstr "最佳"
+
+msgid "home.confirm.untitled"
+msgstr "未命名影片"
+
+msgid "home.dialog.filter.audio"
+msgstr "音訊檔案"
+
+msgid "home.dialog.filter.media"
+msgstr "媒體檔案"
+
+msgid "home.dialog.filter.video"
+msgstr "影片檔案"
+
+msgid "home.dialog.select_media"
+msgstr "選擇媒體檔案"
+
+msgid "home.download.done.body"
+msgstr "開始自動處理..."
+
+msgid "home.download.done.title"
+msgstr "下載完成"
+
+msgid "home.download.parsing"
+msgstr "正在解析影片資訊…"
+
+msgid "home.download.start"
+msgstr "開始下載"
+
+msgid "home.error.invalid_input"
+msgstr "請輸入有效的本機音訊或影片檔案，或完整的 http / https 連結。"
+
+msgid "home.error.unsupported_drop"
+msgstr "拖入的檔案並非支援的音訊或影片格式"
+
+msgid "home.footer.donate"
+msgstr "捐助"
+
+msgid "home.footer.logs"
+msgstr "查看日誌"
+
+msgid "home.hero.title"
+msgstr "匯入影片，產生字幕及配音"
+
+msgid "home.input.placeholder"
+msgstr "貼上影片連結，或拖入本機音訊或影片檔案"
+
+msgid "home.media.kind.audio"
+msgstr "音訊"
+
+msgid "home.media.kind.video"
+msgstr "影片"
+
+msgid "home.media.ready"
+msgstr "準備就緒"
+
+msgid "home.quick.confirm"
+msgstr "解析完成 · 確認清晰度後開始下載"
+
+msgid "home.quick.downloading"
+msgstr "網上影片連結 · 下載完成後自動進入下一步"
+
+msgid "home.quick.empty"
+msgstr "可直接拖入檔案 · 支援本機音影片及網上影片連結"
+
+msgid "home.quick.file"
+msgstr "本機媒體檔案 · 開始後自動進入語音轉錄"
+
+msgid "home.quick.invalid"
+msgstr "無法識別輸入內容"
+
+msgid "home.quick.parsing"
+msgstr "正在解析影片資訊，稍後確認清晰度"
+
+msgid "home.quick.url"
+msgstr "網上影片連結 · 將先下載到工作目錄"
+
+msgid "home.status.invalid"
+msgstr "輸入無效"
+
+msgid "home.status.parsing"
+msgstr "解析中"
+
+msgid "home.status.pending"
+msgstr "待確認"
+
+msgid "home.status.ready"
+msgstr "可開始"
+
+msgid "home.status.waiting"
+msgstr "等待輸入"
+
+msgid "home.tip.downloading"
+msgstr "下載中"
+
+msgid "home.tip.parsing"
+msgstr "解析中"
+
+msgid "homeflow.tab.subtitle_optimize"
+msgstr "字幕優化與翻譯"
+
+msgid "homeflow.tab.task_creation"
+msgstr "建立任務"
+
+msgid "homeflow.tab.transcription"
+msgstr "語音轉錄"
+
+msgid "homeflow.tab.video_synthesis"
+msgstr "字幕影片合成"
+
+msgid "inspector.color.pick"
+msgstr "選擇顏色"
+
+msgid "inspector.color.pick_prefix"
+msgstr "選擇"
+
+msgid "inspector.style.rename"
+msgstr "重新命名"
+
+msgid "inspector.style.source.builtin"
+msgstr "內置"
+
+msgid "inspector.style.source.mine"
+msgstr "我的"
+
+msgid "lclang.ar"
+msgstr "阿拉伯文"
+
+msgid "lclang.auto"
+msgstr "自動識別"
+
+msgid "lclang.cs"
+msgstr "捷克文"
+
+msgid "lclang.da"
+msgstr "丹麥文"
+
+msgid "lclang.de"
+msgstr "德文"
+
+msgid "lclang.en"
+msgstr "英文"
+
+msgid "lclang.es"
+msgstr "西班牙文"
+
+msgid "lclang.fi"
+msgstr "芬蘭文"
+
+msgid "lclang.fil"
+msgstr "菲律賓文"
+
+msgid "lclang.fr"
+msgstr "法文"
+
+msgid "lclang.hi"
+msgstr "印地文"
+
+msgid "lclang.id"
+msgstr "印尼文"
+
+msgid "lclang.is"
+msgstr "冰島文"
+
+msgid "lclang.it"
+msgstr "意大利文"
+
+msgid "lclang.ja"
+msgstr "日文"
+
+msgid "lclang.ko"
+msgstr "韓文"
+
+msgid "lclang.ms"
+msgstr "馬來文"
+
+msgid "lclang.no"
+msgstr "挪威文"
+
+msgid "lclang.pl"
+msgstr "波蘭文"
+
+msgid "lclang.pt"
+msgstr "葡萄牙文"
+
+msgid "lclang.ru"
+msgstr "俄文"
+
+msgid "lclang.sv"
+msgstr "瑞典文"
+
+msgid "lclang.th"
+msgstr "泰文"
+
+msgid "lclang.tr"
+msgstr "土耳其文"
+
+msgid "lclang.uk"
+msgstr "烏克蘭文"
+
+msgid "lclang.vi"
+msgstr "越南文"
+
+msgid "lclang.yue"
+msgstr "廣東話"
+
+msgid "lclang.zh"
+msgstr "中文"
+
+msgid "live.delete.confirm"
+msgstr "確定刪除「{name}」？整條記錄（包括音訊）將會從磁碟移除，此操作無法復原。"
+
+msgid "live.delete.title"
+msgstr "刪除記錄"
+
+msgid "live.device.default_input"
+msgstr "預設輸入"
+
+msgid "live.device.default_tag"
+msgstr "（預設）"
+
+msgid "live.device.system_audio"
+msgstr "系統聲音"
+
+msgid "live.error.concurrency_full"
+msgstr "後端轉錄服務並發已滿（共享介面限 5 路），請稍後再試。"
+
+msgid "live.error.start_failed"
+msgstr "啟動失敗"
+
+msgid "live.error.start_failed_desc"
+msgstr "未能開始即時字幕"
+
+msgid "live.error.transcribe_failed"
+msgstr "轉錄鏈路出錯"
+
+msgid "live.export.dialog_title"
+msgstr "匯出"
+
+msgid "live.export.failed"
+msgstr "匯出失敗"
+
+msgid "live.export.success"
+msgstr "匯出成功"
+
+msgid "live.ready.desc"
+msgstr "選擇聲音來源後即可開始"
+
+msgid "live.ready.title"
+msgstr "開始新的即時字幕"
+
+msgid "live.rename.placeholder"
+msgstr "記錄名稱"
+
+msgid "live.rename.title"
+msgstr "重新命名記錄"
+
+msgid "live.status.connecting"
+msgstr "連線中…"
+
+msgid "live.status.connecting_with_time"
+msgstr "00:00 · 連線中…"
+
+msgid "live.status.paused"
+msgstr "已暫停"
+
+msgid "live.status.progress"
+msgstr "{time} · 已產生 {count} 句"
+
+msgid "live.status.recording"
+msgstr "錄製中"
+
+msgid "live.status.saved"
+msgstr "已儲存"
+
+msgid "live.status.waiting"
+msgstr "等待開始"
+
+msgid "live.title"
+msgstr "即時字幕"
+
+msgid "livetx.menu.copy_all"
+msgstr "複製全部"
+
+msgid "livetx.menu.copy_sentence"
+msgstr "複製本句"
+
+msgid "liveview.action.back"
+msgstr "返回"
+
+msgid "liveview.action.export"
+msgstr "匯出"
+
+msgid "liveview.action.folder"
+msgstr "目錄"
+
+msgid "liveview.action.home"
+msgstr "主頁"
+
+msgid "liveview.action.open"
+msgstr "開啟"
+
+msgid "liveview.action.refresh"
+msgstr "重新整理"
+
+msgid "liveview.action.rename"
+msgstr "重新命名"
+
+msgid "liveview.btn.new_session"
+msgstr "新增會話"
+
+msgid "liveview.btn.pause"
+msgstr "暫停"
+
+msgid "liveview.btn.resume"
+msgstr "繼續"
+
+msgid "liveview.btn.saving"
+msgstr "儲存中…"
+
+msgid "liveview.btn.start"
+msgstr "開始即時字幕"
+
+msgid "liveview.btn.stop"
+msgstr "結束並儲存"
+
+msgid "liveview.btn.view_record"
+msgstr "查看記錄"
+
+msgid "liveview.detail.display"
+msgstr "顯示"
+
+msgid "liveview.detail.export"
+msgstr "匯出"
+
+msgid "liveview.display.bilingual"
+msgstr "雙語"
+
+msgid "liveview.display.source"
+msgstr "原文"
+
+msgid "liveview.display.target"
+msgstr "譯文"
+
+msgid "liveview.error.detail"
+msgstr "無法擷取音訊，請在右側切換來源後重試"
+
+msgid "liveview.error.title"
+msgstr "啟動失敗"
+
+msgid "liveview.export.srt"
+msgstr "SRT 字幕"
+
+msgid "liveview.export.txt"
+msgstr "TXT 文字"
+
+msgid "liveview.history.empty.detail"
+msgstr "儲存後的即時字幕會顯示喺呢度。"
+
+msgid "liveview.history.empty.title"
+msgstr "暫無記錄"
+
+msgid "liveview.history.search_placeholder"
+msgstr "搜尋記錄名稱或正文"
+
+msgid "liveview.option.audio_source"
+msgstr "音訊來源"
+
+msgid "liveview.option.live_translate"
+msgstr "即時翻譯"
+
+msgid "liveview.option.overlay"
+msgstr "桌面浮動視窗"
+
+msgid "liveview.option.source_language"
+msgstr "識別語言"
+
+msgid "liveview.option.target_language"
+msgstr "翻譯語言"
+
+msgid "liveview.ready.detail"
+msgstr "選擇聲音來源後即可開始"
+
+msgid "liveview.ready.title"
+msgstr "開始新的即時字幕"
+
+msgid "liveview.recent.empty.detail"
+msgstr "開始一段即時字幕，結束後會自動儲存到此處。"
+
+msgid "liveview.recent.empty.title"
+msgstr "尚未有記錄"
+
+msgid "liveview.recent.title"
+msgstr "最近記錄"
+
+msgid "liveview.recent.view_all"
+msgstr "查看全部"
+
+msgid "liveview.settings.config"
+msgstr "設定"
+
+msgid "liveview.settings.title"
+msgstr "本次設定"
+
+msgid "liveview.timer.saving"
+msgstr "正在儲存…"
+
+msgid "liveview.timer.waiting"
+msgstr "等待開始"
+
+msgid "liveview.title.detail"
+msgstr "記錄詳情"
+
+msgid "liveview.title.history"
+msgstr "即時字幕歷史"
+
+msgid "liveview.title.session"
+msgstr "即時字幕"
+
+msgid "llmlog.btn.clear"
+msgstr "清空日誌"
+
+msgid "llmlog.btn.refresh"
+msgstr "重新整理"
+
+msgid "llmlog.clear.confirm_body"
+msgstr "確定要清空所有日誌嗎？此操作無法復原。"
+
+msgid "llmlog.clear.confirm_btn"
+msgstr "清空"
+
+msgid "llmlog.clear.confirm_title"
+msgstr "確認清空"
+
+msgid "llmlog.clear.success"
+msgstr "日誌已清空"
+
+msgid "llmlog.col.duration"
+msgstr "耗時"
+
+msgid "llmlog.col.file"
+msgstr "檔案"
+
+msgid "llmlog.col.model"
+msgstr "模型"
+
+msgid "llmlog.col.stage"
+msgstr "階段"
+
+msgid "llmlog.col.time"
+msgstr "時間"
+
+msgid "llmlog.copied"
+msgstr "已複製"
+
+msgid "llmlog.detail.foot_hint"
+msgstr "複製按鈕只會複製對應 JSON；按 Esc 或右上角關閉。"
+
+msgid "llmlog.detail.title"
+msgstr "請求詳情"
+
+msgid "llmlog.empty.hint"
+msgstr "啟用字幕校正、智能斷句或 LLM 翻譯後，頁面會自動記錄請求與回應。"
+
+msgid "llmlog.empty.no_match.hint"
+msgstr "試試其他任務 ID、檔案名稱、模型或階段關鍵字。"
+
+msgid "llmlog.empty.no_match.title"
+msgstr "沒有相符日誌"
+
+msgid "llmlog.empty.title"
+msgstr "暫無 LLM 請求日誌"
+
+msgid "llmlog.empty_payload"
+msgstr "（空）"
+
+msgid "llmlog.meta.duration"
+msgstr "耗時"
+
+msgid "llmlog.meta.result"
+msgstr "結果"
+
+msgid "llmlog.meta.stage"
+msgstr "階段"
+
+msgid "llmlog.meta.time"
+msgstr "時間"
+
+msgid "llmlog.no_records"
+msgstr "暫無記錄"
+
+msgid "llmlog.panel.error"
+msgstr "錯誤回應"
+
+msgid "llmlog.panel.error.desc"
+msgstr "模型或介面返回的 Error JSON"
+
+msgid "llmlog.panel.request"
+msgstr "請求內容"
+
+msgid "llmlog.panel.request.desc"
+msgstr "傳送畀模型的完整 Request JSON"
+
+msgid "llmlog.panel.response"
+msgstr "回應內容"
+
+msgid "llmlog.panel.response.desc"
+msgstr "模型返回的原始 Response JSON"
+
+msgid "llmlog.refresh.success"
+msgstr "重新整理成功"
+
+msgid "llmlog.result.done"
+msgstr "完成"
+
+msgid "llmlog.result.failed"
+msgstr "失敗"
+
+msgid "llmlog.search.placeholder"
+msgstr "搜尋任務 ID、檔案名、模型或階段"
+
+msgid "llmlog.status.filtered"
+msgstr "共 {total} 條 · 篩選後 {shown} 條 · 雙擊查看完整 JSON"
+
+msgid "llmlog.status.total"
+msgstr "共 {total} 條 · 雙擊查看完整 JSON"
+
+msgid "llmlog.status.total_zero"
+msgstr "共 0 條"
+
+msgid "llmlog.title"
+msgstr "LLM 請求日誌"
+
+msgid "llmlog.unknown"
+msgstr "未知"
+
+msgid "logwin.btn.open_folder"
+msgstr "開啟日誌資料夾"
+
+msgid "logwin.error.open_failed"
+msgstr "開啟日誌檔案失敗：{error}"
+
+msgid "logwin.error.read_failed"
+msgstr "讀取日誌檔案失敗：{error}"
+
+msgid "logwin.error.update_failed"
+msgstr "讀取日誌檔案時出錯：{error}"
+
+msgid "logwin.history_divider"
+msgstr "以上是歷史日誌"
+
+msgid "logwin.title"
+msgstr "日誌檢視器"
+
+msgid "modelmgr.action.current"
+msgstr "目前"
+
+msgid "modelmgr.action.download"
+msgstr "下載"
+
+msgid "modelmgr.action.resume"
+msgstr "繼續"
+
+msgid "modelmgr.col.action"
+msgstr "操作"
+
+msgid "modelmgr.col.model"
+msgstr "模型"
+
+msgid "modelmgr.col.size"
+msgstr "大小"
+
+msgid "modelmgr.col.status"
+msgstr "狀態"
+
+msgid "modelmgr.command.copied_body"
+msgstr "在終端機執行後點按「重新偵測」。"
+
+msgid "modelmgr.command.copied_title"
+msgstr "已複製安裝指令"
+
+msgid "modelmgr.command.copy"
+msgstr "複製指令"
+
+msgid "modelmgr.download.done_body"
+msgstr "{name} 下載完成。"
+
+msgid "modelmgr.download.done_title"
+msgstr "模型已就緒"
+
+msgid "modelmgr.download.failed"
+msgstr "下載失敗"
+
+msgid "modelmgr.footer.model_dir"
+msgstr "本機模型目錄"
+
+msgid "modelmgr.footer.open_dir"
+msgstr "開啟目錄"
+
+msgid "modelmgr.program.available"
+msgstr "可用"
+
+msgid "modelmgr.program.found"
+msgstr "已找到 {name}"
+
+msgid "modelmgr.program.missing"
+msgstr "缺失"
+
+msgid "modelmgr.program.open_page"
+msgstr "開啟頁面"
+
+msgid "modelmgr.program.opened_body"
+msgstr "下載並安裝後，回來點擊「重新檢測」。"
+
+msgid "modelmgr.program.opened_title"
+msgstr "已在瀏覽器開啟"
+
+msgid "modelmgr.program.ready_body"
+msgstr "可以繼續下載模型。"
+
+msgid "modelmgr.program.ready_title"
+msgstr "執行程式已就緒"
+
+msgid "modelmgr.program.recheck"
+msgstr "重新檢測"
+
+msgid "modelmgr.progress.connecting"
+msgstr "正在連接鏡像…"
+
+msgid "modelmgr.recheck.available_body"
+msgstr "已找到 {name}。"
+
+msgid "modelmgr.recheck.available_title"
+msgstr "執行程式可用"
+
+msgid "modelmgr.recheck.missing_title"
+msgstr "仍未檢測到"
+
+msgid "modelmgr.remove.body"
+msgstr "將刪除 {name}（{size}），需要時須重新下載。"
+
+msgid "modelmgr.remove.done"
+msgstr "已刪除"
+
+msgid "modelmgr.remove.failed"
+msgstr "刪除失敗"
+
+msgid "modelmgr.remove.title"
+msgstr "刪除模型"
+
+msgid "modelmgr.section.models"
+msgstr "模型檔案"
+
+msgid "modelmgr.section.programs"
+msgstr "執行程式"
+
+msgid "modelmgr.status.downloading"
+msgstr "下載中"
+
+msgid "modelmgr.status.installed"
+msgstr "已下載"
+
+msgid "modelmgr.status.paused"
+msgstr "已暫停"
+
+msgid "modelmgr.status.pending"
+msgstr "待下載"
+
+msgid "modelmgr.title"
+msgstr "本地模型管理"
+
+msgid "overlay.listening"
+msgstr "監聽中…"
+
+msgid "overlay.paused"
+msgstr "已暫停"
+
+msgid "overlayset.bg"
+msgstr "底色樣式"
+
+msgid "overlayset.bg.black"
+msgstr "純黑"
+
+msgid "overlayset.bg.outline"
+msgstr "純描邊"
+
+msgid "overlayset.bg.translucent"
+msgstr "半透明"
+
+msgid "overlayset.display"
+msgstr "顯示內容"
+
+msgid "overlayset.display.bilingual"
+msgstr "雙語"
+
+msgid "overlayset.display.source"
+msgstr "僅原文"
+
+msgid "overlayset.display.target"
+msgstr "僅譯文"
+
+msgid "overlayset.font_size"
+msgstr "字號"
+
+msgid "overlayset.font_size.medium"
+msgstr "中"
+
+msgid "overlayset.title"
+msgstr "字幕設定"
+
+msgid "roi.scrub.hint"
+msgstr "拖動查看其他幀"
+
+msgid "roi.tag.caption_area"
+msgstr "字幕區域"
+
+msgid "settings.about.current_version"
+msgstr "目前版本"
+
+msgid "settings.about.feedback"
+msgstr "意見反饋"
+
+msgid "settings.about.feedback.desc"
+msgstr "遇到問題時提交意見反饋。"
+
+msgid "settings.about.feedback_button"
+msgstr "提交意見反饋"
+
+msgid "settings.about.help"
+msgstr "幫助"
+
+msgid "settings.about.help.desc"
+msgstr "查看使用說明及常見問題。"
+
+msgid "settings.about.help_button"
+msgstr "開啟幫助"
+
+msgid "settings.about.update_button"
+msgstr "檢查更新"
+
+msgid "settings.about.version"
+msgstr "版本"
+
+msgid "settings.busy.loading"
+msgstr "載入中..."
+
+msgid "settings.busy.testing"
+msgstr "測試中..."
+
+msgid "settings.busy.transcribing"
+msgstr "轉錄中..."
+
+msgid "settings.dubbing.api_key"
+msgstr "配音 API Key"
+
+msgid "settings.dubbing.api_key.desc"
+msgstr "Gemini 或 SiliconFlow 配音需要填寫。"
+
+msgid "settings.dubbing.audio_mode"
+msgstr "原聲處理"
+
+msgid "settings.dubbing.audio_mode.desc"
+msgstr "生成影片時如何處理原影片聲音。"
+
+msgid "settings.dubbing.audio_mode.duck"
+msgstr "降低原聲音量"
+
+msgid "settings.dubbing.audio_mode.mix"
+msgstr "混合原聲"
+
+msgid "settings.dubbing.audio_mode.replace"
+msgstr "替換原聲"
+
+msgid "settings.dubbing.config_error"
+msgstr "配音配置錯誤"
+
+msgid "settings.dubbing.enabled"
+msgstr "預設加入配音"
+
+msgid "settings.dubbing.enabled.desc"
+msgstr "開啟後，全流程處理預設產生配音音軌。"
+
+msgid "settings.dubbing.model"
+msgstr "配音模型"
+
+msgid "settings.dubbing.model.desc"
+msgstr "目前配音提供商使用的文字轉語音模型。"
+
+msgid "settings.dubbing.need_api_key"
+msgstr "目前配音提供商需要 API Key。"
+
+msgid "settings.dubbing.preset"
+msgstr "預設音色"
+
+msgid "settings.dubbing.preset.desc"
+msgstr "儲存後會成為配音頁及全流程的預設音色。"
+
+msgid "settings.dubbing.provider"
+msgstr "配音提供商"
+
+msgid "settings.dubbing.provider.desc"
+msgstr "Edge 免 Key；Gemini 及 SiliconFlow 需要 API Key。"
+
+msgid "settings.dubbing.test"
+msgstr "配音測試"
+
+msgid "settings.dubbing.test.desc"
+msgstr "用目前音色合成一句試聽音訊。"
+
+msgid "settings.dubbing.test_button"
+msgstr "測試配音"
+
+msgid "settings.dubbing.test_failed"
+msgstr "配音測試失敗"
+
+msgid "settings.dubbing.test_success"
+msgstr "配音測試成功"
+
+msgid "settings.dubbing.test_success.detail"
+msgstr "{provider} 已產生試聽音訊：{path}"
+
+msgid "settings.dubbing.text_track"
+msgstr "配音文字軌"
+
+msgid "settings.dubbing.text_track.auto"
+msgstr "自動選擇"
+
+msgid "settings.dubbing.text_track.desc"
+msgstr "選擇使用原文、譯文，或自動判斷產生配音。"
+
+msgid "settings.dubbing.text_track.first"
+msgstr "第一行"
+
+msgid "settings.dubbing.text_track.second"
+msgstr "第二行"
+
+msgid "settings.dubbing.timing"
+msgstr "時間對齊"
+
+msgid "settings.dubbing.timing.balanced"
+msgstr "均衡"
+
+msgid "settings.dubbing.timing.desc"
+msgstr "控制配音語速與字幕時間軸的貼合程度。"
+
+msgid "settings.dubbing.timing.natural"
+msgstr "自然"
+
+msgid "settings.dubbing.timing.none"
+msgstr "不變速"
+
+msgid "settings.dubbing.timing.strict"
+msgstr "嚴格"
+
+msgid "settings.dubbing.workers"
+msgstr "配音並發"
+
+msgid "settings.dubbing.workers.desc"
+msgstr "同時合成的字幕行數。"
+
+msgid "settings.live_caption.asr_model"
+msgstr "識別模型"
+
+msgid "settings.live_caption.asr_model.desc"
+msgstr "Fun-ASR 識別模型；多語種模型可自動識別多種語言。"
+
+msgid "settings.live_caption.bg.black"
+msgstr "純黑"
+
+msgid "settings.live_caption.bg.translucent"
+msgstr "半透明"
+
+msgid "settings.live_caption.bg_style"
+msgstr "底色樣式"
+
+msgid "settings.live_caption.bg_style.desc"
+msgstr "浮窗底色風格"
+
+msgid "settings.live_caption.deps_button"
+msgstr "下載 / 偵測"
+
+msgid "settings.live_caption.display.bilingual"
+msgstr "雙語"
+
+msgid "settings.live_caption.display.source"
+msgstr "僅原文"
+
+msgid "settings.live_caption.display.target"
+msgstr "僅譯文"
+
+msgid "settings.live_caption.display_mode"
+msgstr "顯示內容"
+
+msgid "settings.live_caption.display_mode.desc"
+msgstr "浮窗預設顯示的內容"
+
+msgid "settings.live_caption.engine"
+msgstr "轉錄引擎"
+
+msgid "settings.live_caption.engine.desc"
+msgstr "實時語音轉文字所用的識別引擎。"
+
+msgid "settings.live_caption.engine.group"
+msgstr "轉錄引擎"
+
+msgid "settings.live_caption.font_scale"
+msgstr "字體大小"
+
+msgid "settings.live_caption.font_scale.desc"
+msgstr "浮窗譯文字體大小"
+
+msgid "settings.live_caption.fun_key"
+msgstr "百煉 API Key"
+
+msgid "settings.live_caption.fun_key.desc"
+msgstr "Fun-ASR / Qwen-ASR 調用阿里雲百煉所需的密鑰，與轉錄配置共用同一個。"
+
+msgid "settings.live_caption.overlay.group"
+msgstr "浮窗顯示"
+
+msgid "settings.live_caption.source_language"
+msgstr "識別語言"
+
+msgid "settings.live_caption.source_language.desc"
+msgstr "你說話所用的語言；識別引擎會據此轉寫。自動識別可讓引擎按音頻判定語言。"
+
+msgid "settings.live_caption.target_language"
+msgstr "目標語言"
+
+msgid "settings.live_caption.target_language.desc"
+msgstr "譯文翻譯成的語言。"
+
+msgid "settings.live_caption.test.desc"
+msgstr "使用內置短音頻實際轉錄一次，驗證目前引擎可正常運行。"
+
+msgid "settings.live_caption.translate"
+msgstr "實時翻譯"
+
+msgid "settings.live_caption.translate.desc"
+msgstr "開啟後即時翻譯轉錄文字；關閉則只顯示原文。"
+
+msgid "settings.live_caption.translate.group"
+msgstr "翻譯"
+
+msgid "settings.live_caption.translator_service"
+msgstr "翻譯引擎"
+
+msgid "settings.live_caption.translator_service.desc"
+msgstr "生成譯文所用的翻譯服務。"
+
+msgid "settings.live_caption.voxgate"
+msgstr "轉錄程式"
+
+msgid "settings.live_caption.voxgate.desc"
+msgstr "voxgate 本地轉錄程式，未安裝時按此下載或檢測。"
+
+msgid "settings.llm.api_key"
+msgstr "API Key"
+
+msgid "settings.llm.api_key.desc"
+msgstr "{service} 調用大模型時使用。"
+
+msgid "settings.llm.base_url"
+msgstr "Base URL"
+
+msgid "settings.llm.base_url.desc"
+msgstr "只需為 OpenAI 相容或本地服務修改。"
+
+msgid "settings.llm.connect_error"
+msgstr "LLM 連線錯誤"
+
+msgid "settings.llm.connect_failed"
+msgstr "LLM 連線失敗"
+
+msgid "settings.llm.connect_success"
+msgstr "LLM 連線成功"
+
+msgid "settings.llm.load_models"
+msgstr "載入模型"
+
+msgid "settings.llm.model"
+msgstr "模型"
+
+msgid "settings.llm.model.desc"
+msgstr "用於斷句、校正、翻譯的大模型名稱。"
+
+msgid "settings.llm.model_service"
+msgstr "模型服務"
+
+msgid "settings.llm.model_service.desc"
+msgstr "先載入可用模型，再用目前模型測試連通性。"
+
+msgid "settings.llm.models_load_failed"
+msgstr "模型載入失敗"
+
+msgid "settings.llm.models_loaded"
+msgstr "模型已載入"
+
+msgid "settings.llm.models_loaded.desc"
+msgstr "已載入 {count} 個模型。"
+
+msgid "settings.llm.no_models"
+msgstr "沒有可用模型"
+
+msgid "settings.llm.no_models.desc"
+msgstr "未能從目前提供商取得模型列表，請檢查 Base URL 和 API Key。"
+
+msgid "settings.llm.provider"
+msgstr "LLM 提供商"
+
+msgid "settings.llm.provider.desc"
+msgstr "用於字幕斷句、校正和 LLM 翻譯。"
+
+msgid "settings.llm.test_connection"
+msgstr "測試連線"
+
+msgid "settings.llm.warn.need_all"
+msgstr "請先填寫目前提供商的 Base URL、API Key 和模型。"
+
+msgid "settings.llm.warn.need_base_key"
+msgstr "請先填寫目前提供商的 Base URL 和 API Key。"
+
+msgid "settings.page.about"
+msgstr "關於"
+
+msgid "settings.page.dubbing"
+msgstr "配音設定"
+
+msgid "settings.page.live_caption"
+msgstr "即時字幕設定"
+
+msgid "settings.page.llm"
+msgstr "LLM 設定"
+
+msgid "settings.page.personal"
+msgstr "個人化"
+
+msgid "settings.page.save"
+msgstr "儲存設定"
+
+msgid "settings.page.subtitle"
+msgstr "字幕合成設定"
+
+msgid "settings.page.transcribe"
+msgstr "轉錄設定"
+
+msgid "settings.page.translate"
+msgstr "翻譯與優化"
+
+msgid "settings.page.translate_service"
+msgstr "翻譯服務"
+
+msgid "settings.personal.choose_theme_color"
+msgstr "選擇主題顏色"
+
+msgid "settings.personal.follow_system"
+msgstr "跟隨系統"
+
+msgid "settings.personal.language"
+msgstr "語言"
+
+msgid "settings.personal.restart_required"
+msgstr "修改後需要重新啟動應用程式。"
+
+msgid "settings.personal.theme"
+msgstr "應用程式主題"
+
+msgid "settings.personal.theme.dark"
+msgstr "深色"
+
+msgid "settings.personal.theme.desc"
+msgstr "切換淺色、深色或跟隨系統。"
+
+msgid "settings.personal.theme.light"
+msgstr "淺色"
+
+msgid "settings.personal.theme_color"
+msgstr "主題顏色"
+
+msgid "settings.personal.theme_color.desc"
+msgstr "影響按鈕、反白顯示及選取狀態。"
+
+msgid "settings.personal.theme_color.is_default"
+msgstr "目前已是項目預設綠色"
+
+msgid "settings.personal.theme_color.pick_tip"
+msgstr "點擊選擇主題顏色：{color}"
+
+msgid "settings.personal.theme_color.reset"
+msgstr "恢復預設"
+
+msgid "settings.personal.theme_color.reset_tip"
+msgstr "恢復為項目預設綠色"
+
+msgid "settings.personal.zoom"
+msgstr "介面縮放"
+
+msgid "settings.placeholder.empty"
+msgstr "未填寫"
+
+msgid "settings.placeholder.not_selected"
+msgstr "未選擇"
+
+msgid "settings.restart.confirm"
+msgstr "立即重新啟動"
+
+msgid "settings.restart.later"
+msgstr "稍後"
+
+msgid "settings.restart.message"
+msgstr "語言或顯示設定已更改，需要重新啟動應用程式後才會生效。是否立即重新啟動？"
+
+msgid "settings.restart.title"
+msgstr "提示"
+
+msgid "settings.save.cache"
+msgstr "啟用快取"
+
+msgid "settings.save.cache.desc"
+msgstr "在相同設定下重用 ASR、翻譯及配音合成結果。"
+
+msgid "settings.save.cache_disabled"
+msgstr "快取已停用"
+
+msgid "settings.save.cache_disabled.detail"
+msgstr "後續任務會重新生成結果。"
+
+msgid "settings.save.cache_enabled"
+msgstr "快取已啟用"
+
+msgid "settings.save.cache_enabled.detail"
+msgstr "後續任務會優先重用現有結果。"
+
+msgid "settings.save.choose_work_dir"
+msgstr "選擇工作目錄"
+
+msgid "settings.save.keep_intermediates"
+msgstr "保留中間檔案"
+
+msgid "settings.save.keep_intermediates.desc"
+msgstr "處理成功後保留任務目錄內的原始轉錄、樣式字幕等中間產物；預設完成後即清理。"
+
+msgid "settings.save.work_dir"
+msgstr "工作目錄"
+
+msgid "settings.save.work_dir.desc"
+msgstr "下載影片及處理任務的中間檔案會寫入此處。"
+
+msgid "settings.subtitle.layout"
+msgstr "字幕版面配置"
+
+msgid "settings.subtitle.layout.desc"
+msgstr "選擇單語、雙語及原文譯文位置。"
+
+msgid "settings.subtitle.need_video"
+msgstr "合成影片"
+
+msgid "settings.subtitle.need_video.desc"
+msgstr "關閉後只輸出字幕檔案，不生成成片。"
+
+msgid "settings.subtitle.open_style"
+msgstr "開啟樣式頁"
+
+msgid "settings.subtitle.render_mode"
+msgstr "渲染模式"
+
+msgid "settings.subtitle.render_mode.desc"
+msgstr "選擇 ASS 樣式或圓角背景渲染。"
+
+msgid "settings.subtitle.soft"
+msgstr "軟字幕"
+
+msgid "settings.subtitle.soft.desc"
+msgstr "開啟後字幕不會燒錄到畫面。"
+
+msgid "settings.subtitle.style"
+msgstr "字幕樣式"
+
+msgid "settings.subtitle.style.desc"
+msgstr "字體、顏色及預覽圖可於樣式頁調整。"
+
+msgid "settings.subtitle.video_quality"
+msgstr "影片質素"
+
+msgid "settings.subtitle.video_quality.desc"
+msgstr "硬字幕合成時使用的編碼質素。"
+
+msgid "settings.test_transcribe"
+msgstr "測試轉錄"
+
+msgid "settings.title"
+msgstr "設定"
+
+msgid "settings.transcribe.faster_whisper.choose_dir"
+msgstr "選擇 Faster Whisper 模型目錄"
+
+msgid "settings.transcribe.faster_whisper.device"
+msgstr "運行裝置"
+
+msgid "settings.transcribe.faster_whisper.device.desc"
+msgstr "模型運行裝置，通常保持 auto。"
+
+msgid "settings.transcribe.faster_whisper.model"
+msgstr "Faster Whisper 模型"
+
+msgid "settings.transcribe.faster_whisper.model.desc"
+msgstr "選擇已下載的 Faster Whisper 模型。"
+
+msgid "settings.transcribe.faster_whisper.model_dir"
+msgstr "模型目錄"
+
+msgid "settings.transcribe.faster_whisper.model_dir.desc"
+msgstr "Faster Whisper 模型所在資料夾。"
+
+msgid "settings.transcribe.faster_whisper.one_word"
+msgstr "單字時間戳"
+
+msgid "settings.transcribe.faster_whisper.one_word.desc"
+msgstr "開啟後生成單字級時間戳。"
+
+msgid "settings.transcribe.faster_whisper.vad_filter"
+msgstr "VAD 過濾"
+
+msgid "settings.transcribe.faster_whisper.vad_filter.desc"
+msgstr "過濾無人聲片段，減少識別幻覺。"
+
+msgid "settings.transcribe.faster_whisper.vad_method"
+msgstr "VAD 方法"
+
+msgid "settings.transcribe.faster_whisper.vad_method.desc"
+msgstr "選擇語音活動偵測方法。"
+
+msgid "settings.transcribe.faster_whisper.vad_threshold"
+msgstr "VAD 閾值"
+
+msgid "settings.transcribe.faster_whisper.vad_threshold.desc"
+msgstr "語音概率閾值，高於此值視為語音。"
+
+msgid "settings.transcribe.faster_whisper.voice_extraction"
+msgstr "人聲分離"
+
+msgid "settings.transcribe.faster_whisper.voice_extraction.desc"
+msgstr "處理前分離人聲和背景音樂。"
+
+msgid "settings.transcribe.fun_asr.key"
+msgstr "百煉 API Key"
+
+msgid "settings.transcribe.fun_asr.key.desc"
+msgstr "百煉 Fun-ASR 轉錄需要填寫。"
+
+msgid "settings.transcribe.fun_asr.model"
+msgstr "百煉 ASR 模型"
+
+msgid "settings.transcribe.fun_asr.model.desc"
+msgstr "填寫百煉控制台裏可用的語音識別模型 Code。"
+
+msgid "settings.transcribe.local_model"
+msgstr "本地模型"
+
+msgid "settings.transcribe.local_model.desc"
+msgstr "查看執行程式狀態、下載及管理模型檔案。"
+
+msgid "settings.transcribe.local_model.no_model"
+msgstr "尚未下載模型，請開啟「管理模型」選擇下載。"
+
+msgid "settings.transcribe.local_model.not_installed"
+msgstr "執行程式未安裝，請先在「管理模型」完成安裝。"
+
+msgid "settings.transcribe.manage_models"
+msgstr "管理模型"
+
+msgid "settings.transcribe.missing.fun_asr_key"
+msgstr "請先填寫百煉 API Key。"
+
+msgid "settings.transcribe.missing.local_model"
+msgstr "尚未有可用的本機模型，請先在「管理模型」下載。"
+
+msgid "settings.transcribe.missing.whisper_api"
+msgstr "請先填寫 Whisper Base URL、API Key 及模型。"
+
+msgid "settings.transcribe.model"
+msgstr "轉錄模型"
+
+msgid "settings.transcribe.model.desc"
+msgstr "選擇生成原始字幕時使用的語音識別服務。"
+
+msgid "settings.transcribe.output_format"
+msgstr "輸出格式"
+
+msgid "settings.transcribe.output_format.desc"
+msgstr "轉錄完成後儲存的字幕檔案格式。"
+
+msgid "settings.transcribe.prompt"
+msgstr "提示詞"
+
+msgid "settings.transcribe.prompt.desc"
+msgstr "可選的轉錄提示詞，預設留空。"
+
+msgid "settings.transcribe.source_language"
+msgstr "來源語言"
+
+msgid "settings.transcribe.source_language.desc"
+msgstr "音訊／影片中說話的語言，不確定時保持自動偵測。"
+
+msgid "settings.transcribe.test.desc"
+msgstr "使用內置短音訊實際轉錄一次，驗證目前服務可正常運行。"
+
+msgid "settings.transcribe.test_error"
+msgstr "轉錄測試錯誤"
+
+msgid "settings.transcribe.test_failed"
+msgstr "轉錄測試失敗"
+
+msgid "settings.transcribe.test_result"
+msgstr "識別結果：{text}"
+
+msgid "settings.transcribe.test_success"
+msgstr "轉錄測試成功"
+
+msgid "settings.transcribe.whisper_api.base"
+msgstr "Whisper API Base URL"
+
+msgid "settings.transcribe.whisper_api.base.desc"
+msgstr "使用 Whisper API 時請求的服務地址。"
+
+msgid "settings.transcribe.whisper_api.key"
+msgstr "Whisper API Key"
+
+msgid "settings.transcribe.whisper_api.key.desc"
+msgstr "使用 Whisper API 轉錄時需要填寫。"
+
+msgid "settings.transcribe.whisper_api.model"
+msgstr "Whisper 模型"
+
+msgid "settings.transcribe.whisper_api.model.desc"
+msgstr "填寫服務商支援的音頻轉錄模型名稱。"
+
+msgid "settings.transcribe.whisper_cpp.model"
+msgstr "WhisperCpp 模型"
+
+msgid "settings.transcribe.whisper_cpp.model.desc"
+msgstr "選擇已下載的 whisper.cpp 轉錄模型。"
+
+msgid "settings.translate.cjk_length"
+msgstr "中文字幕長度"
+
+msgid "settings.translate.cjk_length.desc"
+msgstr "斷句時每條字幕的中文最多字數。"
+
+msgid "settings.translate.custom_prompt"
+msgstr "自訂提示詞"
+
+msgid "settings.translate.custom_prompt.desc"
+msgstr "補充給字幕校正和翻譯的大模型提示。"
+
+msgid "settings.translate.english_length"
+msgstr "英文字幕長度"
+
+msgid "settings.translate.english_length.desc"
+msgstr "斷句時每條字幕的英文最多詞數。"
+
+msgid "settings.translate.optimize"
+msgstr "字幕校正"
+
+msgid "settings.translate.optimize.desc"
+msgstr "處理字幕時修正識別錯誤和專有名詞。"
+
+msgid "settings.translate.split"
+msgstr "字幕斷句"
+
+msgid "settings.translate.split.desc"
+msgstr "按字數和語義重新切分長字幕。"
+
+msgid "settings.translate.target_language"
+msgstr "目標語言"
+
+msgid "settings.translate.target_language.desc"
+msgstr "翻譯字幕輸出的目標語言。"
+
+msgid "settings.translate.translate"
+msgstr "字幕翻譯"
+
+msgid "settings.translate.translate.desc"
+msgstr "處理字幕時產生目標語言譯文。"
+
+msgid "settings.translate_service.batch_size"
+msgstr "批次處理大小"
+
+msgid "settings.translate_service.batch_size.desc"
+msgstr "LLM 翻譯每批處理的字幕數量。"
+
+msgid "settings.translate_service.deeplx_endpoint"
+msgstr "DeepLx 後端"
+
+msgid "settings.translate_service.deeplx_endpoint.desc"
+msgstr "選擇 DeepLx 翻譯時需要填寫。"
+
+msgid "settings.translate_service.reflect"
+msgstr "反思翻譯"
+
+msgid "settings.translate_service.reflect.desc"
+msgstr "僅 LLM 翻譯時使用，會增加模型調用量。"
+
+msgid "settings.translate_service.service"
+msgstr "翻譯服務"
+
+msgid "settings.translate_service.service.desc"
+msgstr "選擇字幕翻譯使用的服務。"
+
+msgid "settings.translate_service.thread_num"
+msgstr "並發數"
+
+msgid "settings.translate_service.thread_num.desc"
+msgstr "模型服務允許的情況下可以調高。"
+
+msgid "settings.warn.incomplete"
+msgstr "配置不完整"
+
+msgid "substyle.align.center"
+msgstr "置中"
+
+msgid "substyle.align.left"
+msgstr "靠左"
+
+msgid "substyle.align.right"
+msgstr "靠右"
+
+msgid "substyle.content.bilingual"
+msgstr "雙語"
+
+msgid "substyle.content.source"
+msgstr "原文"
+
+msgid "substyle.content.target"
+msgstr "譯文"
+
+msgid "substyle.copy_suffix"
+msgstr "副本"
+
+msgid "substyle.custom_suffix"
+msgstr "自訂"
+
+msgid "substyle.dialog.delete_body"
+msgstr "確定要刪除樣式「{name}」嗎？此操作無法復原。"
+
+msgid "substyle.dialog.delete_title"
+msgstr "刪除樣式"
+
+msgid "substyle.dialog.name_placeholder"
+msgstr "輸入樣式名稱"
+
+msgid "substyle.dialog.new_style"
+msgstr "新增樣式"
+
+msgid "substyle.dialog.pick_bg"
+msgstr "選擇背景圖片"
+
+msgid "substyle.dialog.rename_style"
+msgstr "重新命名樣式"
+
+msgid "substyle.dock.count"
+msgstr "共 {n} 套"
+
+msgid "substyle.dock.folder"
+msgstr "目錄"
+
+msgid "substyle.dock.new"
+msgstr "新增"
+
+msgid "substyle.field.align"
+msgstr "對齊方式"
+
+msgid "substyle.field.bg_color"
+msgstr "背景顏色"
+
+msgid "substyle.field.bold"
+msgstr "粗體"
+
+msgid "substyle.field.font"
+msgstr "字型"
+
+msgid "substyle.field.letter_spacing"
+msgstr "字距"
+
+msgid "substyle.field.margin_bottom"
+msgstr "底部邊距"
+
+msgid "substyle.field.max_width"
+msgstr "最大闊度"
+
+msgid "substyle.field.outline_color"
+msgstr "描邊顏色"
+
+msgid "substyle.field.outline_width"
+msgstr "描邊闊度"
+
+msgid "substyle.field.pad_h"
+msgstr "水平內邊距"
+
+msgid "substyle.field.pad_v"
+msgstr "垂直內邊距"
+
+msgid "substyle.field.radius"
+msgstr "圓角半徑"
+
+msgid "substyle.field.size"
+msgstr "字號"
+
+msgid "substyle.field.text_color"
+msgstr "文字顏色"
+
+msgid "substyle.filter.image"
+msgstr "圖片檔案"
+
+msgid "substyle.group.background"
+msgstr "背景"
+
+msgid "substyle.group.layout"
+msgstr "字幕排列"
+
+msgid "substyle.group.padding"
+msgstr "內邊距"
+
+msgid "substyle.group.position"
+msgstr "位置"
+
+msgid "substyle.group.primary"
+msgstr "主字幕"
+
+msgid "substyle.group.secondary"
+msgstr "副字幕"
+
+msgid "substyle.group.text"
+msgstr "文字"
+
+msgid "substyle.group.text.sub"
+msgstr "主副字幕"
+
+msgid "substyle.inspector.autosave"
+msgstr "自動儲存"
+
+msgid "substyle.inspector.title"
+msgstr "參數"
+
+msgid "substyle.mode.ass"
+msgstr "ASS 描邊"
+
+msgid "substyle.mode.rounded"
+msgstr "圓角背景"
+
+msgid "substyle.order.source_top"
+msgstr "原文在上"
+
+msgid "substyle.order.target_top"
+msgstr "譯文在上"
+
+msgid "substyle.preview.background"
+msgstr "更換背景"
+
+msgid "substyle.preview.landscape"
+msgstr "橫屏預覽"
+
+msgid "substyle.preview.portrait"
+msgstr "直屏預覽"
+
+msgid "substyle.preview.source_placeholder"
+msgstr "用於預覽的原文範例"
+
+msgid "substyle.preview.target_placeholder"
+msgstr "用於預覽的譯文範例"
+
+msgid "substyle.preview.text"
+msgstr "預覽文字"
+
+msgid "substyle.preview.title"
+msgstr "預覽"
+
+msgid "substyle.row.content"
+msgstr "顯示內容"
+
+msgid "substyle.row.gap"
+msgstr "主副間距"
+
+msgid "substyle.row.order"
+msgstr "雙語順序"
+
+msgid "substyle.title"
+msgstr "字幕樣式設定"
+
+msgid "substyle.toast.bg_set"
+msgstr "已設定預覽背景："
+
+msgid "substyle.toast.created"
+msgstr "已建立樣式「{name}」"
+
+msgid "substyle.toast.deleted"
+msgstr "樣式已刪除"
+
+msgid "substyle.toast.duplicated"
+msgstr "已複製為「{name}」"
+
+msgid "substyle.toast.renamed"
+msgstr "已重新命名為「{name}」"
+
+msgid "subtitle.bottom.can_synthesize"
+msgstr "可進入合成"
+
+msgid "subtitle.bottom.count"
+msgstr "共 {count} 條"
+
+msgid "subtitle.bottom.hint"
+msgstr "按右鍵可合併、刪除、重新翻譯"
+
+msgid "subtitle.bottom.loaded"
+msgstr "已載入"
+
+msgid "subtitle.bottom.output"
+msgstr "輸出：{name}"
+
+msgid "subtitle.bottom.progress"
+msgstr "第 {current} / {total} 條"
+
+msgid "subtitle.btn.clear"
+msgstr "清空"
+
+msgid "subtitle.btn.enter_synthesis"
+msgstr "進入合成"
+
+msgid "subtitle.btn.folder"
+msgstr "目錄"
+
+msgid "subtitle.btn.open_config"
+msgstr "開啟處理配置"
+
+msgid "subtitle.btn.processing"
+msgstr "處理中"
+
+msgid "subtitle.btn.replace"
+msgstr "更換"
+
+msgid "subtitle.btn.start"
+msgstr "開始處理"
+
+msgid "subtitle.btn.wait_subtitle"
+msgstr "等待字幕"
+
+msgid "subtitle.clear.body"
+msgstr "將清除已載入的字幕及未儲存的編輯，並返回初始狀態。確定繼續？"
+
+msgid "subtitle.clear.title"
+msgstr "清空目前字幕"
+
+msgid "subtitle.col.end"
+msgstr "結束"
+
+msgid "subtitle.col.original"
+msgstr "原文"
+
+msgid "subtitle.col.start"
+msgstr "開始"
+
+msgid "subtitle.col.translated"
+msgstr "譯文"
+
+msgid "subtitle.dialog.choose_file"
+msgstr "選擇字幕檔案"
+
+msgid "subtitle.dialog.save_file"
+msgstr "儲存字幕檔案"
+
+msgid "subtitle.drop.pick"
+msgstr "點擊選擇字幕"
+
+msgid "subtitle.drop.title"
+msgstr "拖入一個字幕檔案"
+
+msgid "subtitle.error.need_llm"
+msgstr "需要先配置可用的大模型 API Key、接口地址和模型。"
+
+msgid "subtitle.error.no_config"
+msgstr "無法建立處理配置"
+
+msgid "subtitle.fail.config_missing"
+msgstr "配置缺失"
+
+msgid "subtitle.fail.process"
+msgstr "處理失敗"
+
+msgid "subtitle.file_filter"
+msgstr "字幕檔案"
+
+msgid "subtitle.menu.merge"
+msgstr "合併"
+
+msgid "subtitle.menu.retranslate"
+msgstr "重新翻譯"
+
+msgid "subtitle.no_file"
+msgstr "未選擇字幕檔案"
+
+msgid "subtitle.opt.language"
+msgstr "翻譯語言"
+
+msgid "subtitle.opt.layout"
+msgstr "譯文排列"
+
+msgid "subtitle.opt.optimize"
+msgstr "字幕校正"
+
+msgid "subtitle.opt.prompt"
+msgstr "文稿提示"
+
+msgid "subtitle.opt.split"
+msgstr "斷句"
+
+msgid "subtitle.opt.translate"
+msgstr "字幕翻譯"
+
+msgid "subtitle.process_settings"
+msgstr "處理設定"
+
+msgid "subtitle.prompt.placeholder"
+msgstr ""
+"請輸入文稿提示（輔助校正字幕和翻譯）\n"
+"\n"
+"支援以下內容:\n"
+"1. 術語表 - 專業術語、人名、特定詞語的修正對照表\n"
+"示例:\n"
+"機器學習->Machine Learning\n"
+"馬斯克->Elon Musk\n"
+"\n"
+"2. 原字幕文稿 - 影片的原有文稿或相關內容\n"
+"3. 修正要求 - 統一人稱代詞、規範專業術語等\n"
+"\n"
+"注意: 使用小型 LLM 模型時，建議將文稿控制在 1 千字內。"
+
+msgid "subtitle.prompt.set"
+msgstr "已設定"
+
+msgid "subtitle.prompt.unset"
+msgstr "未設定"
+
+msgid "subtitle.status.preparing"
+msgstr "準備處理"
+
+msgid "subtitle.status.retranslating"
+msgstr "重新翻譯所選行"
+
+msgid "subtitle.tip.collapse_settings"
+msgstr "收起設定欄"
+
+msgid "subtitle.tip.expand_settings"
+msgstr "展開處理設定"
+
+msgid "subtitle.toast.format_error"
+msgstr "格式錯誤 "
+
+msgid "subtitle.toast.load_failed"
+msgstr "載入失敗"
+
+msgid "subtitle.toast.load_first"
+msgstr "請先載入字幕檔案"
+
+msgid "subtitle.toast.no_video"
+msgstr "沒有關聯影片，請到「字幕影片合成」頁選擇影片檔案"
+
+msgid "subtitle.toast.processing_wait"
+msgstr "正在處理中，請等待目前工作完成"
+
+msgid "subtitle.toast.save_done"
+msgstr "儲存成功"
+
+msgid "subtitle.toast.save_failed"
+msgstr "儲存失敗"
+
+msgid "subtitle.toast.saved_to"
+msgstr "字幕已儲存至: "
+
+msgid "subtitle.toast.supported_formats"
+msgstr "支援的字幕格式: "
+
+msgid "subtitle.toast.translate_done"
+msgstr "翻譯完成"
+
+msgid "subtitle.toast.translate_done_body"
+msgstr "已更新所選行的翻譯"
+
+msgid "subtitle.toast.translate_failed"
+msgstr "翻譯失敗"
+
+msgid "synth.audio_mode.duck"
+msgstr "降低原聲"
+
+msgid "synth.audio_mode.mix"
+msgstr "混合原聲"
+
+msgid "synth.audio_mode.replace"
+msgstr "取代原聲"
+
+msgid "synth.blocker.ffmpeg_missing"
+msgstr "找不到 FFmpeg"
+
+msgid "synth.blocker.ffmpeg_missing_detail"
+msgstr "請先安裝 FFmpeg，並確保 ffmpeg 在 PATH 中。"
+
+msgid "synth.blocker.ffprobe_missing"
+msgstr "找不到 FFprobe"
+
+msgid "synth.blocker.ffprobe_missing_detail"
+msgstr "配音需要 ffprobe 讀取音訊時長，請確認 FFmpeg 套件完整。"
+
+msgid "synth.blocker.key_required"
+msgstr "目前音色需要 API Key"
+
+msgid "synth.blocker.key_required_detail"
+msgstr "目前音色缺少 API Key，請檢查配音設定，或切換至 Edge 免費音色。"
+
+msgid "synth.btn.generate_audio"
+msgstr "生成配音音訊"
+
+msgid "synth.btn.generate_full"
+msgstr "生成成片"
+
+msgid "synth.btn.generate_subtitle_video"
+msgstr "生成字幕影片"
+
+msgid "synth.btn.optional_video"
+msgstr "可選影片"
+
+msgid "synth.btn.pick_output"
+msgstr "選擇輸出內容"
+
+msgid "synth.btn.pick_subtitle"
+msgstr "選擇字幕"
+
+msgid "synth.btn.pick_video"
+msgstr "選擇影片"
+
+msgid "synth.btn.regenerate"
+msgstr "重新生成"
+
+msgid "synth.btn.wait_files"
+msgstr "等待檔案"
+
+msgid "synth.btn.wait_video"
+msgstr "等待影片"
+
+msgid "synth.dialog.pick_media"
+msgstr "選擇字幕及影片檔案"
+
+msgid "synth.dialog.pick_subtitle"
+msgstr "選擇字幕檔案"
+
+msgid "synth.dialog.pick_video"
+msgstr "選擇影片檔案"
+
+msgid "synth.drop.formats"
+msgstr "字幕：srt / ass / vtt    影片：mp4 / mov / mkv"
+
+msgid "synth.drop.pick"
+msgstr "點擊選擇檔案"
+
+msgid "synth.drop.title"
+msgstr "拖入字幕及影片檔案"
+
+msgid "synth.error.ass_unsupported"
+msgstr "FFmpeg 不支援 ASS 硬字幕，請安裝帶 libass 的完整 FFmpeg，或切換為圓角背景渲染。"
+
+msgid "synth.error.dubbed_video_path_empty"
+msgstr "配音影片輸出路徑為空"
+
+msgid "synth.file.media"
+msgstr "媒體檔案"
+
+msgid "synth.file.reference_video"
+msgstr "參考影片"
+
+msgid "synth.file.subtitle"
+msgstr "字幕檔案"
+
+msgid "synth.file.video"
+msgstr "影片檔案"
+
+msgid "synth.hint.dub_only"
+msgstr "只生成配音音訊，可不選影片檔案"
+
+msgid "synth.hint.dub_then_synthesize"
+msgstr "會先生成配音，再合成字幕影片"
+
+msgid "synth.hint.need_subtitle"
+msgstr "需要字幕檔案"
+
+msgid "synth.hint.need_subtitle_and_video"
+msgstr "需要字幕檔案和影片檔案"
+
+msgid "synth.hint.need_video"
+msgstr "仍需要影片檔案"
+
+msgid "synth.hint.pick_output"
+msgstr "請在右側至少開啟一種輸出內容"
+
+msgid "synth.hint.synthesize_only"
+msgstr "會將字幕合成到影片中"
+
+msgid "synth.link.style_page"
+msgstr "樣式頁"
+
+msgid "synth.link.voice_library"
+msgstr "音色庫"
+
+msgid "synth.opt.audio_mode"
+msgstr "音訊處理"
+
+msgid "synth.opt.render_mode"
+msgstr "渲染模式"
+
+msgid "synth.opt.style"
+msgstr "樣式"
+
+msgid "synth.opt.subtitle_mode"
+msgstr "字幕方式"
+
+msgid "synth.opt.subtitle_style"
+msgstr "字幕樣式"
+
+msgid "synth.opt.text_track"
+msgstr "文字軌道"
+
+msgid "synth.opt.timing"
+msgstr "時間貼合"
+
+msgid "synth.opt.video_quality"
+msgstr "影片質素"
+
+msgid "synth.opt.voice"
+msgstr "音色"
+
+msgid "synth.output.dubbing"
+msgstr "配音音軌"
+
+msgid "synth.output.dubbing_desc"
+msgstr "按字幕生成配音"
+
+msgid "synth.output.subtitle_video"
+msgstr "字幕影片"
+
+msgid "synth.output.subtitle_video_desc"
+msgstr "將字幕合成到影片中"
+
+msgid "synth.panel.title"
+msgstr "今次生成"
+
+msgid "synth.pill.completed"
+msgstr "已完成"
+
+msgid "synth.pill.failed"
+msgstr "失敗"
+
+msgid "synth.pill.missing_ffmpeg"
+msgstr "缺少 FFmpeg"
+
+msgid "synth.pill.missing_ffprobe"
+msgstr "缺少 FFprobe"
+
+msgid "synth.pill.missing_key"
+msgstr "缺少 Key"
+
+msgid "synth.pill.missing_video"
+msgstr "缺少影片"
+
+msgid "synth.pill.no_output"
+msgstr "未選擇輸出"
+
+msgid "synth.pill.ready"
+msgstr "可以生成"
+
+msgid "synth.plan.collect"
+msgstr "整理結果檔案"
+
+msgid "synth.plan.dubbing"
+msgstr "生成配音音軌"
+
+msgid "synth.plan.pending"
+msgstr "待生成"
+
+msgid "synth.plan.save"
+msgstr "儲存結果檔案"
+
+msgid "synth.plan.synthesize"
+msgstr "合成字幕影片"
+
+msgid "synth.result.dubbed_audio"
+msgstr "配音音訊"
+
+msgid "synth.result.dubbed_video"
+msgstr "配音影片"
+
+msgid "synth.result.subtitled_video"
+msgstr "字幕影片"
+
+msgid "synth.row.subtitle_required"
+msgstr "必填：選擇 SRT / ASS / VTT 字幕"
+
+msgid "synth.row.video_optional"
+msgstr "可選：選擇後額外生成配音影片"
+
+msgid "synth.row.video_required"
+msgstr "必填：選擇 MP4 / MOV / MKV 影片"
+
+msgid "synth.section.dubbing_params"
+msgstr "配音參數"
+
+msgid "synth.section.output"
+msgstr "輸出內容"
+
+msgid "synth.section.subtitle_params"
+msgstr "字幕影片參數"
+
+msgid "synth.status.completed"
+msgstr "生成完成"
+
+msgid "synth.status.done"
+msgstr "完成"
+
+msgid "synth.status.failed"
+msgstr "生成失敗"
+
+msgid "synth.status.generating"
+msgstr "正在生成結果檔案"
+
+msgid "synth.status.missing"
+msgstr "缺少"
+
+msgid "synth.status.optional"
+msgstr "可選"
+
+msgid "synth.status.processing"
+msgstr "生成中"
+
+msgid "synth.status.ready"
+msgstr "已就緒"
+
+msgid "synth.status.waiting"
+msgstr "等待"
+
+msgid "synth.subtitle_mode.hard"
+msgstr "硬字幕"
+
+msgid "synth.subtitle_mode.soft"
+msgstr "軟字幕"
+
+msgid "synth.text_track.auto"
+msgstr "自動選擇"
+
+msgid "synth.text_track.first"
+msgstr "第一行"
+
+msgid "synth.text_track.second"
+msgstr "第二行"
+
+msgid "synth.timing.balanced"
+msgstr "平衡"
+
+msgid "synth.timing.natural"
+msgstr "自然"
+
+msgid "synth.timing.strict"
+msgstr "嚴格貼合"
+
+msgid "synth.tip.collapse_panel"
+msgstr "收起本欄"
+
+msgid "synth.tip.expand_panel"
+msgstr "展開生成欄"
+
+msgid "synth.tip.open_config"
+msgstr "開啟合成設定"
+
+msgid "synth.title.config_check"
+msgstr "設定檢查"
+
+msgid "synth.title.confirm"
+msgstr "生成前確認"
+
+msgid "synth.title.input"
+msgstr "輸入檔案"
+
+msgid "synth.title.results"
+msgstr "結果檔案"
+
+msgid "synth.title.running"
+msgstr "生成中"
+
+msgid "t_dubbing.error.config_empty"
+msgstr "配音設定為空"
+
+msgid "t_dubbing.error.output_audio_path_empty"
+msgstr "輸出音訊路徑為空"
+
+msgid "t_dubbing.error.subtitle_path_empty"
+msgstr "字幕路徑為空"
+
+msgid "t_dubbing.error.task_dir_empty"
+msgstr "任務目錄為空"
+
+msgid "t_dubbing.status.done"
+msgstr "配音完成"
+
+msgid "t_dubbing.status.preparing"
+msgstr "準備配音"
+
+msgid "t_hardsub.error.read_video_failed"
+msgstr "無法讀取此影片"
+
+msgid "t_hardsub.status.detecting_region"
+msgstr "識別字幕區域"
+
+msgid "t_hardsub.status.recognizing"
+msgstr "識別中 {count} 條"
+
+msgid "t_media.error.no_video_file"
+msgstr "下載完成但找不到影片檔案，請換另一個連結重試"
+
+msgid "t_media.status.completed"
+msgstr "下載完成"
+
+msgid "t_subtitle.error.llm_model_not_configured"
+msgstr "LLM 模型未設定"
+
+msgid "t_subtitle.error.llm_not_configured"
+msgstr "LLM API 未設定，請檢查 LLM 設定"
+
+msgid "t_subtitle.error.llm_test_failed"
+msgstr "LLM API 測試失敗：{message}"
+
+msgid "t_subtitle.error.no_config"
+msgstr "字幕設定為空"
+
+msgid "t_subtitle.error.no_subtitle_path"
+msgstr "字幕檔案路徑為空"
+
+msgid "t_subtitle.error.no_target_language"
+msgstr "目標語言未設定"
+
+msgid "t_subtitle.error.unsupported_service"
+msgstr "不支援的翻譯服務：{service}"
+
+msgid "t_subtitle.status.done"
+msgstr "處理完成"
+
+msgid "t_subtitle.status.optimizing"
+msgstr "正在優化字幕..."
+
+msgid "t_subtitle.status.processing_percent"
+msgstr "{percent}% 處理字幕"
+
+msgid "t_subtitle.status.splitting"
+msgstr "正在為字幕斷句..."
+
+msgid "t_subtitle.status.translating"
+msgstr "正在翻譯字幕..."
+
+msgid "t_subtitle.status.translating_percent"
+msgstr "{percent}% 翻譯中"
+
+msgid "t_subtitle.status.verifying_llm"
+msgstr "開始驗證 LLM 設定..."
+
+msgid "t_synth.error.no_output_path"
+msgstr "輸出路徑為空"
+
+msgid "t_synth.error.no_subtitle_path"
+msgstr "字幕路徑為空"
+
+msgid "t_synth.error.no_video_path"
+msgstr "影片路徑為空"
+
+msgid "t_synth.status.done"
+msgstr "合成完成"
+
+msgid "t_synth.status.synthesizing"
+msgstr "正在合成"
+
+msgid "t_transcript.error.audio_extract_failed"
+msgstr "音訊轉換失敗"
+
+msgid "t_transcript.error.file_not_found"
+msgstr "媒體檔案不存在"
+
+msgid "t_transcript.error.no_config"
+msgstr "轉錄設定為空"
+
+msgid "t_transcript.error.no_file_path"
+msgstr "檔案路徑為空"
+
+msgid "t_transcript.error.no_output_path"
+msgstr "輸出路徑為空"
+
+msgid "t_transcript.status.done"
+msgstr "轉錄完成"
+
+msgid "t_transcript.status.extracting_audio"
+msgstr "正在轉換音訊"
+
+msgid "t_transcript.status.transcribing"
+msgstr "正在語音轉錄"
+
+msgid "t_voice.error.need_api_key"
+msgstr "{provider} 試聽需要先在設定中填寫配音 API Key"
+
+msgid "t_voice.sample_text"
+msgstr "你好，這是卡卡字幕助手的配音試聽。"
+
+msgid "transcribe.action.cancel"
+msgstr "取消轉錄"
+
+msgid "transcribe.action.replace_file"
+msgstr "更換檔案"
+
+msgid "transcribe.btn.open_subtitle"
+msgstr "進入字幕優化"
+
+msgid "transcribe.btn.retranscribe"
+msgstr "重新轉錄"
+
+msgid "transcribe.btn.running"
+msgstr "轉錄中"
+
+msgid "transcribe.btn.start"
+msgstr "開始轉錄"
+
+msgid "transcribe.btn.waiting_file"
+msgstr "等待檔案"
+
+msgid "transcribe.col.content"
+msgstr "字幕內容"
+
+msgid "transcribe.col.end"
+msgstr "結束時間"
+
+msgid "transcribe.col.start"
+msgstr "開始時間"
+
+msgid "transcribe.config.open_tip"
+msgstr "開啟轉錄設定"
+
+msgid "transcribe.dialog.media_filter"
+msgstr "媒體檔案"
+
+msgid "transcribe.dialog.pick_media"
+msgstr "選擇媒體檔案"
+
+msgid "transcribe.drop.pick"
+msgstr "按此選擇檔案"
+
+msgid "transcribe.drop.title"
+msgstr "拖入一個音訊或影片檔案"
+
+msgid "transcribe.empty.title"
+msgstr "未選擇媒體檔案"
+
+msgid "transcribe.error.title"
+msgstr "失敗原因"
+
+msgid "transcribe.file.title"
+msgstr "目前檔案"
+
+msgid "transcribe.format.txt"
+msgstr "TXT"
+
+msgid "transcribe.opt.language"
+msgstr "語言"
+
+msgid "transcribe.opt.model"
+msgstr "模型"
+
+msgid "transcribe.opt.output"
+msgstr "輸出"
+
+msgid "transcribe.opt.service"
+msgstr "服務"
+
+msgid "transcribe.opt.track"
+msgstr "音軌"
+
+msgid "transcribe.opt.word_timestamp"
+msgstr "詞時間戳"
+
+msgid "transcribe.params.collapse_tip"
+msgstr "收起參數列"
+
+msgid "transcribe.params.expand_tip"
+msgstr "展開參數欄"
+
+msgid "transcribe.params.title"
+msgstr "參數"
+
+msgid "transcribe.pending.not_started"
+msgstr "尚未開始轉錄"
+
+msgid "transcribe.preview.count"
+msgstr "{n} 條"
+
+msgid "transcribe.preview.title"
+msgstr "原始字幕預覽"
+
+msgid "transcribe.progress.phase"
+msgstr "語音識別"
+
+msgid "transcribe.result.collapse_tip"
+msgstr "收起操作欄"
+
+msgid "transcribe.result.file"
+msgstr "結果檔案"
+
+msgid "transcribe.result.open_file_tip"
+msgstr "點擊開啟結果檔案"
+
+msgid "transcribe.result.title"
+msgstr "結果操作"
+
+msgid "transcribe.stage.done"
+msgstr "完成"
+
+msgid "transcribe.stage.read_audio"
+msgstr "讀取音訊"
+
+msgid "transcribe.stage.recognize"
+msgstr "識別語音"
+
+msgid "transcribe.stage.running"
+msgstr "進行中"
+
+msgid "transcribe.stage.waiting"
+msgstr "等待"
+
+msgid "transcribe.stage.write_subtitle"
+msgstr "生成字幕檔案"
+
+msgid "transcribe.status.done"
+msgstr "完成"
+
+msgid "transcribe.status.failed"
+msgstr "轉錄失敗"
+
+msgid "transcribe.status.pending"
+msgstr "待開始"
+
+msgid "transcribe.status.running"
+msgstr "轉錄中"
+
+msgid "transcribe.status.unreachable"
+msgstr "未連通"
+
+msgid "transcribe.text_preview.done"
+msgstr "轉錄完成"
+
+msgid "transcribe.text_preview.title"
+msgstr "純文字預覽"
+
+msgid "transcribe.toast.bad_format"
+msgstr "格式錯誤 {suffix}"
+
+msgid "transcribe.toast.drop_media"
+msgstr "請拖入音訊或影片檔案"
+
+msgid "transcribe.toast.no_subtitle"
+msgstr "沒有可用於字幕優化的字幕檔案"
+
+msgid "transcribe.toast.processing"
+msgstr "正在處理，請等待目前任務完成"
+
+msgid "transcribe.track.first"
+msgstr "音軌 1"
+
+msgid "workbench.drop.or"
+msgstr "或"
+

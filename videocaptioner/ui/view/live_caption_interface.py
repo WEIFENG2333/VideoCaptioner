@@ -43,6 +43,7 @@ from videocaptioner.ui.components.live_caption.views import (
     _fmt_pos,
 )
 from videocaptioner.ui.config_adapter import _llm_from_ui
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.live_caption_thread import LiveCaptionThread
 
 _PAGE_SESSION, _PAGE_HISTORY, _PAGE_DETAIL = 0, 1, 2
@@ -61,7 +62,7 @@ class LiveCaptionInterface(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setObjectName("liveCaptionInterface")
-        self.setWindowTitle(self.tr("实时字幕"))
+        self.setWindowTitle(tr("live.title"))
         # 根背景走 palette.bg，否则面板浮在未着色底上像格格不入的色块。
         self.setStyleSheet(
             f"QWidget#liveCaptionInterface {{ background: {app_palette().bg}; }}"
@@ -191,12 +192,12 @@ class LiveCaptionInterface(QWidget):
             self._devices = list_input_devices()
         except Exception:
             self._devices = []
-        items: List[tuple] = [(-1, self.tr("默认输入"))]
+        items: List[tuple] = [(-1, tr("live.device.default_input"))]
         # macOS：原生「系统声音」（ScreenCaptureKit，免装 BlackHole）。其它平台仍靠选回环设备。
         if system_audio_supported():
-            items.append((_SYSTEM_AUDIO_INDEX, self.tr("系统声音")))
+            items.append((_SYSTEM_AUDIO_INDEX, tr("live.device.system_audio")))
         for dev in self._devices:
-            tag = self.tr("（默认）") if dev.is_default else ""
+            tag = tr("live.device.default_tag") if dev.is_default else ""
             items.append((dev.index, f"{dev.name}{tag}"))
         current = cfg.get(cfg.live_caption_device_index)
         self.session.set_devices(items, current)
@@ -285,9 +286,9 @@ class LiveCaptionInterface(QWidget):
 
     def _do_rename(self, record: LiveCaptionRecord) -> None:
         dlg = InputDialog(
-            self.tr("重命名记录"),
+            tr("live.rename.title"),
             text=record.name,
-            placeholder=self.tr("记录名称"),
+            placeholder=tr("live.rename.placeholder"),
             parent=self,
         )
         if dlg.exec():
@@ -302,10 +303,8 @@ class LiveCaptionInterface(QWidget):
 
     def _do_delete(self, record: LiveCaptionRecord) -> None:
         dlg = ConfirmDialog(
-            self.tr("删除记录"),
-            self.tr("确定删除「{0}」？整条记录（含音频）将从磁盘移除，此操作不可撤销。").format(
-                record.name
-            ),
+            tr("live.delete.title"),
+            tr("live.delete.confirm", name=record.name),
             parent=self,
             danger=True,
         )
@@ -332,7 +331,7 @@ class LiveCaptionInterface(QWidget):
         ext = "srt" if fmt == "srt" else "txt"
         suggested = f"{record.name}.{ext}"
         path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("导出"), suggested, f"{ext.upper()} (*.{ext})"
+            self, tr("live.export.dialog_title"), suggested, f"{ext.upper()} (*.{ext})"
         )
         if not path:
             return
@@ -340,10 +339,10 @@ class LiveCaptionInterface(QWidget):
         try:
             with open(path, "w", encoding="utf-8") as f:
                 f.write(content)
-            InfoBar.success(self.tr("导出成功"), path, duration=3500,
+            InfoBar.success(tr("live.export.success"), path, duration=3500,
                             position=InfoBarPosition.BOTTOM, parent=self)
         except Exception as exc:
-            InfoBar.error(self.tr("导出失败"), str(exc), duration=5000,
+            InfoBar.error(tr("live.export.failed"), str(exc), duration=5000,
                           position=InfoBarPosition.BOTTOM, parent=self)
 
     # ----- 启停 -----
@@ -382,8 +381,8 @@ class LiveCaptionInterface(QWidget):
         self._got_record = False
         self.session.transcript.clear()
         name = LiveCaptionStore.display_name()
-        self.session.set_record_title(name, self.tr("00:00 · 连接中…"))
-        self.session.set_timer("00:00", self.tr("连接中…"))
+        self.session.set_record_title(name, tr("live.status.connecting_with_time"))
+        self.session.set_timer("00:00", tr("live.status.connecting"))
         self.session.set_mode(MODE_LIVE)
         QTimer.singleShot(0, self._launch)
 
@@ -396,8 +395,8 @@ class LiveCaptionInterface(QWidget):
             self._starting = False
             self._teardown_thread()
             self.session.set_mode(MODE_ERROR)
-            self.session.set_error(self.tr("启动失败"), str(exc))
-            self.session.set_record_title(self.tr("启动失败"), self.tr("未能开始实时字幕"))
+            self.session.set_error(tr("live.error.start_failed"), str(exc))
+            self.session.set_record_title(tr("live.error.start_failed"), tr("live.error.start_failed_desc"))
             return
         self._starting = False
 
@@ -453,7 +452,7 @@ class LiveCaptionInterface(QWidget):
         if self._overlay is not None:
             self._overlay.set_paused(True)
         self.session.set_mode(MODE_PAUSED)
-        self.session.set_timer(_clock(self._elapsed), self.tr("已暂停"))
+        self.session.set_timer(_clock(self._elapsed), tr("live.status.paused"))
 
     def _resume(self) -> None:
         if self._thread is not None:
@@ -531,14 +530,14 @@ class LiveCaptionInterface(QWidget):
     def _on_state(self, state: str) -> None:
         if state == TranscriberState.LISTENING.value and self._timer.isActive():
             if not self._paused:
-                self.session.set_timer(_clock(self._elapsed), self.tr("录制中"))
+                self.session.set_timer(_clock(self._elapsed), tr("live.status.recording"))
 
     def _on_recorded(self, record: LiveCaptionRecord) -> None:
         self._got_record = True
         self._last_record = record
         self.session.set_current_record(record)
         self.session.set_record_title(record.name, record.summary)
-        self.session.set_timer(record.duration_label, self.tr("已保存"))
+        self.session.set_timer(record.duration_label, tr("live.status.saved"))
         self.session.set_mode(MODE_ENDED)
         self._refresh_recent()
 
@@ -546,21 +545,21 @@ class LiveCaptionInterface(QWidget):
         # 线程结束但没有产生记录（空会话）→ 回到就绪态
         if not self._got_record and self._stack.currentIndex() == _PAGE_SESSION:
             self.session.set_mode(MODE_READY)
-            self.session.set_timer("00:00", self.tr("等待开始"))
-            self.session.set_record_title(self.tr("开始新的实时字幕"), self.tr("选择声音来源后即可开始"))
+            self.session.set_timer("00:00", tr("live.status.waiting"))
+            self.session.set_record_title(tr("live.ready.title"), tr("live.ready.desc"))
 
     def _on_error(self, message: str) -> None:
         try:
             lowered = message.lower()
             if "quota" in lowered or "concurren" in lowered or "并发" in message:
-                friendly = self.tr("后端转录服务并发已满（共享接口限 5 路），请稍后重试。")
+                friendly = tr("live.error.concurrency_full")
             else:
                 friendly = message
             self._timer.stop()
             self._teardown_thread()
             self.session.set_mode(MODE_ERROR)
-            self.session.set_error(self.tr("启动失败"), friendly)
-            self.session.set_record_title(self.tr("启动失败"), self.tr("转录链路出错"))
+            self.session.set_error(tr("live.error.start_failed"), friendly)
+            self.session.set_record_title(tr("live.error.start_failed"), tr("live.error.transcribe_failed"))
         except Exception:
             import logging
 
@@ -570,10 +569,10 @@ class LiveCaptionInterface(QWidget):
         if self._thread is None or self._paused:
             return
         self._elapsed += 1
-        self.session.set_timer(_clock(self._elapsed), self.tr("录制中"))
+        self.session.set_timer(_clock(self._elapsed), tr("live.status.recording"))
         self.session.set_record_title(
             LiveCaptionStore.display_name(self._session_start),
-            self.tr("{0} · 已生成 {1} 句").format(_clock(self._elapsed), len(self._seen_segs)),
+            tr("live.status.progress", time=_clock(self._elapsed), count=len(self._seen_segs)),
         )
 
     # ----- 浮窗 -----

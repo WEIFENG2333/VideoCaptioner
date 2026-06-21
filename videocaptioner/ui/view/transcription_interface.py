@@ -68,6 +68,7 @@ from videocaptioner.core.utils.platform_utils import (
 )
 from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import cfg
+from videocaptioner.ui.common.enum_labels import enum_from_label, enum_label, enum_options
 from videocaptioner.ui.common.model_options import (
     FUN_ASR_MODEL_OPTIONS,
     WHISPER_API_MODEL_OPTIONS,
@@ -95,6 +96,7 @@ from videocaptioner.ui.components.workbench import (
     draw_rounded_surface,
     icon_pixmap,
 )
+from videocaptioner.ui.i18n import N_, tr
 from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.thread.transcript_thread import TranscriptThread
 from videocaptioner.ui.thread.video_info_thread import VideoInfoThread
@@ -413,7 +415,7 @@ class PendingResultArea(QFrame):
         icon_layout.addWidget(self.iconLabel)
         layout.addWidget(self.iconBox, 0, Qt.AlignHCenter)  # type: ignore[arg-type]
         layout.addSpacing(12)
-        self.textLabel = QLabel(self.tr("尚未开始转录"), self)
+        self.textLabel = QLabel(tr("transcribe.pending.not_started"), self)
         self.textLabel.setObjectName("pendingText")
         self.textLabel.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
         apply_font(self.textLabel, 18, 820)
@@ -460,7 +462,11 @@ class PendingResultArea(QFrame):
 class ProgressCard(QFrame):
     """转录进度卡：百分比 + 进度条 + 三个阶段行。"""
 
-    _STAGES = ("读取音频", "识别语音", "生成字幕文件")
+    _STAGES = (
+        N_("transcribe.stage.read_audio"),
+        N_("transcribe.stage.recognize"),
+        N_("transcribe.stage.write_subtitle"),
+    )
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -470,7 +476,7 @@ class ProgressCard(QFrame):
         layout.setSpacing(18)
 
         head = QHBoxLayout()
-        self.phaseLabel = QLabel(self.tr("语音识别"), self)
+        self.phaseLabel = QLabel(tr("transcribe.progress.phase"), self)
         self.phaseLabel.setObjectName("progressPhase")
         apply_font(self.phaseLabel, 17, 820)
         head.addWidget(self.phaseLabel)
@@ -499,11 +505,11 @@ class ProgressCard(QFrame):
             dot.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
             apply_font(dot, 13, 850)
             row.addWidget(dot)
-            label = QLabel(self.tr(name), row_frame)
+            label = QLabel(tr(name), row_frame)
             label.setObjectName("stageName")
             apply_font(label, 14, 740)
             row.addWidget(label, 1)
-            pill = StatusPill(self.tr("等待"), "neutral", row_frame)
+            pill = StatusPill(tr("transcribe.stage.waiting"), "neutral", row_frame)
             self.stagePills.append(pill)
             row.addWidget(pill)
             layout.addWidget(row_frame)
@@ -511,21 +517,24 @@ class ProgressCard(QFrame):
 
     def setPhase(self, message: str):
         """标题展示线程上报的真实阶段消息，空串时回落到默认文案。"""
-        self.phaseLabel.setText(message or self.tr("语音识别"))
+        self.phaseLabel.setText(message or tr("transcribe.progress.phase"))
 
     def setProgress(self, value: int):
         value = max(0, min(100, value))
         self.percentLabel.setText(f"{value}%")
         self.bar.setValue(value)
         # 阶段映射：<20 在读音频；20-97 在识别；>=98 在写字幕文件。
+        running = N_("transcribe.stage.running")
+        waiting = N_("transcribe.stage.waiting")
+        done = N_("transcribe.stage.done")
         if value < 20:
-            states = [("进行中", "warn"), ("等待", "neutral"), ("等待", "neutral")]
+            states = [(running, "warn"), (waiting, "neutral"), (waiting, "neutral")]
         elif value < 98:
-            states = [("完成", "ok"), ("进行中", "warn"), ("等待", "neutral")]
+            states = [(done, "ok"), (running, "warn"), (waiting, "neutral")]
         else:
-            states = [("完成", "ok"), ("完成", "ok"), ("进行中", "warn")]
-        for pill, (text, level) in zip(self.stagePills, states):
-            pill.setState(self.tr(text), level)
+            states = [(done, "ok"), (done, "ok"), (running, "warn")]
+        for pill, (key, level) in zip(self.stagePills, states):
+            pill.setState(tr(key), level)
 
     def paintEvent(self, event):
         palette = app_palette()
@@ -567,11 +576,11 @@ class SubtitlePreviewPanel(WorkbenchPanel):
 
     def __init__(self, parent=None):
         super().__init__(parent, padded=False)
-        self.header = PanelHeader(self.tr("原始字幕预览"), inline=False, parent=self)
+        self.header = PanelHeader(tr("transcribe.preview.title"), inline=False, parent=self)
         self.pill = StatusPill("", "ok", self)
         self.header.addRight(self.pill)
         # 完成态也要能直接导入下一个文件。
-        self.replaceLink = HeaderLinkButton(self.tr("更换文件"), AppIcon.FOLDER_ADD, self)
+        self.replaceLink = HeaderLinkButton(tr("transcribe.action.replace_file"), AppIcon.FOLDER_ADD, self)
         self.replaceLink.clicked.connect(self.replaceRequested)
         self.header.addRight(self.replaceLink)
         self.bodyLayout.addWidget(self.header)
@@ -583,7 +592,7 @@ class SubtitlePreviewPanel(WorkbenchPanel):
         thead_layout.setContentsMargins(0, 0, 0, 0)
         thead_layout.setSpacing(0)
         self.theadLabels = []
-        for text, width in ((self.tr("开始时间"), 150), (self.tr("结束时间"), 150), (self.tr("字幕内容"), 0)):
+        for text, width in ((tr("transcribe.col.start"), 150), (tr("transcribe.col.end"), 150), (tr("transcribe.col.content"), 0)):
             label = QLabel(text, self.theadFrame)
             label.setObjectName("subtitleTheadCell")
             label.setContentsMargins(16, 0, 16, 0)
@@ -616,7 +625,7 @@ class SubtitlePreviewPanel(WorkbenchPanel):
             row.deleteLater()
         self.rows.clear()
         self._active_index = -1
-        self.pill.setText(self.tr("{} 条").format(len(segments)))
+        self.pill.setText(tr("transcribe.preview.count", n=len(segments)))
         for index, (start_ms, end_ms, text) in enumerate(segments[:_PREVIEW_ROW_LIMIT]):
             row = self._make_row(index, _format_clock(start_ms), _format_clock(end_ms), text)
             self.rows.append(row)
@@ -725,10 +734,10 @@ class TextPreviewPanel(WorkbenchPanel):
 
     def __init__(self, parent=None):
         super().__init__(parent, padded=False)
-        self.header = PanelHeader(self.tr("纯文本预览"), inline=False, parent=self)
-        self.pill = StatusPill(self.tr("转录完成"), "ok", self)
+        self.header = PanelHeader(tr("transcribe.text_preview.title"), inline=False, parent=self)
+        self.pill = StatusPill(tr("transcribe.text_preview.done"), "ok", self)
         self.header.addRight(self.pill)
-        self.replaceLink = HeaderLinkButton(self.tr("更换文件"), AppIcon.FOLDER_ADD, self)
+        self.replaceLink = HeaderLinkButton(tr("transcribe.action.replace_file"), AppIcon.FOLDER_ADD, self)
         self.replaceLink.clicked.connect(self.replaceRequested)
         self.header.addRight(self.replaceLink)
         self.bodyLayout.addWidget(self.header)
@@ -772,10 +781,10 @@ class ParamsPanel(WorkbenchPanel):
     def __init__(self, parent=None):
         super().__init__(parent, padded=True)
         self.header = PanelHeader(
-            self.tr("参数"), inline=True, underline=True, parent=self
+            tr("transcribe.params.title"), inline=True, underline=True, parent=self
         )
         self.collapseButton = RoundIconButton(AppIcon.RIGHT_ARROW, parent=self)
-        self.collapseButton.setToolTip(self.tr("收起参数栏"))
+        self.collapseButton.setToolTip(tr("transcribe.params.collapse_tip"))
         self.collapseButton.clicked.connect(self.collapseRequested)
         self.header.addRight(self.collapseButton)
         # 仅失败态展示状态胶囊（“未连通”）；提供商已由服务卡片表达。
@@ -783,7 +792,7 @@ class ParamsPanel(WorkbenchPanel):
         self.statusPill.hide()
         self.header.addRight(self.statusPill)
         self.configButton = RoundIconButton(AppIcon.SETTING, parent=self)
-        self.configButton.setToolTip(self.tr("打开转录配置"))
+        self.configButton.setToolTip(tr("transcribe.config.open_tip"))
         self.configButton.clicked.connect(self.settingsRequested)
         self.header.addRight(self.configButton)
         self.bodyLayout.addWidget(self.header)
@@ -795,12 +804,12 @@ class ParamsPanel(WorkbenchPanel):
         self.outputSelect = PillSelect(self)
         self.wordSwitch = ToggleSwitch(True, self)
 
-        self.serviceRow = OptionCard(self.tr("服务"), self.serviceSelect, self)
-        self.modelRow = OptionCard(self.tr("模型"), self.modelSelect, self)
-        self.languageRow = OptionCard(self.tr("语言"), self.languageSelect, self)
-        self.trackRow = OptionCard(self.tr("音轨"), self.trackSelect, self)
-        self.outputRow = OptionCard(self.tr("输出"), self.outputSelect, self)
-        self.wordRow = OptionCard(self.tr("词时间戳"), self.wordSwitch, self)
+        self.serviceRow = OptionCard(tr("transcribe.opt.service"), self.serviceSelect, self)
+        self.modelRow = OptionCard(tr("transcribe.opt.model"), self.modelSelect, self)
+        self.languageRow = OptionCard(tr("transcribe.opt.language"), self.languageSelect, self)
+        self.trackRow = OptionCard(tr("transcribe.opt.track"), self.trackSelect, self)
+        self.outputRow = OptionCard(tr("transcribe.opt.output"), self.outputSelect, self)
+        self.wordRow = OptionCard(tr("transcribe.opt.word_timestamp"), self.wordSwitch, self)
         # 子布局统一间距：模型/音轨行按需隐藏时不会残留多余间距。
         options = QVBoxLayout()
         options.setContentsMargins(0, 18, 0, 0)
@@ -820,7 +829,7 @@ class ParamsPanel(WorkbenchPanel):
         self.bodyLayout.addStretch(1)
         # 底部主按钮 48 高，与字幕处理 / 视频合成页右栏主按钮一致
         self.startButton = WorkbenchButton(
-            self.tr("等待文件"), AppIcon.PLAY, primary=False, height=48, parent=self
+            tr("transcribe.btn.waiting_file"), AppIcon.PLAY, primary=False, height=48, parent=self
         )
         self.startButton.setEnabled(False)
         self.startButton.clicked.connect(self.startRequested)
@@ -897,16 +906,16 @@ class ResultActionsPanel(WorkbenchPanel):
     def __init__(self, parent=None):
         super().__init__(parent, padded=True)
         self.header = PanelHeader(
-            self.tr("结果操作"), inline=True, underline=True, parent=self
+            tr("transcribe.result.title"), inline=True, underline=True, parent=self
         )
         self.collapseButton = RoundIconButton(AppIcon.RIGHT_ARROW, parent=self)
-        self.collapseButton.setToolTip(self.tr("收起操作栏"))
+        self.collapseButton.setToolTip(tr("transcribe.result.collapse_tip"))
         self.collapseButton.clicked.connect(self.collapseRequested)
         self.header.addRight(self.collapseButton)
-        self.statusPill = StatusPill(self.tr("完成"), "ok", self)
+        self.statusPill = StatusPill(tr("transcribe.status.done"), "ok", self)
         self.header.addRight(self.statusPill)
         self.configButton = RoundIconButton(AppIcon.SETTING, parent=self)
-        self.configButton.setToolTip(self.tr("打开转录配置"))
+        self.configButton.setToolTip(tr("transcribe.config.open_tip"))
         self.configButton.clicked.connect(self.settingsRequested)
         self.header.addRight(self.configButton)
         self.bodyLayout.addWidget(self.header)
@@ -929,12 +938,12 @@ class ResultActionsPanel(WorkbenchPanel):
 
         self.fileCard = _ResultFileCard(self)
         self.fileCard.setObjectName("resultFileCard")
-        self.fileCard.setToolTip(self.tr("点击打开结果文件"))
+        self.fileCard.setToolTip(tr("transcribe.result.open_file_tip"))
         self.fileCard.clicked.connect(self.openFileRequested)
         file_layout = QVBoxLayout(self.fileCard)
         file_layout.setContentsMargins(22, 22, 22, 22)
         file_layout.setSpacing(8)
-        self.fileCardTitle = QLabel(self.tr("结果文件"), self.fileCard)
+        self.fileCardTitle = QLabel(tr("transcribe.result.file"), self.fileCard)
         self.fileCardTitle.setObjectName("resultFileTitle")
         apply_font(self.fileCardTitle, 19, 840)
         file_layout.addWidget(self.fileCardTitle)
@@ -946,18 +955,18 @@ class ResultActionsPanel(WorkbenchPanel):
         self.bodyLayout.addSpacing(16)
 
         self.openSubtitleButton = WorkbenchButton(
-            self.tr("进入字幕优化"), AppIcon.RIGHT_ARROW, primary=True, height=48, parent=self
+            tr("transcribe.btn.open_subtitle"), AppIcon.RIGHT_ARROW, primary=True, height=48, parent=self
         )
         self.openSubtitleButton.clicked.connect(self.openSubtitleRequested)
         self.bodyLayout.addWidget(self.openSubtitleButton)
         self.bodyLayout.addSpacing(12)
         self.openFolderButton = WorkbenchButton(
-            self.tr("打开文件夹"), AppIcon.FOLDER, primary=False, parent=self
+            tr("common.open_folder"), AppIcon.FOLDER, primary=False, parent=self
         )
         self.openFolderButton.clicked.connect(self.openFolderRequested)
         self.bodyLayout.addWidget(self.openFolderButton)
         self.bodyLayout.addSpacing(16)
-        self.retryLink = ResultTextLink(self.tr("重新转录"), self)
+        self.retryLink = ResultTextLink(tr("transcribe.btn.retranscribe"), self)
         self.retryLink.clicked.connect(self.retryRequested)
         retry_row = QHBoxLayout()
         retry_row.addStretch(1)
@@ -1032,7 +1041,7 @@ class TranscriptionInterface(QWidget):
     def _make_compact_start(self, parent) -> WorkbenchButton:
         """折叠态下左侧头部的主操作按钮（与右栏主按钮状态同步）。"""
         button = WorkbenchButton(
-            self.tr("开始转录"), AppIcon.PLAY, primary=True, height=32, parent=parent
+            tr("transcribe.btn.start"), AppIcon.PLAY, primary=True, height=32, parent=parent
         )
         button.setMinimumWidth(104)
         button.hide()
@@ -1042,7 +1051,7 @@ class TranscriptionInterface(QWidget):
     def _make_expand_button(self, parent) -> RoundIconButton:
         """折叠态下左侧头部的“展开右栏”入口（位置固定，不随动画漂移）。"""
         button = RoundIconButton(AppIcon.LAYOUT, diameter=32, parent=parent)
-        button.setToolTip(self.tr("展开参数栏"))
+        button.setToolTip(tr("transcribe.params.expand_tip"))
         button.hide()
         button.clicked.connect(lambda: self.sideHost.setCollapsed(False))
         return button
@@ -1078,14 +1087,14 @@ class TranscriptionInterface(QWidget):
         """折叠态主按钮与当前状态同步（DONE 态为进入字幕优化）。"""
         if self.state == PageState.DONE:
             text, icon, primary, enabled = (
-                self.tr("进入字幕优化"), AppIcon.RIGHT_ARROW, True, True,
+                tr("transcribe.btn.open_subtitle"), AppIcon.RIGHT_ARROW, True, True,
             )
         else:
             specs = {
-                PageState.EMPTY: (self.tr("等待文件"), AppIcon.PLAY, False, False),
-                PageState.READY: (self.tr("开始转录"), AppIcon.PLAY, True, True),
-                PageState.RUNNING: (self.tr("转录中"), AppIcon.SYNC, False, False),
-                PageState.FAILED: (self.tr("重新转录"), AppIcon.PLAY, True, True),
+                PageState.EMPTY: (tr("transcribe.btn.waiting_file"), AppIcon.PLAY, False, False),
+                PageState.READY: (tr("transcribe.btn.start"), AppIcon.PLAY, True, True),
+                PageState.RUNNING: (tr("transcribe.btn.running"), AppIcon.SYNC, False, False),
+                PageState.FAILED: (tr("transcribe.btn.retranscribe"), AppIcon.PLAY, True, True),
             }
             text, icon, primary, enabled = specs[self.state]
         collapsed = self.sideHost.isCollapsed()
@@ -1117,7 +1126,7 @@ class TranscriptionInterface(QWidget):
         # 空态外壳与字幕/合成页同构：56 高标题栏（带分隔线）+ 16 边距拖放区。
         self.emptyPanel = WorkbenchPanel(self, padded=False)
         empty_header = PanelHeader(
-            self.tr("未选择媒体文件"), inline=False, parent=self.emptyPanel
+            tr("transcribe.empty.title"), inline=False, parent=self.emptyPanel
         )
         self.emptyCompactStart = self._make_compact_start(self.emptyPanel)
         empty_header.addRight(self.emptyCompactStart)
@@ -1126,8 +1135,8 @@ class TranscriptionInterface(QWidget):
         self.emptyPanel.bodyLayout.addWidget(empty_header)
         self.dropZone = DropZone(
             icon=AppIcon.VIDEO,
-            title=self.tr("拖入一个音频或视频文件"),
-            pick_text=self.tr("点击选择文件"),
+            title=tr("transcribe.drop.title"),
+            pick_text=tr("transcribe.drop.pick"),
             pick_icon=AppIcon.FOLDER_ADD,
             formats_line="mp4 / mov / mkv / mp3 / wav / m4a",
             parent=self.emptyPanel,
@@ -1140,13 +1149,13 @@ class TranscriptionInterface(QWidget):
         self.leftStack.addWidget(self.emptyPanel)
 
         self.filePanel = WorkbenchPanel(self, padded=False)
-        self.fileHeader = PanelHeader(self.tr("当前文件"), inline=False, parent=self.filePanel)
-        self.filePill = StatusPill(self.tr("待开始"), "neutral", self.filePanel)
+        self.fileHeader = PanelHeader(tr("transcribe.file.title"), inline=False, parent=self.filePanel)
+        self.filePill = StatusPill(tr("transcribe.status.pending"), "neutral", self.filePanel)
         self.fileHeader.addRight(self.filePill)
-        self.replaceLink = HeaderLinkButton(self.tr("更换文件"), AppIcon.FOLDER_ADD, self.filePanel)
+        self.replaceLink = HeaderLinkButton(tr("transcribe.action.replace_file"), AppIcon.FOLDER_ADD, self.filePanel)
         self.fileHeader.addRight(self.replaceLink)
         # 转录中必须可以取消。
-        self.cancelLink = HeaderLinkButton(self.tr("取消转录"), AppIcon.CANCEL, self.filePanel)
+        self.cancelLink = HeaderLinkButton(tr("transcribe.action.cancel"), AppIcon.CANCEL, self.filePanel)
         self.fileHeader.addRight(self.cancelLink)
         self.cancelLink.hide()
         self.fileCompactStart = self._make_compact_start(self.filePanel)
@@ -1164,7 +1173,7 @@ class TranscriptionInterface(QWidget):
         file_body_layout.addWidget(self.pendingArea, 1)
         self.progressCard = ProgressCard(file_body)
         file_body_layout.addWidget(self.progressCard)
-        self.errorBanner = ErrorCard(title=self.tr("失败原因"), parent=file_body)
+        self.errorBanner = ErrorCard(title=tr("transcribe.error.title"), parent=file_body)
         file_body_layout.addWidget(self.errorBanner)
         file_body_layout.addStretch(0)
         # 初始即隐藏：QStackedWidget 的最小尺寸取所有页面之和，
@@ -1254,12 +1263,12 @@ class TranscriptionInterface(QWidget):
             services, _provider_short(cfg.transcribe_model.value)
         )
         self.paramsPanel.languageSelect.setItems(
-            [language.value for language in TranscribeLanguageEnum],
-            cfg.transcribe_language.value.value,
+            enum_options(TranscribeLanguageEnum),
+            enum_label(cfg.transcribe_language.value),
         )
         self.paramsPanel.outputSelect.setItems(
-            [fmt.value for fmt in TranscribeOutputFormatEnum],
-            cfg.transcribe_output_format.value.value,
+            enum_options(TranscribeOutputFormatEnum),
+            enum_label(cfg.transcribe_output_format.value),
         )
         self.paramsPanel.wordSwitch.setChecked(bool(cfg.transcribe_word_timestamp.value))
         self._refresh_service_row()
@@ -1312,18 +1321,14 @@ class TranscriptionInterface(QWidget):
                     break
 
     def _on_language_selected(self, language_name: str):
-        for language in TranscribeLanguageEnum:
-            if language.value == language_name:
-                if cfg.transcribe_language.value != language:
-                    cfg.set(cfg.transcribe_language, language)
-                break
+        language = enum_from_label(TranscribeLanguageEnum, language_name)
+        if language is not None and cfg.transcribe_language.value != language:
+            cfg.set(cfg.transcribe_language, language)
 
     def _on_output_selected(self, format_name: str):
-        for fmt in TranscribeOutputFormatEnum:
-            if fmt.value == format_name:
-                if cfg.transcribe_output_format.value != fmt:
-                    cfg.set(cfg.transcribe_output_format, fmt)
-                break
+        fmt = enum_from_label(TranscribeOutputFormatEnum, format_name)
+        if fmt is not None and cfg.transcribe_output_format.value != fmt:
+            cfg.set(cfg.transcribe_output_format, fmt)
 
     def _on_word_timestamp_toggled(self, checked: bool):
         if cfg.transcribe_word_timestamp.value != checked:
@@ -1348,9 +1353,9 @@ class TranscriptionInterface(QWidget):
 
         if state in (PageState.READY, PageState.RUNNING, PageState.FAILED):
             pills = {
-                PageState.READY: (self.tr("待开始"), "neutral"),
-                PageState.RUNNING: (self.tr("转录中"), "warn"),
-                PageState.FAILED: (self.tr("转录失败"), "fail"),
+                PageState.READY: (tr("transcribe.status.pending"), "neutral"),
+                PageState.RUNNING: (tr("transcribe.status.running"), "warn"),
+                PageState.FAILED: (tr("transcribe.status.failed"), "fail"),
             }
             self.filePill.setState(*pills[state])
             self.replaceLink.setVisible(state != PageState.RUNNING)
@@ -1374,17 +1379,17 @@ class TranscriptionInterface(QWidget):
                 self.mediaCard.setChips(self._run_chips())
 
         buttons = {
-            PageState.EMPTY: (self.tr("等待文件"), AppIcon.PLAY, False, False),
-            PageState.READY: (self.tr("开始转录"), AppIcon.PLAY, True, True),
-            PageState.RUNNING: (self.tr("转录中"), AppIcon.SYNC, False, False),
-            PageState.FAILED: (self.tr("重新转录"), AppIcon.PLAY, True, True),
-            PageState.DONE: (self.tr("开始转录"), AppIcon.PLAY, True, True),
+            PageState.EMPTY: (tr("transcribe.btn.waiting_file"), AppIcon.PLAY, False, False),
+            PageState.READY: (tr("transcribe.btn.start"), AppIcon.PLAY, True, True),
+            PageState.RUNNING: (tr("transcribe.btn.running"), AppIcon.SYNC, False, False),
+            PageState.FAILED: (tr("transcribe.btn.retranscribe"), AppIcon.PLAY, True, True),
+            PageState.DONE: (tr("transcribe.btn.start"), AppIcon.PLAY, True, True),
         }
         text, icon, primary, enabled = buttons[state]
         self.paramsPanel.setButtonState(text, icon=icon, primary=primary, enabled=enabled)
 
         if state == PageState.FAILED:
-            self.paramsPanel.statusPill.setState(self.tr("未连通"), "fail")
+            self.paramsPanel.statusPill.setState(tr("transcribe.status.unreachable"), "fail")
             self.paramsPanel.statusPill.show()
         else:
             self.paramsPanel.statusPill.hide()
@@ -1407,9 +1412,9 @@ class TranscriptionInterface(QWidget):
         audio_formats = " ".join(f"*.{fmt.value}" for fmt in SupportedAudioFormats)
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            self.tr("选择媒体文件"),
+            tr("transcribe.dialog.pick_media"),
             desktop,
-            f"{self.tr('媒体文件')} ({video_formats} {audio_formats})",
+            f"{tr('transcribe.dialog.media_filter')} ({video_formats} {audio_formats})",
         )
         if file_path:
             self.load_media(file_path)
@@ -1436,7 +1441,7 @@ class TranscriptionInterface(QWidget):
         tracks = [
             _track_label(index, stream.language)
             for index, stream in enumerate(info.audio_streams)
-        ] or [self.tr("音轨 1")]
+        ] or [tr("transcribe.track.first")]
         self.paramsPanel.trackSelect.setItems(tracks, tracks[0])
         if self.state == PageState.READY:
             self._apply_state(PageState.READY)
@@ -1456,7 +1461,7 @@ class TranscriptionInterface(QWidget):
             chips.append(_format_file_size(info.file_path))
         if info.audio_streams and not is_audio:
             stream = info.audio_streams[0]
-            chip = self.tr("音轨 1")
+            chip = tr("transcribe.track.first")
             if _track_language(stream.language):
                 chip += f" ({stream.language})"
             chips.append(chip)
@@ -1473,12 +1478,12 @@ class TranscriptionInterface(QWidget):
             chips.append(_format_file_size(info.file_path))
         chips.append(_provider_short(cfg.transcribe_model.value))
         if not is_audio:
-            chips.append(cfg.transcribe_output_format.value.value)
+            chips.append(enum_label(cfg.transcribe_output_format.value))
         return chips
 
     def _on_media_failed(self, message: str):
         InfoBar.error(
-            self.tr("错误"), message, duration=INFOBAR_DURATION_ERROR, parent=self
+            tr("common.error"), message, duration=INFOBAR_DURATION_ERROR, parent=self
         )
         if self.state == PageState.READY and self.media_info is None:
             self._apply_state(PageState.EMPTY)
@@ -1554,7 +1559,7 @@ class TranscriptionInterface(QWidget):
         chips = [_provider_short(cfg.transcribe_model.value)]
         if info and info.duration_seconds:
             chips.append(_format_duration(info.duration_seconds))
-        chips.append(self.tr("TXT") if is_text else artifact.suffix.lstrip(".").upper())
+        chips.append(tr("transcribe.format.txt") if is_text else artifact.suffix.lstrip(".").upper())
         self.resultPanel.thumb.setMedia(
             info.thumbnail_path if info else None, is_audio
         )
@@ -1587,8 +1592,8 @@ class TranscriptionInterface(QWidget):
             self.finished.emit(str(self._result_path), str(self.task.file_path))
             return
         InfoBar.warning(
-            self.tr("提示"),
-            self.tr("没有可用于字幕优化的字幕文件"),
+            tr("common.tip"),
+            tr("transcribe.toast.no_subtitle"),
             duration=INFOBAR_DURATION_WARNING,
             parent=self,
         )
@@ -1612,8 +1617,8 @@ class TranscriptionInterface(QWidget):
 
     def _warn_processing(self):
         InfoBar.warning(
-            self.tr("警告"),
-            self.tr("正在处理中，请等待当前任务完成"),
+            tr("common.warning"),
+            tr("transcribe.toast.processing"),
             duration=INFOBAR_DURATION_WARNING,
             parent=self,
         )
@@ -1664,8 +1669,8 @@ class TranscriptionInterface(QWidget):
                 self.load_media(file_path)
                 return
             InfoBar.error(
-                self.tr("格式错误 ") + suffix,
-                self.tr("请拖入音频或视频文件"),
+                tr("transcribe.toast.bad_format", suffix=suffix),
+                tr("transcribe.toast.drop_media"),
                 duration=INFOBAR_DURATION_ERROR,
                 parent=self,
             )

@@ -40,6 +40,7 @@ from videocaptioner.ui.components.workbench import (
     apply_font,
     draw_rounded_surface,
 )
+from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.artifact_download_thread import (
     ArtifactDownloadThread,
     dependency_download_thread,
@@ -101,11 +102,11 @@ class _DependencyRow(QFrame):
         self.status.hide()
         layout.addWidget(self.status)
 
-        self.actionButton = AccentButton(self.tr("下载"), AppIcon.DOWNLOAD, self)
+        self.actionButton = AccentButton(tr("depdl.btn.download"), AppIcon.DOWNLOAD, self)
         self.actionButton.clicked.connect(lambda: self.actionRequested.emit(self.spec))
         self.actionButton.hide()
         layout.addWidget(self.actionButton)
-        self.cancelButton = CompactButton(self.tr("取消"), None, self)
+        self.cancelButton = CompactButton(tr("common.cancel"), None, self)
         self.cancelButton.clicked.connect(self.cancelRequested)
         self.cancelButton.hide()
         layout.addWidget(self.cancelButton)
@@ -122,20 +123,20 @@ class _DependencyRow(QFrame):
         self._hide_right()
         self.descLabel.setText(self.spec.description)
         if installed:
-            self.status.setState(self.tr("已安装"), "ok")  # 绿胶囊已表态，无需再放按钮
+            self.status.setState(tr("depdl.status.installed"), "ok")  # 绿胶囊已表态，无需再放按钮
             self.status.setVisible(True)
         elif not supported:
-            self.status.setState(self.tr("暂不支持"), "neutral")
+            self.status.setState(tr("depdl.status.unsupported"), "neutral")
             self.status.setVisible(True)
         elif failed:
-            self.status.setState(self.tr("失败"), "fail")
+            self.status.setState(tr("depdl.status.failed"), "fail")
             self.status.setVisible(True)
-            self.actionButton.setText(self.tr("重试"))
+            self.actionButton.setText(tr("common.retry"))
             self.actionButton.setIcon(AppIcon.DOWNLOAD)
             self.actionButton.setEnabled(not busy)
             self.actionButton.setVisible(True)
         else:  # 缺失、可装
-            self.actionButton.setText(self.tr("下载"))
+            self.actionButton.setText(tr("depdl.btn.download"))
             self.actionButton.setIcon(AppIcon.DOWNLOAD)
             self.actionButton.setEnabled(not busy)
             self.actionButton.setVisible(True)
@@ -146,7 +147,7 @@ class _DependencyRow(QFrame):
         self.progressLine.setVisible(True)
         self.percentLabel.setText("0%")
         self.percentLabel.setVisible(True)
-        self.descLabel.setText(self.tr("正在连接镜像…"))
+        self.descLabel.setText(tr("depdl.status.connecting"))
         self.cancelButton.setEnabled(True)
         self.cancelButton.setVisible(True)
 
@@ -176,16 +177,14 @@ class DependencyDownloadDialog(AppDialog):
     depsChanged = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None):
-        super().__init__("下载运行依赖", icon=AppIcon.DOWNLOAD, parent=parent, width=560)
+        super().__init__(tr("depdl.title"), icon=AppIcon.DOWNLOAD, parent=parent, width=560)
         self._thread: ArtifactDownloadThread | None = None
         self._active: _DependencyRow | None = None
         self._queue: list[DependencySpec] = []  # 一键安装缺失的待装队列
         self._failed: set[str] = set()
         self._rows: list[_DependencyRow] = []
 
-        self.addBodyText(
-            self.tr("按你的系统自动选择合适的版本下载到本机；国内网络会优先走加速镜像。")
-        )
+        self.addBodyText(tr("depdl.body.intro"))
         for spec in iter_dependencies():
             row = _DependencyRow(spec, self.widget)
             row.actionRequested.connect(self._on_row_action)
@@ -193,14 +192,14 @@ class DependencyDownloadDialog(AppDialog):
             self.bodyLayout.addWidget(row)
             self._rows.append(row)
 
-        self.openDirButton = self.addFooterButton(self.tr("打开安装目录"), icon=AppIcon.FOLDER)
+        self.openDirButton = self.addFooterButton(tr("depdl.btn.open_install_dir"), icon=AppIcon.FOLDER)
         self.openDirButton.clicked.connect(self._open_bin_dir)
         self.addFooterStretch()
         self.installAllButton = self.addFooterButton(
-            self.tr("一键安装缺失"), kind="accent", icon=AppIcon.DOWNLOAD
+            tr("depdl.btn.install_all_missing"), kind="accent", icon=AppIcon.DOWNLOAD
         )
         self.installAllButton.clicked.connect(self._install_all_missing)
-        self.doneButton = self.addFooterButton(self.tr("完成"))
+        self.doneButton = self.addFooterButton(tr("depdl.btn.done"))
         self.doneButton.clicked.connect(lambda: self.done(0))
 
         self._refresh()
@@ -260,19 +259,19 @@ class DependencyDownloadDialog(AppDialog):
             if asset_for(spec) is not None and not is_installed(spec)
         ]
         if not missing:
-            self._info(self.tr("无需安装"), self.tr("所有依赖都已就绪。"))
+            self._info(tr("depdl.info.nothing_title"), tr("depdl.info.nothing_body"))
             return
         self._queue = missing[1:]
         self._start(missing[0])
 
     def _on_done(self, spec: DependencySpec):
         self._failed.discard(spec.key)
-        self._info(self.tr("已安装"), self.tr("{} 下载完成。").format(spec.display_name))
+        self._info(tr("depdl.status.installed"), tr("depdl.info.done_body", name=spec.display_name))
         self.depsChanged.emit()
 
     def _on_error(self, spec: DependencySpec, message: str):
         self._failed.add(spec.key)
-        self._error(self.tr("下载失败"), message)
+        self._error(tr("depdl.error.download_failed"), message)
 
     def _on_finished(self):
         thread = self._thread

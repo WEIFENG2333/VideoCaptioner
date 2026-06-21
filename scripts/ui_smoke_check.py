@@ -201,6 +201,19 @@ def _apply_theme(theme_name: str) -> None:
     setThemeColor(cfg.themeColor.value)
 
 
+def _init_i18n() -> None:
+    """与 ui/main.py 一致：按当前语言装载 UI 翻译（缺了页面会显示 tr key 而非文案）。
+
+    可用 VC_SMOKE_LANG=en/zh_Hant/zh_Hans 覆盖，用于截非中文界面。
+    """
+    from videocaptioner.config import I18N_PATH
+    from videocaptioner.ui.common.config import cfg
+    from videocaptioner.ui.i18n import init as init_i18n
+
+    lang = os.environ.get("VC_SMOKE_LANG") or cfg.get(cfg.language).value.name()
+    init_i18n(I18N_PATH, lang)
+
+
 def _settle_widget(widget, app) -> None:
     """等事件队列消化完，再等页面里可能存在的预览线程，避免截到半成品。"""
     for _ in range(12):
@@ -1100,13 +1113,13 @@ def _check_video_synthesis(output_dir: Path, app, screenshot_names: list[str]) -
     assert not widget.generatePanel.dubbingCard.isChecked()
 
     # 字幕方式互锁：软字幕不烧录样式，渲染模式和样式入口都应隐藏/锁定。
-    widget.generatePanel.subtitleModeSelect.setCurrentText(SUBTITLE_MODE_LABELS[True])
+    widget.generatePanel.subtitleModeSelect.setCurrentText(SUBTITLE_MODE_LABELS()[True])
     app.processEvents()
     assert cfg.soft_subtitle.value
     assert not widget.generatePanel.renderModeSelect.isEnabled()
     assert not widget.generatePanel.renderModeCard.isVisible()
     assert not widget.generatePanel.stylePageCard.isVisible()
-    widget.generatePanel.subtitleModeSelect.setCurrentText(SUBTITLE_MODE_LABELS[False])
+    widget.generatePanel.subtitleModeSelect.setCurrentText(SUBTITLE_MODE_LABELS()[False])
     app.processEvents()
     assert not cfg.soft_subtitle.value
     assert widget.generatePanel.renderModeSelect.isEnabled()
@@ -1351,6 +1364,7 @@ def main() -> int:
 
     app = QApplication([])
     _apply_theme(args.theme)
+    _init_i18n()
 
     if args.shots_only:
         # 快速模式：只截图，不跑断言。

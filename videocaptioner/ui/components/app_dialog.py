@@ -29,6 +29,10 @@ from videocaptioner.ui.components.workbench import (
     RoundIconButton,
     apply_font,
 )
+from videocaptioner.ui.i18n import tr
+
+# 哨兵：区分「未传按钮文案」（→ 取当前语言默认）与显式传 None（ConfirmDialog 表示隐藏取消钮）
+_UNSET = object()
 
 
 class AppDialog(MaskDialogBase):
@@ -150,13 +154,18 @@ class ConfirmDialog(AppDialog):
         message: str,
         parent: QWidget | None = None,
         *,
-        confirm_text: str = "确定",
-        cancel_text: str | None = "取消",
+        confirm_text: str | None = None,
+        cancel_text: str | None = _UNSET,  # type: ignore[assignment]
         danger: bool = False,
         icon: AppIcon | None = None,
         width: int = 430,
     ):
         super().__init__(title, icon=icon, parent=parent, width=width)
+        # 默认文案在运行时取，跟随当前语言；显式传 None 表示隐藏取消钮
+        if confirm_text is None:
+            confirm_text = tr("common.ok")
+        if cancel_text is _UNSET:
+            cancel_text = tr("common.cancel")
         self.messageLabel = self.addBodyText(message)
         self.addFooterStretch()
         self.cancelButton: CompactButton | None = None
@@ -182,12 +191,17 @@ class InputDialog(AppDialog):
         text: str = "",
         placeholder: str = "",
         parent: QWidget | None = None,
-        confirm_text: str = "确定",
-        cancel_text: str = "取消",
+        confirm_text: str | None = None,
+        cancel_text: str | None = None,
         icon: AppIcon | None = None,
         width: int = 430,
     ):
         super().__init__(title, icon=icon, parent=parent, width=width)
+        # 默认按钮文案在运行时取，跟随当前语言
+        if confirm_text is None:
+            confirm_text = tr("common.ok")
+        if cancel_text is None:
+            cancel_text = tr("common.cancel")
         self.edit = AppLineEdit(text, self.widget)
         if placeholder:
             self.edit.setPlaceholderText(placeholder)
