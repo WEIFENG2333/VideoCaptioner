@@ -51,6 +51,7 @@ def download_file(
     dest: Path,
     *,
     sha1: str | None = None,
+    sha256: str | None = None,
     on_progress: ProgressCallback | None = None,
     should_cancel: CancelCheck | None = None,
     session: requests.Session | None = None,
@@ -70,7 +71,8 @@ def download_file(
     for url in urls:
         try:
             _fetch_to_part(http, url, part, dest.name, on_progress, should_cancel)
-            _verify_sha1(part, sha1)
+            _verify_digest(part, "sha256", sha256)
+            _verify_digest(part, "sha1", sha1)
             os.replace(part, dest)
             return dest
         except DownloadCancelled:
@@ -135,16 +137,16 @@ def _total_size(response: requests.Response, resume_from: int) -> int | None:
     return int(length)
 
 
-def _verify_sha1(path: Path, expected: str | None) -> None:
+def _verify_digest(path: Path, algo: str, expected: str | None) -> None:
     if not expected:
         return
-    digest = hashlib.sha1()
+    digest = hashlib.new(algo)
     with open(path, "rb") as fh:
         for block in iter(lambda: fh.read(1024 * 1024), b""):
             digest.update(block)
     actual = digest.hexdigest()
     if actual.lower() != expected.lower():
-        raise DownloadError(f"SHA1 校验失败（{actual[:12]}… != {expected[:12]}…）")
+        raise DownloadError(f"{algo.upper()} 校验失败（{actual[:12]}… != {expected[:12]}…）")
 
 
 def _host(url: str) -> str:

@@ -1,9 +1,3 @@
-msgid "app.announcement.got_it"
-msgstr ""
-
-msgid "app.announcement.title"
-msgstr ""
-
 msgid "app.ffmpeg.missing_body"
 msgstr ""
 
@@ -49,28 +43,46 @@ msgstr ""
 msgid "app.nav.subtitle_style"
 msgstr ""
 
-msgid "app.update.body"
+msgid "app.update.available"
 msgstr ""
 
-msgid "app.update.body_required"
+msgid "app.update.cancel"
 msgstr ""
 
-msgid "app.update.disabled_body"
+msgid "app.update.check_failed"
 msgstr ""
 
-msgid "app.update.disabled_title"
+msgid "app.update.download"
 msgstr ""
 
-msgid "app.update.later"
+msgid "app.update.downloading"
 msgstr ""
 
-msgid "app.update.now"
+msgid "app.update.failed"
+msgstr ""
+
+msgid "app.update.go_download"
+msgstr ""
+
+msgid "app.update.install"
+msgstr ""
+
+msgid "app.update.install_failed"
+msgstr ""
+
+msgid "app.update.mandatory"
+msgstr ""
+
+msgid "app.update.ready"
+msgstr ""
+
+msgid "app.update.retry"
 msgstr ""
 
 msgid "app.update.title"
 msgstr ""
 
-msgid "app.update.title_required"
+msgid "app.update.up_to_date"
 msgstr ""
 
 msgid "app.window_title"

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import webbrowser
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +34,6 @@ from videocaptioner.config import (
     FEEDBACK_URL,
     HELP_URL,
     MODEL_PATH,
-    RELEASE_URL,
     VERSION,
     YEAR,
 )
@@ -153,6 +151,8 @@ class SettingInterface(SettingsShell):
     # 内嵌在 SettingsDialog 里时无法直接 self.window() 拿到主窗口跳转字幕样式 tab，
     # 改发信号由 SettingsDialog 接管（先关弹窗再切主窗口）。
     openStylePageRequested = pyqtSignal()
+    # 「检查更新」交给主窗口的更新流程（应用内下载 + 重启安装），不在设置页里自己开浏览器。
+    checkUpdateRequested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -1189,7 +1189,7 @@ class SettingInterface(SettingsShell):
         cfg.themeColor.valueChanged.connect(self._sync_theme_color_swatch)
         self.helpButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(HELP_URL)))
         self.feedbackButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
-        self.updateButton.clicked.connect(lambda: webbrowser.open(RELEASE_URL))
+        self.updateButton.clicked.connect(self.checkUpdateRequested.emit)
 
     def _refresh_transcribe_rows(self, value: Any) -> None:
         is_whisper_api = value == TranscribeModelEnum.WHISPER_API

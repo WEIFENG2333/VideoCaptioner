@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-22 00:04+0800\n"
+"POT-Creation-Date: 2026-06-22 03:34+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
-
-msgid "app.announcement.got_it"
-msgstr "我知道了"
-
-msgid "app.announcement.title"
-msgstr "公告"
 
 msgid "app.ffmpeg.missing_body"
 msgstr "軟件處理音訊及影片檔案時需要 FFmpeg，請先安裝"
@@ -73,36 +67,47 @@ msgstr "設定"
 msgid "app.nav.subtitle_style"
 msgstr "字幕樣式"
 
-msgid "app.update.body"
-msgstr ""
-"發現新版本 {version}\n"
-"\n"
-"{update_info}"
+msgid "app.update.available"
+msgstr "有可用更新"
 
-msgid "app.update.body_required"
-msgstr ""
-"發現新版本 {version}\n"
-"\n"
-"更新內容：\n"
-"{update_info}"
+msgid "app.update.cancel"
+msgstr "取消"
 
-msgid "app.update.disabled_body"
-msgstr "目前版本部分功能已被停用。請盡快更新。"
+msgid "app.update.check_failed"
+msgstr "檢查更新失敗"
 
-msgid "app.update.disabled_title"
-msgstr "需要更新"
+msgid "app.update.download"
+msgstr "下載更新"
 
-msgid "app.update.later"
-msgstr "稍後再說"
+msgid "app.update.downloading"
+msgstr "下載中 {percent}%"
 
-msgid "app.update.now"
-msgstr "立即更新"
+msgid "app.update.failed"
+msgstr "下載失敗：{error}"
+
+msgid "app.update.go_download"
+msgstr "前往下載"
+
+msgid "app.update.install"
+msgstr "重啟並安裝"
+
+msgid "app.update.install_failed"
+msgstr "安裝失敗"
+
+msgid "app.update.mandatory"
+msgstr "需更新到最新版本後才能繼續使用"
+
+msgid "app.update.ready"
+msgstr "下載完成"
+
+msgid "app.update.retry"
+msgstr "重試"
 
 msgid "app.update.title"
-msgstr "發現新版本"
+msgstr "發現新版本 {version}"
 
-msgid "app.update.title_required"
-msgstr "發現新版本，需要更新"
+msgid "app.update.up_to_date"
+msgstr "已是最新版本"
 
 msgid "app.window_title"
 msgstr "卡卡字幕助手 -- VideoCaptioner"

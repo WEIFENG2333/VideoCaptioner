@@ -17,6 +17,7 @@ from videocaptioner.core.download import (
 
 PAYLOAD = b"0123456789abcdef" * 65536  # 1 MB，大于下载 chunk，保证取消能落在中途
 PAYLOAD_SHA1 = hashlib.sha1(PAYLOAD).hexdigest()
+PAYLOAD_SHA256 = hashlib.sha256(PAYLOAD).hexdigest()
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -64,6 +65,22 @@ def test_download_success_with_sha1(server, tmp_path: Path):
     assert result == dest
     assert dest.read_bytes() == PAYLOAD
     assert not dest.with_suffix(".bin.part").exists()
+
+
+def test_download_success_with_sha256(server, tmp_path: Path):
+    dest = tmp_path / "update.zip"
+    result = download_file([f"{server}/ok.bin"], dest, sha256=PAYLOAD_SHA256)
+    assert result == dest
+    assert dest.read_bytes() == PAYLOAD
+    assert not dest.with_suffix(".zip.part").exists()
+
+
+def test_sha256_mismatch_fails(server, tmp_path: Path):
+    dest = tmp_path / "update.zip"
+    with pytest.raises(DownloadError) as excinfo:
+        download_file([f"{server}/ok.bin"], dest, sha256="0" * 64)
+    assert "SHA256" in str(excinfo.value)
+    assert not dest.exists()
 
 
 def test_mirror_fallback_on_404(server, tmp_path: Path):

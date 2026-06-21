@@ -26,6 +26,9 @@ HELP_URL = "https://github.com/WEIFENG2333/VideoCaptioner"
 GITHUB_REPO_URL = "https://github.com/WEIFENG2333/VideoCaptioner"
 RELEASE_URL = "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest"
 FEEDBACK_URL = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
+# 自动更新 manifest：CI 发版时生成 latest.json 挂到同一个 Release（与资产同源、可回滚）。
+# 客户端拉它判断新版并取本平台下载地址；core/update 会自动加 ghproxy 镜像兜底。
+UPDATE_MANIFEST_URL = "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest/download/latest.json"
 
 # Detect where read-only bundled/source resources live.
 _PACKAGE_DIR = Path(__file__).parent

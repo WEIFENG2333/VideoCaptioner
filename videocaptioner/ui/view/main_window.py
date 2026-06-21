@@ -1,9 +1,10 @@
 import atexit
 import os
 import shutil
+from pathlib import Path
 
 import psutil
-from PyQt5.QtCore import QSize, QThread, QUrl
+from PyQt5.QtCore import QSize, QUrl
 from PyQt5.QtGui import QColor, QDesktopServices, QIcon
 from PyQt5.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
@@ -15,15 +16,17 @@ from qfluentwidgets import (
     SplashScreen,
 )
 
-from videocaptioner.config import ASSETS_PATH, GITHUB_REPO_URL
+from videocaptioner.config import ASSETS_PATH, CACHE_PATH, GITHUB_REPO_URL
 from videocaptioner.core.constant import INFOBAR_DURATION_FOREVER
+from videocaptioner.core.update import apply_update
 from videocaptioner.ui.common.app_icons import AppFluentIcon, AppIcon
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.theme_tokens import BG_DARK, BG_LIGHT
 from videocaptioner.ui.components.app_dialog import ConfirmDialog
 from videocaptioner.ui.components.donate_dialog import DonateDialog
+from videocaptioner.ui.components.update_banner import UpdateBanner
 from videocaptioner.ui.i18n import tr
-from videocaptioner.ui.thread.version_checker_thread import VersionChecker
+from videocaptioner.ui.thread.update_thread import UpdateCheckThread
 from videocaptioner.ui.view.batch_process_interface import BatchProcessInterface
 from videocaptioner.ui.view.doctor_interface import DoctorInterface
 from videocaptioner.ui.view.dubbing_interface import DubbingInterface
@@ -66,15 +69,13 @@ class MainWindow(FluentWindow):
         # 硬字幕提取「送入字幕优化」：切到主页字幕优化 tab 并载入提取出的字幕
         self.hardsubInterface.sendToOptimize.connect(self._on_hardsub_to_optimize)
 
-        # 初始化版本检查器
-        self.versionChecker = VersionChecker()
-        self.versionChecker.newVersionAvailable.connect(self.onNewVersion)
-        self.versionChecker.announcementAvailable.connect(self.onAnnouncement)
+        # 设置页「检查更新」按钮 → 主动走同一套更新流程
+        self.settingInterface.checkUpdateRequested.connect(self._on_manual_update_check)
 
-        self.versionThread = QThread()
-        self.versionChecker.moveToThread(self.versionThread)
-        self.versionThread.started.connect(self.versionChecker.perform_check)
-        self.versionThread.start()
+        # 启动时后台检查更新；有新版时弹出更新提示条（下载 + 重启安装一键完成）
+        self.updateBanner = None
+        self.updateCheckThread = None
+        self._check_updates()
 
         # 初始化导航界面
         self.initNavigation()
@@ -199,49 +200,67 @@ class MainWindow(FluentWindow):
         elif open_donate:
             DonateDialog(self).exec_()
 
-    def onNewVersion(self, version, update_required, update_info, download_url):
-        """新版本提示"""
-        if update_required:
-            title = tr("app.update.title_required")
-            content = tr("app.update.body_required", version=version, update_info=update_info)
-        else:
-            title = tr("app.update.title")
-            content = tr("app.update.body", version=version, update_info=update_info)
+    def _check_updates(self, *, manual=False):
+        """启动后台检查更新。manual=True 时（设置页按钮触发）额外提示「已是最新/检查失败」。"""
+        if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
+            return
+        self.updateCheckThread = UpdateCheckThread(self)
+        self.updateCheckThread.updateAvailable.connect(self._on_update_available)
+        if manual:
+            self.updateCheckThread.upToDate.connect(self._on_up_to_date)
+            self.updateCheckThread.checkFailed.connect(self._on_check_failed)
+        self.updateCheckThread.start()
 
-        w = ConfirmDialog(
-            title,
-            content,
-            self,
-            confirm_text=tr("app.update.now"),
-            cancel_text=tr("app.update.later"),
-            icon=AppIcon.DOWNLOAD,
-        )
-        if w.exec() or update_required:
-            QDesktopServices.openUrl(QUrl(download_url))
+    def _on_manual_update_check(self):
+        if self.updateBanner is not None:  # 已有提示条在展示，直接复用
+            return
+        self._check_updates(manual=True)
 
-        if update_required:
+    def _on_update_available(self, info):
+        """有新版：展示更新提示条（可用→下载中→重启安装）。强制更新时禁用主流程页。"""
+        if self.updateBanner is not None:  # 防重复（手动检查叠加自动检查）
+            return
+        self.updateBanner = UpdateBanner(self, info, CACHE_PATH / "update", self._install_update)
+        self.updateBanner.show()
+        if info.mandatory:
             self.homeInterface.setEnabled(False)
             self.batchProcessInterface.setEnabled(False)
+
+    def _on_up_to_date(self):
+        InfoBar.success(
+            title=tr("app.update.up_to_date"),
+            content="",
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=3000,
+            parent=self,
+        )
+
+    def _on_check_failed(self, message):
+        InfoBar.warning(
+            title=tr("app.update.check_failed"),
+            content=message,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=4000,
+            parent=self,
+        )
+
+    def _install_update(self, zip_path):
+        """下载完成、用户点「重启并安装」：启动 helper 替换并退出本进程。"""
+        try:
+            apply_update(Path(zip_path))
+        except Exception as exc:  # noqa: BLE001 — 安装失败提示用户手动更新
             InfoBar.error(
-                title=tr("app.update.disabled_title"),
-                content=tr("app.update.disabled_body"),
-                isClosable=False,
-                position=InfoBarPosition.BOTTOM,
+                title=tr("app.update.install_failed"),
+                content=str(exc),
+                isClosable=True,
+                position=InfoBarPosition.TOP,
                 duration=-1,
                 parent=self,
             )
-
-    def onAnnouncement(self, content):
-        """显示公告"""
-        w = ConfirmDialog(
-            tr("app.announcement.title"),
-            content,
-            self,
-            confirm_text=tr("app.announcement.got_it"),
-            cancel_text=None,
-            icon=AppIcon.DOCUMENT,
-        )
-        w.exec()
+            return
+        QApplication.quit()
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
@@ -267,10 +286,11 @@ class MainWindow(FluentWindow):
         ):
             interface.close()
 
-        # 版本检查线程是事件循环线程，需显式退出再等待
-        if self.versionThread.isRunning():
-            self.versionThread.quit()
-            self.versionThread.wait(2000)
+        # 停掉更新检查/下载线程，避免退出时销毁运行中的 QThread 触发 abort
+        if self.updateBanner is not None:
+            self.updateBanner.stop()
+        if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
+            self.updateCheckThread.wait(2000)
 
         super().closeEvent(event)
         QApplication.quit()

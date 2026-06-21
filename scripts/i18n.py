@@ -112,7 +112,10 @@ def update() -> None:
         po = _po_path(lang)
         po.parent.mkdir(parents=True, exist_ok=True)
         if po.exists():
-            _pybabel("update", "-i", str(POT), "-o", str(po), "-l", lang, "--no-fuzzy-matching")
+            _pybabel(
+                "update", "-i", str(POT), "-o", str(po), "-l", lang,
+                "--no-fuzzy-matching", "--ignore-obsolete",
+            )
         else:
             _pybabel("init", "-i", str(POT), "-o", str(po), "-l", lang)
         print(f"✓ update → {_rel(po)}")

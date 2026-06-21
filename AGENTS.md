@@ -635,6 +635,38 @@ UI 国际化是 **key-based gettext**，**只翻 UI（PyQt）；core 与 CLI 不
   `docs/dev/i18n-workflow.md`）。CI 跑 `scripts/i18n.py check`（源码 key 集==.pot、基准无空译文）。
 - 语言切换 = 保存即弹确认自动重启（不做逐页热刷新）。完整方案见 `docs/dev/i18n-plan.md`。
 
+## Software Update (自动更新)
+
+应用内自动更新：启动后台拉清单 → 有新版弹「更新提示条」→ 一键下载（带校验）→
+「重启并安装」。**业务在 `core/update`（无 PyQt），UI 只是薄壳。**
+
+```text
+core/update/manifest.py    拉 GitHub Release 的 latest.json、选当前平台资产、比版本
+                           （fetch_update / is_newer / select_asset / UpdateInfo）
+core/update/installer.py   下载（复用 core/download，sha256 校验）+ 退出后替换重启
+                           （download_update / apply_update / can_self_update / install_root）
+ui/thread/update_thread.py UpdateCheckThread（启动后台检查）/ UpdateDownloadThread（进度+取消）
+ui/components/update_banner.py  提示条状态机：可用→下载中 NN%→重启并安装；失败可重试
+scripts/gen_update_manifest.py  发版时按产物生成 latest.json（CI 跑，挂到同一 Release）
+```
+
+硬规则：
+
+- **manifest 与资产同源、可回滚**：`scripts/build_desktop.py` 产物名决定平台键与 kind
+  （`*-windows-x64.zip`→`windows-x64`/`onedir-zip`；`*-macos-*-app.zip`→`macos-*`/`app-zip`；
+  macOS 裸 onedir 不参与更新）。改产物命名要同步改 `gen_update_manifest.py` 的解析。
+  `.github/workflows/build-desktop.yml` 的 `manifest` job 在所有平台构建后生成并 `gh release upload`。
+- **onedir 运行中无法原地覆盖自身**：`apply_update` 解压到临时目录 → 写平台 helper
+  （Win `.cmd` / Unix `.sh`，等本进程 PID 退出后 rm+mv 换装并重启，macOS 还要清 quarantine）→
+  调用方必须立即 `QApplication.quit()`，否则 helper 一直等。
+- **不能自更新就退化**：非 frozen / 安装目录不可写时 `can_self_update()` 为假，提示条按钮变
+  「前往下载」开 Release 页（开发态、`VERSION` 以 `0.0.0` 开头时启动检查直接 upToDate，不联网）。
+- 下载走 `core/download/downloader.download_file`（镜像兜底 + 续传 + sha256），**不要**另起一套下载。
+- 更新检查/下载线程必须在 `main_window.closeEvent` 里停掉（`updateBanner.stop()` +
+  `updateCheckThread.wait()`），否则退出销毁运行中 QThread 触发 abort。
+- 旧的 `vc.bkfeng.top/api/version` 轮询 + `version_checker_thread.py` 已删除，不要复活。
+- 新增更新 UI 文案要走 i18n（`app.update.*`），改完重跑 `scripts/i18n.py extract→update→…→compile`。
+
 ## Useful Docs
 
 - `docs/dev/config-architecture.md`
@@ -643,6 +675,7 @@ UI 国际化是 **key-based gettext**，**只翻 UI（PyQt）；core 与 CLI 不
 - `docs/dev/translate-module.md`
 - `docs/dev/tts-provider-research.md`
 - `docs/dev/i18n-workflow.md` · `docs/dev/i18n-plan.md`
+- `docs/dev/packaging-and-update-plan.md`
 - `videocaptioner/core/subtitle/README.md`
 
 `docs/dev/architecture.md`, `api.md`, and `contributing.md` are public pages

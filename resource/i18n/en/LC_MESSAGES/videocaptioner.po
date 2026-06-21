@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-22 00:04+0800\n"
+"POT-Creation-Date: 2026-06-22 03:34+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
-
-msgid "app.announcement.got_it"
-msgstr "Got it"
-
-msgid "app.announcement.title"
-msgstr "Announcement"
 
 msgid "app.ffmpeg.missing_body"
 msgstr ""
@@ -77,38 +71,47 @@ msgstr "Settings"
 msgid "app.nav.subtitle_style"
 msgstr "Subtitle Style"
 
-msgid "app.update.body"
-msgstr ""
-"New version found: {version}\n"
-"\n"
-"{update_info}"
+msgid "app.update.available"
+msgstr "A new version is available"
 
-msgid "app.update.body_required"
-msgstr ""
-"New version found: {version}\n"
-"\n"
-"What's new:\n"
-"{update_info}"
+msgid "app.update.cancel"
+msgstr "Cancel"
 
-msgid "app.update.disabled_body"
-msgstr ""
-"Some features in the current version have been disabled. Please update as"
-" soon as possible."
+msgid "app.update.check_failed"
+msgstr "Update check failed"
 
-msgid "app.update.disabled_title"
-msgstr "Update required"
+msgid "app.update.download"
+msgstr "Download update"
 
-msgid "app.update.later"
-msgstr "Later"
+msgid "app.update.downloading"
+msgstr "Downloading {percent}%"
 
-msgid "app.update.now"
-msgstr "Update now"
+msgid "app.update.failed"
+msgstr "Download failed: {error}"
+
+msgid "app.update.go_download"
+msgstr "Go to download"
+
+msgid "app.update.install"
+msgstr "Restart & install"
+
+msgid "app.update.install_failed"
+msgstr "Install failed"
+
+msgid "app.update.mandatory"
+msgstr "You must update to the latest version to continue"
+
+msgid "app.update.ready"
+msgstr "Download complete"
+
+msgid "app.update.retry"
+msgstr "Retry"
 
 msgid "app.update.title"
-msgstr "New version available"
+msgstr "Update available: {version}"
 
-msgid "app.update.title_required"
-msgstr "New version available, update required"
+msgid "app.update.up_to_date"
+msgstr "You're up to date"
 
 msgid "app.window_title"
 msgstr "Kaka Subtitle Assistant -- VideoCaptioner"

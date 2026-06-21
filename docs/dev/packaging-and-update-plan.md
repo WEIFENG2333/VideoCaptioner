@@ -4,6 +4,11 @@
 > 单文件是否可行、目录设计是否合理、更新机制怎么重构成自动更新。两块强关联（打包形态决定更新落地方式、
 > macOS 签名/公证既是「易安装」也是「自更新不被拦」的前提），一并给方案。
 
+> **实现状态（2026-06-22）**：打包缺口已修（spec collect OCR/onnxruntime、CI `--extra ocr`、smoke 校验
+> bundled 负载，mac 真打包实测 OCR/下载/实时字幕可用）。自动更新已落地为 `core/update`（manifest + 下载
+> sha256 校验 + 退出后 helper 换装重启）+ 应用内「更新提示条」+ 设置页「检查更新」+ CI `latest.json` 生成；
+> 旧 `vc.bkfeng.top` 轮询已删。架构索引见 `AGENTS.md` 的「Software Update」；下文为设计依据，按需查阅。
+
 ## 一、打包现状
 
 PyInstaller **onedir**：`scripts/build_desktop.py` 驱动 `VideoCaptioner.spec` → `dist/VideoCaptioner/`（含 `_internal/`），
