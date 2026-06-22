@@ -18,7 +18,8 @@ from qfluentwidgets import (
 
 from videocaptioner.config import ASSETS_PATH, CACHE_PATH, GITHUB_REPO_URL
 from videocaptioner.core.constant import INFOBAR_DURATION_FOREVER
-from videocaptioner.core.update import apply_update
+from videocaptioner.core.update import apply_update, can_self_update
+from videocaptioner.core.utils.cache import get_version_state_cache
 from videocaptioner.ui.common.app_icons import AppFluentIcon, AppIcon
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.theme_tokens import BG_DARK, BG_LIGHT
@@ -206,13 +207,41 @@ class MainWindow(FluentWindow):
             return
         self.updateCheckThread = UpdateCheckThread(self)
         self.updateCheckThread.updateAvailable.connect(self._on_update_available)
+        self.updateCheckThread.announcementAvailable.connect(self._on_announcement)
         if manual:
             self.updateCheckThread.upToDate.connect(self._on_up_to_date)
             self.updateCheckThread.checkFailed.connect(self._on_check_failed)
         self.updateCheckThread.start()
 
+    def _on_announcement(self, ann):
+        """展示线上公告（按 id 去重，只弹一次）。公告与是否有新版无关。"""
+        cache = get_version_state_cache()
+        key = f"announcement_shown_{ann.id}"
+        if cache.get(key, default=False):
+            return
+        cache.set(key, True)
+        ConfirmDialog(
+            ann.title or tr("app.announcement.title"),
+            ann.content,
+            self,
+            confirm_text=tr("app.announcement.got_it"),
+            cancel_text=None,
+            icon=AppIcon.DOCUMENT,
+        ).exec()
+
     def _on_manual_update_check(self):
         if self.updateBanner is not None:  # 已有提示条在展示，直接复用
+            return
+        if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
+            # 启动检查还没跑完就点了「检查更新」：给反馈，别让按钮像没反应（死点击）
+            InfoBar.info(
+                title=tr("app.update.checking"),
+                content="",
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
             return
         self._check_updates(manual=True)
 
@@ -222,7 +251,9 @@ class MainWindow(FluentWindow):
             return
         self.updateBanner = UpdateBanner(self, info, CACHE_PATH / "update", self._install_update)
         self.updateBanner.show()
-        if info.mandatory:
+        # 仅当能在应用内自更新时才禁用主流程页逼用户更新；不能自更新（开发态/安装目录不可写）
+        # 时禁用会把用户卡死在只能「前往下载」的死胡同，故保持页面可用、提示条可关。
+        if info.mandatory and can_self_update():
             self.homeInterface.setEnabled(False)
             self.batchProcessInterface.setEnabled(False)
 

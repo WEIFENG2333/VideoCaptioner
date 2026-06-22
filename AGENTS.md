@@ -637,12 +637,13 @@ UI 国际化是 **key-based gettext**，**只翻 UI（PyQt）；core 与 CLI 不
 
 ## Software Update (自动更新)
 
-应用内自动更新：启动后台拉清单 → 有新版弹「更新提示条」→ 一键下载（带校验）→
-「重启并安装」。**业务在 `core/update`（无 PyQt），UI 只是薄壳。**
+应用内自动更新 + 实时公告：启动后台拉清单 → 有新版弹「更新提示条」→ 一键下载（带校验）→
+「重启并安装」；同一清单里可带公告，按 id 弹一次。**业务在 `core/update`（无 PyQt），UI 只是薄壳。**
 
 ```text
-core/update/manifest.py    拉 GitHub Release 的 latest.json、选当前平台资产、比版本
-                           （fetch_update / is_newer / select_asset / UpdateInfo）
+core/update/manifest.py    拉 GitHub Release 的 latest.json、选当前平台资产、比版本、取公告
+                           （fetch_manifest → (UpdateInfo, Announcement)；fetch_update 是其薄包装；
+                           select_announcement / is_newer / select_asset）
 core/update/installer.py   下载（复用 core/download，sha256 校验）+ 退出后替换重启
                            （download_update / apply_update / can_self_update / install_root）
 ui/thread/update_thread.py UpdateCheckThread（启动后台检查）/ UpdateDownloadThread（进度+取消）
@@ -665,7 +666,15 @@ scripts/gen_update_manifest.py  发版时按产物生成 latest.json（CI 跑，
 - 更新检查/下载线程必须在 `main_window.closeEvent` 里停掉（`updateBanner.stop()` +
   `updateCheckThread.wait()`），否则退出销毁运行中 QThread 触发 abort。
 - 旧的 `vc.bkfeng.top/api/version` 轮询 + `version_checker_thread.py` 已删除，不要复活。
-- 新增更新 UI 文案要走 i18n（`app.update.*`），改完重跑 `scripts/i18n.py extract→update→…→compile`。
+- **实时公告**并进同一 `latest.json` 的 `announcement` 块（零服务器：发版后 `gh release upload
+  latest.json --clobber` 即可随时改）：`enabled`/`content` + `start_date~end_date` 时间窗 +
+  `min_version~max_version` 版本定向（比旧版多的"控制版本看谁"）；客户端按 `id`（缺省取 content
+  哈希）去重只弹一次，去重态存 `get_version_state_cache()`，公告与是否有新版互相独立（最新版用户也能收）。
+  生成时用 `gen_update_manifest.py --announcement notice.json` 嵌入。
+- **强制更新/版本控制**：`mandatory`（一刀切）+ `min_supported`（低于即强制）；命中后 main_window
+  禁用 home/batch 页 + 提示条不可关闭。
+- 新增更新/公告 UI 文案要走 i18n（`app.update.*` / `app.announcement.*`），改完重跑
+  `scripts/i18n.py extract→update→…→compile`。
 
 ## Useful Docs
 

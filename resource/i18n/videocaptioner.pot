@@ -1,3 +1,9 @@
+msgid "app.announcement.got_it"
+msgstr ""
+
+msgid "app.announcement.title"
+msgstr ""
+
 msgid "app.ffmpeg.missing_body"
 msgstr ""
 
@@ -50,6 +56,9 @@ msgid "app.update.cancel"
 msgstr ""
 
 msgid "app.update.check_failed"
+msgstr ""
+
+msgid "app.update.checking"
 msgstr ""
 
 msgid "app.update.download"

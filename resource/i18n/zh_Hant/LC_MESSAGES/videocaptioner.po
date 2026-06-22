@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-22 03:34+0800\n"
+"POT-Creation-Date: 2026-06-22 10:39+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+msgid "app.announcement.got_it"
+msgstr "知道了"
+
+msgid "app.announcement.title"
+msgstr "公告"
 
 msgid "app.ffmpeg.missing_body"
 msgstr "軟件處理音訊及影片檔案時需要 FFmpeg，請先安裝"
@@ -75,6 +81,9 @@ msgstr "取消"
 
 msgid "app.update.check_failed"
 msgstr "檢查更新失敗"
+
+msgid "app.update.checking"
+msgstr "正在檢查更新…"
 
 msgid "app.update.download"
 msgstr "下載更新"

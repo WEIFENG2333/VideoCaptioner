@@ -46,7 +46,9 @@ class UpdateBanner:
             InfoBarIcon.INFORMATION,
             tr("app.update.title", version=self._info.version),
             "",
-            isClosable=not self._info.mandatory,
+            # 强制更新且能自更新时才不可关闭（逼用户在应用内更新）；不能自更新时仍可关，
+            # 否则用户被卡在一个只能「前往下载」的常驻条上、无应用内出路。
+            isClosable=not (self._info.mandatory and self._self_update),
             duration=-1,
             position=InfoBarPosition.TOP,
             parent=self._window,
@@ -60,9 +62,25 @@ class UpdateBanner:
 
     def stop(self) -> None:
         """取消在途下载并等待线程退出（供窗口关闭/提示条关闭时调用）。"""
-        if self._dl is not None and self._dl.isRunning():
-            self._dl.cancel()
-            self._dl.wait(3000)
+        self._teardown_dl()
+
+    def _teardown_dl(self) -> None:
+        """取消 + 等待 + 断信号 + 清空当前下载线程，维持「至多一个在跑」的单例不变量。
+
+        否则 取消→再下载 会让旧线程成为仍在跑、信号仍连着 banner 的孤儿：迟到的 progress
+        会盖掉新线程进度，退出时 stop() 也够不到它 → 销毁运行中 QThread 触发 abort。
+        """
+        if self._dl is None:
+            return
+        dl, self._dl = self._dl, None
+        dl.cancel()
+        dl.wait(3000)
+        try:
+            dl.progress.disconnect(self._on_progress)
+            dl.downloaded.disconnect(self._on_downloaded)
+            dl.downloadFailed.disconnect(self._on_failed)
+        except (TypeError, RuntimeError):
+            pass
 
     # ---- 状态机 ----
     def _set_state(self, state: str, *, percent: int = 0, error: str = "") -> None:
@@ -95,6 +113,7 @@ class UpdateBanner:
             QDesktopServices.openUrl(QUrl(RELEASE_URL))
 
     def _start_download(self) -> None:
+        self._teardown_dl()  # 重试/再下载前先清掉上一个线程，保证单例
         self._dl = UpdateDownloadThread(self._info, self._dest_dir, self._window)
         self._dl.progress.connect(self._on_progress)
         self._dl.downloaded.connect(self._on_downloaded)
@@ -103,8 +122,7 @@ class UpdateBanner:
         self._dl.start()
 
     def _cancel(self) -> None:
-        if self._dl is not None:
-            self._dl.cancel()
+        self._teardown_dl()
         self._set_state("available")
 
     def _install(self) -> None:

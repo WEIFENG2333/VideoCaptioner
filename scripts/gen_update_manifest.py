@@ -61,6 +61,7 @@ def build_manifest(
     notes: str,
     mandatory: bool,
     min_supported: str,
+    announcement: dict | None = None,
 ) -> dict:
     platforms: dict[str, dict] = {}
     for zip_path in sorted(artifacts.rglob("VideoCaptioner-*.zip")):
@@ -79,6 +80,8 @@ def build_manifest(
     manifest: dict = {"version": version, "notes": notes, "mandatory": mandatory, "platforms": platforms}
     if min_supported:
         manifest["min_supported"] = min_supported
+    if announcement:
+        manifest["announcement"] = announcement
     return manifest
 
 
@@ -91,7 +94,17 @@ def main() -> int:
     parser.add_argument("--notes", default="", help="更新说明")
     parser.add_argument("--mandatory", action="store_true", help="标记为强制更新")
     parser.add_argument("--min-supported", default="", help="低于此版本视为必须更新")
+    parser.add_argument(
+        "--announcement",
+        type=Path,
+        default=None,
+        help="可选：公告 JSON 文件（{enabled,id,title,content,start_date,end_date,min_version,max_version}），嵌入 manifest",
+    )
     args = parser.parse_args()
+
+    announcement = None
+    if args.announcement:
+        announcement = json.loads(args.announcement.read_text(encoding="utf-8"))
 
     version = args.tag.lstrip("vV")
     manifest = build_manifest(
@@ -102,6 +115,7 @@ def main() -> int:
         notes=args.notes,
         mandatory=args.mandatory,
         min_supported=args.min_supported,
+        announcement=announcement,
     )
     args.out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"✓ 写入 {args.out}（{len(manifest['platforms'])} 个平台：{', '.join(manifest['platforms'])}）")

@@ -13,16 +13,17 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 from videocaptioner.config import UPDATE_MANIFEST_URL, VERSION
 from videocaptioner.core.download.downloader import DownloadCancelled, DownloadProgress
-from videocaptioner.core.update import UpdateInfo, download_update, fetch_update
+from videocaptioner.core.update import UpdateInfo, download_update, fetch_manifest
 from videocaptioner.core.utils.logger import setup_logger
 
 logger = setup_logger("update_thread")
 
 
 class UpdateCheckThread(QThread):
-    """后台检查更新。dev 版（0.0.0-dev）跳过，避免源码运行每次误报。"""
+    """后台检查更新 + 公告（一次拉取 manifest）。dev 版（0.0.0-dev）跳过，避免源码运行每次误报。"""
 
     updateAvailable = pyqtSignal(object)  # UpdateInfo
+    announcementAvailable = pyqtSignal(object)  # Announcement（与是否有新版无关）
     upToDate = pyqtSignal()
     checkFailed = pyqtSignal(str)
 
@@ -31,15 +32,20 @@ class UpdateCheckThread(QThread):
             self.upToDate.emit()
             return
         try:
-            info = fetch_update(VERSION, (UPDATE_MANIFEST_URL,))
+            manifest = fetch_manifest(VERSION, (UPDATE_MANIFEST_URL,))
         except Exception as exc:  # noqa: BLE001 — 检查失败不该影响启动
             logger.warning("update check failed: %s", exc)
             self.checkFailed.emit(str(exc))
             return
-        if info is None:
+        if manifest is None:
+            self.checkFailed.emit("manifest 不可达")
+            return
+        if manifest.announcement is not None:
+            self.announcementAvailable.emit(manifest.announcement)
+        if manifest.update is None:
             self.upToDate.emit()
         else:
-            self.updateAvailable.emit(info)
+            self.updateAvailable.emit(manifest.update)
 
 
 class UpdateDownloadThread(QThread):
