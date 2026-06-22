@@ -657,6 +657,13 @@ scripts/gen_update_manifest.py  发版时按产物生成 latest.json（CI 跑，
   （`*-windows-x64.zip`→`windows-x64`/`onedir-zip`；`*-macos-*-app.zip`→`macos-*`/`app-zip`；
   macOS 裸 onedir 不参与更新）。改产物命名要同步改 `gen_update_manifest.py` 的解析。
   `.github/workflows/build-desktop.yml` 的 `manifest` job 在所有平台构建后生成并 `gh release upload`。
+- **安装器/dmg 只给人工首次下载，不参与自动更新**：`scripts/build_windows_installer.py`
+  （Inno Setup，`packaging/windows/VideoCaptioner.iss`，per-user 装到 `%LOCALAPPDATA%\Programs`
+  → 目录可写、自更新照常）出 `*-windows-x64-setup.exe`；`scripts/build_macos_dmg.py`
+  （ad-hoc 签名 + hdiutil）出 `*-macos-*.dmg`。自动更新仍只拉 onedir-zip/app-zip 走 rm+mv 换装，
+  故 `gen_update_manifest.py` 只 `rglob VideoCaptioner-*.zip`、忽略 exe/dmg。**无 Apple 证书时
+  macOS 首次打开必被 Gatekeeper 提示**（需右键→打开），ad-hoc 签名只避免「已损坏」硬拦截；
+  消除提示需付费证书 + 公证。
 - **onedir 运行中无法原地覆盖自身**：`apply_update` 解压到临时目录 → 写平台 helper
   （Win `.cmd` / Unix `.sh`，等本进程 PID 退出后 rm+mv 换装并重启，macOS 还要清 quarantine）→
   调用方必须立即 `QApplication.quit()`，否则 helper 一直等。

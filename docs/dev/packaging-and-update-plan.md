@@ -6,8 +6,14 @@
 
 > **实现状态（2026-06-22）**：打包缺口已修（spec collect OCR/onnxruntime、CI `--extra ocr`、smoke 校验
 > bundled 负载，mac 真打包实测 OCR/下载/实时字幕可用）。自动更新已落地为 `core/update`（manifest + 下载
-> sha256 校验 + 退出后 helper 换装重启）+ 应用内「更新提示条」+ 设置页「检查更新」+ CI `latest.json` 生成；
-> 旧 `vc.bkfeng.top` 轮询已删。架构索引见 `AGENTS.md` 的「Software Update」；下文为设计依据，按需查阅。
+> sha256 校验 + 退出后 helper 换装重启）+ 应用内「更新提示条」+ 设置页「检查更新」+ 实时公告 + CI
+> `latest.json` 生成；旧 `vc.bkfeng.top` 轮询已删。
+>
+> **安装形态已补（2026-06-22）**：Windows 出 Inno Setup `Setup.exe`（`packaging/windows/VideoCaptioner.iss`
+> + `scripts/build_windows_installer.py`，per-user 装到 `%LOCALAPPDATA%\Programs` → 自更新照常）；macOS 出
+> 拖拽安装 `.dmg`（`scripts/build_macos_dmg.py`，ad-hoc 签名规避「已损坏」硬拦截）。便携 zip 仍是自动更新
+> 下载源。**无 Apple 付费证书 → macOS 首次打开仍需右键→打开**（消除提示需证书 + 公证，本项目暂不做）。
+> 架构索引见 `AGENTS.md` 的「Software Update」；下文为设计依据，按需查阅。
 
 ## 一、打包现状
 

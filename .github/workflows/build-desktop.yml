@@ -63,11 +63,23 @@ jobs:
       - name: Smoke test packaged app
         run: uv run python scripts/smoke_desktop.py dist/VideoCaptioner
 
+      # 安装器 / dmg：给用户首次下载用（便携 zip 仍是自动更新的下载源）。
+      - name: Build Windows installer (Inno Setup)
+        if: runner.os == 'Windows'
+        run: |
+          choco install innosetup -y --no-progress
+          uv run python scripts/build_windows_installer.py
+
+      - name: Build macOS dmg
+        if: runner.os == 'macOS'
+        run: uv run python scripts/build_macos_dmg.py
+
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ runner.os }}
-          path: artifacts/*.zip
+          # zip（自动更新源）+ setup.exe / dmg（人工下载）。manifest job 只挑 zip。
+          path: artifacts/*
           if-no-files-found: error
           retention-days: 14
 
@@ -80,7 +92,7 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/}"
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" --title "$TAG" --generate-notes
-          gh release upload "$TAG" artifacts/*.zip --clobber
+          gh release upload "$TAG" artifacts/* --clobber
 
   # 所有平台产物上传完成后，生成自动更新清单 latest.json（含各平台 sha256/size）并挂到同一 Release。
   # 客户端 videocaptioner/core/update 拉它判断新版；与资产同源、可回滚。
