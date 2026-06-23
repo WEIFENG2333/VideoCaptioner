@@ -1774,6 +1774,93 @@ msgstr ""
 msgid "enum.WhisperModelEnum.TINY"
 msgstr ""
 
+msgid "feedback.add_image"
+msgstr ""
+
+msgid "feedback.attach_count"
+msgstr ""
+
+msgid "feedback.category.bug"
+msgstr ""
+
+msgid "feedback.category.feature"
+msgstr ""
+
+msgid "feedback.category.label"
+msgstr ""
+
+msgid "feedback.category.other"
+msgstr ""
+
+msgid "feedback.category.question"
+msgstr ""
+
+msgid "feedback.contact.placeholder"
+msgstr ""
+
+msgid "feedback.diagnostics_hint"
+msgstr ""
+
+msgid "feedback.done"
+msgstr ""
+
+msgid "feedback.err.category_invalid"
+msgstr ""
+
+msgid "feedback.err.contact_too_long"
+msgstr ""
+
+msgid "feedback.err.file_too_large"
+msgstr ""
+
+msgid "feedback.err.file_type"
+msgstr ""
+
+msgid "feedback.err.invalid_request"
+msgstr ""
+
+msgid "feedback.err.message_required"
+msgstr ""
+
+msgid "feedback.err.message_too_long"
+msgstr ""
+
+msgid "feedback.err.network"
+msgstr ""
+
+msgid "feedback.err.server"
+msgstr ""
+
+msgid "feedback.err.too_large"
+msgstr ""
+
+msgid "feedback.err.too_many_files"
+msgstr ""
+
+msgid "feedback.err.total_too_large"
+msgstr ""
+
+msgid "feedback.err.unauthorized"
+msgstr ""
+
+msgid "feedback.message.placeholder"
+msgstr ""
+
+msgid "feedback.submit"
+msgstr ""
+
+msgid "feedback.submitting"
+msgstr ""
+
+msgid "feedback.success"
+msgstr ""
+
+msgid "feedback.success_noid"
+msgstr ""
+
+msgid "feedback.title"
+msgstr ""
+
 msgid "hardsub.btn.auto_region"
 msgstr ""
 

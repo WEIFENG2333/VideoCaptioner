@@ -31,7 +31,6 @@ from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from videocaptioner.config import (
     AUTHOR,
-    FEEDBACK_URL,
     HELP_URL,
     MODEL_PATH,
     VERSION,
@@ -85,6 +84,7 @@ from videocaptioner.ui.common.model_options import (
 )
 from videocaptioner.ui.common.theme_tokens import app_palette
 from videocaptioner.ui.components.app_dialog import ConfirmDialog
+from videocaptioner.ui.components.feedback_dialog import FeedbackDialog
 from videocaptioner.ui.components.model_manager_dialog import ModelManagerDialog
 from videocaptioner.ui.components.settings_controls import (
     CONTROL_WIDTH,
@@ -1188,7 +1188,7 @@ class SettingInterface(SettingsShell):
         self.themeColorResetButton.clicked.connect(self._reset_theme_color)
         cfg.themeColor.valueChanged.connect(self._sync_theme_color_swatch)
         self.helpButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(HELP_URL)))
-        self.feedbackButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
+        self.feedbackButton.clicked.connect(lambda: FeedbackDialog(self).exec())
         self.updateButton.clicked.connect(self.checkUpdateRequested.emit)
 
     def _refresh_transcribe_rows(self, value: Any) -> None:

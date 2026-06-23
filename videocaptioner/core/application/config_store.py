@@ -86,6 +86,10 @@ DEFAULTS: Dict[str, Any] = {
         "batch_mode": "full",
         "batch_concurrency": 1,
     },
+    "feedback": {
+        # 匿名设备 ID：首次提交反馈时生成并持久化，供后端去重/跟进，非个人信息。
+        "client_id": "",
+    },
     "llm": {
         "service": "openai",
         "api_key": "",

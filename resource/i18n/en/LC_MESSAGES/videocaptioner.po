@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-22 10:39+0800\n"
+"POT-Creation-Date: 2026-06-23 20:34+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1886,6 +1886,95 @@ msgstr "small"
 
 msgid "enum.WhisperModelEnum.TINY"
 msgstr "tiny"
+
+msgid "feedback.add_image"
+msgstr "Add image"
+
+msgid "feedback.attach_count"
+msgstr "{count}/{max}"
+
+msgid "feedback.category.bug"
+msgstr "Bug"
+
+msgid "feedback.category.feature"
+msgstr "Feature request"
+
+msgid "feedback.category.label"
+msgstr "Type"
+
+msgid "feedback.category.other"
+msgstr "Other"
+
+msgid "feedback.category.question"
+msgstr "Question"
+
+msgid "feedback.contact.placeholder"
+msgstr "Email / WeChat / QQ (optional, so we can reply)"
+
+msgid "feedback.diagnostics_hint"
+msgstr ""
+"Submitting also attaches app version, OS and other diagnostics (no "
+"secrets)"
+
+msgid "feedback.done"
+msgstr "Done"
+
+msgid "feedback.err.category_invalid"
+msgstr "Invalid type"
+
+msgid "feedback.err.contact_too_long"
+msgstr "Contact is too long"
+
+msgid "feedback.err.file_too_large"
+msgstr "Each screenshot must be ≤ 5 MB"
+
+msgid "feedback.err.file_type"
+msgstr "PNG / JPEG only"
+
+msgid "feedback.err.invalid_request"
+msgstr "Invalid request"
+
+msgid "feedback.err.message_required"
+msgstr "Please describe the issue first"
+
+msgid "feedback.err.message_too_long"
+msgstr "Description too long (max 5000)"
+
+msgid "feedback.err.network"
+msgstr "Network error, please retry"
+
+msgid "feedback.err.server"
+msgstr "Submit failed, please retry"
+
+msgid "feedback.err.too_large"
+msgstr "Image or request too large"
+
+msgid "feedback.err.too_many_files"
+msgstr "Up to 3 screenshots"
+
+msgid "feedback.err.total_too_large"
+msgstr "Total size must be ≤ 12 MB"
+
+msgid "feedback.err.unauthorized"
+msgstr "Unauthorized"
+
+msgid "feedback.message.placeholder"
+msgstr "Describe the issue or suggestion — paste a screenshot with Ctrl+V…"
+
+msgid "feedback.submit"
+msgstr "Submit"
+
+msgid "feedback.submitting"
+msgstr "Submitting…"
+
+msgid "feedback.success"
+msgstr "Submitted — ref {id}. Thanks for your feedback!"
+
+msgid "feedback.success_noid"
+msgstr "Submitted. Thanks for your feedback!"
+
+msgid "feedback.title"
+msgstr "Feedback"
 
 msgid "hardsub.btn.auto_region"
 msgstr "Auto-detect Region"

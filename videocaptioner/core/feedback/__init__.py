@@ -1,0 +1,41 @@
+"""用户反馈：组装报告 → multipart 提交后端（写入飞书多维表格）。无 PyQt 依赖。"""
+
+from videocaptioner.core.feedback.client import (
+    FeedbackClient,
+    FeedbackResult,
+    feedback_endpoint,
+)
+from videocaptioner.core.feedback.diagnostics import (
+    gather_diagnostics,
+    get_or_create_client_id,
+    platform_tag,
+)
+from videocaptioner.core.feedback.models import (
+    ALLOWED_MIME,
+    CATEGORIES,
+    MAX_FILE_BYTES,
+    MAX_FILES,
+    MAX_TOTAL_BYTES,
+    MESSAGE_MAX,
+    FeedbackAttachment,
+    FeedbackReport,
+    FeedbackValidationError,
+)
+
+__all__ = [
+    "FeedbackClient",
+    "FeedbackResult",
+    "feedback_endpoint",
+    "FeedbackReport",
+    "FeedbackAttachment",
+    "FeedbackValidationError",
+    "gather_diagnostics",
+    "get_or_create_client_id",
+    "platform_tag",
+    "CATEGORIES",
+    "ALLOWED_MIME",
+    "MAX_FILES",
+    "MAX_FILE_BYTES",
+    "MAX_TOTAL_BYTES",
+    "MESSAGE_MAX",
+]

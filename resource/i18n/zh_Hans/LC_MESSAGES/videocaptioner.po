@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-22 10:39+0800\n"
+"POT-Creation-Date: 2026-06-23 20:34+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hans\n"
@@ -1802,6 +1802,93 @@ msgstr "small"
 
 msgid "enum.WhisperModelEnum.TINY"
 msgstr "tiny"
+
+msgid "feedback.add_image"
+msgstr "添加图片"
+
+msgid "feedback.attach_count"
+msgstr "{count}/{max}"
+
+msgid "feedback.category.bug"
+msgstr "问题报告"
+
+msgid "feedback.category.feature"
+msgstr "功能建议"
+
+msgid "feedback.category.label"
+msgstr "类型"
+
+msgid "feedback.category.other"
+msgstr "其他"
+
+msgid "feedback.category.question"
+msgstr "使用问题"
+
+msgid "feedback.contact.placeholder"
+msgstr "邮箱 / 微信 / QQ（选填，方便回复你）"
+
+msgid "feedback.diagnostics_hint"
+msgstr "提交时会附带应用版本、系统等诊断信息（不含密钥）"
+
+msgid "feedback.done"
+msgstr "完成"
+
+msgid "feedback.err.category_invalid"
+msgstr "反馈类型无效"
+
+msgid "feedback.err.contact_too_long"
+msgstr "联系方式过长"
+
+msgid "feedback.err.file_too_large"
+msgstr "单张截图需 ≤ 5 MB"
+
+msgid "feedback.err.file_type"
+msgstr "仅支持 PNG / JPEG"
+
+msgid "feedback.err.invalid_request"
+msgstr "请求参数有误"
+
+msgid "feedback.err.message_required"
+msgstr "请先填写问题描述"
+
+msgid "feedback.err.message_too_long"
+msgstr "问题描述过长（最多 5000 字）"
+
+msgid "feedback.err.network"
+msgstr "网络错误，请稍后重试"
+
+msgid "feedback.err.server"
+msgstr "提交失败，请稍后重试"
+
+msgid "feedback.err.too_large"
+msgstr "图片或请求过大"
+
+msgid "feedback.err.too_many_files"
+msgstr "最多 3 张截图"
+
+msgid "feedback.err.total_too_large"
+msgstr "截图总大小需 ≤ 12 MB"
+
+msgid "feedback.err.unauthorized"
+msgstr "鉴权失败"
+
+msgid "feedback.message.placeholder"
+msgstr "描述你遇到的问题或建议，可直接 Ctrl+V 粘贴截图…"
+
+msgid "feedback.submit"
+msgstr "提交反馈"
+
+msgid "feedback.submitting"
+msgstr "提交中…"
+
+msgid "feedback.success"
+msgstr "已提交，编号 {id}，感谢反馈！"
+
+msgid "feedback.success_noid"
+msgstr "已提交，感谢反馈！"
+
+msgid "feedback.title"
+msgstr "意见反馈"
 
 msgid "hardsub.btn.auto_region"
 msgstr "自动识别区域"
