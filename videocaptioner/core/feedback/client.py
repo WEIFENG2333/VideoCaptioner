@@ -1,13 +1,13 @@
 """提交反馈到后端（multipart/form-data）。无 PyQt。
 
 复用 net.system_proxy（GUI 进程拿不到 shell 的 HTTP_PROXY，必须主动取系统代理）。
-端点可用 VC_FEEDBACK_URL 覆盖。本期后端无幂等，但客户端仍每次带新 request_id 仅供排查。
+端点写死在 config.FEEDBACK_API_URL，不走环境变量/配置文件。本期后端无幂等，但客户端仍每次
+带新 request_id 仅供排查。
 """
 
 from __future__ import annotations
 
 import json
-import os
 import uuid
 from dataclasses import dataclass
 from typing import Optional
@@ -31,13 +31,9 @@ class FeedbackResult:
     error: str = ""
 
 
-def feedback_endpoint() -> str:
-    return os.environ.get("VC_FEEDBACK_URL", "").strip() or FEEDBACK_API_URL
-
-
 class FeedbackClient:
     def __init__(self, endpoint: str = "", *, session: Optional[requests.Session] = None, timeout: int = 30):
-        self._endpoint = endpoint or feedback_endpoint()
+        self._endpoint = endpoint or FEEDBACK_API_URL
         self._session = session
         self._timeout = timeout
 

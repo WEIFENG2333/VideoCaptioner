@@ -39,13 +39,14 @@ def test_gather_diagnostics_keeps_safe_provider_names(monkeypatch, tmp_path):
     assert diag["dubbing_provider"] == "edge"
 
 
-def test_client_id_is_stable_and_persisted(monkeypatch, tmp_path):
-    cfg = tmp_path / "config.toml"
-    monkeypatch.setattr(config_store, "CONFIG_FILE", cfg)
+def test_client_id_is_stable_and_persisted_to_file(monkeypatch, tmp_path):
+    # client_id 存独立文件，不入配置文件
+    id_file = tmp_path / "feedback_client_id"
+    monkeypatch.setattr(diagnostics, "_CLIENT_ID_FILE", id_file)
     first = diagnostics.get_or_create_client_id()
     second = diagnostics.get_or_create_client_id()
     assert first and first == second
-    assert config_store.get_nested(config_store.load_config_file(cfg), "feedback.client_id") == first
+    assert id_file.read_text(encoding="utf-8").strip() == first
 
 
 def test_platform_tag_shape():

@@ -3,7 +3,6 @@
 from videocaptioner.core.feedback.client import (
     FeedbackClient,
     FeedbackResult,
-    feedback_endpoint,
 )
 from videocaptioner.core.feedback.diagnostics import (
     gather_diagnostics,
@@ -25,7 +24,6 @@ from videocaptioner.core.feedback.models import (
 __all__ = [
     "FeedbackClient",
     "FeedbackResult",
-    "feedback_endpoint",
     "FeedbackReport",
     "FeedbackAttachment",
     "FeedbackValidationError",

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-23 20:34+0800\n"
+"POT-Creation-Date: 2026-06-23 21:02+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1911,11 +1911,6 @@ msgstr "Question"
 msgid "feedback.contact.placeholder"
 msgstr "Email / WeChat / QQ (optional, so we can reply)"
 
-msgid "feedback.diagnostics_hint"
-msgstr ""
-"Submitting also attaches app version, OS and other diagnostics (no "
-"secrets)"
-
 msgid "feedback.done"
 msgstr "Done"
 
@@ -1958,8 +1953,25 @@ msgstr "Total size must be ≤ 12 MB"
 msgid "feedback.err.unauthorized"
 msgstr "Unauthorized"
 
+msgid "feedback.intro"
+msgstr ""
+"Your feedback goes straight to the developer — we read every one and will"
+" look into it."
+
 msgid "feedback.message.placeholder"
-msgstr "Describe the issue or suggestion — paste a screenshot with Ctrl+V…"
+msgstr "Describe the issue or suggestion — the more detail, the better…"
+
+msgid "feedback.screenshot.hint"
+msgstr "Paste with Ctrl+V, drag in, or click “Add image”"
+
+msgid "feedback.section.contact"
+msgstr "Contact (optional)"
+
+msgid "feedback.section.message"
+msgstr "Description"
+
+msgid "feedback.section.screenshot"
+msgstr "Screenshots (optional)"
 
 msgid "feedback.submit"
 msgstr "Submit"
@@ -1968,10 +1980,7 @@ msgid "feedback.submitting"
 msgstr "Submitting…"
 
 msgid "feedback.success"
-msgstr "Submitted — ref {id}. Thanks for your feedback!"
-
-msgid "feedback.success_noid"
-msgstr "Submitted. Thanks for your feedback!"
+msgstr "Got it — we'll look into this soon. Thanks for your feedback!"
 
 msgid "feedback.title"
 msgstr "Feedback"

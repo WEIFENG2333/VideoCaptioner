@@ -11,8 +11,12 @@ import sys
 import uuid
 
 from videocaptioner import config
+from videocaptioner.config import APPDATA_PATH
 from videocaptioner.core.application import config_store
 from videocaptioner.core.download.dependencies import current_platform
+
+# 匿名设备 ID 存独立文件（不进配置文件）：一行 UUID，丢了重生成即可。
+_CLIENT_ID_FILE = APPDATA_PATH / "feedback_client_id"
 
 # 只采集这些非敏感字段（值是 provider/语言名称，不是凭据）。
 _DIAG_KEYS = {
@@ -39,15 +43,18 @@ def platform_tag() -> str:
 
 
 def get_or_create_client_id() -> str:
-    """本机匿名设备 ID（首次生成并持久化到配置 `feedback.client_id`）。"""
-    cfg = config_store.load_config_file()
-    cid = str(config_store.get_nested(cfg, "feedback.client_id", "") or "").strip()
-    if not cid:
-        cid = str(uuid.uuid4())
-        try:
-            config_store.save_config_value("feedback.client_id", cid)
-        except Exception:  # noqa: BLE001 — 落盘失败不该挡住反馈，用临时 ID 继续
-            pass
+    """本机匿名设备 ID（首次生成并持久化到独立文件，不入配置文件）。"""
+    try:
+        cid = _CLIENT_ID_FILE.read_text(encoding="utf-8").strip()
+        if cid:
+            return cid
+    except OSError:
+        pass
+    cid = str(uuid.uuid4())
+    try:
+        _CLIENT_ID_FILE.write_text(cid, encoding="utf-8")
+    except OSError:  # 落盘失败不该挡住反馈，用临时 ID 继续
+        pass
     return cid
 
 

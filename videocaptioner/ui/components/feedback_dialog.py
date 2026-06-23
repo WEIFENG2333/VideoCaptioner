@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -35,6 +36,7 @@ from videocaptioner.ui.components.workbench import (
     CompactButton,
     PillSelect,
     RoundIconButton,
+    SectionLabel,
     apply_font,
 )
 from videocaptioner.ui.i18n import N_, tr
@@ -150,27 +152,28 @@ class FeedbackDialog(AppDialog):
         self._thread: FeedbackSubmitThread | None = None
         self._categories = [(value, tr(f"feedback.category.{value}")) for value in CATEGORIES]
 
+        # 顶部说明：让用户知道反馈直达开发者、会被处理
+        self.intro = self.addBodyText(tr("feedback.intro"))
+
         # 类型
         cat_row = QHBoxLayout()
-        cat_row.setSpacing(10)
-        cat_label = self._field_label(tr("feedback.category.label"))
-        cat_label.setFixedWidth(48)
-        cat_row.addWidget(cat_label)
+        cat_row.setContentsMargins(0, 0, 0, 0)
         self.categorySelect = PillSelect(self.widget)
         self.categorySelect.setItems([label for _, label in self._categories], current=self._categories[0][1])
         cat_row.addWidget(self.categorySelect)
         cat_row.addStretch(1)
-        self.bodyLayout.addLayout(cat_row)
+        self._add_field(tr("feedback.category.label"), cat_row)
 
-        # 描述编辑器（支持粘贴/拖入截图）
-        self.editor = _PasteTextEdit(parent=self.widget, min_height=128)
+        # 问题描述
+        self.editor = _PasteTextEdit(parent=self.widget, min_height=120)
         self.editor.setPlaceholderText(tr("feedback.message.placeholder"))
         self.editor.imagePasted.connect(self._add_image_qimage)
         self.editor.imageFilePasted.connect(self._add_image_file)
-        self.bodyLayout.addWidget(self.editor)
+        self._add_field(tr("feedback.section.message"), self.editor)
 
-        # 截图行：缩略图 + 添加按钮 + 计数
+        # 截图（选填）：标题下提示可粘贴；缩略图 + 添加按钮 + 计数
         attach_row = QHBoxLayout()
+        attach_row.setContentsMargins(0, 0, 0, 0)
         attach_row.setSpacing(8)
         self.thumbStrip = QHBoxLayout()
         self.thumbStrip.setSpacing(8)
@@ -182,16 +185,14 @@ class FeedbackDialog(AppDialog):
         attach_row.addStretch(1)
         self.countLabel = self._hint_label("")
         attach_row.addWidget(self.countLabel)
-        self.bodyLayout.addLayout(attach_row)
+        self._add_field(tr("feedback.section.screenshot"), attach_row, hint=tr("feedback.screenshot.hint"))
 
-        # 联系方式
+        # 联系方式（选填）
         self.contactEdit = AppLineEdit("", self.widget)
         self.contactEdit.setPlaceholderText(tr("feedback.contact.placeholder"))
-        self.bodyLayout.addWidget(self.contactEdit)
+        self._add_field(tr("feedback.section.contact"), self.contactEdit)
 
-        # 诊断附带说明 + 提交状态
-        self.diagHint = self._hint_label(tr("feedback.diagnostics_hint"))
-        self.bodyLayout.addWidget(self.diagHint)
+        # 提交状态（默认隐藏）
         self.statusLabel = QLabel("", self.widget)
         self.statusLabel.setWordWrap(True)
         self.statusLabel.setObjectName("feedbackStatus")
@@ -210,11 +211,19 @@ class FeedbackDialog(AppDialog):
         self.syncStyle()
 
     # ----------------------------------------------------------- helpers
-    def _field_label(self, text: str) -> QLabel:
-        label = QLabel(text, self.widget)
-        apply_font(label, 13, 720)
-        label.setStyleSheet(f"color: {app_palette().subtle}; background: transparent;")
-        return label
+    def _add_field(self, label_text: str, content, hint: str | None = None) -> None:
+        """一个表单字段：小节标题（+可选提示）在上，控件/行在下，组内紧凑、组间留白。"""
+        group = QVBoxLayout()
+        group.setContentsMargins(0, 0, 0, 0)
+        group.setSpacing(5)
+        group.addWidget(SectionLabel(label_text, self.widget))
+        if hint:
+            group.addWidget(self._hint_label(hint))
+        if isinstance(content, QWidget):
+            group.addWidget(content)
+        else:
+            group.addLayout(content)
+        self.bodyLayout.addLayout(group)
 
     def _hint_label(self, text: str) -> QLabel:
         label = QLabel(text, self.widget)
@@ -323,9 +332,9 @@ class FeedbackDialog(AppDialog):
         self._show_status(tr("feedback.submitting"), error=False)
 
     def _on_succeeded(self, feedback_id: str) -> None:
+        # 编号对用户不可查（后端本期无状态查询），不展示；只给"已收到、会处理"的安心反馈。
         self._state = "done"
-        text = tr("feedback.success", id=feedback_id) if feedback_id else tr("feedback.success_noid")
-        self._show_status(text, error=False)
+        self._show_status(tr("feedback.success"), error=False)
         self.cancelButton.setVisible(False)
         self.closeButton.setEnabled(True)
         self.submitButton.setEnabled(True)

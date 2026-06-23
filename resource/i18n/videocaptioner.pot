@@ -1798,9 +1798,6 @@ msgstr ""
 msgid "feedback.contact.placeholder"
 msgstr ""
 
-msgid "feedback.diagnostics_hint"
-msgstr ""
-
 msgid "feedback.done"
 msgstr ""
 
@@ -1843,7 +1840,22 @@ msgstr ""
 msgid "feedback.err.unauthorized"
 msgstr ""
 
+msgid "feedback.intro"
+msgstr ""
+
 msgid "feedback.message.placeholder"
+msgstr ""
+
+msgid "feedback.screenshot.hint"
+msgstr ""
+
+msgid "feedback.section.contact"
+msgstr ""
+
+msgid "feedback.section.message"
+msgstr ""
+
+msgid "feedback.section.screenshot"
 msgstr ""
 
 msgid "feedback.submit"
@@ -1853,9 +1865,6 @@ msgid "feedback.submitting"
 msgstr ""
 
 msgid "feedback.success"
-msgstr ""
-
-msgid "feedback.success_noid"
 msgstr ""
 
 msgid "feedback.title"
