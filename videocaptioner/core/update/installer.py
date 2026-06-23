@@ -89,11 +89,14 @@ def _extract(zip_path: Path, into: Path) -> Path:
 
 def _win_helper(new_dir: Path, target: Path, pid: int) -> str:
     exe = target / "VideoCaptioner.exe"
+    # Inno Setup 安装的副本带卸载器 unins000.exe/.dat；rmdir 会连它一起删，导致更新后
+    # 「卸载」入口失效。换装前把卸载器挪进新目录，move 时一并带回（便携版没有，if exist 跳过）。
     return (
         "@echo off\r\n"
         "chcp 65001 >nul\r\n"
         f':wait\r\n'
         f'tasklist /FI "PID eq {pid}" 2>nul | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto wait)\r\n'
+        f'if exist "{target}\\unins000.exe" move /y "{target}\\unins000.*" "{new_dir}\\" >nul\r\n'
         f'rmdir /s /q "{target}"\r\n'
         f'move "{new_dir}" "{target}" >nul\r\n'
         f'start "" "{exe}"\r\n'

@@ -38,6 +38,9 @@ def test_win_helper_waits_for_pid_then_swaps(tmp_path):
     assert f'move "{new_dir}" "{target}"' in script
     assert "VideoCaptioner.exe" in script  # 重启
     assert "del " in script  # 自删除
+    # Inno 安装副本的卸载器要保留：rmdir 前先挪进新目录，move 时带回
+    assert "unins000" in script
+    assert f'if exist "{target}\\unins000.exe"' in script
 
 
 def test_unix_helper_mac_clears_quarantine_and_reopens(tmp_path):
