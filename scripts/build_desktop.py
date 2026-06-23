@@ -163,10 +163,16 @@ def _archive_dir(source: Path, archive: Path) -> None:
     archive.parent.mkdir(parents=True, exist_ok=True)
     if archive.exists():
         archive.unlink()
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
-        for file in sorted(source.rglob("*")):
-            if file.is_file():
-                zf.write(file, file.relative_to(source.parent))
+    if platform.system() == "Darwin":
+        # macOS 必须用 ditto：zipfile 会把符号链接拍平成普通文件、丢掉可执行位，解压出的
+        # .app（Python/Qt framework 的 Versions/Current 软链 + 主程序 +x）将无法启动。
+        # ditto 保留软链/权限/代码签名，且产物是标准 zip。客户端 _extract 对应也用 ditto。
+        _run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(source), str(archive)])
+    else:
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+            for file in sorted(source.rglob("*")):
+                if file.is_file():
+                    zf.write(file, file.relative_to(source.parent))
     print(f"Created {archive.relative_to(ROOT)}")
 
 
@@ -203,6 +209,10 @@ def archive(version: str) -> None:
     _archive_dir(bundle, ARTIFACT_DIR / f"VideoCaptioner-{version}-{tag}.zip")
     app = DIST_DIR / "VideoCaptioner.app"
     if app.exists():
+        # ad-hoc 签名后再打包：更新负载（app-zip）与 dmg 走同一签名姿态，规避 Apple Silicon
+        # 「已损坏」硬拦截。无 Apple 证书，ad-hoc 不消除 Gatekeeper 首启提示（需公证）。
+        if subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(app)]).returncode != 0:
+            print("⚠ ad-hoc codesign 失败（不阻断打包）")
         _archive_dir(app, ARTIFACT_DIR / f"VideoCaptioner-{version}-{tag}-app.zip")
 
 

@@ -670,6 +670,10 @@ scripts/gen_update_manifest.py  发版时按产物生成 latest.json（CI 跑，
 - **不能自更新就退化**：非 frozen / 安装目录不可写时 `can_self_update()` 为假，提示条按钮变
   「前往下载」开 Release 页（开发态、`VERSION` 以 `0.0.0` 开头时启动检查直接 upToDate，不联网）。
 - 下载走 `core/download/downloader.download_file`（镜像兜底 + 续传 + sha256），**不要**另起一套下载。
+- **macOS 打包/解压必须用 `ditto`，不能用 Python `zipfile`**：zipfile 会把 .app 的符号链接
+  （Qt/Python framework 的 `Versions/Current` 等）拍平成普通文件、丢掉可执行位，解压出的 .app
+  起不来。`build_desktop._archive_dir` 与 `installer._extract` 在 Darwin 分支都走 ditto（产物仍是
+  标准 zip）；Windows onedir 无软链/执行位，继续用 zipfile。改这两处务必保持 ditto。
 - 更新检查/下载线程必须在 `main_window.closeEvent` 里停掉（`updateBanner.stop()` +
   `updateCheckThread.wait()`），否则退出销毁运行中 QThread 触发 abort。
 - 旧的 `vc.bkfeng.top/api/version` 轮询 + `version_checker_thread.py` 已删除，不要复活。

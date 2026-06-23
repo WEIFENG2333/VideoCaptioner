@@ -74,12 +74,32 @@ def test_extract_finds_named_top_level(tmp_path, monkeypatch):
 
 
 def test_extract_falls_back_to_single_top_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr(installer.platform, "system", lambda: "Darwin")
+    # 非 Darwin → zipfile 分支（不依赖 ditto，可在任意 CI 主机跑）；测的是顶层目录兜底逻辑。
+    monkeypatch.setattr(installer.platform, "system", lambda: "Linux")
     src = tmp_path / "pkg.zip"
     with zipfile.ZipFile(src, "w") as zf:
-        zf.writestr("Renamed.app/Contents/MacOS/x", "binary")
+        zf.writestr("Renamed/Contents/x", "binary")
     out = installer._extract(src, tmp_path / "staging")
-    assert out.name == "Renamed.app"
+    assert out.name == "Renamed"
+
+
+def test_extract_uses_ditto_on_macos(tmp_path, monkeypatch):
+    """macOS 走 ditto（保留 .app 软链/可执行位）；用 stub 验证分发，不依赖真 ditto。"""
+    monkeypatch.setattr(installer.platform, "system", lambda: "Darwin")
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        # 模拟 ditto 解压出 VideoCaptioner.app
+        (tmp_path / "staging" / "VideoCaptioner.app").mkdir(parents=True, exist_ok=True)
+        import subprocess as _sp
+
+        return _sp.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(installer.subprocess, "run", fake_run)
+    out = installer._extract(tmp_path / "x.zip", tmp_path / "staging")
+    assert calls and calls[0][:3] == ["ditto", "-x", "-k"]
+    assert out.name == "VideoCaptioner.app"
 
 
 def test_download_update_passes_sha256(monkeypatch, tmp_path):

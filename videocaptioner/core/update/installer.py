@@ -74,8 +74,13 @@ def download_update(
 def _extract(zip_path: Path, into: Path) -> Path:
     """解压更新包，返回顶层产物路径（Windows: VideoCaptioner/；macOS: VideoCaptioner.app/）。"""
     into.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(zip_path) as zf:
-        zf.extractall(into)
+    if platform.system() == "Darwin":
+        # 与打包侧 ditto 对应：保留 .app 的符号链接/可执行位/代码签名。zipfile 会把软链拍平、
+        # 丢可执行位，解压出的 .app 无法启动 —— 这是 macOS 更新换装必须用 ditto 的原因。
+        subprocess.run(["ditto", "-x", "-k", str(zip_path), str(into)], check=True)
+    else:
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(into)
     want = "VideoCaptioner.app" if platform.system() == "Darwin" else "VideoCaptioner"
     cand = into / want
     if cand.exists():
