@@ -2,13 +2,22 @@ from pathlib import Path
 from typing import Optional
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QHBoxLayout,
+    QSizePolicy,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 from qfluentwidgets import SegmentedWidget
 
 from videocaptioner.core.asr.asr_data import ASRData
 from videocaptioner.core.llm.context import generate_task_id
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.theme_tokens import app_palette
+from videocaptioner.ui.components.feedback_dialog import FeedbackDialog
+from videocaptioner.ui.components.workbench import HeaderLinkButton
 from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.view.subtitle_interface import SubtitleInterface
@@ -65,7 +74,16 @@ class HomeInterface(QWidget):
             tr("homeflow.tab.video_synthesis"),
         )
 
-        self.vBoxLayout.addWidget(self.pivot)
+        # 顶部行：左侧流程分段标签 + 右上角「意见反馈」入口
+        self.feedbackLink = HeaderLinkButton(tr("feedback.title"), AppIcon.MESSAGE, self)
+        self.feedbackLink.clicked.connect(lambda: FeedbackDialog(self).exec())
+        headerRow = QHBoxLayout()
+        headerRow.setContentsMargins(0, 0, 0, 0)
+        headerRow.addWidget(self.pivot)
+        headerRow.addStretch(1)
+        headerRow.addWidget(self.feedbackLink, 0, Qt.AlignVCenter)  # type: ignore[attr-defined]
+
+        self.vBoxLayout.addLayout(headerRow)
         self.vBoxLayout.addWidget(self.stackedWidget)
         self.vBoxLayout.setContentsMargins(30, 10, 30, 30)
 
