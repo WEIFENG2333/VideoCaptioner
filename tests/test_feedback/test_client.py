@@ -52,27 +52,32 @@ def _report(**over):
 
 
 def _parse_parts(captured):
-    """从 requests files=parts 还原 (字段名→值, 图片列表)。字段 part 为 (name, (None, value))。"""
+    """从 requests files=parts 还原 (字段名→值, 图片列表, 日志列表)。字段 part 为 (name, (None, value))。"""
     assert "data" not in captured  # 一切走 multipart，无 urlencoded data
-    fields, images = {}, []
+    fields, images, logs = {}, [], []
     for name, spec in captured["files"]:
         if name == "files":
             images.append(spec)  # (filename, data, mime)
+        elif name == "logs":
+            logs.append(spec)
         else:
             fields[name] = spec[1]
-    return fields, images
+    return fields, images, logs
 
 
 def test_submit_success_builds_multipart():
     sess = _Session(resp=_Resp(200, {"ok": True, "id": "FB-1"}))
-    result = FeedbackClient("https://host/api", session=sess).submit(_report())
+    result = FeedbackClient("https://host/api", session=sess).submit(
+        _report(logs=[FeedbackAttachment("recent.log", b"log tail", "text/plain")])
+    )
     assert result.ok and result.id == "FB-1"
     cap = sess.captured
     assert cap["url"] == "https://host/api"
     headers = cap["headers"]
     assert headers["X-App-Version"] and headers["X-App-Platform"]
     assert headers["User-Agent"].startswith("VideoCaptioner/")
-    fields, images = _parse_parts(cap)
+    fields, images, logs = _parse_parts(cap)
+    assert logs[0][0] == "recent.log" and logs[0][2] == "text/plain"
     assert fields["category"] == "bug"
     assert fields["message"] == "导出报错"
     assert fields["client_id"] == "cid-test"
@@ -88,9 +93,9 @@ def test_no_image_still_multipart():
     FeedbackClient("https://host/api", session=sess).submit(
         _report(contact="", attachments=[], diagnostics={})
     )
-    fields, images = _parse_parts(sess.captured)
+    fields, images, logs = _parse_parts(sess.captured)
     assert sess.captured["files"]  # 始终走 files（multipart），不退化成 data
-    assert images == []
+    assert images == [] and logs == []
     assert "contact" not in fields  # 空联系方式省略
     assert "diagnostics" not in fields
     assert fields["category"] == "bug" and fields["message"]

@@ -4,6 +4,7 @@ import pytest
 
 from videocaptioner.core.feedback.models import (
     MAX_FILE_BYTES,
+    MAX_TOTAL_BYTES,
     FeedbackAttachment,
     FeedbackReport,
     FeedbackValidationError,
@@ -68,4 +69,17 @@ def test_total_too_large():
     files = [FeedbackAttachment(f"{i}.png", b"x" * MAX_FILE_BYTES, "image/png") for i in range(3)]
     with pytest.raises(FeedbackValidationError) as e:
         FeedbackReport(category="bug", message="hi", attachments=files).validate()
+    assert e.value.code == "total_too_large"
+
+
+def test_total_counts_text_not_just_binary():
+    # 二进制正好 12MB：旧逻辑用严格 > 会放行，但加上文本字段+multipart 框架后实际超 12MB，
+    # 后端会 413。本地必须计入文本/框架，先于后端拒掉（让本地校验是后端上限的真超集）。
+    files = [
+        FeedbackAttachment("a.png", b"x" * MAX_FILE_BYTES, "image/png"),
+        FeedbackAttachment("b.png", b"x" * MAX_FILE_BYTES, "image/png"),
+        FeedbackAttachment("c.png", b"x" * (MAX_TOTAL_BYTES - 2 * MAX_FILE_BYTES), "image/png"),
+    ]
+    with pytest.raises(FeedbackValidationError) as e:
+        FeedbackReport(category="bug", message="导出报错", attachments=files).validate()
     assert e.value.code == "total_too_large"

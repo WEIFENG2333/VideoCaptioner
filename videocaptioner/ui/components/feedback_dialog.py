@@ -2,7 +2,8 @@
 
 复用 AppDialog 外壳 + workbench 控件；类型用整宽 _SelectField、添加截图用与缩略图等大的 _AddImageTile，
 让所有控件成一套视觉。截图由用户提供：编辑器里 Ctrl+V 粘贴、拖入，或点 + 块选文件；缩略图可删。
-诊断信息默认随提交附带（无开关），但绝不含密钥（见 core/feedback/diagnostics）。
+诊断信息与最近日志默认随提交附带（无开关、不在 UI 提示），均已脱敏绝不含密钥（见
+core/feedback/diagnostics 与 core/feedback/logs）。
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from videocaptioner.core.feedback import (
     FeedbackAttachment,
     FeedbackReport,
     FeedbackValidationError,
+    collect_recent_logs,
     gather_diagnostics,
 )
 from videocaptioner.ui.common.app_icons import AppIcon
@@ -425,6 +427,7 @@ class FeedbackDialog(AppDialog):
             message=self.editor.toPlainText(),
             contact=self.contactEdit.text(),
             attachments=[a for a, _ in self._attachments],
+            logs=collect_recent_logs(),  # 默认附带最近日志（已脱敏），帮助定位
             diagnostics=gather_diagnostics(),
         )
         try:

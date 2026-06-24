@@ -49,7 +49,6 @@ def test_client_id_is_stable_and_persisted_to_file(monkeypatch, tmp_path):
     assert id_file.read_text(encoding="utf-8").strip() == first
 
 
-def test_platform_tag_shape():
-    tag = diagnostics.platform_tag()
-    assert tag.split("-")[0] in ("windows", "macos", "linux")
-    assert tag.split("-")[1] in ("x64", "arm64")
+def test_platform_tag_in_contract_enum():
+    # header X-App-Platform 只能是契约枚举：dev/linux、windows-arm64 都收敛进来
+    assert diagnostics.platform_tag() in ("windows-x64", "macos-x64", "macos-arm64")

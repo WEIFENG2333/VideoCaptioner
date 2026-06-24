@@ -9,6 +9,7 @@ from videocaptioner.core.feedback.diagnostics import (
     get_or_create_client_id,
     platform_tag,
 )
+from videocaptioner.core.feedback.logs import collect_recent_logs, scrub_log_text
 from videocaptioner.core.feedback.models import (
     ALLOWED_MIME,
     CATEGORIES,
@@ -30,6 +31,8 @@ __all__ = [
     "gather_diagnostics",
     "get_or_create_client_id",
     "platform_tag",
+    "collect_recent_logs",
+    "scrub_log_text",
     "CATEGORIES",
     "ALLOWED_MIME",
     "MAX_FILES",

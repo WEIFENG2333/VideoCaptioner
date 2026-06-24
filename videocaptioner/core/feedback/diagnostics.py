@@ -37,9 +37,16 @@ def _is_safe(value: str) -> bool:
 
 
 def platform_tag() -> str:
-    """X-App-Platform 取值：windows-x64 / macos-arm64 / macos-x64（dev/linux 为 linux-x64）。"""
+    """X-App-Platform：只发契约枚举 windows-x64 / macos-x64 / macos-arm64。
+
+    current_platform() 还会给出 linux-x64 / windows-arm64（dev/边缘机），不在枚举内，
+    收敛到最接近的发行值，避免 header 携带契约外的值（诊断里的 os 字段仍保留完整系统信息）。
+    """
     os_key, arch = current_platform()
-    return f"{os_key}-{arch}"
+    tag = f"{os_key}-{arch}"
+    if tag in ("windows-x64", "macos-x64", "macos-arm64"):
+        return tag
+    return "macos-x64" if os_key == "macos" else "windows-x64"
 
 
 def get_or_create_client_id() -> str:

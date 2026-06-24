@@ -61,6 +61,7 @@ class FeedbackClient:
         # 否则无截图时 requests 会退化成 application/x-www-form-urlencoded 被后端拒绝。
         parts = [(key, (None, value)) for key, value in fields.items()]
         parts += [("files", (att.filename, att.data, att.mime)) for att in report.attachments]
+        parts += [("logs", (att.filename, att.data, att.mime)) for att in report.logs]
 
         proxy = system_proxy()
         proxies = {"http": proxy, "https": proxy} if proxy else None

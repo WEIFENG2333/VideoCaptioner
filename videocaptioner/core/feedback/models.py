@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 
 CATEGORIES = ("bug", "feature", "question", "other")
@@ -9,8 +10,12 @@ MESSAGE_MIN = 1
 MESSAGE_MAX = 5000
 CONTACT_MAX_BYTES = 200
 MAX_FILES = 3
+MAX_LOG_FILES = 3
 MAX_FILE_BYTES = 5 * 1024 * 1024
-MAX_TOTAL_BYTES = 12 * 1024 * 1024
+MAX_TOTAL_BYTES = 12 * 1024 * 1024  # 后端按整个请求体（截图 + 日志 + 文本字段）卡 12 MB
+# 后端卡的是整条 multipart 请求；本地把文本字段与每段框架开销也计入 total，让本地校验
+# 成为后端上限的真超集（否则正好 12MB 二进制 + message/diagnostics 会被后端 413）。
+_FRAMING_RESERVE_BYTES = 2048
 ALLOWED_MIME = ("image/png", "image/jpeg")
 
 
@@ -41,6 +46,7 @@ class FeedbackReport:
     message: str
     contact: str = ""
     attachments: list[FeedbackAttachment] = field(default_factory=list)
+    logs: list[FeedbackAttachment] = field(default_factory=list)
     diagnostics: dict = field(default_factory=dict)
 
     def validate(self) -> None:
@@ -55,12 +61,21 @@ class FeedbackReport:
             raise FeedbackValidationError("contact_too_long", "联系方式过长")
         if len(self.attachments) > MAX_FILES:
             raise FeedbackValidationError("too_many_files", f"最多 {MAX_FILES} 张截图")
-        total = 0
+        if len(self.logs) > MAX_LOG_FILES:
+            raise FeedbackValidationError("too_many_logs", f"最多 {MAX_LOG_FILES} 个日志文件")
+        total = len(msg.encode("utf-8")) + len(self.contact.strip().encode("utf-8"))
+        if self.diagnostics:
+            total += len(json.dumps(self.diagnostics, ensure_ascii=False).encode("utf-8"))
+        total += _FRAMING_RESERVE_BYTES
         for att in self.attachments:
             if att.mime not in ALLOWED_MIME:
                 raise FeedbackValidationError("file_type", "仅支持 PNG / JPEG 截图")
             if att.size > MAX_FILE_BYTES:
                 raise FeedbackValidationError("file_too_large", "单张截图需 ≤ 5 MB")
             total += att.size
+        for log in self.logs:
+            if log.size > MAX_FILE_BYTES:
+                raise FeedbackValidationError("log_too_large", "单个日志需 ≤ 5 MB")
+            total += log.size
         if total > MAX_TOTAL_BYTES:
-            raise FeedbackValidationError("total_too_large", "截图总大小需 ≤ 12 MB")
+            raise FeedbackValidationError("total_too_large", "截图与日志总大小需 ≤ 12 MB")
