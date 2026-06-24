@@ -49,6 +49,7 @@ from videocaptioner.ui.common.app_icons import AppIcon, render_svg_icon
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.theme_tokens import app_palette, is_dark_theme, rgba
 from videocaptioner.ui.components.donate_dialog import DonateDialog
+from videocaptioner.ui.components.feedback_dialog import FeedbackDialog
 from videocaptioner.ui.components.workbench import (
     CompactButton,
     ElidedLabel,
@@ -717,10 +718,11 @@ class TaskCreationInterface(QWidget):
         apply_font(self.versionChip, 10, 800)
         footer.addWidget(self.versionChip)
         footer.addSpacing(14)
+        self.feedbackAction = FooterAction(tr("feedback.title"), self.footerBar)
         self.logAction = FooterAction(tr("home.footer.logs"), self.footerBar)
         self.donateAction = FooterAction(tr("home.footer.donate"), self.footerBar)
         self._footerDividers = []
-        for index, action in enumerate((self.logAction, self.donateAction)):
+        for index, action in enumerate((self.feedbackAction, self.logAction, self.donateAction)):
             if index:
                 divider = QFrame(self.footerBar)
                 divider.setObjectName("taskFooterDivider")
@@ -781,6 +783,7 @@ class TaskCreationInterface(QWidget):
         self.controller.mediaChanged.connect(self.downloadPanel.setMedia)
         self.controller.completed.connect(self._on_download_completed)
         self.controller.failed.connect(self._on_download_failed)
+        self.feedbackAction.clicked.connect(lambda: FeedbackDialog(self).exec())
         self.logAction.clicked.connect(self._show_log_window)
         self.donateAction.clicked.connect(lambda: DonateDialog(self).exec_())
 
