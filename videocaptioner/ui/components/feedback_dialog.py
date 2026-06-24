@@ -1,7 +1,7 @@
 """意见反馈弹窗：分类 + 可粘贴截图的描述编辑器 + 联系方式 → 后台 multipart 提交。
 
-复用 AppDialog 外壳 + workbench 控件（AppTextEdit/AppLineEdit/PillSelect/RoundIconButton）。
-截图由用户提供：编辑器里 Ctrl+V 直接粘贴、或拖入、或「添加图片」选文件；缩略图可删。
+复用 AppDialog 外壳 + workbench 控件；类型用整宽 _SelectField、添加截图用与缩略图等大的 _AddImageTile，
+让所有控件成一套视觉。截图由用户提供：编辑器里 Ctrl+V 粘贴、拖入，或点 + 块选文件；缩略图可删。
 诊断信息默认随提交附带（无开关），但绝不含密钥（见 core/feedback/diagnostics）。
 """
 
@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from qfluentwidgets import Action, RoundMenu
 
 from videocaptioner.core.feedback import (
     CATEGORIES,
@@ -28,16 +29,16 @@ from videocaptioner.core.feedback import (
     gather_diagnostics,
 )
 from videocaptioner.ui.common.app_icons import AppIcon
-from videocaptioner.ui.common.theme_tokens import app_palette
+from videocaptioner.ui.common.theme_tokens import app_palette, rgba
 from videocaptioner.ui.components.app_dialog import AppDialog
 from videocaptioner.ui.components.workbench import (
     AppLineEdit,
     AppTextEdit,
-    CompactButton,
-    PillSelect,
     RoundIconButton,
     SectionLabel,
     apply_font,
+    draw_rounded_surface,
+    icon_pixmap,
 )
 from videocaptioner.ui.i18n import N_, tr
 from videocaptioner.ui.thread.feedback_thread import FeedbackSubmitThread
@@ -142,6 +143,118 @@ class _AttachmentThumb(QFrame):
         painter.drawRoundedRect(rect, 9, 9)
 
 
+class _SelectField(QFrame):
+    """整宽下拉：外观与 AppLineEdit 一致（同高 36 / 圆角 9 / 同边框），点击弹 RoundMenu 选值。
+
+    取代 PillSelect 的小胶囊，让「类型」与下面的描述框 / 联系方式框是同一套视觉。
+    """
+
+    currentTextChanged = pyqtSignal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._items: list[str] = []
+        self._current = ""
+        self.setFixedHeight(36)
+        self.setCursor(Qt.PointingHandCursor)  # type: ignore[attr-defined]
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 0, 10, 0)
+        layout.setSpacing(8)
+        self.textLabel = QLabel(self)
+        apply_font(self.textLabel, 14, 720)
+        self.textLabel.setStyleSheet("background: transparent; border: none;")
+        layout.addWidget(self.textLabel)
+        layout.addStretch(1)
+        self.chevron = QLabel(self)
+        self.chevron.setFixedSize(14, 14)
+        self.chevron.setStyleSheet("background: transparent; border: none;")
+        layout.addWidget(self.chevron, 0, Qt.AlignVCenter)  # type: ignore[attr-defined]
+        self._sync()
+
+    def setItems(self, items: list[str], current: str | None = None) -> None:
+        self._items = list(items)
+        self.setCurrentText(current if current is not None else (items[0] if items else ""))
+
+    def currentText(self) -> str:
+        return self._current
+
+    def setCurrentText(self, text: str) -> None:
+        self._current = text
+        self.textLabel.setText(text)
+        self.currentTextChanged.emit(text)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self._items:  # type: ignore[attr-defined]
+            menu = RoundMenu(parent=self)
+            for item in self._items:
+                action = Action(item)
+                action.triggered.connect(lambda _=False, text=item: self.setCurrentText(text))
+                menu.addAction(action)
+            menu.exec(self.mapToGlobal(self.rect().bottomLeft()))
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def enterEvent(self, event):
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event):
+        palette = app_palette()
+        border = palette.accent_border if (self.underMouse() and self.isEnabled()) else palette.line_soft
+        draw_rounded_surface(self, palette.field, border, 9)
+        super().paintEvent(event)
+
+    def _sync(self) -> None:
+        palette = app_palette()
+        self.chevron.setPixmap(icon_pixmap(AppIcon.CHEVRON_DOWN, palette.subtle, 14))
+        self.textLabel.setStyleSheet(f"color: {palette.text}; background: transparent; border: none;")
+
+
+class _AddImageTile(QFrame):
+    """与缩略图等大（56×56）的「添加图片」方块，中心 + 号；和缩略图排成一排等大方块。"""
+
+    clicked = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(56, 56)
+        self.setCursor(Qt.PointingHandCursor)  # type: ignore[attr-defined]
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:  # type: ignore[attr-defined]
+            self.clicked.emit()
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def enterEvent(self, event):
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event):
+        palette = app_palette()
+        hovered = self.underMouse() and self.isEnabled()
+        draw_rounded_surface(
+            self,
+            rgba(palette.accent, 0.10 if hovered else 0.05),
+            rgba(palette.accent, 0.70 if hovered else 0.40),
+            9,
+        )
+        size = 22
+        pixmap = icon_pixmap(AppIcon.ADD, palette.accent_text, size)
+        painter = QPainter(self)
+        painter.drawPixmap((self.width() - size) // 2, (self.height() - size) // 2, pixmap)
+
+
 class FeedbackDialog(AppDialog):
     """意见反馈表单弹窗。"""
 
@@ -156,14 +269,10 @@ class FeedbackDialog(AppDialog):
         # 顶部说明：让用户知道反馈直达开发者、会被处理
         self.intro = self.addBodyText(tr("feedback.intro"))
 
-        # 类型
-        cat_row = QHBoxLayout()
-        cat_row.setContentsMargins(0, 0, 0, 0)
-        self.categorySelect = PillSelect(self.widget)
+        # 类型：整宽下拉，与下面的输入框同款
+        self.categorySelect = _SelectField(self.widget)
         self.categorySelect.setItems([label for _, label in self._categories], current=self._categories[0][1])
-        cat_row.addWidget(self.categorySelect)
-        cat_row.addStretch(1)
-        self._add_field(tr("feedback.category.label"), cat_row)
+        self._add_field(tr("feedback.category.label"), self.categorySelect)
 
         # 问题描述：定高，避免 QPlainTextEdit 的 Expanding 策略把空输入框撑得过高、显空旷（超出滚动）
         self.editor = _PasteTextEdit(parent=self.widget, min_height=112)
@@ -173,7 +282,7 @@ class FeedbackDialog(AppDialog):
         self.editor.imageFilePasted.connect(self._add_image_file)
         self._add_field(tr("feedback.section.message"), self.editor)
 
-        # 截图（选填）：计数放小节标题右侧；标题下提示可粘贴；下面是缩略图 + 添加按钮
+        # 截图（选填）：计数放小节标题右侧；标题下提示可粘贴；缩略图与「+」添加块排成一排等大方块
         self.countLabel = self._hint_label("")
         attach_row = QHBoxLayout()
         attach_row.setContentsMargins(0, 0, 0, 0)
@@ -182,9 +291,9 @@ class FeedbackDialog(AppDialog):
         self.thumbStrip.setSpacing(8)
         self.thumbStrip.setContentsMargins(0, 0, 0, 0)
         attach_row.addLayout(self.thumbStrip)
-        self.addImageButton = CompactButton(tr("feedback.add_image"), AppIcon.PHOTO, self.widget)
-        self.addImageButton.clicked.connect(self._pick_images)
-        attach_row.addWidget(self.addImageButton, 0, Qt.AlignVCenter)  # type: ignore[attr-defined]
+        self.addTile = _AddImageTile(self.widget)
+        self.addTile.clicked.connect(self._pick_images)
+        attach_row.addWidget(self.addTile, 0, Qt.AlignVCenter)  # type: ignore[attr-defined]
         attach_row.addStretch(1)
         self._add_field(
             tr("feedback.section.screenshot"), attach_row,
@@ -294,7 +403,8 @@ class FeedbackDialog(AppDialog):
 
     def _refresh_count(self) -> None:
         self.countLabel.setText(tr("feedback.attach_count", count=len(self._attachments), max=MAX_FILES))
-        self.addImageButton.setEnabled(self._state == "form" and len(self._attachments) < MAX_FILES)
+        self.addTile.setVisible(len(self._attachments) < MAX_FILES)  # 满 3 张隐藏添加块
+        self.addTile.setEnabled(self._state == "form")
 
     # ----------------------------------------------------------- submit
     def _selected_category(self) -> str:
@@ -333,7 +443,7 @@ class FeedbackDialog(AppDialog):
         self.editor.setReadOnly(True)
         self.categorySelect.setEnabled(False)
         self.contactEdit.setEnabled(False)
-        self.addImageButton.setEnabled(False)
+        self.addTile.setEnabled(False)
         self.cancelButton.setEnabled(False)
         self.closeButton.setEnabled(False)
         self.setClosableOnMaskClicked(False)

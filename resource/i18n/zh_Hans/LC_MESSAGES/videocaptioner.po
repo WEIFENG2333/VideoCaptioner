@@ -1876,7 +1876,7 @@ msgid "feedback.message.placeholder"
 msgstr "请描述你遇到的问题或建议，越具体我们越好定位…"
 
 msgid "feedback.screenshot.hint"
-msgstr "可 Ctrl+V 粘贴、拖入，或点击「添加图片」"
+msgstr "可 Ctrl+V 粘贴、拖入图片，或点 + 添加"
 
 msgid "feedback.section.contact"
 msgstr "联系方式（选填）"

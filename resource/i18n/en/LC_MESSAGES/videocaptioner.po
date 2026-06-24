@@ -1962,7 +1962,7 @@ msgid "feedback.message.placeholder"
 msgstr "Describe the issue or suggestion — the more detail, the better…"
 
 msgid "feedback.screenshot.hint"
-msgstr "Paste with Ctrl+V, drag in, or click “Add image”"
+msgstr "Paste with Ctrl+V, drag in, or click + to add"
 
 msgid "feedback.section.contact"
 msgstr "Contact (optional)"
