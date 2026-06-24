@@ -51,6 +51,18 @@ def _report(**over):
     return FeedbackReport(**base)
 
 
+def _parse_parts(captured):
+    """从 requests files=parts 还原 (字段名→值, 图片列表)。字段 part 为 (name, (None, value))。"""
+    assert "data" not in captured  # 一切走 multipart，无 urlencoded data
+    fields, images = {}, []
+    for name, spec in captured["files"]:
+        if name == "files":
+            images.append(spec)  # (filename, data, mime)
+        else:
+            fields[name] = spec[1]
+    return fields, images
+
+
 def test_submit_success_builds_multipart():
     sess = _Session(resp=_Resp(200, {"ok": True, "id": "FB-1"}))
     result = FeedbackClient("https://host/api", session=sess).submit(_report())
@@ -60,27 +72,28 @@ def test_submit_success_builds_multipart():
     headers = cap["headers"]
     assert headers["X-App-Version"] and headers["X-App-Platform"]
     assert headers["User-Agent"].startswith("VideoCaptioner/")
-    data = cap["data"]
-    assert data["category"] == "bug"
-    assert data["message"] == "导出报错"
-    assert data["client_id"] == "cid-test"
-    assert data["request_id"]  # 每次新 UUID
-    assert data["contact"] == "a@b.c"
-    assert json.loads(data["diagnostics"])["platform"] == "windows-x64"
-    files = cap["files"]
-    assert files[0][0] == "files"
-    assert files[0][1][0] == "s.png" and files[0][1][2] == "image/png"
+    fields, images = _parse_parts(cap)
+    assert fields["category"] == "bug"
+    assert fields["message"] == "导出报错"
+    assert fields["client_id"] == "cid-test"
+    assert fields["request_id"]  # 每次新 UUID
+    assert fields["contact"] == "a@b.c"
+    assert json.loads(fields["diagnostics"])["platform"] == "windows-x64"
+    assert images[0][0] == "s.png" and images[0][2] == "image/png"
 
 
-def test_optional_fields_omitted_when_empty():
+def test_no_image_still_multipart():
+    # 关键回归：无截图也必须是 multipart（字段作为 part 发送），否则后端拒 invalid_request
     sess = _Session(resp=_Resp(200, {"ok": True, "id": "FB-2"}))
     FeedbackClient("https://host/api", session=sess).submit(
         _report(contact="", attachments=[], diagnostics={})
     )
-    data = sess.captured["data"]
-    assert "contact" not in data
-    assert "diagnostics" not in data
-    assert sess.captured["files"] is None
+    fields, images = _parse_parts(sess.captured)
+    assert sess.captured["files"]  # 始终走 files（multipart），不退化成 data
+    assert images == []
+    assert "contact" not in fields  # 空联系方式省略
+    assert "diagnostics" not in fields
+    assert fields["category"] == "bug" and fields["message"]
 
 
 def test_error_response_maps_code():

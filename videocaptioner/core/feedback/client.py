@@ -47,17 +47,20 @@ class FeedbackClient:
             "X-App-Platform": plat,
             "User-Agent": f"{APP_NAME}/{VERSION} ({plat})",
         }
-        data = {
+        fields = {
             "category": report.category,
             "message": report.message.strip(),
             "client_id": get_or_create_client_id(),
             "request_id": str(uuid.uuid4()),
         }
         if report.contact.strip():
-            data["contact"] = report.contact.strip()
+            fields["contact"] = report.contact.strip()
         if report.diagnostics:
-            data["diagnostics"] = json.dumps(report.diagnostics, ensure_ascii=False)
-        files = [("files", (att.filename, att.data, att.mime)) for att in report.attachments]
+            fields["diagnostics"] = json.dumps(report.diagnostics, ensure_ascii=False)
+        # 后端强制 multipart/form-data。文本字段也作为 multipart part（filename=None）发送，
+        # 否则无截图时 requests 会退化成 application/x-www-form-urlencoded 被后端拒绝。
+        parts = [(key, (None, value)) for key, value in fields.items()]
+        parts += [("files", (att.filename, att.data, att.mime)) for att in report.attachments]
 
         proxy = system_proxy()
         proxies = {"http": proxy, "https": proxy} if proxy else None
@@ -65,8 +68,7 @@ class FeedbackClient:
             resp = http.post(
                 self._endpoint,
                 headers=headers,
-                data=data,
-                files=files or None,
+                files=parts,
                 proxies=proxies,
                 timeout=self._timeout,
             )
