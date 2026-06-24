@@ -105,17 +105,17 @@ class _PasteTextEdit(AppTextEdit):
 
 
 class _AttachmentThumb(QFrame):
-    """64×64 圆角截图缩略图，右上角悬浮删除钮。"""
+    """56×56 圆角截图缩略图，右上角悬浮删除钮。"""
 
     removed = pyqtSignal(object)
 
     def __init__(self, pixmap: QPixmap, parent=None):
         super().__init__(parent)
-        self.setFixedSize(64, 64)
+        self.setFixedSize(56, 56)
         self._pixmap = pixmap
-        self._remove = RoundIconButton(AppIcon.CLOSE, diameter=20, parent=self)
+        self._remove = RoundIconButton(AppIcon.CLOSE, diameter=18, parent=self)
         self._remove.clicked.connect(lambda: self.removed.emit(self))
-        self._remove.move(self.width() - 20, 0)
+        self._remove.move(self.width() - 18, 0)
 
     def paintEvent(self, event):
         palette = app_palette()
@@ -151,6 +151,7 @@ class FeedbackDialog(AppDialog):
         self._attachments: list[tuple[FeedbackAttachment, _AttachmentThumb]] = []
         self._thread: FeedbackSubmitThread | None = None
         self._categories = [(value, tr(f"feedback.category.{value}")) for value in CATEGORIES]
+        self.bodyLayout.setSpacing(15)  # 字段组之间留白（组内由 _add_field 收紧）
 
         # 顶部说明：让用户知道反馈直达开发者、会被处理
         self.intro = self.addBodyText(tr("feedback.intro"))
@@ -164,14 +165,16 @@ class FeedbackDialog(AppDialog):
         cat_row.addStretch(1)
         self._add_field(tr("feedback.category.label"), cat_row)
 
-        # 问题描述
-        self.editor = _PasteTextEdit(parent=self.widget, min_height=120)
+        # 问题描述：定高，避免 QPlainTextEdit 的 Expanding 策略把空输入框撑得过高、显空旷（超出滚动）
+        self.editor = _PasteTextEdit(parent=self.widget, min_height=112)
+        self.editor.setFixedHeight(112)
         self.editor.setPlaceholderText(tr("feedback.message.placeholder"))
         self.editor.imagePasted.connect(self._add_image_qimage)
         self.editor.imageFilePasted.connect(self._add_image_file)
         self._add_field(tr("feedback.section.message"), self.editor)
 
-        # 截图（选填）：标题下提示可粘贴；缩略图 + 添加按钮 + 计数
+        # 截图（选填）：计数放小节标题右侧；标题下提示可粘贴；下面是缩略图 + 添加按钮
+        self.countLabel = self._hint_label("")
         attach_row = QHBoxLayout()
         attach_row.setContentsMargins(0, 0, 0, 0)
         attach_row.setSpacing(8)
@@ -181,11 +184,12 @@ class FeedbackDialog(AppDialog):
         attach_row.addLayout(self.thumbStrip)
         self.addImageButton = CompactButton(tr("feedback.add_image"), AppIcon.PHOTO, self.widget)
         self.addImageButton.clicked.connect(self._pick_images)
-        attach_row.addWidget(self.addImageButton)
+        attach_row.addWidget(self.addImageButton, 0, Qt.AlignVCenter)  # type: ignore[attr-defined]
         attach_row.addStretch(1)
-        self.countLabel = self._hint_label("")
-        attach_row.addWidget(self.countLabel)
-        self._add_field(tr("feedback.section.screenshot"), attach_row, hint=tr("feedback.screenshot.hint"))
+        self._add_field(
+            tr("feedback.section.screenshot"), attach_row,
+            hint=tr("feedback.screenshot.hint"), header_right=self.countLabel,
+        )
 
         # 联系方式（选填）
         self.contactEdit = AppLineEdit("", self.widget)
@@ -211,12 +215,18 @@ class FeedbackDialog(AppDialog):
         self.syncStyle()
 
     # ----------------------------------------------------------- helpers
-    def _add_field(self, label_text: str, content, hint: str | None = None) -> None:
-        """一个表单字段：小节标题（+可选提示）在上，控件/行在下，组内紧凑、组间留白。"""
+    def _add_field(self, label_text: str, content, hint: str | None = None, header_right: QWidget | None = None) -> None:
+        """一个表单字段：小节标题行（可带右侧元数据）+ 可选提示 + 控件；组内紧凑、组间留白。"""
         group = QVBoxLayout()
         group.setContentsMargins(0, 0, 0, 0)
-        group.setSpacing(5)
-        group.addWidget(SectionLabel(label_text, self.widget))
+        group.setSpacing(7)
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.addWidget(SectionLabel(label_text, self.widget))
+        if header_right is not None:
+            header.addStretch(1)
+            header.addWidget(header_right)
+        group.addLayout(header)
         if hint:
             group.addWidget(self._hint_label(hint))
         if isinstance(content, QWidget):
