@@ -522,6 +522,7 @@ TRANSLATOR_KEYS = {
     TranslatorServiceEnum.BING: "bing",
     TranslatorServiceEnum.GOOGLE: "google",
     TranslatorServiceEnum.DEEPLX: "deeplx",
+    TranslatorServiceEnum.IMMERSIVE: "immersive",
 }
 
 SUBTITLE_LAYOUT_KEYS = {

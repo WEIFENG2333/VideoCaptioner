@@ -45,13 +45,15 @@ _SERVICE_TO_TYPE = {
     TranslatorServiceEnum.GOOGLE: TranslatorType.GOOGLE,
     TranslatorServiceEnum.BING: TranslatorType.BING,
     TranslatorServiceEnum.DEEPLX: TranslatorType.DEEPLX,
+    TranslatorServiceEnum.IMMERSIVE: TranslatorType.IMMERSIVE,
 }
 
-# 不依赖 LLM 的翻译服务
+# 不依赖 LLM 的翻译服务（沉浸式免费模型自带令牌，也无需用户配 LLM key）
 _NON_LLM_TRANSLATORS = (
     TranslatorServiceEnum.DEEPLX,
     TranslatorServiceEnum.BING,
     TranslatorServiceEnum.GOOGLE,
+    TranslatorServiceEnum.IMMERSIVE,
 )
 
 

@@ -225,6 +225,7 @@ def translator_from_cli(value: str) -> TranslatorServiceEnum:
         "bing": TranslatorServiceEnum.BING,
         "google": TranslatorServiceEnum.GOOGLE,
         "deeplx": TranslatorServiceEnum.DEEPLX,
+        "immersive": TranslatorServiceEnum.IMMERSIVE,
     }.get(str(value or "bing").lower(), TranslatorServiceEnum.BING)
 
 

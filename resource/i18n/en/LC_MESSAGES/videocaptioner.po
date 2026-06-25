@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-23 21:02+0800\n"
+"POT-Creation-Date: 2026-06-25 14:48+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1829,6 +1829,9 @@ msgstr "DeepLx Translate"
 
 msgid "enum.TranslatorServiceEnum.GOOGLE"
 msgstr "Google Translate"
+
+msgid "enum.TranslatorServiceEnum.IMMERSIVE"
+msgstr "Immersive Translate (Free)"
 
 msgid "enum.TranslatorServiceEnum.OPENAI"
 msgstr "LLM Translation"

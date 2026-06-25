@@ -131,6 +131,7 @@ class TranslatorServiceEnum(Enum):
     DEEPLX = "DeepLx 翻译"
     BING = "微软翻译"
     GOOGLE = "谷歌翻译"
+    IMMERSIVE = "沉浸式翻译（免费）"
 
 
 class VadMethodEnum(Enum):

@@ -28,6 +28,7 @@ OnRecord = Callable[[LiveCaptionRecord], None]
 _TRANSLATE_LABELS = {
     TranslatorType.BING: "微软翻译",
     TranslatorType.GOOGLE: "谷歌翻译",
+    TranslatorType.IMMERSIVE: "沉浸式翻译(免费)",
 }
 
 

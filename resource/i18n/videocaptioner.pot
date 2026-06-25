@@ -1717,6 +1717,9 @@ msgstr ""
 msgid "enum.TranslatorServiceEnum.GOOGLE"
 msgstr ""
 
+msgid "enum.TranslatorServiceEnum.IMMERSIVE"
+msgstr ""
+
 msgid "enum.TranslatorServiceEnum.OPENAI"
 msgstr ""
 

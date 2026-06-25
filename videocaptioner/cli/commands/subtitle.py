@@ -232,7 +232,12 @@ def run(args: Namespace, config: dict) -> int:
             from videocaptioner.core.translate.factory import TranslatorFactory
             from videocaptioner.core.translate.types import TranslatorType
 
-            type_map = {"llm": TranslatorType.OPENAI, "bing": TranslatorType.BING, "google": TranslatorType.GOOGLE}
+            type_map = {
+                "llm": TranslatorType.OPENAI,
+                "bing": TranslatorType.BING,
+                "google": TranslatorType.GOOGLE,
+                "immersive": TranslatorType.IMMERSIVE,
+            }
             translator = TranslatorFactory.create_translator(
                 translator_type=type_map.get(translator_service, TranslatorType.OPENAI),
                 thread_num=thread_num,
