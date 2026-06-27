@@ -155,6 +155,36 @@ def run(args: Namespace, config: dict) -> int:
             return EXIT.FILE_NOT_FOUND
         custom_prompt = p.read_text(encoding="utf-8")
 
+    # Optional: TwelveLabs Pegasus visual scene context. Opt-in via
+    # --scene-context VIDEO (or scene.enabled + scene.api_key). Best-effort:
+    # never aborts the job, and is a no-op when no API key is configured.
+    scene_video = getattr(args, "scene_context", None)
+    if scene_video and needs_llm and get(config, "scene.enabled", False):
+        scene_api_key = get(config, "scene.api_key", "")
+        if not scene_api_key:
+            output.warn(
+                "--scene-context needs a TwelveLabs API key; set TWELVELABS_API_KEY "
+                "or 'videocaptioner config set scene.api_key <key>'. Skipping scene context."
+            )
+        else:
+            if not quiet:
+                output.info("Analyzing visual scenes with TwelveLabs Pegasus...")
+            from videocaptioner.core.scene import get_scene_context
+
+            scene_text = get_scene_context(
+                video=scene_video,
+                api_key=scene_api_key,
+                model=get(config, "scene.model", "pegasus1.5"),
+            )
+            if scene_text:
+                visual = f"Visual scene context (from the video):\n{scene_text}"
+                custom_prompt = f"{visual}\n\n{custom_prompt}" if custom_prompt else visual
+                if verbose:
+                    output.info(f"Scene context added ({len(scene_text)} chars)")
+            elif not quiet:
+                output.warn("No scene context generated; proceeding without it")
+    elif scene_video and not needs_llm:
+        output.warn("--scene-context only applies to LLM optimization/translation")
 
     if verbose:
         output.info(f"Optimize: {need_optimize}, Translate: {need_translate}")

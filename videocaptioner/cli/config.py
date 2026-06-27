@@ -59,6 +59,10 @@ ENV_MAP: Dict[str, str] = {
     "VIDEOCAPTIONER_TTS_MAX_SPEED": "dubbing.max_speed",
     "VIDEOCAPTIONER_TTS_REWRITE_TOO_LONG": "dubbing.rewrite_too_long",
     "VIDEOCAPTIONER_TTS_MIX_ORIGINAL_AUDIO": "dubbing.mix_original_audio",
+    # TwelveLabs Pegasus visual scene context (optional)
+    "TWELVELABS_API_KEY": "scene.api_key",
+    "VIDEOCAPTIONER_SCENE_API_KEY": "scene.api_key",
+    "VIDEOCAPTIONER_SCENE_MODEL": "scene.model",
 }
 
 DEFAULTS: Dict[str, Any] = {
@@ -138,6 +142,13 @@ DEFAULTS: Dict[str, Any] = {
     },
     "output": {
         "format": "srt",
+    },
+    # Optional visual scene context (TwelveLabs Pegasus). Disabled unless
+    # enabled AND an api_key is configured; behaviour is unchanged otherwise.
+    "scene": {
+        "enabled": False,
+        "api_key": "",
+        "model": "pegasus1.5",
     },
 }
 

@@ -208,6 +208,18 @@ def _build_subtitle_parser(subparsers) -> None:
         help="Subtitle layout for bilingual output (default: target-above)",
     )
 
+    scene = p.add_argument_group("Scene context options (TwelveLabs Pegasus, optional)")
+    scene.add_argument(
+        "--scene-context",
+        metavar="VIDEO",
+        help="Use TwelveLabs Pegasus to describe the source VIDEO (path or URL) "
+             "and feed that visual context into LLM optimization/translation. "
+             "Needs a TwelveLabs API key (TWELVELABS_API_KEY or scene.api_key). "
+             "Free key: https://twelvelabs.io",
+    )
+    scene.add_argument("--scene-api-key", metavar="KEY", help=argparse.SUPPRESS)
+    scene.add_argument("--scene-model", metavar="NAME", help=argparse.SUPPRESS)
+
     # Hidden: --prompt-file (use --prompt instead)
     p.add_argument("--prompt-file", metavar="FILE", help=argparse.SUPPRESS)
 
@@ -624,6 +636,13 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
 
     # Output
     _set("output.format", getattr(args, "format", None))
+
+    # Scene context (TwelveLabs Pegasus, optional). --scene-context takes the
+    # source video path/URL; its presence enables the feature.
+    if getattr(args, "scene_context", None):
+        _set("scene.enabled", True)
+    _set("scene.api_key", getattr(args, "scene_api_key", None))
+    _set("scene.model", getattr(args, "scene_model", None))
 
     return overrides
 

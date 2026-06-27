@@ -43,6 +43,22 @@ videocaptioner config set llm.model gpt-4o-mini
 
 配置优先级：`命令行参数 > 环境变量 (VIDEOCAPTIONER_*) > 配置文件 > 默认值`。运行 `videocaptioner config show` 查看当前配置。
 
+### 视觉场景上下文（可选，TwelveLabs Pegasus）
+
+可选地用 [TwelveLabs](https://twelvelabs.io) Pegasus 模型分析源视频的画面内容（场景、屏幕文字、专有名词等），并把这些视觉上下文喂给 LLM，从而更准确地纠正同音字、保留专有名词、按画面切分字幕。该功能**完全可选、默认关闭**：不配置 API Key 时行为与之前完全一致。
+
+```bash
+pip install 'videocaptioner[scene]'        # 安装可选依赖
+export TWELVELABS_API_KEY=<your-key>        # 免费额度：https://twelvelabs.io
+
+# 用源视频的画面上下文增强字幕优化/翻译
+videocaptioner subtitle input.srt --scene-context video.mp4
+```
+
+`--scene-context` 接受本地视频路径（直传 ≤ 200MB）或公开 URL（≤ 4GB）。
+
+> Optional: use TwelveLabs Pegasus to describe the source video's visual scenes and feed that context into LLM subtitle optimization/translation — improving homophone correction, proper-noun retention, and scene-aware segmentation. Fully opt-in and non-breaking; with no key configured, behavior is unchanged. Free API key (generous free tier) at https://twelvelabs.io.
+
 <details>
 <summary>所有 CLI 命令一览</summary>
 
