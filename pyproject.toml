@@ -43,6 +43,9 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = []
+# Optional visual scene context via TwelveLabs Pegasus.
+# Install with: pip install 'videocaptioner[scene]'
+scene = ["twelvelabs>=1.2.8"]
 
 [project.urls]
 Homepage = "https://github.com/WEIFENG2333/VideoCaptioner"

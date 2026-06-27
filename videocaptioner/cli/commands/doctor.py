@@ -43,6 +43,7 @@ def _run_checks(config: dict, *, check_api: bool = False) -> list[Check]:
     checks.append(_check_config_file())
     checks.extend(_check_transcribe(config))
     checks.extend(_check_subtitle(config))
+    checks.extend(_check_scene(config))
     checks.extend(_check_dubbing(config))
     if check_api:
         checks.extend(_check_api(config))
@@ -139,6 +140,24 @@ def _check_subtitle(config: dict) -> list[Check]:
         checks.append(Check("llm.api_key", "warn", "LLM API key is missing; AI polish/split/LLM translation will fail", "Run 'videocaptioner config set llm.api_key <key>' or disable AI polish/split"))
     if needs_llm and not get(config, "llm.model", ""):
         checks.append(Check("llm.model", "error", "LLM model is missing", "Run 'videocaptioner config set llm.model <model>'"))
+    return checks
+
+
+def _check_scene(config: dict) -> list[Check]:
+    """Check the optional TwelveLabs Pegasus scene-context feature."""
+    if not bool(get(config, "scene.enabled", False)):
+        return []  # Opt-in feature; silent when disabled.
+    checks: list[Check] = []
+    try:
+        import twelvelabs  # noqa: F401
+
+        checks.append(Check("scene.sdk", "ok", "twelvelabs SDK installed"))
+    except ImportError:
+        checks.append(Check("scene.sdk", "error", "twelvelabs package not installed", "Run 'pip install videocaptioner[scene]'"))
+    if not get(config, "scene.api_key", ""):
+        checks.append(Check("scene.api_key", "error", "TwelveLabs API key is missing", "Set TWELVELABS_API_KEY or run 'videocaptioner config set scene.api_key <key>' (free key at https://twelvelabs.io)"))
+    else:
+        checks.append(Check("scene.model", "ok", f"scene model: {get(config, 'scene.model', 'pegasus1.5')}"))
     return checks
 
 
