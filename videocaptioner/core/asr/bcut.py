@@ -1,4 +1,5 @@
 import json
+import random
 import time
 from typing import Any, Callable, List, Optional, Union
 
@@ -15,6 +16,8 @@ API_REQ_UPLOAD = API_BASE_URL + "/resource/create"
 API_COMMIT_UPLOAD = API_BASE_URL + "/resource/create/complete"
 API_CREATE_TASK = API_BASE_URL + "/task"
 API_QUERY_RESULT = API_BASE_URL + "/task/result"
+
+RETRYABLE_STATUS_CODES = {408, 409, 412, 425, 429, 500, 502, 503, 504}
 
 
 class BcutASR(BaseASR):
@@ -51,6 +54,59 @@ class BcutASR(BaseASR):
 
         self.need_word_time_stamp = need_word_time_stamp
 
+    def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        *,
+        max_attempts: int = 8,
+        timeout: tuple[int, int] = (15, 300),
+        **kwargs: Any,
+    ) -> requests.Response:
+        """Request Bcut/BOSS endpoints with retry for transient failures."""
+        last_exc: Optional[BaseException] = None
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                resp = self.session.request(method, url, timeout=timeout, **kwargs)
+                if resp.status_code not in RETRYABLE_STATUS_CODES:
+                    resp.raise_for_status()
+                    return resp
+
+                last_exc = requests.HTTPError(
+                    f"{resp.status_code} retryable response", response=resp
+                )
+            except requests.RequestException as exc:
+                last_exc = exc
+                response = getattr(exc, "response", None)
+                status_code = getattr(response, "status_code", None)
+                if status_code is not None and status_code not in RETRYABLE_STATUS_CODES:
+                    raise
+
+            if attempt >= max_attempts:
+                break
+
+            response = getattr(last_exc, "response", None)
+            retry_after = response.headers.get("Retry-After") if response else None
+            try:
+                wait_seconds = float(retry_after) if retry_after else None
+            except ValueError:
+                wait_seconds = None
+
+            if wait_seconds is None:
+                wait_seconds = min(60.0, 2 ** (attempt - 1)) + random.uniform(0, 0.5)
+
+            print(
+                f"Bcut request failed ({last_exc}); "
+                f"retry {attempt}/{max_attempts - 1} after {wait_seconds:.1f}s"
+            )
+            time.sleep(wait_seconds)
+
+        assert last_exc is not None
+        if isinstance(last_exc, requests.HTTPError) and last_exc.response is not None:
+            last_exc.response.raise_for_status()
+        raise last_exc
+
     def upload(self) -> None:
         """Request upload authorization and upload audio file."""
         if not self.file_binary:
@@ -65,8 +121,9 @@ class BcutASR(BaseASR):
             }
         )
 
-        resp = requests.post(API_REQ_UPLOAD, data=payload, headers=self.headers)
-        resp.raise_for_status()
+        resp = self._request_with_retry(
+            "POST", API_REQ_UPLOAD, data=payload, headers=self.headers
+        )
         resp = resp.json()
         resp_data = resp["data"]
 
@@ -93,12 +150,12 @@ class BcutASR(BaseASR):
         for clip in range(self.__clips):
             start_range = clip * self.__per_size
             end_range = (clip + 1) * self.__per_size
-            resp = requests.put(
+            resp = self._request_with_retry(
+                "PUT",
                 self.__upload_urls[clip],
                 data=self.file_binary[start_range:end_range],
                 headers=self.headers,
             )
-            resp.raise_for_status()
             etag = resp.headers.get("Etag")
             if etag is not None:
                 self.__etags.append(etag)
@@ -114,31 +171,33 @@ class BcutASR(BaseASR):
                 "model_id": "8",
             }
         )
-        resp = requests.post(API_COMMIT_UPLOAD, data=data, headers=self.headers)
-        resp.raise_for_status()
+        resp = self._request_with_retry(
+            "POST", API_COMMIT_UPLOAD, data=data, headers=self.headers
+        )
         resp = resp.json()
         self.__download_url = resp["data"]["download_url"]
 
     def create_task(self) -> str:
         """Create ASR task."""
-        resp = requests.post(
+        resp = self._request_with_retry(
+            "POST",
             API_CREATE_TASK,
             json={"resource": self.__download_url, "model_id": "8"},
             headers=self.headers,
         )
-        resp.raise_for_status()
         resp = resp.json()
         self.task_id = resp["data"]["task_id"]
         return self.task_id or ""
 
     def result(self, task_id: Optional[str] = None):
         """Query ASR result."""
-        resp = requests.get(
+        resp = self._request_with_retry(
+            "GET",
             API_QUERY_RESULT,
             params={"model_id": 7, "task_id": task_id or self.task_id},
             headers=self.headers,
+            timeout=(15, 120),
         )
-        resp.raise_for_status()
         resp = resp.json()
         return resp["data"]
 
