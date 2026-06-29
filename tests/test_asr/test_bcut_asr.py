@@ -3,10 +3,80 @@
 from pathlib import Path
 
 import pytest
+import requests
 
 from tests.test_asr.conftest import assert_asr_result_valid
 from videocaptioner.core.asr import BcutASR
 from videocaptioner.core.asr.asr_data import ASRData
+
+
+class FakeResponse:
+    def __init__(self, status_code: int, headers: dict[str, str] | None = None):
+        self.status_code = status_code
+        self.headers = headers or {}
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"{self.status_code} error", response=self)
+
+
+class FakeSession:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = 0
+
+    def request(self, *args, **kwargs):
+        self.calls += 1
+        response = self.responses.pop(0)
+        if isinstance(response, BaseException):
+            raise response
+        return response
+
+
+def make_bcut_without_init(session: FakeSession) -> BcutASR:
+    asr = object.__new__(BcutASR)
+    asr.session = session
+    return asr
+
+
+def test_request_with_retry_recovers_from_read_timeout(monkeypatch) -> None:
+    monkeypatch.setattr("videocaptioner.core.asr.bcut.time.sleep", lambda _: None)
+    monkeypatch.setattr("videocaptioner.core.asr.bcut.random.uniform", lambda *_: 0)
+    session = FakeSession(
+        [
+            requests.exceptions.ReadTimeout("read timed out"),
+            requests.exceptions.ReadTimeout("read timed out"),
+            FakeResponse(200),
+        ]
+    )
+    asr = make_bcut_without_init(session)
+
+    response = asr._request_with_retry("GET", "https://example.test", max_attempts=3)
+
+    assert response.status_code == 200
+    assert session.calls == 3
+
+
+def test_request_with_retry_recovers_from_412(monkeypatch) -> None:
+    monkeypatch.setattr("videocaptioner.core.asr.bcut.time.sleep", lambda _: None)
+    monkeypatch.setattr("videocaptioner.core.asr.bcut.random.uniform", lambda *_: 0)
+    session = FakeSession([FakeResponse(412), FakeResponse(200)])
+    asr = make_bcut_without_init(session)
+
+    response = asr._request_with_retry("GET", "https://example.test", max_attempts=2)
+
+    assert response.status_code == 200
+    assert session.calls == 2
+
+
+def test_request_with_retry_does_not_retry_non_retryable_status() -> None:
+    session = FakeSession([FakeResponse(401)])
+    asr = make_bcut_without_init(session)
+
+    with pytest.raises(requests.HTTPError):
+        asr._request_with_retry("GET", "https://example.test")
+
+    assert session.calls == 1
 
 
 @pytest.mark.integration
