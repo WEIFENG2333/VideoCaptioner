@@ -9,8 +9,17 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
+
+# Windows 控制台默认 cp1252，打印中文标签（如依赖校验的中文名）会 UnicodeEncodeError 崩掉
+# 冒烟测试 → 拦住产物上传。强制 UTF-8 输出，跨平台一致。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, ValueError):
+        pass
 
 
 def _run(cmd: list[str], *, env: dict[str, str] | None = None, cwd: Path | None = None) -> subprocess.CompletedProcess:
