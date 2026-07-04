@@ -6,10 +6,6 @@ from videocaptioner.core.translate.base import BaseTranslator
 from videocaptioner.core.translate.bing_translator import BingTranslator
 from videocaptioner.core.translate.deeplx_translator import DeepLXTranslator
 from videocaptioner.core.translate.google_translator import GoogleTranslator
-from videocaptioner.core.translate.immersive_translator import (
-    MAX_CONCURRENCY,
-    ImmersiveFreeTranslator,
-)
 from videocaptioner.core.translate.llm_translator import LLMTranslator
 from videocaptioner.core.translate.types import TargetLanguage, TranslatorType
 from videocaptioner.core.utils.logger import setup_logger
@@ -73,15 +69,6 @@ class TranslatorFactory:
                     batch_num=batch_num,
                     target_language=target_language,
                     timeout=20,
-                    update_callback=update_callback,
-                )
-            elif translator_type == TranslatorType.IMMERSIVE:
-                # 免费额度：并发封顶 MAX_CONCURRENCY；无需 key/model
-                return ImmersiveFreeTranslator(
-                    thread_num=min(thread_num, MAX_CONCURRENCY),
-                    batch_num=batch_num,
-                    target_language=target_language,
-                    custom_prompt=custom_prompt,
                     update_callback=update_callback,
                 )
         except Exception as e:

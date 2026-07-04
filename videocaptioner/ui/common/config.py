@@ -505,6 +505,7 @@ LLM_SERVICE_KEYS = {
     LLMServiceEnum.LM_STUDIO: "lm_studio",
     LLMServiceEnum.GEMINI: "gemini",
     LLMServiceEnum.CHATGLM: "chatglm",
+    LLMServiceEnum.IMMERSIVE: "immersive",
 }
 KEY_TO_LLM_SERVICE = {value: key for key, value in LLM_SERVICE_KEYS.items()}
 
@@ -522,7 +523,6 @@ TRANSLATOR_KEYS = {
     TranslatorServiceEnum.BING: "bing",
     TranslatorServiceEnum.GOOGLE: "google",
     TranslatorServiceEnum.DEEPLX: "deeplx",
-    TranslatorServiceEnum.IMMERSIVE: "immersive",
 }
 
 SUBTITLE_LAYOUT_KEYS = {

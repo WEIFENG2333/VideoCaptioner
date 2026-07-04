@@ -1225,6 +1225,9 @@ msgstr ""
 msgid "enum.LLMServiceEnum.GEMINI"
 msgstr ""
 
+msgid "enum.LLMServiceEnum.IMMERSIVE"
+msgstr ""
+
 msgid "enum.LLMServiceEnum.LM_STUDIO"
 msgstr ""
 
@@ -1715,9 +1718,6 @@ msgid "enum.TranslatorServiceEnum.DEEPLX"
 msgstr ""
 
 msgid "enum.TranslatorServiceEnum.GOOGLE"
-msgstr ""
-
-msgid "enum.TranslatorServiceEnum.IMMERSIVE"
 msgstr ""
 
 msgid "enum.TranslatorServiceEnum.OPENAI"
@@ -3014,6 +3014,12 @@ msgid "settings.llm.connect_failed"
 msgstr ""
 
 msgid "settings.llm.connect_success"
+msgstr ""
+
+msgid "settings.llm.immersive_hint.desc"
+msgstr ""
+
+msgid "settings.llm.immersive_hint.title"
 msgstr ""
 
 msgid "settings.llm.load_models"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-25 14:48+0800\n"
+"POT-Creation-Date: 2026-06-25 20:45+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -1255,6 +1255,9 @@ msgstr "DeepSeek"
 msgid "enum.LLMServiceEnum.GEMINI"
 msgstr "Gemini"
 
+msgid "enum.LLMServiceEnum.IMMERSIVE"
+msgstr "公益大模型"
+
 msgid "enum.LLMServiceEnum.LM_STUDIO"
 msgstr "LM Studio"
 
@@ -1746,9 +1749,6 @@ msgstr "DeepLx 翻譯"
 
 msgid "enum.TranslatorServiceEnum.GOOGLE"
 msgstr "Google 翻譯"
-
-msgid "enum.TranslatorServiceEnum.IMMERSIVE"
-msgstr "沉浸式翻譯（免費）"
 
 msgid "enum.TranslatorServiceEnum.OPENAI"
 msgstr "LLM 大模型翻譯"
@@ -3045,6 +3045,12 @@ msgstr "LLM 連線失敗"
 
 msgid "settings.llm.connect_success"
 msgstr "LLM 連線成功"
+
+msgid "settings.llm.immersive_hint.desc"
+msgstr "公益模型額度有限，高峰期可能限流或偶發失敗，追求穩定和更好的效果可配置自己的 LLM Key。"
+
+msgid "settings.llm.immersive_hint.title"
+msgstr "免費 · 無需 API Key"
 
 msgid "settings.llm.load_models"
 msgstr "載入模型"

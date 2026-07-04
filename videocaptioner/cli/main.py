@@ -191,8 +191,8 @@ def _build_subtitle_parser(subparsers) -> None:
     trans = p.add_argument_group("Translation options")
     trans.add_argument(
         "--translator",
-        choices=["llm", "bing", "google", "immersive"],
-        help="Translation service (default: bing). bing/google/immersive are free (immersive = Immersive Translate free model, no key)",
+        choices=["llm", "bing", "google"],
+        help="Translation service (default: bing). bing and google are free",
     )
     trans.add_argument(
         "--target-language",
@@ -409,8 +409,8 @@ def _build_process_parser(subparsers) -> None:
     pipe.add_argument("--fun-asr-api-key", metavar="KEY", help="Bailian/DashScope API key (for --asr fun-asr)")
     pipe.add_argument("--fun-asr-api-base", metavar="URL", help="Bailian/DashScope API base URL")
     pipe.add_argument("--fun-asr-model", metavar="NAME", help="Bailian Fun-ASR model name")
-    pipe.add_argument("--translator", choices=["llm", "bing", "google", "immersive"],
-                      help="Translation service (default: bing). bing/google/immersive are free (immersive = Immersive Translate free model, no key)")
+    pipe.add_argument("--translator", choices=["llm", "bing", "google"],
+                      help="Translation service (default: bing). bing and google are free")
     pipe.add_argument("--to", dest="target_language", metavar="CODE", help="Target language BCP 47 code")
     p.add_argument("--target-language", dest="target_language", metavar="CODE", help=argparse.SUPPRESS)
     pipe.add_argument("--reflect", action="store_true", help="Reflective translation (LLM only)")
@@ -507,7 +507,7 @@ def _build_config_parser(subparsers) -> None:
     init_p.add_argument("--llm-api-base", metavar="URL", help="LLM API base URL")
     init_p.add_argument("--llm-model", metavar="NAME", help="LLM model")
     init_p.add_argument("--asr", choices=CLI_ASR_CHOICES, help="Default ASR engine")
-    init_p.add_argument("--translator", choices=["llm", "bing", "google", "immersive"], help="Default translation service")
+    init_p.add_argument("--translator", choices=["llm", "bing", "google"], help="Default translation service")
     init_p.add_argument("--target-language", "--to", dest="target_language", metavar="CODE", help=argparse.SUPPRESS)
     init_p.add_argument("--no-optimize", action="store_true", help="Disable AI subtitle polish by default")
     init_p.add_argument("--no-split", action="store_true", help="Disable subtitle re-segmentation by default")

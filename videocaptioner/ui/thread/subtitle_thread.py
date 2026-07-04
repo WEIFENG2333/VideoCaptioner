@@ -23,6 +23,7 @@ from videocaptioner.core.entities import (
     SubtitleTask,
     TranslatorServiceEnum,
 )
+from videocaptioner.core.llm import free_model
 from videocaptioner.core.llm.check_llm import check_llm_connection
 from videocaptioner.core.llm.context import (
     clear_task_context,
@@ -45,15 +46,13 @@ _SERVICE_TO_TYPE = {
     TranslatorServiceEnum.GOOGLE: TranslatorType.GOOGLE,
     TranslatorServiceEnum.BING: TranslatorType.BING,
     TranslatorServiceEnum.DEEPLX: TranslatorType.DEEPLX,
-    TranslatorServiceEnum.IMMERSIVE: TranslatorType.IMMERSIVE,
 }
 
-# 不依赖 LLM 的翻译服务（沉浸式免费模型自带令牌，也无需用户配 LLM key）
+# 不依赖 LLM 的翻译服务
 _NON_LLM_TRANSLATORS = (
     TranslatorServiceEnum.DEEPLX,
     TranslatorServiceEnum.BING,
     TranslatorServiceEnum.GOOGLE,
-    TranslatorServiceEnum.IMMERSIVE,
 )
 
 
@@ -84,11 +83,13 @@ def _setup_llm_environment(config: SubtitleConfig) -> None:
     """验证 LLM 连通性并写入环境变量；失败抛异常。"""
     if not (config.base_url and config.api_key and config.llm_model):
         raise Exception(tr("t_subtitle.error.llm_not_configured"))
-    success, message = check_llm_connection(
-        config.base_url, config.api_key, config.llm_model
-    )
-    if not success:
-        raise Exception(tr("t_subtitle.error.llm_test_failed", message=message or ""))
+    # 公益大模型令牌由 LLM client 实时获取，占位 key 无法预检，跳过
+    if not free_model.is_free_base(config.base_url):
+        success, message = check_llm_connection(
+            config.base_url, config.api_key, config.llm_model
+        )
+        if not success:
+            raise Exception(tr("t_subtitle.error.llm_test_failed", message=message or ""))
     os.environ["OPENAI_BASE_URL"] = config.base_url
     os.environ["OPENAI_API_KEY"] = config.api_key
 

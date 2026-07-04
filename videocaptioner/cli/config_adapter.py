@@ -21,6 +21,7 @@ from videocaptioner.core.application.app_config import (
 )
 from videocaptioner.core.application.config_store import get
 from videocaptioner.core.entities import FasterWhisperModelEnum, VadMethodEnum, WhisperModelEnum
+from videocaptioner.core.llm import free_model
 from videocaptioner.core.subtitle.style_manager import normalize_style_id
 
 
@@ -32,6 +33,19 @@ def app_config_from_cli(config: dict) -> AppConfig:
     subtitle_mode = str(get(config, "synthesize.subtitle_mode", "hard"))
     llm_service = str(get(config, "llm.service", "openai"))
     llm_provider = get(config, f"llm.providers.{llm_service}", {}) or {}
+    if llm_service == "immersive":
+        # 公益大模型：无需用户配置，base/model 固定，真实令牌在 LLM client 内实时取
+        llm_key, llm_base, llm_model = (
+            free_model.PLACEHOLDER_KEY, free_model.BASE_URL, free_model.MODEL,
+        )
+    else:
+        llm_key = str(llm_provider.get("api_key") or get(config, "llm.api_key", "") or "")
+        llm_base = str(
+            llm_provider.get("api_base")
+            or get(config, "llm.api_base", "https://api.openai.com/v1")
+            or ""
+        )
+        llm_model = str(llm_provider.get("model") or get(config, "llm.model", "gpt-4o-mini") or "")
     return AppConfig(
         work_dir=str(get(config, "app.work_dir", "") or ""),
         cache_enabled=bool(
@@ -39,13 +53,9 @@ def app_config_from_cli(config: dict) -> AppConfig:
         ),
         llm=LLMSettings(
             service=_llm_service_from_key(llm_service),
-            api_key=str(llm_provider.get("api_key") or get(config, "llm.api_key", "") or ""),
-            api_base=str(
-                llm_provider.get("api_base")
-                or get(config, "llm.api_base", "https://api.openai.com/v1")
-                or ""
-            ),
-            model=str(llm_provider.get("model") or get(config, "llm.model", "gpt-4o-mini") or ""),
+            api_key=llm_key,
+            api_base=llm_base,
+            model=llm_model,
         ),
         transcribe=TranscribeSettings(
             model=transcribe_model_from_cli(asr),

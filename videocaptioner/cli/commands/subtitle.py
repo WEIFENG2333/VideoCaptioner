@@ -7,6 +7,7 @@ from pathlib import Path
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
 from videocaptioner.core.application.config_store import get
+from videocaptioner.core.llm import free_model
 
 # BCP 47 → TargetLanguage.value (Chinese label) mapping for internal use
 _LANG_MAP = {
@@ -151,13 +152,19 @@ def run(args: Namespace, config: dict) -> int:
         return err
 
     # Setup LLM environment
-    llm_api_key = get(config, "llm.api_key", "")
-    llm_api_base = get(config, "llm.api_base", "")
-    llm_model = get(config, "llm.model", "")
-    if llm_api_key:
-        os.environ["OPENAI_API_KEY"] = llm_api_key
-    if llm_api_base:
-        os.environ["OPENAI_BASE_URL"] = llm_api_base
+    if get(config, "llm.service", "") == "immersive":
+        # 公益大模型：base/model 固定，真实令牌在 LLM client 内实时取
+        os.environ["OPENAI_BASE_URL"] = free_model.BASE_URL
+        os.environ["OPENAI_API_KEY"] = free_model.PLACEHOLDER_KEY
+        llm_model = free_model.MODEL
+    else:
+        llm_api_key = get(config, "llm.api_key", "")
+        llm_api_base = get(config, "llm.api_base", "")
+        llm_model = get(config, "llm.model", "")
+        if llm_api_key:
+            os.environ["OPENAI_API_KEY"] = llm_api_key
+        if llm_api_base:
+            os.environ["OPENAI_BASE_URL"] = llm_api_base
 
     # Load custom prompt (only if LLM features are needed)
     custom_prompt = getattr(args, "prompt", None) or ""
@@ -236,7 +243,6 @@ def run(args: Namespace, config: dict) -> int:
                 "llm": TranslatorType.OPENAI,
                 "bing": TranslatorType.BING,
                 "google": TranslatorType.GOOGLE,
-                "immersive": TranslatorType.IMMERSIVE,
             }
             translator = TranslatorFactory.create_translator(
                 translator_type=type_map.get(translator_service, TranslatorType.OPENAI),

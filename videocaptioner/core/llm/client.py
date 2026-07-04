@@ -18,6 +18,7 @@ from tenacity import (
 from videocaptioner.core.utils.cache import get_llm_cache, memoize
 from videocaptioner.core.utils.logger import setup_logger
 
+from . import free_model
 from .request_logger import create_logging_http_client, log_llm_response
 
 _global_client: Optional[OpenAI] = None
@@ -61,6 +62,9 @@ def get_llm_client() -> OpenAI:
 
     base_url = normalize_base_url(os.getenv("OPENAI_BASE_URL", "").strip())
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    # 公益大模型网关无需用户 key：忽略占位 key，实时取令牌（指纹含令牌，过期换发后自动重建）
+    if free_model.is_free_base(base_url):
+        api_key = free_model.token()
     if not base_url or not api_key:
         raise ValueError(
             "OPENAI_BASE_URL and OPENAI_API_KEY environment variables must be set"
@@ -70,10 +74,16 @@ def get_llm_client() -> OpenAI:
     if _global_client is None or _client_fingerprint != fingerprint:
         with _client_lock:
             if _global_client is None or _client_fingerprint != fingerprint:
+                # 公益网关在 Cloudflare 后，httpx 默认指纹会被 403：改走 curl_cffi transport
+                http_client = (
+                    free_model.make_http_client()
+                    if free_model.is_free_base(base_url)
+                    else create_logging_http_client()
+                )
                 _global_client = OpenAI(
                     base_url=base_url,
                     api_key=api_key,
-                    http_client=create_logging_http_client(),
+                    http_client=http_client,
                 )
                 _client_fingerprint = fingerprint
 
@@ -130,6 +140,18 @@ def _call_llm_api(
         kwargs = _strip_thinking(kwargs)  # 已知该模型不支持 → 提前去掉
 
     try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,  # pyright: ignore[reportArgumentType]
+            **kwargs,
+        )
+    except openai.AuthenticationError:
+        # 公益大模型 JWT 过期：换发后重建 client 重试一次（其它端点的 401 仍照常抛出）
+        if not free_model.is_free_base(os.getenv("OPENAI_BASE_URL", "")):
+            raise
+        logger.info("公益大模型令牌过期，刷新后重试")
+        free_model.token(force=True)
+        client = get_llm_client()
         response = client.chat.completions.create(
             model=model,
             messages=messages,  # pyright: ignore[reportArgumentType]

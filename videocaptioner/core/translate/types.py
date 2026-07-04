@@ -10,7 +10,6 @@ class TranslatorType(Enum):
     GOOGLE = "google"
     BING = "bing"
     DEEPLX = "deeplx"
-    IMMERSIVE = "immersive"
 
 
 class TargetLanguage(Enum):

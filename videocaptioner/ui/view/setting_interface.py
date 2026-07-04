@@ -496,6 +496,15 @@ class SettingInterface(SettingsShell):
                 "model": model,
             }
 
+        # 选中「公益大模型」时显示：免费免 key + 稳定性预防针；无任何可配置项
+        self.llmImmersiveHintRow = group.addRow(
+            SettingRow(
+                tr("settings.llm.immersive_hint.title"),
+                tr("settings.llm.immersive_hint.desc"),
+                None,
+                group,
+            )
+        )
         self.loadLLMModelsButton = make_button(tr("settings.llm.load_models"), parent=group)
         self.checkLLMButton = make_button(tr("settings.llm.test_connection"), parent=group)
         self.checkLLMRow = group.addRow(
@@ -1313,6 +1322,10 @@ class SettingInterface(SettingsShell):
 
     def _refresh_llm_rows(self, value: Any) -> None:
         current = value if isinstance(value, LLMServiceEnum) else LLMServiceEnum(str(value))
+        # 公益大模型无可配置项：隐藏全部 provider 行与「测试/加载」行，只留提示
+        is_immersive = current == LLMServiceEnum.IMMERSIVE
+        self.llmImmersiveHintRow.setVisible(is_immersive)
+        self.checkLLMRow.setVisible(not is_immersive)
         custom_base_services = {LLMServiceEnum.OPENAI, LLMServiceEnum.OLLAMA, LLMServiceEnum.LM_STUDIO}
         for service, rows in self.llmProviderRows.items():
             for row in rows:

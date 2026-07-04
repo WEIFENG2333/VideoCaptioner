@@ -15,6 +15,7 @@ from videocaptioner.core.application.app_config import (
     TranscribeSettings,
 )
 from videocaptioner.core.entities import LANGUAGES, LLMServiceEnum
+from videocaptioner.core.llm import free_model
 
 
 def app_config_from_ui(cfg) -> AppConfig:
@@ -92,6 +93,14 @@ def app_config_from_ui(cfg) -> AppConfig:
 
 def _llm_from_ui(cfg) -> LLMSettings:
     service = cfg.llm_service.value
+    if service == LLMServiceEnum.IMMERSIVE:
+        # 公益大模型：无需用户配置，base/model 固定，真实令牌在 LLM client 内实时取
+        return LLMSettings(
+            service=service,
+            api_key=free_model.PLACEHOLDER_KEY,
+            api_base=free_model.BASE_URL,
+            model=free_model.MODEL,
+        )
     items = {
         LLMServiceEnum.OPENAI: (
             cfg.openai_api_key,

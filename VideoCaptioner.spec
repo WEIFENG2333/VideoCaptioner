@@ -78,9 +78,15 @@ hiddenimports += ["sounddevice", "_sounddevice_data", "cffi", "_cffi_backend", "
 # onnxruntime 的原生库（libonnxruntime.*.dylib / onnxruntime_pybind11_state.so）。ocr 未装时这些为空、不影响 base 包。
 hiddenimports += ["onnxruntime", "rapidocr", "rapidfuzz"]
 hiddenimports += _safe(collect_submodules, "rapidocr")
+# 公益大模型经 curl_cffi（浏览器 TLS 指纹过 Cloudflare）：wheel 内带原生 libcurl-impersonate
+# 与 CA 证书数据，需显式收集，否则打包后 import 就崩。
+hiddenimports += ["curl_cffi"]
+hiddenimports += collect_submodules("curl_cffi")
 
 datas += _safe(collect_data_files, "rapidocr")
-ocr_binaries = _safe(collect_dynamic_libs, "onnxruntime")
+datas += collect_data_files("curl_cffi")
+native_binaries = _safe(collect_dynamic_libs, "onnxruntime")
+native_binaries += collect_dynamic_libs("curl_cffi")
 
 excludes = [
     "tkinter",
@@ -97,7 +103,7 @@ excludes = [
 a = Analysis(
     [str(ROOT / "videocaptioner" / "__main__.py")],
     pathex=[str(ROOT)],
-    binaries=ocr_binaries,
+    binaries=native_binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
