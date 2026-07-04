@@ -25,11 +25,17 @@ from qfluentwidgets import (
     SwitchButton,
 )
 
+from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.enum_labels import enum_label
 from videocaptioner.ui.common.settings_state import SettingField
 from videocaptioner.ui.common.theme_tokens import app_palette, is_dark_theme, rgba
-from videocaptioner.ui.components.workbench import AppLineEdit, WorkbenchButton, apply_font
+from videocaptioner.ui.components.workbench import (
+    AppLineEdit,
+    RoundIconButton,
+    WorkbenchButton,
+    apply_font,
+)
 from videocaptioner.ui.i18n import tr
 
 CONTROL_WIDTH = 246
@@ -778,11 +784,11 @@ class _ElidedPathLabel(QLabel):
 
 
 class FolderPickerControl(QWidget):
-    """目录设置控件：只读路径 + 「打开」 + 「更改」。
+    """目录设置控件：省略路径 + 紧凑图标按钮（打开 / 更改）。
 
-    目录路径是配置值，不该被当文本手敲——只读展示防误改；「打开」
-    满足最常见的"看看里面有什么"诉求；选目录统一走系统对话框
-    （changeRequested 由所属页面接管，便于定制对话框标题与落库）。
+    目录路径是配置值，不该被当文本手敲——只读展示防误改，完整路径走 tooltip。
+    打开/更改用 34px 图标按钮而非宽文字按钮，控件区收窄，给左侧标题/描述让位
+    （选目录统一走系统对话框，changeRequested 由所属页面接管，定制标题与落库）。
     """
 
     changeRequested = pyqtSignal()
@@ -797,10 +803,13 @@ class FolderPickerControl(QWidget):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(8)
         self.pathLabel = _ElidedPathLabel(self)
-        self.openButton = make_button(tr("ctrl.open"), parent=self)
-        self.changeButton = make_button(tr("ctrl.change"), parent=self)
+        self.pathLabel.setFixedWidth(210)  # 比 CONTROL_WIDTH 窄，腾出空间给标题/描述
+        self.openButton = RoundIconButton(AppIcon.FOLDER, diameter=34, parent=self)
+        self.openButton.setToolTip(tr("ctrl.open"))
+        self.changeButton = RoundIconButton(AppIcon.EDIT, diameter=34, parent=self)
+        self.changeButton.setToolTip(tr("ctrl.change"))
         layout.addWidget(self.pathLabel)
         layout.addWidget(self.openButton)
         layout.addWidget(self.changeButton)
@@ -873,7 +882,7 @@ def _apply_value_label_style(label: QWidget) -> None:
                 border: 1px solid {palette.line_soft};
                 border-radius: 9px;
             padding: 0 12px;
-            font-weight: bold;
+            font-weight: normal;
         }}
         """
     )

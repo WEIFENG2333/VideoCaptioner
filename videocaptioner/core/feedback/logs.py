@@ -1,8 +1,6 @@
 """采集随反馈上传的「最近日志」附件（默认开启）。无 PyQt。
 
-只取 app.log 尾部（最近 ~256KB，足够定位且远小于 5MB 上限），**发送前脱敏**：
-Bearer / sk-xxx / api_key=... / token / password / URL 凭据一律打码。对齐后端文档硬规则
-「logs 里不要放 API key、base URL、access token」。
+取 app.log 尾部（~256KB），发送前脱敏。硬规则：logs 不得含 API key / base URL / token。
 """
 
 from __future__ import annotations
@@ -15,11 +13,8 @@ from videocaptioner.core.feedback.models import FeedbackAttachment
 _LOG_FILE = LOG_PATH / "app.log"
 _MAX_TAIL_BYTES = 256 * 1024  # 最近日志尾部上限
 
-# 脱敏规则。scheme 前缀凭据（Bearer/Basic）单独成条并保留 scheme 便于可读；HTTP
-# Authorization 头走这条，故键值对列表里不含 authorization（否则会把 scheme 词再吃成 ***）。
-# 硬规则：logs 默认随反馈上传，不得含 API key / base URL / access token，故一并打码：
-# 密钥形态（sk- / Google AIza）、key=value 与 query `?key=` 凭据、URL 内嵌账密、以及
-# base URL / endpoint 标记后的地址（base URL 本身也算敏感，会暴露 provider/自建主机）。
+# 打码顺序固定。Bearer/Basic 单独成条保留 scheme 便于可读，故键值对列表不含
+# authorization（否则会把 scheme 词二次吃成 ***）。base URL/endpoint 也算敏感，一并打码。
 _SCRUB_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"(?i)\b(bearer|basic)\s+[A-Za-z0-9._\-+/=]+"), r"\1 ***"),
     (re.compile(r"\bsk-[A-Za-z0-9._\-]{6,}"), "sk-***"),

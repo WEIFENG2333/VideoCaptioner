@@ -12,9 +12,8 @@ CONTACT_MAX_BYTES = 200
 MAX_FILES = 3
 MAX_LOG_FILES = 3
 MAX_FILE_BYTES = 5 * 1024 * 1024
-MAX_TOTAL_BYTES = 12 * 1024 * 1024  # 后端按整个请求体（截图 + 日志 + 文本字段）卡 12 MB
-# 后端卡的是整条 multipart 请求；本地把文本字段与每段框架开销也计入 total，让本地校验
-# 成为后端上限的真超集（否则正好 12MB 二进制 + message/diagnostics 会被后端 413）。
+MAX_TOTAL_BYTES = 12 * 1024 * 1024  # 后端按整条请求体（截图 + 日志 + 文本字段）卡 12 MB
+# 本地 total 也计入文本字段与框架开销，成为后端上限的真超集，避免本地放行后被后端 413。
 _FRAMING_RESERVE_BYTES = 2048
 ALLOWED_MIME = ("image/png", "image/jpeg")
 

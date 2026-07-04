@@ -1,8 +1,7 @@
 """提交反馈到后端（multipart/form-data）。无 PyQt。
 
-复用 net.system_proxy（GUI 进程拿不到 shell 的 HTTP_PROXY，必须主动取系统代理）。
-端点写死在 config.FEEDBACK_API_URL，不走环境变量/配置文件。本期后端无幂等，但客户端仍每次
-带新 request_id 仅供排查。
+代理走 net.system_proxy（GUI 进程拿不到 shell 的 HTTP_PROXY）；端点写死在
+config.FEEDBACK_API_URL。本期后端无幂等，request_id 仅供排查。
 """
 
 from __future__ import annotations
