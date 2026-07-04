@@ -103,7 +103,7 @@ def test_extract_uses_ditto_on_macos(tmp_path, monkeypatch):
 
 
 def test_download_update_passes_sha256(monkeypatch, tmp_path):
-    from videocaptioner.core.update.manifest import UpdateAsset, UpdateInfo
+    from videocaptioner.core.update.client import UpdateInfo
 
     captured = {}
 
@@ -117,10 +117,14 @@ def test_download_update_passes_sha256(monkeypatch, tmp_path):
     info = UpdateInfo(
         version="3.0.0",
         notes="",
-        mandatory=False,
-        asset=UpdateAsset(url="https://github.com/x/y.zip", sha256="deadbeef", size=1, kind="app-zip"),
+        url="https://github.com/x/y.zip",
+        sha256="deadbeef",
+        size=1,
     )
     out = installer.download_update(info, tmp_path)
     assert out.name == "VideoCaptioner-3.0.0.zip"
     assert captured["sha256"] == "deadbeef"
+    # 镜像兜底：原直链在列表末尾，前面是 ghproxy 镜像
+    assert captured["urls"][-1] == "https://github.com/x/y.zip"
+    assert len(captured["urls"]) == 3
     assert captured["urls"][-1] == "https://github.com/x/y.zip"  # 直连兜底在末位

@@ -26,9 +26,9 @@ HELP_URL = "https://github.com/WEIFENG2333/VideoCaptioner"
 GITHUB_REPO_URL = "https://github.com/WEIFENG2333/VideoCaptioner"
 RELEASE_URL = "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest"
 FEEDBACK_URL = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
-# 自动更新 manifest：CI 发版时生成 latest.json 挂到同一个 Release（与资产同源、可回滚）。
-# 客户端拉它判断新版并取本平台下载地址；core/update 会自动加 ghproxy 镜像兜底。
-UPDATE_MANIFEST_URL = "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest/download/latest.json"
+# 更新检查后端：客户端启动调它，一次拿 block / update / announcement（飞书多维表格驱动）。
+# 二进制仍在 GitHub Release，响应给直链；core/update 下载时自动加 ghproxy 镜像兜底 + 校验 sha256。
+UPDATE_CHECK_URL = "https://backend.videocaptioner.cn/api/update/check"
 # 用户反馈后端：客户端 multipart 提交到这里，后端写入飞书多维表格。端点写死，不走环境变量/配置。
 FEEDBACK_API_URL = "https://vc-feedback-backend.weifeng.workers.dev/api/feedback"
 

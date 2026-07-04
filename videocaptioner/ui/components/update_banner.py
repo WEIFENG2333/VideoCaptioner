@@ -26,14 +26,17 @@ class UpdateBanner:
     def __init__(
         self,
         window,
-        info: UpdateInfo,
+        info: UpdateInfo | None,
         dest_dir: Path,
         on_install: Callable[[str], None],
+        *,
+        blocked: str | None = None,
     ):
         self._window = window
         self._info = info
         self._dest_dir = Path(dest_dir)
         self._on_install = on_install
+        self._blocked = blocked  # 非空=当前版本被后端封禁，文案直接展示
         self._self_update = can_self_update()
         self._state = "available"
         self._zip_path: str | None = None
@@ -42,13 +45,19 @@ class UpdateBanner:
         self._button: PrimaryPushButton | None = None
 
     def show(self) -> None:
+        # 普通更新标题带版本号；版本被封禁时用「需更新才能继续使用」标题，原因放正文
+        title = (
+            tr("app.update.title", version=self._info.version)
+            if (self._info and not self._blocked)
+            else tr("app.update.mandatory")
+        )
         self._bar = InfoBar(
             InfoBarIcon.INFORMATION,
-            tr("app.update.title", version=self._info.version),
+            title,
             "",
-            # 强制更新且能自更新时才不可关闭（逼用户在应用内更新）；不能自更新时仍可关，
+            # 封禁且能自更新时才不可关（逼用户在应用内更新）；不能自更新时仍可关，
             # 否则用户被卡在一个只能「前往下载」的常驻条上、无应用内出路。
-            isClosable=not (self._info.mandatory and self._self_update),
+            isClosable=not (self._blocked and self._self_update),
             duration=-1,
             position=InfoBarPosition.TOP,
             parent=self._window,
@@ -88,8 +97,13 @@ class UpdateBanner:
         if self._bar is None or self._button is None:
             return
         if state == "available":
-            content = tr("app.update.mandatory") if self._info.mandatory else tr("app.update.available")
-            button = tr("app.update.download") if self._self_update else tr("app.update.go_download")
+            content = self._blocked or tr("app.update.available")
+            # 能自更新且有资产才给「下载更新」，否则退化「前往下载」（pip / 无本平台资产）
+            button = (
+                tr("app.update.download")
+                if (self._self_update and self._info)
+                else tr("app.update.go_download")
+            )
         elif state == "downloading":
             content = tr("app.update.downloading", percent=percent)
             button = tr("app.update.cancel")
@@ -107,12 +121,14 @@ class UpdateBanner:
             self._cancel()
         elif self._state == "ready":
             self._install()
-        elif self._self_update:  # available / failed
+        elif self._self_update and self._info is not None:  # available / failed
             self._start_download()
         else:
             QDesktopServices.openUrl(QUrl(RELEASE_URL))
 
     def _start_download(self) -> None:
+        if self._info is None:  # 无资产不可下载（理论上按钮已退化为前往下载）
+            return
         self._teardown_dl()  # 重试/再下载前先清掉上一个线程，保证单例
         self._dl = UpdateDownloadThread(self._info, self._dest_dir, self._window)
         self._dl.progress.connect(self._on_progress)

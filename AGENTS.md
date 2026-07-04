@@ -637,53 +637,55 @@ UI 国际化是 **key-based gettext**，**只翻 UI（PyQt）；core 与 CLI 不
 
 ## Software Update (自动更新)
 
-应用内自动更新 + 实时公告：启动后台拉清单 → 有新版弹「更新提示条」→ 一键下载（带校验）→
-「重启并安装」；同一清单里可带公告，按 id 弹一次。**业务在 `core/update`（无 PyQt），UI 只是薄壳。**
+应用内自动更新 + 公告：启动后台调**自建后端** `GET /api/update/check` → 拿 `block`（版本封禁）/
+`update`（新版）/`announcement`（公告）→ 有新版弹「更新提示条」一键下载（带校验）→「重启并安装」；
+公告按 id 弹一次。后端（飞书多维表格驱动）决定一切版本逻辑，客户端只渲染。**二进制仍在 GitHub
+Release**，响应给直链。契约见 `docs/dev/update-api.md`（与 vc-backend 的 `docs/update-api.md` 同步）。
+**业务在 `core/update`（无 PyQt），UI 只是薄壳。**
 
 ```text
-core/update/manifest.py    拉 GitHub Release 的 latest.json、选当前平台资产、比版本、取公告
-                           （fetch_manifest → (UpdateInfo, Announcement)；fetch_update 是其薄包装；
-                           select_announcement / is_newer / select_asset）
+core/update/client.py      调 /api/update/check（headers 带版本/平台/channel/client_id）→ CheckResult
+                           (block, update, announcement)；app_channel()；UpdateInfo.urls 镜像兜底
 core/update/installer.py   下载（复用 core/download，sha256 校验）+ 退出后替换重启
                            （download_update / apply_update / can_self_update / install_root）
-ui/thread/update_thread.py UpdateCheckThread（启动后台检查）/ UpdateDownloadThread（进度+取消）
-ui/components/update_banner.py  提示条状态机：可用→下载中 NN%→重启并安装；失败可重试
-scripts/gen_update_manifest.py  发版时按产物生成 latest.json（CI 跑，挂到同一 Release）
+ui/thread/update_thread.py UpdateCheckThread（启动后台检查，resultReady/checkFailed）/ UpdateDownloadThread
+ui/components/update_banner.py  提示条状态机：可用→下载中 NN%→重启并安装；失败可重试；blocked 态
+scripts/register_release.py  发版时 POST /api/admin/release 登记新版（CI 跑，带 CI_RELEASE_TOKEN）
 ```
 
 硬规则：
 
-- **manifest 与资产同源、可回滚**：`scripts/build_desktop.py` 产物名决定平台键与 kind
-  （`*-windows-x64.zip`→`windows-x64`/`onedir-zip`；`*-macos-*-app.zip`→`macos-*`/`app-zip`；
-  macOS 裸 onedir 不参与更新）。改产物命名要同步改 `gen_update_manifest.py` 的解析。
-  `.github/workflows/build-desktop.yml` 的 `manifest` job 在所有平台构建后生成并 `gh release upload`。
-- **安装器/dmg 只给人工首次下载，不参与自动更新**：`scripts/build_windows_installer.py`
-  （Inno Setup，`packaging/windows/VideoCaptioner.iss`，per-user 装到 `%LOCALAPPDATA%\Programs`
-  → 目录可写、自更新照常）出 `*-windows-x64-setup.exe`；`scripts/build_macos_dmg.py`
-  （ad-hoc 签名 + hdiutil）出 `*-macos-*.dmg`。自动更新仍只拉 onedir-zip/app-zip 走 rm+mv 换装，
-  故 `gen_update_manifest.py` 只 `rglob VideoCaptioner-*.zip`、忽略 exe/dmg。**无 Apple 证书时
-  macOS 首次打开必被 Gatekeeper 提示**（需右键→打开），ad-hoc 签名只避免「已损坏」硬拦截；
-  消除提示需付费证书 + 公证。
-- **onedir 运行中无法原地覆盖自身**：`apply_update` 解压到临时目录 → 写平台 helper
-  （Win `.cmd` / Unix `.sh`，等本进程 PID 退出后 rm+mv 换装并重启，macOS 还要清 quarantine）→
-  调用方必须立即 `QApplication.quit()`，否则 helper 一直等。
-- **不能自更新就退化**：非 frozen / 安装目录不可写时 `can_self_update()` 为假，提示条按钮变
-  「前往下载」开 Release 页（开发态、`VERSION` 以 `0.0.0` 开头时启动检查直接 upToDate，不联网）。
+- **后端是真相源**：版本封禁、选最新版、灰度、公告时间窗全部后端算，客户端不做版本比较。端点写死
+  `config.UPDATE_CHECK_URL`（`https://backend.videocaptioner.cn/api/update/check`），不走环境变量。
+- **三个字段都可空，缺值一律按「无」处理**：`block`（非空字符串=封禁，文案直接展示）/ `update`
+  `{version,notes,url,sha256,size}` / `announcement` `{id,title,content}`。`check_update` 任何
+  失败（网络/非 JSON/`ok:false`）返回 None，调用方静默忽略、不阻断启动。
+- **channel 决定能否自更新**：`app_channel()` = `desktop`(frozen) / `dev`(源码或 editable，包不在
+  site-packages) / `pip`(wheel 装进 site-packages)。**dev 也检查**（看得到更新/公告便于调试）；
+  `pip` 后端返回 `update=null`（交给 `pip install -U`）。不再有 `VERSION.startswith("0.0.0")` 跳过。
+- **block = 锁死整个应用**：`block` 非空且 `can_self_update()` 时 main_window `stackedWidget.setEnabled(False)`
+  + 提示条不可关，逼用户更新；不能自更新（dev/pip）时不锁、按钮变「前往下载」，避免卡死。
+- **CI 发版几乎零手工**：`tag + push` → build-desktop 构建上传 zip 到 Release → `register` job 跑
+  `register_release.py` POST `/api/admin/release` 登记（version/notes/各平台 url+sha256+size）。
+  封禁老版本/灰度/发公告改飞书表，无需重新发版。改产物命名要同步 `register_release.py` 的 `_platform_key`。
+- **安装器/dmg 只给人工首次下载，不参与自动更新**：`build_windows_installer.py`（Inno，per-user 装到
+  `%LOCALAPPDATA%\Programs` → 可写、自更新照常）出 `*-setup.exe`；`build_macos_dmg.py`（ad-hoc 签名）
+  出 `*.dmg`。自更新只拉 onedir-zip(Windows)/app-zip(macOS) 走 rm+mv 换装，`register_release.py` 只
+  `rglob VideoCaptioner-*.zip` 且跳过 macOS 裸 onedir。**无 Apple 证书 macOS 首开必被 Gatekeeper 提示**。
+- **onedir 运行中无法原地覆盖自身**：`apply_update` 解压到临时目录 → 写平台 helper（Win `.cmd` /
+  Unix `.sh`，等本进程 PID 退出后 rm+mv 换装并重启，macOS 还清 quarantine）→ 调用方必须立即
+  `QApplication.quit()`，否则 helper 一直等。
 - 下载走 `core/download/downloader.download_file`（镜像兜底 + 续传 + sha256），**不要**另起一套下载。
-- **macOS 打包/解压必须用 `ditto`，不能用 Python `zipfile`**：zipfile 会把 .app 的符号链接
-  （Qt/Python framework 的 `Versions/Current` 等）拍平成普通文件、丢掉可执行位，解压出的 .app
-  起不来。`build_desktop._archive_dir` 与 `installer._extract` 在 Darwin 分支都走 ditto（产物仍是
-  标准 zip）；Windows onedir 无软链/执行位，继续用 zipfile。改这两处务必保持 ditto。
+- **macOS 打包/解压必须用 `ditto`，不能用 Python `zipfile`**：zipfile 会把 .app 的符号链接拍平、
+  丢可执行位，解压出的 .app 起不来。`build_desktop._archive_dir` 与 `installer._extract` 在 Darwin
+  分支都走 ditto；Windows onedir 无软链/执行位继续用 zipfile。改这两处务必保持 ditto。
 - 更新检查/下载线程必须在 `main_window.closeEvent` 里停掉（`updateBanner.stop()` +
   `updateCheckThread.wait()`），否则退出销毁运行中 QThread 触发 abort。
-- 旧的 `vc.bkfeng.top/api/version` 轮询 + `version_checker_thread.py` 已删除，不要复活。
-- **实时公告**并进同一 `latest.json` 的 `announcement` 块（零服务器：发版后 `gh release upload
-  latest.json --clobber` 即可随时改）：`enabled`/`content` + `start_date~end_date` 时间窗 +
-  `min_version~max_version` 版本定向（比旧版多的"控制版本看谁"）；客户端按 `id`（缺省取 content
-  哈希）去重只弹一次，去重态存 `get_version_state_cache()`，公告与是否有新版互相独立（最新版用户也能收）。
-  生成时用 `gen_update_manifest.py --announcement notice.json` 嵌入。
-- **强制更新/版本控制**：`mandatory`（一刀切）+ `min_supported`（低于即强制）；命中后 main_window
-  禁用 home/batch 页 + 提示条不可关闭。
+- **client_id 与反馈复用同一个**（`get_or_create_client_id`，存 `APPDATA/feedback_client_id`），
+  随 check 走 `X-Client-Id` 头给后端统计；`X-App-Version/Platform/Channel` 同走头，无任何密钥。
+- 公告按 `id` 去重只弹一次，去重态存 `get_version_state_cache()`（`announcement_shown_<id>`），与是否
+  有新版互相独立（最新版用户也能收）。旧的 GitHub `latest.json` / `gen_update_manifest.py` /
+  `manifest.py` / `vc.bkfeng.top` 轮询 / `mandatory`+`min_supported` 客户端逻辑均已删除，不要复活。
 - 新增更新/公告 UI 文案要走 i18n（`app.update.*` / `app.announcement.*`），改完重跑
   `scripts/i18n.py extract→update→…→compile`。
 

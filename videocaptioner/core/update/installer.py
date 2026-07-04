@@ -18,7 +18,7 @@ import zipfile
 from pathlib import Path
 
 from videocaptioner.core.download.downloader import download_file
-from videocaptioner.core.update.manifest import UpdateInfo
+from videocaptioner.core.update.client import UpdateInfo
 from videocaptioner.core.utils.logger import setup_logger
 
 logger = setup_logger("update_installer")
@@ -65,7 +65,7 @@ def download_update(
     return download_file(
         info.urls,
         dest,
-        sha256=info.asset.sha256 or None,
+        sha256=info.sha256 or None,
         on_progress=on_progress,
         should_cancel=should_cancel,
     )

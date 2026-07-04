@@ -205,13 +205,20 @@ class MainWindow(FluentWindow):
         """启动后台检查更新。manual=True 时（设置页按钮触发）额外提示「已是最新/检查失败」。"""
         if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
             return
+        self._manual_update_check = manual
         self.updateCheckThread = UpdateCheckThread(self)
-        self.updateCheckThread.updateAvailable.connect(self._on_update_available)
-        self.updateCheckThread.announcementAvailable.connect(self._on_announcement)
-        if manual:
-            self.updateCheckThread.upToDate.connect(self._on_up_to_date)
-            self.updateCheckThread.checkFailed.connect(self._on_check_failed)
+        self.updateCheckThread.resultReady.connect(self._on_check_result)
+        self.updateCheckThread.checkFailed.connect(self._on_check_failed)
         self.updateCheckThread.start()
+
+    def _on_check_result(self, result):
+        """一次检查的结果：公告（去重弹）+ 封禁/更新（提示条）。"""
+        if result.announcement is not None:
+            self._on_announcement(result.announcement)
+        if result.block or result.update is not None:
+            self._show_update_banner(result.update, result.block)
+        elif getattr(self, "_manual_update_check", False):
+            self._on_up_to_date()
 
     def _on_announcement(self, ann):
         """展示线上公告（按 id 去重，只弹一次）。公告与是否有新版无关。"""
@@ -245,17 +252,18 @@ class MainWindow(FluentWindow):
             return
         self._check_updates(manual=True)
 
-    def _on_update_available(self, info):
-        """有新版：展示更新提示条（可用→下载中→重启安装）。强制更新时禁用主流程页。"""
+    def _show_update_banner(self, info, block):
+        """展示更新提示条（可用→下载中→重启安装）。版本被封禁且能自更新时锁死整个应用。"""
         if self.updateBanner is not None:  # 防重复（手动检查叠加自动检查）
             return
-        self.updateBanner = UpdateBanner(self, info, CACHE_PATH / "update", self._install_update)
+        self.updateBanner = UpdateBanner(
+            self, info, CACHE_PATH / "update", self._install_update, blocked=block
+        )
         self.updateBanner.show()
-        # 仅当能在应用内自更新时才禁用主流程页逼用户更新；不能自更新（开发态/安装目录不可写）
-        # 时禁用会把用户卡死在只能「前往下载」的死胡同，故保持页面可用、提示条可关。
-        if info.mandatory and can_self_update():
-            self.homeInterface.setEnabled(False)
-            self.batchProcessInterface.setEnabled(False)
+        # 版本被封禁且能自更新：锁死整个应用，只留更新入口（提示条不可关）。不能自更新
+        # （开发态/pip/安装目录不可写）时不锁，否则把用户卡死在只能「前往下载」的死胡同。
+        if block and can_self_update():
+            self.stackedWidget.setEnabled(False)
 
     def _on_up_to_date(self):
         InfoBar.success(
@@ -268,6 +276,9 @@ class MainWindow(FluentWindow):
         )
 
     def _on_check_failed(self, message):
+        # 仅手动「检查更新」时提示失败；启动自动检查失败静默忽略，不打扰
+        if not getattr(self, "_manual_update_check", False):
+            return
         InfoBar.warning(
             title=tr("app.update.check_failed"),
             content=message,

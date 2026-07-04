@@ -94,21 +94,22 @@ jobs:
             gh release create "$TAG" --title "$TAG" --generate-notes
           gh release upload "$TAG" artifacts/* --clobber
 
-  # 所有平台产物上传完成后，生成自动更新清单 latest.json（含各平台 sha256/size）并挂到同一 Release。
-  # 客户端 videocaptioner/core/update 拉它判断新版；与资产同源、可回滚。
-  manifest:
-    name: Publish update manifest
+  # 所有平台产物上传完成后，把新版本登记到更新后端（飞书多维表格驱动）。
+  # 客户端启动调 /api/update/check 即可拿到；二进制仍在本 Release，后端只存下载地址 + 校验信息。
+  register:
+    name: Register release to update backend
     needs: desktop
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests
 
       - name: Download all desktop artifacts
         uses: actions/download-artifact@v5
@@ -117,16 +118,13 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Generate and publish latest.json
+      - name: Register release
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
+          CI_RELEASE_TOKEN: ${{ secrets.CI_RELEASE_TOKEN }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          python scripts/gen_update_manifest.py \
+          python scripts/register_release.py \
             --tag "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --artifacts artifacts \
-            --out latest.json
-          cat latest.json
-          gh release upload "$TAG" latest.json --clobber
+            --artifacts artifacts
