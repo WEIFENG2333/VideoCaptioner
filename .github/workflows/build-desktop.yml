@@ -37,8 +37,8 @@ jobs:
         include:
           - name: Windows x64
             os: windows-latest
-          - name: macOS Intel
-            os: macos-15-intel
+          - name: macOS Apple Silicon
+            os: macos-15
 
     steps:
       - uses: actions/checkout@v6
