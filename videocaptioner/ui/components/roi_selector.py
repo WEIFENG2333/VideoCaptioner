@@ -402,6 +402,7 @@ class RoiSelector(QWidget):
         palette = app_palette()
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)  # 帧图缩放不锯齿
         p.fillRect(self.rect(), QColor("#10100f"))  # 帧外黑边
         if self._pix is None:
             if self._busy_text:

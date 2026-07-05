@@ -124,6 +124,7 @@ class _AttachmentThumb(QFrame):
         palette = app_palette()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)  # 分数 DPI 缩放不锯齿
         rect = self.rect().adjusted(0, 0, -1, -1)
         clip = QPainterPath()
         clip.addRoundedRect(rect.x(), rect.y(), rect.width(), rect.height(), 9, 9)
@@ -254,6 +255,7 @@ class _AddImageTile(QFrame):
         size = 22
         pixmap = icon_pixmap(AppIcon.ADD, palette.accent_text, size)
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)  # 分数 DPI 缩放不锯齿
         painter.drawPixmap((self.width() - size) // 2, (self.height() - size) // 2, pixmap)
 
 

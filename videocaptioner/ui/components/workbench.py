@@ -2018,6 +2018,7 @@ class MediaThumb(QFrame):
         palette = app_palette()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)  # 分数 DPI 缩放不锯齿
         rect = QRectF(0.5, 0.5, self.width() - 1, self.height() - 1)
         clip = QPainterPath()
         clip.addRoundedRect(rect, 10, 10)
