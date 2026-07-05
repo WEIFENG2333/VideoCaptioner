@@ -1983,7 +1983,9 @@ class OptionCard(QFrame):
 class MediaThumb(QFrame):
     """媒体缩略图：有封面画封面，没有就画音/视频占位图。
 
-    转录页媒体卡与合成页结果预览共用。
+    转录页媒体卡与合成页结果预览共用。``fit``：
+    - "cover"（默认）铺满并裁切，适合固定高度的小卡片；
+    - "contain" 完整显示留边，适合结果预览这种「必须看全画面」的大区域。
     """
 
     # 音频波形折线的折点（180x28 坐标系），绘制时按尺寸缩放。
@@ -1992,10 +1994,11 @@ class MediaThumb(QFrame):
         (104, 4), (124, 23), (144, 10), (178, 16),
     ]
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, fit: str = "cover"):
         super().__init__(parent)
         self._pixmap: Optional[QPixmap] = None
         self._audio = False
+        self._fit = fit
 
     def setMedia(self, thumbnail_path: str | None, is_audio: bool):
         self._audio = is_audio
@@ -2021,9 +2024,15 @@ class MediaThumb(QFrame):
         painter.setClipPath(clip)
 
         if self._pixmap is not None:
+            if self._fit == "contain":
+                # 完整显示：先铺主题底色再等比缩放居中，留边不裁画面
+                painter.fillRect(self.rect(), QColor(palette.panel_deep))
+                aspect_mode = Qt.KeepAspectRatio
+            else:
+                aspect_mode = Qt.KeepAspectRatioByExpanding
             scaled = self._pixmap.scaled(
                 self.size(),
-                Qt.KeepAspectRatioByExpanding,  # type: ignore[arg-type]
+                aspect_mode,  # type: ignore[arg-type]
                 Qt.SmoothTransformation,  # type: ignore[arg-type]
             )
             painter.drawPixmap(

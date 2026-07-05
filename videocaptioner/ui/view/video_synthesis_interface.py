@@ -853,7 +853,8 @@ class VideoSynthesisInterface(QWidget):
         done_layout = QVBoxLayout(done_host)
         done_layout.setContentsMargins(16, 16, 16, 16)
         done_layout.setSpacing(12)
-        self.resultThumb = MediaThumb(self)
+        # contain：结果预览要完整看到成片画面，不能像小卡片那样铺满裁切
+        self.resultThumb = MediaThumb(self, fit="contain")
         self.resultThumb.setMinimumHeight(240)
         done_layout.addWidget(self.resultThumb, 1)
         self.resultRows = [ResultFileRow(self), ResultFileRow(self)]
@@ -1122,6 +1123,7 @@ class VideoSynthesisInterface(QWidget):
                 tr("synth.blocker.ffmpeg_missing_detail"),
             )
         if add_dubbing and not shutil.which("ffprobe"):
+            # pydub 读 mp3 段（Edge 默认输出）经 ffprobe，缺了会在任务中途裸崩
             return (
                 tr("synth.blocker.ffprobe_missing"),
                 (tr("synth.pill.missing_ffprobe"), "fail"),
