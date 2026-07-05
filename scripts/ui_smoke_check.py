@@ -355,21 +355,18 @@ def _assert_unique_action_texts(menu, label: str) -> list[str]:
 
 
 def _check_navigation(output_dir: Path, app, screenshot_names: list[str]) -> None:
-    """导航栏在窄窗口下保持 EXPAND 模式且宽度符合约束。"""
+    """自研侧栏：展开/收纳几何、动画收敛、选中互斥、收纳态 tooltip。"""
     from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
-    from qfluentwidgets import FluentIcon as FIF
-    from qfluentwidgets import NavigationInterface
-    from qfluentwidgets.components.navigation.navigation_panel import (
-        NavigationDisplayMode,
-    )
 
+    from videocaptioner.ui.common.app_icons import AppIcon
     from videocaptioner.ui.common.theme_tokens import app_palette
-    from videocaptioner.ui.view.main_window import (
-        NAV_EXPAND_WIDTH,
-        NAV_MINIMUM_EXPAND_WIDTH,
-        WINDOW_MINIMUM_WIDTH,
+    from videocaptioner.ui.components.sidebar import (
+        COLLAPSED_WIDTH,
+        EXPANDED_WIDTH,
+        Sidebar,
     )
+    from videocaptioner.ui.view.main_window import WINDOW_MINIMUM_WIDTH
 
     parent = QWidget()
     parent.resize(1050, 800)
@@ -381,41 +378,46 @@ def _check_navigation(output_dir: Path, app, screenshot_names: list[str]) -> Non
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(0)
 
-    navigation = NavigationInterface(parent)
-    navigation.setExpandWidth(NAV_EXPAND_WIDTH)
-    navigation.setMinimumExpandWidth(NAV_MINIMUM_EXPAND_WIDTH)
+    sidebar = Sidebar(parent)
     for key, icon, text in [
-        ("home", FIF.HOME, "主页"),
-        ("batch", FIF.VIDEO, "批量处理"),
-        ("style", FIF.FONT, "字幕样式"),
-        ("dubbing", FIF.VOLUME, "配音"),
-        ("doctor", FIF.SEARCH, "诊断"),
+        ("home", AppIcon.HOME, "主页"),
+        ("batch", AppIcon.VIDEO, "批量处理"),
+        ("style", AppIcon.SUBTITLE, "字幕样式"),
+        ("dubbing", AppIcon.VOLUME, "配音"),
+        ("doctor", AppIcon.DIAGNOSTIC, "诊断"),
     ]:
-        navigation.addItem(key, icon, text)
+        sidebar.add_page(key, icon, text)
+    sidebar.add_action("settings", AppIcon.SETTING, "设置", lambda: None)
+    sidebar.set_current("style")
     content = QLabel("内容区域")
     content.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
-    layout.addWidget(navigation)
+    layout.addWidget(sidebar)
     layout.addWidget(content, 1)
 
     parent.show()
     app.processEvents()
-    navigation.expand(False)
-    app.processEvents()
-    assert 118 <= NAV_EXPAND_WIDTH <= 144
     assert WINDOW_MINIMUM_WIDTH >= 960
-    assert navigation.panel.displayMode == NavigationDisplayMode.EXPAND
-    assert navigation.panel.width() == NAV_EXPAND_WIDTH
-    _grab(parent, output_dir, "navigation-compact", app)
-    screenshot_names.append("navigation-compact")
+    assert sidebar.width() == EXPANDED_WIDTH and sidebar.is_expanded()
+    _grab(parent, output_dir, "navigation-expanded", app)
+    screenshot_names.append("navigation-expanded")
 
-    parent.resize(900, 800)
+    # 收纳：动画收敛到 rail 宽；tooltip 兜底出现
+    sidebar.set_expanded(False)
+    import time as _time
+    deadline = _time.time() + 2  # 动画走真实时钟，等它收敛
+    while sidebar.width() != COLLAPSED_WIDTH and _time.time() < deadline:
+        app.processEvents()
+    assert sidebar.width() == COLLAPSED_WIDTH and not sidebar.is_expanded()
+    assert sidebar._items["home"].toolTip() == "主页"
+    _grab(parent, output_dir, "navigation-collapsed", app)
+    screenshot_names.append("navigation-collapsed")
+
+    # 再展开：宽度还原、tooltip 清空、选中保持
+    sidebar.set_expanded(True, animate=False)
     app.processEvents()
-    navigation.panel.collapse()
-    app.processEvents()
-    navigation.expand(False)
-    app.processEvents()
-    assert navigation.panel.displayMode == NavigationDisplayMode.EXPAND
-    assert navigation.panel.width() == NAV_EXPAND_WIDTH
+    assert sidebar.width() == EXPANDED_WIDTH
+    assert sidebar._items["home"].toolTip() == ""
+    assert sidebar.current() == "style"
     parent.close()
 
 

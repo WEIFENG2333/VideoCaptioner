@@ -7,12 +7,10 @@ import psutil
 from PyQt5.QtCore import QSize, QUrl
 from PyQt5.QtGui import QColor, QDesktopServices, QIcon
 from PyQt5.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     FluentWindow,
     InfoBar,
     InfoBarPosition,
-    NavigationItemPosition,
     SplashScreen,
 )
 
@@ -20,11 +18,12 @@ from videocaptioner.config import ASSETS_PATH, CACHE_PATH, GITHUB_REPO_URL
 from videocaptioner.core.constant import INFOBAR_DURATION_FOREVER
 from videocaptioner.core.update import apply_update, can_self_update
 from videocaptioner.core.utils.cache import get_version_state_cache
-from videocaptioner.ui.common.app_icons import AppFluentIcon, AppIcon
+from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import cfg
 from videocaptioner.ui.common.theme_tokens import BG_DARK, BG_LIGHT
 from videocaptioner.ui.components.app_dialog import ConfirmDialog
 from videocaptioner.ui.components.donate_dialog import DonateDialog
+from videocaptioner.ui.components.sidebar import EXPANDED_WIDTH, Sidebar
 from videocaptioner.ui.components.update_banner import UpdateBanner
 from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.update_thread import UpdateCheckThread
@@ -39,11 +38,11 @@ from videocaptioner.ui.view.setting_interface import SettingsDialog
 from videocaptioner.ui.view.subtitle_style_interface import SubtitleStyleInterface
 
 LOGO_PATH = ASSETS_PATH / "logo.png"
-NAV_EXPAND_WIDTH = 132
-NAV_MINIMUM_EXPAND_WIDTH = 760
 # 字幕样式页是三栏布局，最窄需约 950px；窗口最小宽要容纳它 + 导航栏，否则右栏被切。
 WINDOW_MINIMUM_WIDTH = 1020
 TITLEBAR_LEFT_INSET = 46  # 给左侧导航栏让位，标题栏不贴死左上角
+# 内容区 < 该宽度时自动收纳侧栏（展开态侧栏挤压三栏页面）；再变宽且非手动收纳时自动还原
+SIDEBAR_AUTO_COLLAPSE_WIDTH = WINDOW_MINIMUM_WIDTH + EXPANDED_WIDTH - 64
 
 
 class MainWindow(FluentWindow):
@@ -89,52 +88,63 @@ class MainWindow(FluentWindow):
         atexit.register(self.stop)
 
     def initNavigation(self):
-        """初始化导航栏"""
-        self.navigationInterface.setExpandWidth(NAV_EXPAND_WIDTH)
-        self.navigationInterface.setMinimumExpandWidth(NAV_MINIMUM_EXPAND_WIDTH)
+        """初始化导航：自研 Sidebar 替代 qfluent NavigationInterface（后者隐藏不用）。"""
+        self.navigationInterface.hide()
 
-        # 添加导航项
-        self.addSubInterface(self.homeInterface, FIF.HOME, tr("app.nav.home"))
-        self.addSubInterface(self.batchProcessInterface, FIF.VIDEO, tr("app.nav.batch"))
-        self.addSubInterface(
-            self.subtitleStyleInterface, AppFluentIcon(AppIcon.SUBTITLE), tr("app.nav.subtitle_style")
-        )
-        self.addSubInterface(self.dubbingInterface, FIF.VOLUME, tr("app.nav.dubbing"))
-        self.addSubInterface(
-            self.liveCaptionInterface, AppFluentIcon(AppIcon.MICROPHONE), tr("app.nav.live_caption")
-        )
-        self.addSubInterface(
-            self.hardsubInterface, AppFluentIcon(AppIcon.HARDSUB), tr("app.nav.hardsub")
-        )
-        self.addSubInterface(
-            self.llmLogsInterface, AppFluentIcon(AppIcon.HISTORY), tr("app.nav.request_logs")
-        )
-        self.addSubInterface(
-            self.doctorInterface, AppFluentIcon(AppIcon.DIAGNOSTIC), tr("app.nav.doctor")
-        )
+        pages = [
+            ("home", self.homeInterface, AppIcon.HOME, tr("app.nav.home")),
+            ("batch", self.batchProcessInterface, AppIcon.VIDEO, tr("app.nav.batch")),
+            ("substyle", self.subtitleStyleInterface, AppIcon.SUBTITLE, tr("app.nav.subtitle_style")),
+            ("dubbing", self.dubbingInterface, AppIcon.VOLUME, tr("app.nav.dubbing")),
+            ("live", self.liveCaptionInterface, AppIcon.MICROPHONE, tr("app.nav.live_caption")),
+            ("hardsub", self.hardsubInterface, AppIcon.HARDSUB, tr("app.nav.hardsub")),
+            ("logs", self.llmLogsInterface, AppIcon.HISTORY, tr("app.nav.request_logs")),
+            ("doctor", self.doctorInterface, AppIcon.DIAGNOSTIC, tr("app.nav.doctor")),
+        ]
+        self._page_by_key = {key: page for key, page, _, _ in pages}
 
-        self.navigationInterface.addSeparator()
-
-        # 在底部添加自定义小部件
-        self.navigationInterface.addItem(
-            routeKey="avatar",
-            text="GitHub",
-            icon=FIF.GITHUB,
-            onClick=self.onGithubDialog,
-            position=NavigationItemPosition.BOTTOM,
+        self.sidebar = Sidebar(self, top_inset=self.titleBar.height())
+        for key, page, icon, label in pages:
+            self.stackedWidget.addWidget(page)
+            self.sidebar.add_page(key, icon, label)
+        self.sidebar.add_action("github", AppIcon.GITHUB, "GitHub", self.onGithubDialog)
+        self.sidebar.add_action(
+            "settings", AppIcon.SETTING, tr("app.nav.settings"),
+            lambda: self.openSettingsPage("transcribe"),
         )
-        # 设置：底部导航动作项（点击弹出设置 modal，不作为可选中的 tab）
-        self.navigationInterface.addItem(
-            routeKey="settings",
-            text=tr("app.nav.settings"),
-            icon=FIF.SETTING,
-            onClick=lambda: self.openSettingsPage("transcribe"),
-            selectable=False,
-            position=NavigationItemPosition.BOTTOM,
-        )
+        self.hBoxLayout.insertWidget(0, self.sidebar)
 
-        # 设置默认界面
+        self.sidebar.currentChanged.connect(
+            lambda key: self.switchTo(self._page_by_key[key])
+        )
+        # 程序化 switchTo（如硬字幕→字幕优化）也要同步侧栏高亮
+        self.stackedWidget.currentChanged.connect(self._sync_sidebar_highlight)
+        self._sidebar_user_collapsed = False  # 手动收纳后窗口变宽不自动展开
+        self.sidebar.expandedChanged.connect(self._on_sidebar_toggled)
+
+        # 设置默认界面（home 是 index 0，currentChanged 不触发，需显式点亮）
         self.switchTo(self.homeInterface)
+        self.sidebar.set_current("home")
+
+    def _sync_sidebar_highlight(self, _index: int) -> None:
+        widget = self.stackedWidget.currentWidget()
+        for key, page in self._page_by_key.items():
+            if page is widget:
+                self.sidebar.set_current(key)
+                return
+
+    def _on_sidebar_toggled(self, expanded: bool) -> None:
+        # 只把「窗口够宽时的手动收纳」记为用户意愿；窄窗自动收纳不算
+        if self.width() >= SIDEBAR_AUTO_COLLAPSE_WIDTH:
+            self._sidebar_user_collapsed = not expanded
+
+    def _auto_fit_sidebar(self) -> None:
+        """窄窗自动收纳，变宽且非手动收纳时还原（展开态侧栏会挤压三栏页面）。"""
+        if self.width() < SIDEBAR_AUTO_COLLAPSE_WIDTH:
+            if self.sidebar.is_expanded():
+                self.sidebar.set_expanded(False)
+        elif not self._sidebar_user_collapsed and not self.sidebar.is_expanded():
+            self.sidebar.set_expanded(True)
 
     def _on_hardsub_to_optimize(self, subtitle_path: str, video_path: str) -> None:
         """硬字幕提取 → 主页字幕优化页（载入提取出的字幕，等用户配置优化/翻译）。"""
@@ -310,6 +320,8 @@ class MainWindow(FluentWindow):
         self.titleBar.resize(self.width() - TITLEBAR_LEFT_INSET, self.titleBar.height())
         if hasattr(self, "splashScreen"):
             self.splashScreen.resize(self.size())
+        if hasattr(self, "sidebar"):
+            self._auto_fit_sidebar()
 
     def closeEvent(self, event):
         # 退出前关停所有子界面：各页 closeEvent/shutdown 会取消正在跑的
