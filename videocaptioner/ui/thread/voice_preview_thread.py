@@ -159,6 +159,8 @@ def playable_voice_preview(path: Path) -> Path:
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     except Exception as exc:
         logger.warning("内置音色试听转码失败，回退原文件: %s", exc)

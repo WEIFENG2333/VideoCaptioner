@@ -154,6 +154,7 @@ class WhisperCppASR(BaseASR):
                     stderr=subprocess.PIPE,
                     text=True,
                     encoding="utf-8",
+                    errors="replace",
                     bufsize=1,
                 )
 
