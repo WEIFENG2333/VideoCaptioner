@@ -70,7 +70,12 @@ def clean() -> None:
 
 
 def prepare_ffmpeg() -> None:
-    """Download the current platform's static ffmpeg/ffprobe into runtime resources."""
+    """Download the current platform's static ffmpeg/ffprobe into runtime resources.
+
+    应用自身的媒体探测统一走 ``ffmpeg -i``（core/utils/media_info.py），但配音
+    管线的 pydub 读 mp3 仍硬依赖 ffprobe（AudioSegment.from_file → mediainfo_json），
+    所以 ffprobe 必须随包，直到 pydub 被替换。
+    """
     try:
         from static_ffmpeg.run import (
             get_or_fetch_platform_executables_else_raise,

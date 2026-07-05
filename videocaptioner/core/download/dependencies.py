@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import platform
 import shutil
+import subprocess
 import tarfile
 import zipfile
 from collections.abc import Callable
@@ -25,6 +26,7 @@ from typing import Optional
 from videocaptioner.config import BIN_PATH, CACHE_PATH, find_binary
 from videocaptioner.core.download.downloader import (
     CancelCheck,
+    DownloadError,
     DownloadProgress,
     ProgressCallback,
     download_file,
@@ -40,9 +42,18 @@ _MAIN_REPO = "WEIFENG2333/VideoCaptioner"
 # 这样发 app 新版（latest 移动）不会影响 ffmpeg 下载。
 _FFMPEG_TAG = "ffmpeg-bin"
 _VOXGATE_REPO = "WEIFENG2333/voxgate"
-_VOXGATE_TAG = "v0.2.10"  # 升级 voxgate：改这里（需回归实时字幕协议）
-# 国内加速镜像优先，最后回落 GitHub 直连（download_file 会按顺序兜底）
-_GH_MIRRORS = ("https://ghproxy.com/", "https://mirror.ghproxy.com/")
+_VOXGATE_TAG = "v0.3.0"  # 升级 voxgate：改这里 + 同步下方 sha256（需回归实时字幕协议）
+# release 附带 checksums.txt 的 sha256：加速镜像是第三方代理，靠校验和防篡改/防错误页
+_VOXGATE_SHA256 = {
+    "voxgate_darwin_amd64.tar.gz": "7848a0cad309c38cdd1ddd07b471621aec4a43b24deec6f3febaee3180fba30f",
+    "voxgate_darwin_arm64.tar.gz": "4054dc98aa11994fde3e649f0ba15178b14d58bc29016e3b2a7d589d7cd68af1",
+    "voxgate_linux_amd64.tar.gz": "66ac755d9b8e9d4bedfb20c0afedb491c41dc67404aa2d1e856422fc5d438b33",
+    "voxgate_linux_arm64.tar.gz": "a9b285d5622d8b5f043ea97d90ce469c0b7bc3c97f6b188fa46c213d986ceb99",
+    "voxgate_windows_amd64.zip": "c7f953490daf53ba9fd2fdcc6987c24bf9da0bc86a828c33427f63700329e138",
+}
+# 国内加速镜像优先，最后回落 GitHub 直连（download_file 会按顺序兜底）。
+# 加速镜像生态更迭快、死镜像常以 200 返回 HTML 页——下载后有压缩包验真兜底。
+_GH_MIRRORS = ("https://gh-proxy.com/", "https://ghfast.top/")
 
 PhaseCallback = Callable[[str], None]
 
@@ -76,6 +87,7 @@ class DependencyAsset:
     executables: tuple[str, ...]  # 安装后应落到 BIN_PATH 的可执行文件名（用于检测/解压匹配）
     archive: bool = False  # True=压缩包（解压取出可执行+随附动态库）；False=裸二进制（重命名落地）
     sha1: Optional[str] = None
+    sha256: Optional[str] = None
     size_bytes: Optional[int] = None
     repo: str = _MAIN_REPO  # 资产所在仓库
     tag: str = "latest"  # release tag；latest=取最新
@@ -125,6 +137,7 @@ def _voxgate_asset(os_key: str, arch: str) -> DependencyAsset:
         asset=asset,
         executables=exes,
         archive=True,
+        sha256=_VOXGATE_SHA256.get(asset),
         repo=_VOXGATE_REPO,
         tag=_VOXGATE_TAG,
     )
@@ -134,6 +147,7 @@ def _ffmpeg_asset(os_key: str, arch: str) -> DependencyAsset:
     ext = ".exe" if os_key == "windows" else ""
     return DependencyAsset(
         asset=f"ffmpeg-{os_key}-{arch}.zip",
+        # ffprobe 一并装：应用探测只用 ffmpeg，但 pydub（配音）读 mp3 仍需 ffprobe
         executables=(f"ffmpeg{ext}", f"ffprobe{ext}"),
         archive=True,
         tag=_FFMPEG_TAG,
@@ -183,13 +197,54 @@ def _find_executable(name: str) -> Optional[str]:
     return find_binary(name)
 
 
+# (path, mtime, size) -> version。is_installed 在 GUI 线程被反复调用（诊断页/下载
+# 对话框刷新），--version 子进程不能每次都跑（Windows 首启还会被杀软扫描卡几秒）。
+_voxgate_version_cache: dict[tuple[str, float, int], str] = {}
+
+
+def _voxgate_version(binary: str) -> str:
+    """`voxgate --version` → "0.3.0"；探测失败返回空串（按版本未知处理，不拦使用）。"""
+    try:
+        stat = os.stat(binary)
+        cache_key = (binary, stat.st_mtime, stat.st_size)
+    except OSError:
+        return ""
+    if cache_key in _voxgate_version_cache:
+        return _voxgate_version_cache[cache_key]
+    try:
+        result = subprocess.run(
+            [binary, "--version"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+        )
+        parts = (result.stdout or result.stderr).strip().split()
+        version = parts[-1] if parts else ""
+    except (OSError, subprocess.TimeoutExpired):
+        version = ""
+    _voxgate_version_cache[cache_key] = version
+    return version
+
+
 def is_installed(spec: DependencySpec) -> bool:
     """该依赖是否已就绪（所有可执行文件都能找到）。"""
     if spec.key == "voxgate":
         # 复用 voxgate 的发现顺序（含用户在设置里指定的路径）
         from videocaptioner.core.realtime.backends.voxgate import find_voxgate_binary
 
-        return find_voxgate_binary() is not None
+        found = find_voxgate_binary()
+        if found is None:
+            return False
+        # 我们装进 BIN_PATH 的实例跟着钉住的版本走：旧版本视为未就绪，诊断页
+        # 的「下载 voxgate」即升级入口。用户自己指定/系统 PATH 的不做版本检查。
+        if Path(found).parent == Path(BIN_PATH):
+            version = _voxgate_version(found)
+            if version and version != _VOXGATE_TAG.lstrip("v"):
+                return False
+        return True
     asset = asset_for(spec)
     if asset is None:
         return False
@@ -241,6 +296,8 @@ def install_dependency(
         asset.urls,
         download_dest,
         sha1=asset.sha1,
+        sha256=asset.sha256,
+        validate=_validate_archive if asset.archive else None,
         on_progress=on_progress,
         should_cancel=should_cancel,
     )
@@ -269,6 +326,12 @@ def _is_shared_lib(name: str) -> bool:
     """是否是运行所需的动态库（随可执行一起取出，否则 Windows 上缺 dll 跑不起来）。"""
     low = name.lower()
     return low.endswith((".dll", ".dylib", ".so")) or ".so." in low
+
+
+def _validate_archive(path: Path) -> None:
+    """压缩包验真：失效镜像会以 HTTP 200 返回 HTML 错误页，必须当场识破换下一个镜像。"""
+    if not (zipfile.is_zipfile(path) or tarfile.is_tarfile(path)):
+        raise DownloadError(f"{path.name}: 下载内容不是有效压缩包（镜像可能已失效）")
 
 
 def _extract_runtime_files(archive: Path, executables: tuple[str, ...], dest_dir: Path) -> list[Path]:

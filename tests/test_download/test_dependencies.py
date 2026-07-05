@@ -21,7 +21,7 @@ def test_gh_urls_latest_and_pinned():
     assert latest[-1] == (
         "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest/download/ffmpeg-macos-arm64.zip"
     )
-    assert any("ghproxy" in u for u in latest[:-1])  # 镜像在前
+    assert len(latest) > 1  # 镜像在前、直连兜底（不锁定具体镜像域名，镜像生态更迭快）
     assert all(u.endswith(latest[-1]) for u in latest[:-1])
     pinned = deps._gh_urls("WEIFENG2333/voxgate", "v0.2.10", "voxgate_darwin_arm64.tar.gz")
     assert pinned[-1] == (

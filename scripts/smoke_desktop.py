@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -111,19 +111,18 @@ def _create_sample_video(ffmpeg: Path, output: Path) -> None:
     ])
 
 
-def _duration(ffprobe: Path, media: Path) -> float:
-    result = subprocess.run([
-        str(ffprobe),
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-of",
-        "json",
-        str(media),
-    ], check=True, capture_output=True, text=True)
-    data = json.loads(result.stdout)
-    return float(data["format"]["duration"])
+def _duration(ffmpeg: Path, media: Path) -> float:
+    # 包里只带 ffmpeg（媒体探测统一走 ffmpeg -i，见 core/utils/media_info.py），
+    # 时长从其 stderr 的 Duration 行解析
+    result = subprocess.run(
+        [str(ffmpeg), "-hide_banner", "-i", str(media)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    match = re.search(r"Duration: (\d+):(\d+):(\d+\.?\d*)", result.stderr or "")
+    if not match:
+        raise RuntimeError(f"Cannot parse duration from ffmpeg output: {media}")
+    h, m, s = match.groups()
+    return int(h) * 3600 + int(m) * 60 + float(s)
 
 
 def _check_bundled_payload(bundle: Path) -> None:
@@ -153,7 +152,6 @@ def main() -> int:
     exe = _find_executable(bundle)
     _check_bundled_payload(bundle)
     ffmpeg = _find_bundled_tool(bundle, "ffmpeg")
-    ffprobe = _find_bundled_tool(bundle, "ffprobe")
 
     with tempfile.TemporaryDirectory(prefix="videocaptioner-smoke-") as tmp:
         tmp_path = Path(tmp)
@@ -204,7 +202,7 @@ def main() -> int:
         for output in [soft_out, hard_out]:
             if not output.exists() or output.stat().st_size <= 0:
                 raise RuntimeError(f"Expected output was not created: {output}")
-            seconds = _duration(ffprobe, output)
+            seconds = _duration(ffmpeg, output)
             if seconds < 2.5:
                 raise RuntimeError(f"Output duration is unexpectedly short: {output} ({seconds:.2f}s)")
             print(f"Verified {output.name}: {output.stat().st_size} bytes, {seconds:.2f}s")

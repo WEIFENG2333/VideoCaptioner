@@ -52,6 +52,7 @@ def download_file(
     *,
     sha1: str | None = None,
     sha256: str | None = None,
+    validate: Callable[[Path], None] | None = None,
     on_progress: ProgressCallback | None = None,
     should_cancel: CancelCheck | None = None,
     session: requests.Session | None = None,
@@ -60,6 +61,8 @@ def download_file(
 
     任意镜像成功即返回；全部失败抛 DownloadError；
     取消抛 DownloadCancelled（保留 .part 供下次续传）。
+    ``validate(part)`` 在校验和之后执行，抛 DownloadError 视为该镜像失败换下一个
+    ——失效的加速镜像常以 HTTP 200 返回 HTML 错误页，校验和缺失时靠它兜底。
     """
     if not urls:
         raise DownloadError(f"{dest.name}: 没有可用的下载地址")
@@ -73,6 +76,8 @@ def download_file(
             _fetch_to_part(http, url, part, dest.name, on_progress, should_cancel)
             _verify_digest(part, "sha256", sha256)
             _verify_digest(part, "sha1", sha1)
+            if validate is not None:
+                validate(part)
             os.replace(part, dest)
             return dest
         except DownloadCancelled:
