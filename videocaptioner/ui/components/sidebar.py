@@ -125,6 +125,8 @@ class SidebarItem(QAbstractButton):
         palette = app_palette()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        # 分数 DPI（125%/150%）下图标落在非整数物理坐标，缺平滑变换会锯齿
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
 
         if self._variant == "toggle":
             self._paint_toggle(painter, palette)
