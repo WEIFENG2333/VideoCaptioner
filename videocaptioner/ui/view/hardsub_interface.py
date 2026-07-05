@@ -637,11 +637,12 @@ class HardsubInterface(QWidget):
         )
         self.dropZone.setVisible(False)
         card = ErrorCard(reason, title=tr("hardsub.engine.card_title"), parent=self._stagePanel)
+        card.setMaximumWidth(520)  # 紧凑居中的错误卡；直接 addWidget 会撑满舞台、内部文字被拉散
         host = self.stageStack.widget(0)
         lay = host.layout()
         if lay is not None and lay.count() and not getattr(self, "_engine_card_shown", False):
             self.dropZone.hide()
-            lay.addWidget(card)
+            lay.addWidget(card, 0, Qt.AlignCenter)  # type: ignore[call-arg]
             self._engine_card_shown = True
 
     def _toast(self, text: str) -> None:

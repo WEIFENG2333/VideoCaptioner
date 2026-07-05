@@ -191,7 +191,10 @@ class DiagnosticRow(QFrame):
             self.setProperty("status", "error")
         elif item.status == ItemStatus.WARNING:
             self.setProperty("status", "warning")
-        self.setFixedHeight(78)  # 容纳 标题(16)+描述(13) 两行，紧凑不挤
+        # 常规行 78 恰好容纳 标题+一行描述；描述换行时行高随内容长（定高会把长文案裁掉），
+        # 垂直 Maximum 挡住容器把多余空间平摊进行内（否则标题↔描述被撑开）
+        self.setMinimumHeight(78)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
 
         layout = QGridLayout(self)
         layout.setContentsMargins(16, 13, 16, 13)
@@ -205,12 +208,12 @@ class DiagnosticRow(QFrame):
         title = QLabel(item.title, self)
         title.setObjectName("rowTitle")
         apply_font(title, 16, 700)  # 正确字重(~72)；QSS font-weight 会被 Qt5 压成 ~98 黑体糊字
-        title.setTextInteractionFlags(Qt.TextSelectableByMouse)
         description = QLabel(item.description, self)
         description.setObjectName("rowDescription")
         apply_font(description, 13, 450)
+        # 不可选中：wordWrap + TextSelectableByMouse 组合走 QTextDocument 渲染，
+        # 行高按字体 win-metrics 虚报（文楷下一行文字报两行高），标题描述被撑散。
         description.setWordWrap(True)
-        description.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
         text_layout = QVBoxLayout()
         text_layout.setContentsMargins(0, 0, 0, 0)
@@ -465,10 +468,14 @@ class DoctorInterface(ScrollArea):
 
     def _handle_action(self, action: ItemAction):
         if action == ItemAction.DOWNLOAD_HELP:
+            from videocaptioner.core.download.net import cookies_file
+
+            # 帮助文案要读完：常驻直到手动关闭，不能用几秒就消失的 toast；
+            # cookies.txt 给出本机具体路径，"应用数据目录"用户找不到
             InfoBar.info(
                 tr("doctor.download"),
-                tr("doctor.help.download"),
-                duration=INFOBAR_DURATION_SUCCESS,
+                tr("doctor.help.download") + f"\ncookies.txt：{cookies_file()}",
+                duration=-1,
                 parent=self,
             )
             return
@@ -560,7 +567,7 @@ def _base_items() -> list[DiagnosticItem]:
     items = [
         DiagnosticItem(
             key="ffmpeg",
-            title="FFmpeg / FFprobe",
+            title="FFmpeg",
             description=tr("doctor.ffmpeg.desc"),
             action=ItemAction.TOOL_HELP,
             button_text=tr("doctor.btn.install_tool"),
