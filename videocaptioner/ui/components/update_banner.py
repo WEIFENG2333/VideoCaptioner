@@ -59,7 +59,8 @@ class UpdateBanner:
             # 否则用户被卡在一个只能「前往下载」的常驻条上、无应用内出路。
             isClosable=not (self._blocked and self._self_update),
             duration=-1,
-            position=InfoBarPosition.TOP,
+            # 右下角：TOP 会压住自绘标题栏和页头文字；常驻条放通知惯例位、不遮内容
+            position=InfoBarPosition.BOTTOM_RIGHT,
             parent=self._window,
         )
         self._button = PrimaryPushButton(self._bar)
