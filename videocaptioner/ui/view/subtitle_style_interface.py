@@ -189,10 +189,18 @@ class RoundedBgPreviewThread(QThread):
 class _Stage(QFrame):
     """预览舞台容器：自绘圆角底，居中放预览图。"""
 
+    # 预览图适配必须跟舞台几何走：预览图可压缩后，布局重排可能在页面尺寸
+    # 不变时改变舞台大小（此时页面 resizeEvent 不触发），漏适配会把图卡在小尺寸。
+    resized = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("styleStage")
         self.setStyleSheet("QFrame#styleStage { background: transparent; border: none; }")
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.resized.emit()
 
     def paintEvent(self, event):
         palette = app_palette()
@@ -338,11 +346,11 @@ class SubtitleStyleInterface(QWidget):
         body.setContentsMargins(12, 10, 12, 12)
         body.setSpacing(0)
         self.stage = _Stage()
-        stage_layout = QVBoxLayout(self.stage)
-        stage_layout.setContentsMargins(10, 10, 10, 10)  # 细边框留薄边，预览图尽量铺满舞台
+        self.stage.resized.connect(self._fit_preview)
+        # 预览图不进布局、由 _fit_preview 手动缩放并居中：ImageLabel 靠 setFixedSize
+        # 撑尺寸（sizeHint 不反映图片），进布局要么把页面最小高度钉死到窗口无法
+        # 缩小，要么被布局按 sizeHint 压瘪。
         self.previewImage = ImageLabel(self.stage)
-        self.previewImage.setAlignment(Qt.AlignCenter)  # type: ignore[arg-type]
-        stage_layout.addWidget(self.previewImage, 0, Qt.AlignCenter)  # type: ignore[arg-type]
         body.addWidget(self.stage, 1)
         layout.addLayout(body)
         return panel
@@ -1072,7 +1080,7 @@ class SubtitleStyleInterface(QWidget):
         nw, nh = native
         if nw <= 0 or nh <= 0:
             return
-        margin = 20  # 对应舞台 stage_layout 上下/左右各 10 的薄边
+        margin = 20  # 舞台四周留 10px 薄边
         avail_w = self.stage.width() - margin
         avail_h = self.stage.height() - margin
         if avail_w <= 0 or avail_h <= 0:
@@ -1082,6 +1090,11 @@ class SubtitleStyleInterface(QWidget):
         if self.previewImage.height() > avail_h:
             self.previewImage.scaledToHeight(avail_h)
         self.previewImage.setBorderRadius(12, 12, 12, 12)
+        # 手动居中（图不在布局里，见构造处）
+        self.previewImage.move(
+            (self.stage.width() - self.previewImage.width()) // 2,
+            (self.stage.height() - self.previewImage.height()) // 2,
+        )
 
     # ---------------------------------------------------------------- 杂项
 
