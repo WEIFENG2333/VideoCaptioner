@@ -78,7 +78,7 @@ from videocaptioner.ui.components.workbench import (
     file_type_icon,
     icon_pixmap,
 )
-from videocaptioner.ui.i18n import tr
+from videocaptioner.ui.i18n import N_, tr
 from videocaptioner.ui.task_factory import TaskFactory
 from videocaptioner.ui.thread.dubbing_thread import DubbingThread
 from videocaptioner.ui.thread.subtitle_thread import SubtitleThread
@@ -92,12 +92,13 @@ _SUBTITLE_EXTENSIONS = {f".{fmt.value}" for fmt in SupportedSubtitleFormats}
 _FOLDER_MAX_DEPTH = 3
 
 
+# 模块级常量在 init_i18n 之前求值，只能存 N_ 标记的 key，翻译放在使用点。
 @dataclass(frozen=True)
 class BatchMode:
     key: str
     icon: AppIcon
-    title: str
-    desc: str
+    title_key: str
+    desc_key: str
     accepts_media: bool  # True：音视频输入；False：字幕文件输入
 
 
@@ -105,56 +106,61 @@ BATCH_MODES = [
     BatchMode(
         "full",
         AppIcon.VIDEO,
-        tr("batch.mode.full.title"),
-        tr("batch.mode.full.desc"),
+        N_("batch.mode.full.title"),
+        N_("batch.mode.full.desc"),
         True,
     ),
     BatchMode(
         "trans_sub",
         AppIcon.SUBTITLE,
-        tr("batch.mode.trans_sub.title"),
-        tr("batch.mode.trans_sub.desc"),
+        N_("batch.mode.trans_sub.title"),
+        N_("batch.mode.trans_sub.desc"),
         True,
     ),
     BatchMode(
         "transcribe",
         AppIcon.MICROPHONE,
-        tr("batch.mode.transcribe.title"),
-        tr("batch.mode.transcribe.desc"),
+        N_("batch.mode.transcribe.title"),
+        N_("batch.mode.transcribe.desc"),
         True,
     ),
     BatchMode(
         "subtitle",
         AppIcon.FILE,
-        tr("batch.mode.subtitle.title"),
-        tr("batch.mode.subtitle.desc"),
+        N_("batch.mode.subtitle.title"),
+        N_("batch.mode.subtitle.desc"),
         False,
     ),
 ]
 
-# 阶段元数据：key -> (图标, 标题, 说明)
+# 阶段元数据：key -> (图标, 标题 key, 说明 key)
 STAGE_SPECS = {
     "transcribe": (
         AppIcon.MICROPHONE,
-        tr("batch.stage.transcribe.title"),
-        tr("batch.stage.transcribe.desc"),
+        N_("batch.stage.transcribe.title"),
+        N_("batch.stage.transcribe.desc"),
     ),
     "subtitle": (
         AppIcon.SUBTITLE,
-        tr("batch.stage.subtitle.title"),
-        tr("batch.stage.subtitle.desc"),
+        N_("batch.stage.subtitle.title"),
+        N_("batch.stage.subtitle.desc"),
     ),
     "dubbing": (
         AppIcon.VOLUME,
-        tr("batch.stage.dubbing.title"),
-        tr("batch.stage.dubbing.desc"),
+        N_("batch.stage.dubbing.title"),
+        N_("batch.stage.dubbing.desc"),
     ),
     "synthesis": (
         AppIcon.VIDEO,
-        tr("batch.stage.synthesis.title"),
-        tr("batch.stage.synthesis.desc"),
+        N_("batch.stage.synthesis.title"),
+        N_("batch.stage.synthesis.desc"),
     ),
 }
+
+
+def stage_title(stage: str) -> str:
+    # 不在调用点写 tr(STAGE_SPECS["xx"][1])：babel 按 token 抽取，会把 "xx" 误收进 .pot
+    return tr(STAGE_SPECS[stage][1])
 
 
 def mode_by_key(key: str) -> BatchMode:
@@ -305,7 +311,7 @@ class JobRunner(QObject):
         try:
             thread = self._build_thread(stage)
         except Exception as exc:  # 任务构建失败（配置/路径问题）
-            self.failed.emit(f"{STAGE_SPECS[stage][1]}：{exc}")
+            self.failed.emit(f"{stage_title(stage)}：{exc}")
             return
         thread.setParent(self)
         thread.progress.connect(self._on_stage_progress)
@@ -390,7 +396,7 @@ class JobRunner(QObject):
     def _on_transcribed(self, task: TranscribeTask):
         if not task.output_path:
             self.failed.emit(
-                tr("batch.error.empty_output", stage=STAGE_SPECS["transcribe"][1])
+                tr("batch.error.empty_output", stage=stage_title("transcribe"))
             )
             return
         self._subtitle_path = task.output_path
@@ -399,7 +405,7 @@ class JobRunner(QObject):
     def _on_subtitled(self, _video_path: str, output_path: str):
         if not output_path:
             self.failed.emit(
-                tr("batch.error.empty_output", stage=STAGE_SPECS["subtitle"][1])
+                tr("batch.error.empty_output", stage=stage_title("subtitle"))
             )
             return
         self._subtitle_path = output_path
@@ -408,7 +414,7 @@ class JobRunner(QObject):
     def _on_dubbed(self, task):
         if not task.output_video_path:
             self.failed.emit(
-                tr("batch.error.empty_video_output", stage=STAGE_SPECS["dubbing"][1])
+                tr("batch.error.empty_video_output", stage=stage_title("dubbing"))
             )
             return
         self._dub_video = task.output_video_path
@@ -417,7 +423,7 @@ class JobRunner(QObject):
     def _on_synthesized(self, task):
         if not task.output_path:
             self.failed.emit(
-                tr("batch.error.empty_output", stage=STAGE_SPECS["synthesis"][1])
+                tr("batch.error.empty_output", stage=stage_title("synthesis"))
             )
             return
         self._advance([task.output_path])
@@ -429,14 +435,14 @@ class JobRunner(QObject):
 
     def _emit_progress(self, value: int, message: str):
         stage = self._stages[self._index]
-        title = STAGE_SPECS[stage][1]
+        title = stage_title(stage)
         note = f"{title} · {message}" if message else title
         overall = int((self._index * 100 + max(0, min(100, value))) / len(self._stages))
         self.progressChanged.emit(overall, note, stage)
 
     def _on_stage_error(self, message: str):
         stage = self._stages[self._index]
-        self.failed.emit(f"{STAGE_SPECS[stage][1]}：{message}")
+        self.failed.emit(f"{stage_title(stage)}：{message}")
 
 
 class BatchController(QObject):
@@ -946,6 +952,7 @@ class StageRow(QFrame):
         super().__init__(parent)
         self.setObjectName("batchStageRow")
         icon, title, desc = STAGE_SPECS[stage_key]
+        title, desc = tr(title), tr(desc)
         self.stage_key = stage_key
         self._icon = icon
         self._state = "wait"  # wait / active / done
@@ -1143,7 +1150,9 @@ class BatchProcessInterface(QWidget):
         mode_row.setSpacing(12)
         self.modeCards: list[SelectableCard] = []
         for mode in BATCH_MODES:
-            card = SelectableCard(mode.key, mode.title, mode.desc, mode.icon, self)
+            card = SelectableCard(
+                mode.key, tr(mode.title_key), tr(mode.desc_key), mode.icon, self
+            )
             card.clicked.connect(self._on_mode_clicked)
             mode_row.addWidget(card, 1)
             self.modeCards.append(card)
@@ -1370,14 +1379,14 @@ class BatchProcessInterface(QWidget):
         if dropped:
             InfoBar.info(
                 tr("batch.filtered.title"),
-                tr("batch.filtered.body", n=dropped, mode=self.mode.title),
+                tr("batch.filtered.body", n=dropped, mode=tr(self.mode.title_key)),
                 duration=INFOBAR_DURATION_INFO,
                 position=InfoBarPosition.TOP, parent=self,
             )
         if announce:
             InfoBar.info(
                 tr("batch.switched.title"),
-                tr("batch.switched.body", mode=self.mode.title),
+                tr("batch.switched.body", mode=tr(self.mode.title_key)),
                 duration=INFOBAR_DURATION_INFO,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -1411,9 +1420,10 @@ class BatchProcessInterface(QWidget):
                     config.api_key and config.base_url and config.llm_model
                 ):
                     return tr("batch.preflight.llm")
-        if "synthesis" in stages and not shutil.which("ffmpeg"):
+        if ("synthesis" in stages or "dubbing" in stages) and not shutil.which("ffmpeg"):
             return tr("batch.preflight.ffmpeg")
         if "dubbing" in stages:
+            # pydub 读 mp3 段（Edge 默认输出）经 ffprobe，缺了会在任务中途裸崩
             if not shutil.which("ffprobe"):
                 return tr("batch.preflight.ffprobe")
             provider = cfg.dubbing_provider.value
@@ -1687,7 +1697,7 @@ class BatchProcessInterface(QWidget):
             else tr("batch.drop.subtitle_kinds")
         )
         self.dropZone.formatLabel.setText(
-            tr("batch.drop.format", mode=self.mode.title, kinds=accepts)
+            tr("batch.drop.format", mode=tr(self.mode.title_key), kinds=accepts)
         )
         self.dropZone.formatLabel.setVisible(True)
         count_level = {PageState.RUNNING: "warn", PageState.DONE: "ok"}.get(
