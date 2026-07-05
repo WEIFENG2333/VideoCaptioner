@@ -1,10 +1,11 @@
 """Audio helpers for dubbing timeline assembly."""
 
-import json
 import subprocess
 from pathlib import Path
 
 from pydub import AudioSegment
+
+from videocaptioner.core.utils.media_info import probe_media
 
 
 def get_audio_duration_ms(path: str) -> int:
@@ -68,8 +69,9 @@ def mux_dubbed_audio(
     编码器交给 ffmpeg 按输出扩展名自动选择。
     """
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    has_video = _video_has_video_stream(video_path)
-    mix = mix_original_audio and _video_has_audio(video_path)
+    info = probe_media(video_path)  # 一次探测同时拿视频/音频流有无
+    has_video = info is not None and info.has_video
+    mix = mix_original_audio and info is not None and info.has_audio
 
     cmd = ["ffmpeg", "-y", "-v", "error", "-i", video_path, "-i", audio_path]
     if mix:
@@ -120,31 +122,13 @@ def _linear_to_db(volume: float) -> float:
     return 20 * math.log10(volume)
 
 
-def _has_stream(media_path: str, kind: str) -> bool:
-    """media_path 是否含指定类型的流（kind: 'v' 视频 / 'a' 音频）。探测失败时按无处理。"""
-    cmd = [
-        "ffprobe",
-        "-v",
-        "error",
-        "-select_streams",
-        kind,
-        "-show_entries",
-        "stream=index",
-        "-of",
-        "json",
-        media_path,
-    ]
-    try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-    data = json.loads(result.stdout or "{}")
-    return bool(data.get("streams"))
-
-
 def _video_has_video_stream(video_path: str) -> bool:
-    return _has_stream(video_path, "v")
+    """探测失败时按无处理。"""
+    info = probe_media(video_path)
+    return info is not None and info.has_video
 
 
 def _video_has_audio(video_path: str) -> bool:
-    return _has_stream(video_path, "a")
+    """探测失败时按无处理。"""
+    info = probe_media(video_path)
+    return info is not None and info.has_audio

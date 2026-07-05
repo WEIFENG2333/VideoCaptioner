@@ -18,7 +18,7 @@ from videocaptioner.ui.thread.worker import WorkerThread
 
 
 class PrepareThread(WorkerThread):
-    """载入视频的耗时探测放后台：ffprobe 取尺寸/时长 + 抽首帧，避免拖入时 GUI 卡死。"""
+    """载入视频的耗时探测放后台：ffmpeg 取尺寸/时长 + 抽首帧，避免拖入时 GUI 卡死。"""
 
     ready = pyqtSignal(int, int, float, object)  # width, height, duration, first_frame_rgb|None
 

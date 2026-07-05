@@ -1,7 +1,6 @@
 """Rounded background subtitle renderer"""
 
 import os
-import re
 import subprocess
 import tempfile
 from dataclasses import replace
@@ -14,6 +13,7 @@ from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.subtitle.preview_cache import preview_path
 from videocaptioner.core.subtitle.preview_cache import prune as prune_preview_cache
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.media_info import probe_media
 
 from .font_utils import FontType, get_font
 from .styles import RoundedBgStyle
@@ -26,30 +26,11 @@ logger = setup_logger("subtitle.rounded")
 
 
 def _get_video_info(video_path: str) -> Tuple[int, int, float]:
-    """获取视频分辨率和时长"""
-    result = subprocess.run(
-        ["ffmpeg", "-i", video_path],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
-    )
-
-    # 解析分辨率
-    width, height = 0, 0
-    if match := re.search(r"Stream.*Video:.* (\d{2,5})x(\d{2,5})", result.stderr):
-        width, height = int(match.group(1)), int(match.group(2))
-    else:
+    """获取视频分辨率和时长；无视频流时抛 ValueError（圆角渲染必须知道画布尺寸）。"""
+    info = probe_media(video_path)
+    if info is None or not info.has_video:
         raise ValueError(f"Cannot get video resolution: {video_path}")
-
-    # 解析时长
-    duration = 0.0
-    if match := re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", result.stderr):
-        h, m, s = match.groups()
-        duration = int(h) * 3600 + int(m) * 60 + float(s)
-
-    return width, height, duration
+    return info.width, info.height, info.duration_seconds
 
 
 def render_text_block(

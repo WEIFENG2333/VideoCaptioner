@@ -15,7 +15,7 @@ import numpy as np
 
 from videocaptioner import config as app_config
 from videocaptioner.core.utils.logger import setup_logger
-from videocaptioner.core.utils.video_utils import get_video_info
+from videocaptioner.core.utils.media_info import probe_media
 
 logger = setup_logger("hardsub_frames")
 
@@ -29,10 +29,10 @@ def ffmpeg_executable() -> str:
 
 def probe_dimensions(video_path: str) -> Optional[tuple[int, int, float, float]]:
     """返回 (width, height, fps, duration_seconds)；失败返回 None。"""
-    info = get_video_info(video_path)
+    info = probe_media(video_path)
     if info is None or info.width <= 0 or info.height <= 0:
         return None
-    fps = info.fps if info.fps and info.fps > 0 else 25.0
+    fps = info.fps if info.fps > 0 else 25.0
     return info.width, info.height, fps, info.duration_seconds
 
 

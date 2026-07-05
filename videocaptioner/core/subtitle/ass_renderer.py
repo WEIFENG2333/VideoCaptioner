@@ -12,6 +12,7 @@ from PIL import Image
 from videocaptioner.config import FONTS_PATH, RESOURCE_PATH
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.media_info import probe_media
 
 from .ass_utils import auto_wrap_ass_file
 from .preview_cache import preview_path
@@ -302,22 +303,11 @@ def render_ass_preview(
 
 
 def _get_video_resolution(video_path: str) -> Tuple[int, int]:
-    """获取视频分辨率"""
-    result = subprocess.run(
-        ["ffmpeg", "-i", video_path],
-        capture_output=True,
-        text=True,
-        creationflags=(
-            getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-        ),
-    )
-
-    # 从 ffmpeg 输出中解析分辨率
-    pattern = r"(\d{2,5})x(\d{2,5})"
-    match = re.search(pattern, result.stderr)
-    if match:
-        return int(match.group(1)), int(match.group(2))
-    return 1920, 1080  # 默认返回 1080P
+    """获取视频分辨率；探测失败按 1080P 处理。"""
+    info = probe_media(video_path)
+    if info is not None and info.has_video:
+        return info.resolution
+    return 1920, 1080
 
 
 def render_ass_video(

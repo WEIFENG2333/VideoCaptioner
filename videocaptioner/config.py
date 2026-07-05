@@ -105,7 +105,7 @@ for p in [APPDATA_PATH, CACHE_PATH, LOG_PATH, WORK_PATH, MODEL_PATH, BIN_PATH, U
     p.mkdir(parents=True, exist_ok=True)
 
 # Add bin paths to PATH. User-downloaded binaries take precedence over bundled
-# tools, while packaged ffmpeg/ffprobe still work out of the box.
+# tools, while packaged ffmpeg still works out of the box.
 for _path in [FASTER_WHISPER_PATH, BIN_PATH, BUNDLED_BIN_PATH]:
     if _path.exists():
         os.environ["PATH"] = str(_path) + os.pathsep + os.environ["PATH"]

@@ -8,10 +8,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Literal, Optional
 
 from ..entities import (
-    AudioStreamInfo,
     SubtitleLayoutEnum,
     SubtitleRenderModeEnum,
-    VideoInfo,
 )
 from ..subtitle.ass_renderer import render_ass_video
 from ..subtitle.ass_utils import auto_wrap_ass_file
@@ -136,6 +134,8 @@ def check_cuda_available() -> bool:
             ["ffmpeg", "-hwaccels"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             creationflags=(
                 getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
             ),
@@ -149,6 +149,8 @@ def check_cuda_available() -> bool:
             ["ffmpeg", "-hide_banner", "-init_hw_device", "cuda"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             creationflags=(
                 getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
             ),
@@ -371,162 +373,6 @@ def add_subtitles(
                 if process and process.poll() is None:
                     process.kill()
                 raise
-
-
-def get_video_info(
-    file_path: str, thumbnail_path: Optional[str] = None
-) -> Optional["VideoInfo"]:
-    """获取媒体文件信息（支持视频和音频文件）
-
-    Args:
-        file_path: 媒体文件路径（视频或音频）
-        thumbnail_path: 缩略图保存路径（可选，仅对视频文件有效）
-
-    Returns:
-        VideoInfo 对象，失败返回 None
-        对于纯音频文件，视频相关字段（width/height/fps）将为 0
-    """
-    try:
-        # 执行 ffmpeg 获取视频信息
-        result = subprocess.run(
-            ["ffmpeg", "-i", file_path],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
-        )
-        info = result.stderr
-
-        # 提取时长
-        duration_seconds = 0.0
-        if duration_match := re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info):
-            hours, minutes, seconds = map(float, duration_match.groups())
-            duration_seconds = hours * 3600 + minutes * 60 + seconds
-
-        # 提取比特率
-        bitrate_kbps = 0
-        if bitrate_match := re.search(r"bitrate: (\d+) kb/s", info):
-            bitrate_kbps = int(bitrate_match.group(1))
-
-        # 提取视频流信息
-        width, height, fps, video_codec = 0, 0, 0.0, ""
-        has_video_stream = False
-        if video_stream_match := re.search(
-            r"Stream #.*?Video: (\w+)(?:\s*\([^)]*\))?.* (\d+)x(\d+).*?(?:(\d+(?:\.\d+)?)\s*(?:fps|tb[rn]))",
-            info,
-            re.DOTALL,
-        ):
-            video_codec = video_stream_match.group(1)
-            width = int(video_stream_match.group(2))
-            height = int(video_stream_match.group(3))
-            fps = float(video_stream_match.group(4))
-            has_video_stream = True
-
-        # 提取第一条音频流信息（用于兼容性）
-        audio_codec, audio_sampling_rate = "", 0
-        if audio_stream_match := re.search(
-            r"Stream #\d+:\d+.*Audio: (\w+).* (\d+) Hz", info
-        ):
-            audio_codec = audio_stream_match.group(1)
-            audio_sampling_rate = int(audio_stream_match.group(2))
-
-        # 提取All音频流信息（用于多音轨选择）
-        audio_streams: list[AudioStreamInfo] = []
-        for match in re.finditer(
-            r"Stream #\d+:(\d+)(?:\[0x[0-9a-fA-F]+\])?(?:\(([a-z]{3})\))?: Audio: (\w+)",
-            info,
-        ):
-            audio_streams.append(
-                AudioStreamInfo(
-                    index=int(match.group(1)),
-                    codec=match.group(3),
-                    language=match.group(2) or "",
-                )
-            )
-
-        if audio_streams:
-            logger.debug(f"Detected {len(audio_streams)}  audio tracks")
-
-        # 验证文件是否包含有效的媒体流
-        if not has_video_stream and not audio_streams:
-            logger.error("File has no video or audio streams")
-            return None
-
-        # 提取缩略图（如果指定了路径且有视频流）
-        final_thumbnail_path = ""
-        if thumbnail_path and duration_seconds > 0 and has_video_stream:
-            if _extract_thumbnail(file_path, duration_seconds * 0.3, thumbnail_path):
-                final_thumbnail_path = thumbnail_path
-
-        # 构造并返回 VideoInfo 对象
-        return VideoInfo(
-            file_name=Path(file_path).stem,
-            file_path=file_path,
-            width=width,
-            height=height,
-            fps=fps,
-            duration_seconds=duration_seconds,
-            bitrate_kbps=bitrate_kbps,
-            video_codec=video_codec,
-            audio_codec=audio_codec,
-            audio_sampling_rate=audio_sampling_rate,
-            thumbnail_path=final_thumbnail_path,
-            audio_streams=audio_streams,
-        )
-    except Exception as e:
-        logger.exception(f"获取视频信息时出错: {str(e)}")
-        return None
-
-
-def _extract_thumbnail(video_path: str, seek_time: float, thumbnail_path: str) -> bool:
-    """提取视频缩略图
-
-    Args:
-        video_path: 视频文件路径
-        seek_time: 截取时间点（秒）
-        thumbnail_path: 缩略图保存路径
-
-    Returns:
-        是否成功
-    """
-    if not Path(video_path).is_file():
-        logger.error(f"视频文件不存在: {video_path}")
-        return False
-
-    try:
-        timestamp = f"{int(seek_time // 3600):02}:{int((seek_time % 3600) // 60):02}:{seek_time % 60:06.3f}"
-        Path(thumbnail_path).parent.mkdir(parents=True, exist_ok=True)
-
-        result = subprocess.run(
-            [
-                "ffmpeg",
-                "-ss",
-                timestamp,
-                "-i",
-                Path(video_path).as_posix(),
-                "-vframes",
-                "1",
-                "-q:v",
-                "2",
-                "-y",
-                Path(thumbnail_path).as_posix(),
-            ],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
-        )
-        return result.returncode == 0
-
-    except Exception as e:
-        logger.exception(f"提取缩略图时出错: {str(e)}")
-        return False
 
 
 def add_subtitles_with_style(

@@ -48,8 +48,8 @@ def run_diagnostics(
 ) -> list[Check]:
     checks: list[Check] = []
     checks.append(_check_python())
-    checks.append(_check_command("ffmpeg", "Required for audio extraction, timing fit, muxing, and hard subtitles."))
-    checks.append(_check_command("ffprobe", "Required for media duration checks."))
+    checks.append(_check_command("ffmpeg", "Required for audio extraction, media probing, timing fit, muxing, and hard subtitles."))
+    checks.append(_check_command("ffprobe", "Required by dubbing audio processing (pydub reads mp3 via ffprobe)."))
     checks.append(_check_ytdlp())
     checks.append(_check_config_file())
     checks.extend(_check_transcribe(config))
@@ -134,13 +134,13 @@ def _yt_dlp_version_is_old(version: str) -> bool:
 
 def _command_version(name: str) -> str:
     try:
-        result = subprocess.run([name, "-version"], capture_output=True, text=True, timeout=5)
+        result = subprocess.run([name, "-version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5)
         if result.returncode == 0 and result.stdout:
             return result.stdout.splitlines()[0][:100]
     except Exception:
         pass
     try:
-        result = subprocess.run([name, "--version"], capture_output=True, text=True, timeout=5)
+        result = subprocess.run([name, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5)
         if result.returncode == 0 and result.stdout:
             return result.stdout.splitlines()[0][:100]
     except Exception:

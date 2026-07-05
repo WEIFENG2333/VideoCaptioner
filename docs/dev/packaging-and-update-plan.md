@@ -19,7 +19,7 @@
 
 PyInstaller **onedir**：`scripts/build_desktop.py` 驱动 `VideoCaptioner.spec` → `dist/VideoCaptioner/`（含 `_internal/`），
 macOS 经 `BUNDLE` 另出 `.app` + zip。
-- ffmpeg/ffprobe 由 `static-ffmpeg` 按平台下载、`macsysaudio`(swift) 现编，staged 进 `RUNTIME_DIR/resource/bin` → spec 收进 `resource/bin`。
+- ffmpeg/ffprobe 由 `static-ffmpeg` 按平台下载（应用探测统一走 `ffmpeg -i`；ffprobe 仅为 pydub 配音链路保留）、`macsysaudio`(swift) 现编，staged 进 `RUNTIME_DIR/resource/bin` → spec 收进 `resource/bin`。
 - datas 收 `resource/{assets,fonts,subtitle_styles,i18n}` + `core/prompts`；版本来自 git tag（hatch-vcs→`_version.py`）。
 - CI `.github/workflows/build-desktop.yml`：tag `v*` 触发，矩阵 = **Windows x64 + macOS Intel(x86_64)**，`uv sync --frozen` → `uv run --with pyinstaller --with static-ffmpeg python scripts/build_desktop.py` → `gh release upload`。
 - **零签名零公证**（spec `codesign_identity=None`）。

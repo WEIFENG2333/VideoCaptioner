@@ -175,7 +175,7 @@ class TranscriptionController(QObject):
         self._transcript_thread: Optional[TranscriptThread] = None
 
     def load_media(self, file_path: str) -> None:
-        # 重入保护：连拖两个文件（前一个 ffprobe 慢）时覆盖前先停旧线程，
+        # 重入保护：连拖两个文件（前一个探测慢）时覆盖前先停旧线程，
         # 否则旧 running QThread 被 GC 触发 "Destroyed while still running" abort
         if self._info_thread is not None and self._info_thread.isRunning():
             self._info_thread.stop(wait_ms=200)
