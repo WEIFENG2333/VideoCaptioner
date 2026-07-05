@@ -77,6 +77,12 @@ msgstr "Settings"
 msgid "app.nav.subtitle_style"
 msgstr "Subtitle Style"
 
+msgid "app.sidebar.collapse"
+msgstr "Collapse"
+
+msgid "app.sidebar.expand"
+msgstr "Expand"
+
 msgid "app.update.available"
 msgstr "A new version is available"
 
@@ -333,8 +339,8 @@ msgstr ""
 
 msgid "batch.preflight.ffprobe"
 msgstr ""
-"Dubbing requires ffprobe to read audio duration. Please ensure the FFmpeg"
-" suite is complete."
+"Dubbing needs ffprobe for audio processing. Please install the full "
+"FFmpeg suite (with ffprobe)."
 
 msgid "batch.preflight.llm"
 msgstr ""
@@ -616,9 +622,7 @@ msgstr ""
 "state). Paste a link to download directly."
 
 msgid "doctor.download.unavailable"
-msgstr ""
-"The site is currently unavailable (browser login state fallback was also "
-"tried): {detail}"
+msgstr "{detail}"
 
 msgid "doctor.dubbing.desc"
 msgstr ""
@@ -652,7 +656,7 @@ msgstr ""
 " voiceovers merged."
 
 msgid "doctor.ffmpeg.missing.title"
-msgstr "Missing FFmpeg / FFprobe"
+msgstr "Missing FFmpeg"
 
 msgid "doctor.ffmpeg.no_ass.desc"
 msgstr ""
@@ -668,9 +672,11 @@ msgstr "Tools are complete. You can generate videos and voiceover videos."
 
 msgid "doctor.help.download"
 msgstr ""
-"YouTube requires a working system proxy; if Bilibili reports risk control"
-" (412), wait a few minutes and try again, or log in in your browser and "
-"export cookies.txt to the app data directory."
+"YouTube needs a working system proxy. If it asks for sign-in "
+"verification: log in with Firefox, or export cookies.txt via a browser "
+"extension into the app data folder (recent Chrome/Edge encryption blocks "
+"cookie reading on Windows). Bilibili risk control (412) usually clears "
+"after a few minutes."
 
 msgid "doctor.help.ffmpeg"
 msgstr ""
@@ -3170,7 +3176,10 @@ msgid "settings.llm.connect_success"
 msgstr "LLM connected successfully"
 
 msgid "settings.llm.immersive_hint.desc"
-msgstr "The free community model has limited quota and may be rate-limited or fail occasionally at peak times. For better reliability and quality, configure your own LLM key."
+msgstr ""
+"The free community model has limited quota and may be rate-limited or "
+"fail occasionally at peak times. For better reliability and quality, "
+"configure your own LLM key."
 
 msgid "settings.llm.immersive_hint.title"
 msgstr "Free · No API Key"
@@ -4033,12 +4042,12 @@ msgid "synth.blocker.ffmpeg_missing_detail"
 msgstr "Please install FFmpeg and ensure ffmpeg is in PATH."
 
 msgid "synth.blocker.ffprobe_missing"
-msgstr "FFprobe not found"
+msgstr "ffprobe missing — dubbing unavailable"
 
 msgid "synth.blocker.ffprobe_missing_detail"
 msgstr ""
-"Dubbing requires ffprobe to read audio duration. Please make sure the "
-"FFmpeg suite is complete."
+"Dubbing needs ffprobe for audio processing. Install the full FFmpeg suite"
+" (with ffprobe) and retry."
 
 msgid "synth.blocker.key_required"
 msgstr "Current voice requires API Key"
@@ -4195,7 +4204,7 @@ msgid "synth.pill.missing_ffmpeg"
 msgstr "Missing FFmpeg"
 
 msgid "synth.pill.missing_ffprobe"
-msgstr "Missing FFprobe"
+msgstr "No ffprobe"
 
 msgid "synth.pill.missing_key"
 msgstr "Missing Key"

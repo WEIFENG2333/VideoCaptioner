@@ -49,6 +49,12 @@ msgstr ""
 msgid "app.nav.subtitle_style"
 msgstr ""
 
+msgid "app.sidebar.collapse"
+msgstr ""
+
+msgid "app.sidebar.expand"
+msgstr ""
+
 msgid "app.update.available"
 msgstr ""
 

@@ -74,6 +74,12 @@ msgstr "设置"
 msgid "app.nav.subtitle_style"
 msgstr "字幕样式"
 
+msgid "app.sidebar.collapse"
+msgstr "收起"
+
+msgid "app.sidebar.expand"
+msgstr "展开"
+
 msgid "app.update.available"
 msgstr "有可用更新"
 
@@ -323,7 +329,7 @@ msgid "batch.preflight.ffmpeg"
 msgstr "视频合成需要 FFmpeg：请先安装并确保 ffmpeg 在 PATH 中"
 
 msgid "batch.preflight.ffprobe"
-msgstr "配音需要 ffprobe 读取音频时长，请确认 FFmpeg 套件完整"
+msgstr "配音需要 ffprobe 处理音频，请确认 FFmpeg 套件完整（含 ffprobe）"
 
 msgid "batch.preflight.llm"
 msgstr "字幕处理需要大模型：请先配置可用的 API Key、接口地址和模型"
@@ -593,7 +599,7 @@ msgid "doctor.download.ok_login"
 msgstr "YouTube 与哔哩哔哩解析正常（部分站点通过浏览器登录态），可直接粘贴链接下载。"
 
 msgid "doctor.download.unavailable"
-msgstr "站点当前不可用（浏览器登录态兜底也已尝试）：{detail}"
+msgstr "{detail}"
 
 msgid "doctor.dubbing.desc"
 msgstr "按当前提供商和音色生成配音；部分服务需要 Key。"
@@ -617,7 +623,7 @@ msgid "doctor.ffmpeg.missing.desc"
 msgstr "缺少后无法生成视频、压入字幕或合入配音。"
 
 msgid "doctor.ffmpeg.missing.title"
-msgstr "缺少 FFmpeg / FFprobe"
+msgstr "缺少 FFmpeg"
 
 msgid "doctor.ffmpeg.no_ass.desc"
 msgstr "当前 FFmpeg 缺少 ASS 字幕滤镜。请安装完整版本，或把字幕渲染模式切换为圆角背景。"
@@ -629,7 +635,9 @@ msgid "doctor.ffmpeg.ok.desc"
 msgstr "工具完整，可生成视频和配音视频。"
 
 msgid "doctor.help.download"
-msgstr "YouTube 需要可用的系统代理；哔哩哔哩提示风控（412）时稍等几分钟重试，或在浏览器登录后导出 cookies.txt 放到应用数据目录。"
+msgstr ""
+"YouTube 需要可用的系统代理；提示登录验证时：安装 Firefox 并登录，或用浏览器扩展导出 cookies.txt "
+"放到应用数据目录（Windows 上新版 Chrome/Edge 的登录态无法读取）。哔哩哔哩风控（412）稍等几分钟会自动恢复。"
 
 msgid "doctor.help.ffmpeg"
 msgstr "ASS 硬字幕需要带 libass 的完整 FFmpeg。macOS 可安装 ffmpeg-full；也可以先切换为圆角背景。"
@@ -3880,10 +3888,10 @@ msgid "synth.blocker.ffmpeg_missing_detail"
 msgstr "请先安装 FFmpeg 并确保 ffmpeg 在 PATH 中。"
 
 msgid "synth.blocker.ffprobe_missing"
-msgstr "未找到 FFprobe"
+msgstr "缺少 ffprobe，无法配音"
 
 msgid "synth.blocker.ffprobe_missing_detail"
-msgstr "配音需要 ffprobe 读取音频时长，请确认 FFmpeg 套件完整。"
+msgstr "配音需要 ffprobe 处理音频，请安装完整的 FFmpeg 套件（含 ffprobe）后重试。"
 
 msgid "synth.blocker.key_required"
 msgstr "当前音色需要 API Key"
@@ -4036,7 +4044,7 @@ msgid "synth.pill.missing_ffmpeg"
 msgstr "缺少 FFmpeg"
 
 msgid "synth.pill.missing_ffprobe"
-msgstr "缺少 FFprobe"
+msgstr "缺 ffprobe"
 
 msgid "synth.pill.missing_key"
 msgstr "缺少 Key"
