@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 import psutil
-from PyQt5.QtCore import QSize, QUrl
+from PyQt5.QtCore import QEvent, QSize, QUrl
 from PyQt5.QtGui import QColor, QDesktopServices, QIcon
 from PyQt5.QtWidgets import QApplication
 from qfluentwidgets import (
@@ -40,7 +40,7 @@ from videocaptioner.ui.view.subtitle_style_interface import SubtitleStyleInterfa
 LOGO_PATH = ASSETS_PATH / "logo.png"
 # 字幕样式页是三栏布局，最窄需约 950px；窗口最小宽要容纳它 + 导航栏，否则右栏被切。
 WINDOW_MINIMUM_WIDTH = 1020
-TITLEBAR_LEFT_INSET = 46  # 给左侧导航栏让位，标题栏不贴死左上角
+TITLEBAR_GAP = 12  # 标题栏文字与侧栏右缘的间隙
 # 内容区 < 该宽度时自动收纳侧栏（展开态侧栏挤压三栏页面）；再变宽且非手动收纳时自动还原
 SIDEBAR_AUTO_COLLAPSE_WIDTH = WINDOW_MINIMUM_WIDTH + EXPANDED_WIDTH - 64
 
@@ -113,6 +113,8 @@ class MainWindow(FluentWindow):
             lambda: self.openSettingsPage("transcribe"),
         )
         self.hBoxLayout.insertWidget(0, self.sidebar)
+        self.sidebar.installEventFilter(self)  # 宽度动画期间标题栏持续跟随
+        self._place_titlebar()
 
         self.sidebar.currentChanged.connect(
             lambda key: self.switchTo(self._page_by_key[key])
@@ -314,10 +316,20 @@ class MainWindow(FluentWindow):
             return
         QApplication.quit()
 
+    def _place_titlebar(self) -> None:
+        """标题栏从侧栏右缘开始（侧栏宽度动画期间经 eventFilter 持续跟随）。"""
+        inset = (self.sidebar.width() if hasattr(self, "sidebar") else 0) + TITLEBAR_GAP
+        self.titleBar.move(inset, 0)
+        self.titleBar.resize(self.width() - inset, self.titleBar.height())
+
+    def eventFilter(self, obj, event):
+        if hasattr(self, "sidebar") and obj is self.sidebar and event.type() == QEvent.Resize:
+            self._place_titlebar()
+        return super().eventFilter(obj, event)
+
     def resizeEvent(self, e):
         super().resizeEvent(e)
-        self.titleBar.move(TITLEBAR_LEFT_INSET, 0)
-        self.titleBar.resize(self.width() - TITLEBAR_LEFT_INSET, self.titleBar.height())
+        self._place_titlebar()
         if hasattr(self, "splashScreen"):
             self.splashScreen.resize(self.size())
         if hasattr(self, "sidebar"):
