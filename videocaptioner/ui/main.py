@@ -5,17 +5,37 @@ import platform
 import sys
 
 
-def _patch_qfluent_font_fallback():
-    if platform.system() != "Darwin":
-        return
+def _install_app_font(app):
+    """加载内置霞鹜文楷并设为全局 UI 字体（Windows 缺省字体没有中文字形，会回退宋体）。
 
+    qfluent 控件走自己的 getFont 字族表，需一并替换。
+    """
     import qfluentwidgets
-    from PyQt5.QtGui import QFont
+    from PyQt5.QtGui import QFont, QFontDatabase
     from qfluentwidgets.common import font as fluent_font
+
+    from videocaptioner.config import FONTS_PATH
+
+    families = []
+    font_id = QFontDatabase.addApplicationFont(str(FONTS_PATH / "LXGWWenKai-Regular.ttf"))
+    if font_id != -1:
+        families = list(QFontDatabase.applicationFontFamilies(font_id))
+    families += [
+        "Segoe UI",
+        "Microsoft YaHei UI",
+        "Microsoft YaHei",
+        "PingFang SC",
+        "Helvetica Neue",
+        "Arial",
+    ]
+
+    font = app.font()
+    font.setFamilies(families)
+    app.setFont(font)
 
     def get_font(fontSize=14, weight=QFont.Normal):
         font = QFont()
-        font.setFamilies(["PingFang SC", "Helvetica Neue", "Arial"])
+        font.setFamilies(families)
         font.setPixelSize(fontSize)
         font.setWeight(weight)
         return font
@@ -90,19 +110,19 @@ def main():
         os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore
 
-    _patch_qfluent_font_fallback()
     app = QApplication(sys.argv)
     app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings, True)  # type: ignore
+    _install_app_font(app)
     setTheme(_to_qfluent_theme(cfg.themeMode.value))
     setThemeColor(cfg.themeColor.value)
 
-    from videocaptioner.ui.view.main_window import MainWindow
-
     # i18n：UI 走 key-based gettext（core/CLI 不翻译）；FluentTranslator 负责 qfluent 自带控件。
-    # 必须在构造 MainWindow（页面 __init__ 会调 tr()）之前装载语言。
+    # 必须在 import 页面模块之前装载语言——模块级常量若含 tr()/N_() key 求值发生在 import 时。
     locale = cfg.get(cfg.language).value
     app.installTranslator(FluentTranslator(locale))
     init_i18n(I18N_PATH, locale.name())
+
+    from videocaptioner.ui.view.main_window import MainWindow
 
     w = MainWindow()
     w.show()
