@@ -170,6 +170,11 @@ Do not:
   `app_setting_cards.py`, `WhisperAPISettingWidget.py`, or
   `TranscriptionOutputDialog.py`.
 - Use raw unicode arrows for production icons; use `app_icons` or FluentIcon.
+- Combine `setWordWrap(True)` with `setTextInteractionFlags(TextSelectableByMouse)`
+  on QLabels inside grid/row layouts (title+description pairs): the selectable
+  text-document path can report a stale 2-line heightForWidth and the pair gets
+  pushed apart (bit the doctor rows under LXGW WenKai; standalone labels don't
+  reproduce). If a row's spacing balloons, drop one of the two flags first.
 - Add explanatory cards just to fill space. This project prefers compact,
   task-oriented pages.
 
@@ -453,7 +458,12 @@ Known failure signatures:
 - `Error parsing filterchain`
 - `Exception: FFmpeg Return code: 234`
 
-If `resource/bin/ffmpeg` or `resource/bin/ffprobe` is relinked or replaced,
+All app-owned media probing goes through `core/utils/media_info.py`
+(`probe_media`, parses `ffmpeg -i` stderr — do not add new ffprobe callers or
+ad-hoc ffmpeg output parsers). ffprobe is still bundled solely because pydub
+(dubbing audio assembly) reads mp3 via ffprobe; it goes away when pydub does.
+
+If `resource/bin/ffmpeg` is relinked or replaced,
 restart the running desktop app before retesting. The live process can keep an
 old binary/path snapshot.
 
