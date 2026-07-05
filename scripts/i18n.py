@@ -36,6 +36,13 @@ from videocaptioner.ui.common.config import source_language_i18n_map
 from videocaptioner.ui.common.dubbing_options import i18n_base_map as dubbing_i18n_map
 from videocaptioner.ui.common.enum_labels import enum_base_map
 
+# Windows GBK 控制台打印
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, ValueError):
+        pass
+
 ROOT = Path(__file__).resolve().parent.parent
 I18N_DIR = ROOT / "resource" / "i18n"
 POT = I18N_DIR / "videocaptioner.pot"
@@ -82,11 +89,19 @@ def _po_path(lang: str) -> Path:
 
 
 def _pybabel(*args: str) -> None:
-    subprocess.run([sys.executable, "-m", "babel.messages.frontend", *args], check=True, cwd=ROOT)
+    # PYTHONUTF8：Windows 默认 GBK 编码读不了含中文注释的 babel.cfg
+    env = {**os.environ, "PYTHONUTF8": "1"}
+    subprocess.run(
+        [sys.executable, "-m", "babel.messages.frontend", *args],
+        check=True, cwd=ROOT, env=env,
+    )
 
 
 # ---------------------------------------------------------------- extract / update / compile
 def extract(out: Path = POT) -> None:
+    # f-string 内部的 tr() 依赖 PEP 701 tokenizer 才能抽到，低版本会静默丢 key
+    if sys.version_info < (3, 12):
+        sys.exit("✗ extract 需要 Python >= 3.12（与 CI 一致），否则抽不到 f-string 内的 tr()")
     out.parent.mkdir(parents=True, exist_ok=True)
     _pybabel(
         "extract", "-F", str(BABEL_CFG), "-k", "tr", "-k", "N_",
