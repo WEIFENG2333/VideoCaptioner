@@ -56,6 +56,7 @@ from videocaptioner.core.entities import (
     TranslatorServiceEnum,
     transcribe_languages_for,
 )
+from videocaptioner.core.llm import free_model
 from videocaptioner.core.llm.check_llm import check_llm_connection, get_available_models
 from videocaptioner.core.realtime.check import check_live_caption
 from videocaptioner.core.realtime.config import LiveCaptionConfig
@@ -1322,10 +1323,10 @@ class SettingInterface(SettingsShell):
 
     def _refresh_llm_rows(self, value: Any) -> None:
         current = value if isinstance(value, LLMServiceEnum) else LLMServiceEnum(str(value))
-        # 公益大模型无可配置项：隐藏全部 provider 行与「测试/加载」行，只留提示
+        # 公益大模型无可配置项：隐藏 provider 行与「加载模型」（模型固定），保留「测试连接」
         is_immersive = current == LLMServiceEnum.IMMERSIVE
         self.llmImmersiveHintRow.setVisible(is_immersive)
-        self.checkLLMRow.setVisible(not is_immersive)
+        self.loadLLMModelsButton.setVisible(not is_immersive)
         custom_base_services = {LLMServiceEnum.OPENAI, LLMServiceEnum.OLLAMA, LLMServiceEnum.LM_STUDIO}
         for service, rows in self.llmProviderRows.items():
             for row in rows:
@@ -1490,20 +1491,28 @@ class SettingInterface(SettingsShell):
 
     def check_llm_connection(self) -> None:
         service = cfg.llm_service.value
-        controls = self.llmProviderControls.get(service)
-        if controls is None:
-            return
-        api_base = controls["api_base"].text().strip()
-        api_key = controls["api_key"].text().strip()
-        model = controls["model"].currentText().strip()
-        if not api_base or not api_key or not model:
-            InfoBar.warning(
-                tr("settings.warn.incomplete"),
-                tr("settings.llm.warn.need_all"),
-                duration=INFOBAR_DURATION_WARNING,
-                parent=self._toast_parent(),
+        if service == LLMServiceEnum.IMMERSIVE:
+            # 公益大模型 base/model 固定、无用户凭证；真实令牌在 check 内实时换取
+            api_base, api_key, model = (
+                free_model.BASE_URL,
+                free_model.PLACEHOLDER_KEY,
+                free_model.MODEL,
             )
-            return
+        else:
+            controls = self.llmProviderControls.get(service)
+            if controls is None:
+                return
+            api_base = controls["api_base"].text().strip()
+            api_key = controls["api_key"].text().strip()
+            model = controls["model"].currentText().strip()
+            if not api_base or not api_key or not model:
+                InfoBar.warning(
+                    tr("settings.warn.incomplete"),
+                    tr("settings.llm.warn.need_all"),
+                    duration=INFOBAR_DURATION_WARNING,
+                    parent=self._toast_parent(),
+                )
+                return
         self._run_button_thread(
             self.checkLLMButton,
             tr("settings.llm.test_connection"),
