@@ -18,7 +18,7 @@ class TestFriendlyError:
         message = friendly_download_error(
             "https://www.bilibili.com/video/BVx", "HTTP Error 412: Precondition Failed"
         )
-        assert "风控" in message and "cookies.txt" in message
+        assert "风控" in message
 
     def test_non_bilibili_412_keeps_generic_hint(self):
         message = friendly_download_error("https://example.com/v", "HTTP Error 412")
@@ -153,7 +153,9 @@ class TestSourceCheck:
         )
         result = check_download_source(DOWNLOAD_SOURCES[1])
         assert not result.success
-        assert "已尝试 Chrome" in result.detail
+        # 结论说明兜底已试（点名浏览器）且给出可行动的出路
+        assert "Chrome" in result.detail
+        assert "cookies.txt" in result.detail
 
     def test_no_browser_available_reports_friendly_412(self, monkeypatch):
         class FailingYdl:

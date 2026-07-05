@@ -118,7 +118,7 @@ def proxy_for_url(url: str) -> Optional[str]:
 # 错误翻译表：按序匹配（特征关键词集, 简短提示）。提示统一为
 # "一句原因 + 一句建议"，技术细节走日志，不在界面堆砌路径。
 _ERROR_RULES = [
-    (("sign in to confirm", "not a bot"), "YouTube 要求登录验证。请在浏览器中登录后重试。"),
+    (("sign in to confirm", "not a bot"), "YouTube 判定当前网络异常，要求登录验证。"),
     (("is only available for registered users",), "该视频需要登录后才能观看。"),
     (("http error 412",), "站点拒绝了请求（需要有效登录态）。"),
     (("premium", "membership", "大会员", "充电专属"), "该视频为会员或付费内容，当前账号没有观看权限。"),
@@ -144,7 +144,7 @@ def friendly_download_error(url: str, message: str) -> str:
     if "ted.com" in url and "http error 403" in lowered:
         return "TED 拒绝了请求，请稍后重试或换一个公开链接。"
     if is_bilibili_url(url) and "http error 412" in lowered:
-        return "哔哩哔哩风控拦截了请求，请稍等几分钟重试；如持续出现，可在浏览器登录后导出 cookies.txt。"
+        return "哔哩哔哩风控拦截了请求（412），请稍等几分钟再试。"
     for hints, friendly in _ERROR_RULES:
         if any(hint in lowered for hint in hints):
             return friendly
@@ -243,6 +243,40 @@ def _is_cookie_read_failure(message: str) -> bool:
     return any(hint in lowered for hint in _COOKIE_READ_FAILURE_HINTS)
 
 
+def _describe_unreadable(unreadable: list[tuple[str, str]]) -> str:
+    """按真实原因解释「浏览器登录态读不出来」，给平台对症的说法。
+
+    Windows 上 Chrome/Edge 是两类硬伤：浏览器开着 → cookie 库被锁；
+    Chromium 127+ 的 App-Bound Encryption → yt-dlp 无法解密（上游限制）。
+    macOS 则是 TCC 隐私保护，放行「完全磁盘访问权限」即可。
+    """
+    locked: list[str] = []
+    encrypted: list[str] = []
+    other: list[str] = []
+    for title, message in unreadable:
+        lowered = message.lower()
+        if "could not copy" in lowered or "database is locked" in lowered:
+            locked.append(title)
+        elif "failed to decrypt" in lowered or "dpapi" in lowered:
+            encrypted.append(title)
+        else:
+            other.append(title)
+    parts = []
+    if locked:
+        parts.append(f"{'、'.join(locked)} 正在运行、登录态被锁定")
+    if encrypted:
+        parts.append(f"{'、'.join(encrypted)} 新版加密不支持读取")
+    if other:
+        if platform.system() == "Darwin":
+            parts.append(
+                f"{'、'.join(other)} 被系统隐私保护拦截"
+                "（系统设置 → 隐私与安全性 → 完全磁盘访问权限 中放行）"
+            )
+        else:
+            parts.append(f"{'、'.join(other)} 登录态无法读取")
+    return "；".join(parts)
+
+
 def run_with_browser_cookie_fallback(
     url: str,
     attempt: Callable[[Optional[str]], T],
@@ -269,12 +303,15 @@ def run_with_browser_cookie_fallback(
         original_message = strip_ansi(str(original))
         browsers = detect_cookie_browsers()
         if not looks_like_cookie_error(original_message) or not browsers:
-            raise RuntimeError(friendly_download_error(url, original_message)) from original
+            friendly = friendly_download_error(url, original_message)
+            if looks_like_cookie_error(original_message):
+                friendly += " 请在浏览器登录该网站后导出 cookies.txt 到应用数据目录再试。"
+            raise RuntimeError(friendly) from original
 
         global _last_good_browser
         had_cookies_file = cookies_file().exists()
         rejected: list[str] = []
-        unreadable: list[str] = []
+        unreadable: list[tuple[str, str]] = []
         for browser in browsers:
             title = _BROWSER_TITLES[browser]
             logger.info("需登录态，尝试 %s 浏览器 cookies: %s", title, url)
@@ -290,22 +327,22 @@ def run_with_browser_cookie_fallback(
                 message = strip_ansi(str(exc))
                 logger.warning("%s 登录态重试失败: %s", title, message)
                 if _is_cookie_read_failure(message):
-                    unreadable.append(title)
+                    unreadable.append((title, message))
                 else:
                     rejected.append(title)
 
+        # 短句结论 + 一条最可靠的行动；细节在日志里
         parts = [friendly_download_error(url, original_message)]
         if rejected:
-            parts.append(
-                f"已尝试 {'、'.join(rejected)} 浏览器登录态，仍被拒绝，"
-                "请先在浏览器中登录该网站。"
-            )
+            parts.append(f"已用 {'、'.join(rejected)} 登录态重试仍被拒绝。")
         if unreadable:
-            parts.append(
-                f"{'、'.join(unreadable)} 的登录态因系统隐私保护无法读取"
-                "（可在 系统设置 → 隐私与安全性 → 完全磁盘访问权限 中允许后重试）。"
-            )
+            parts.append(_describe_unreadable(unreadable) + "。")
         if had_cookies_file:
-            parts.append("另外检测到 cookies.txt 已失效，建议删除后重新导出。")
+            parts.append("cookies.txt 已失效，请删除后重新导出。")
+        actions = []
+        if "firefox" not in browsers:
+            actions.append("安装 Firefox 并登录后重试")
+        actions.append("导出 cookies.txt 到应用数据目录")
+        parts.append("解决：" + "，或".join(actions) + "。")
         logger.warning("浏览器登录态全部失败，cookies.txt=%s", cookies_file())
         raise RuntimeError(" ".join(parts)) from original

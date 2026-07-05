@@ -91,7 +91,7 @@ class TestFallbackLadder:
                 on_attempt=notified.append,
             )
         message = str(exc.value)
-        assert "已尝试 Chrome、Edge" in message
+        assert "已用 Chrome、Edge 登录态重试仍被拒绝" in message
         assert "已失效" in message  # 提示清理失效的 cookies.txt
         assert notified == ["Chrome", "Edge"]
 
@@ -112,12 +112,17 @@ class TestFallbackLadder:
             net.run_with_browser_cookie_fallback("https://youtube.com/watch?v=x", attempt)
         message = str(exc.value)
         # 标题来自最初的站点报错（登录验证），而不是 Safari 的本机权限错误
-        assert message.startswith("YouTube 要求登录验证")
+        assert message.startswith("YouTube 判定当前网络异常")
         assert "Operation not permitted" not in message
-        # 权限问题与"被网站拒绝"分开表述
-        assert "已尝试 Chrome 浏览器登录态" in message
-        assert "Safari 的登录态因系统隐私保护无法读取" in message
-        assert "完全磁盘访问权限" in message
+        # 权限问题与"被网站拒绝"分开表述；具体措辞按平台对症（macOS 给隐私放行指引）
+        assert "已用 Chrome 登录态重试仍被拒绝" in message
+        import platform as _platform
+
+        if _platform.system() == "Darwin":
+            assert "Safari 被系统隐私保护拦截" in message
+            assert "完全磁盘访问权限" in message
+        else:
+            assert "Safari 登录态无法读取" in message
 
     def test_ansi_codes_stripped_from_messages(self):
         friendly = net.friendly_download_error(
