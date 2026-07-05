@@ -60,7 +60,7 @@ class VoxgateBackend(LiveTranscriber):
     ) -> None:
         super().__init__(on_segment, on_state, on_error)
         if not binary:
-            raise LiveCaptionError("未找到 voxgate 可执行文件。请在设置中指定其路径，或放入应用 bin 目录。")
+            raise LiveCaptionError("未找到 voxgate 转录程序：可到「诊断」页一键下载，或在设置中指定其路径。")
         self._binary = binary
         self._language = language or "zh"
         self._proc: Optional[subprocess.Popen] = None

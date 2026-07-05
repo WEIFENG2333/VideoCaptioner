@@ -82,6 +82,7 @@ class LiveCaptionInterface(QWidget):
         self._seen_segs: set = set()
         self._last_record: Optional[LiveCaptionRecord] = None
         self._got_record = False
+        self._errored = False  # 本次会话是否以错误收场（阻止 finished 把错误页重置回就绪）
         self._records_cache: Optional[List[LiveCaptionRecord]] = None  # 历史列表内存缓存
         self._detail_from = _PAGE_SESSION  # 详情返回目标（来源页）
 
@@ -379,6 +380,7 @@ class LiveCaptionInterface(QWidget):
         self._paused = False
         self._seen_segs.clear()
         self._got_record = False
+        self._errored = False
         self.session.transcript.clear()
         name = LiveCaptionStore.display_name()
         self.session.set_record_title(name, tr("live.status.connecting_with_time"))
@@ -542,14 +544,16 @@ class LiveCaptionInterface(QWidget):
         self._refresh_recent()
 
     def _on_finished(self) -> None:
-        # 线程结束但没有产生记录（空会话）→ 回到就绪态
-        if not self._got_record and self._stack.currentIndex() == _PAGE_SESSION:
+        # 线程结束但没有产生记录（空会话）→ 回到就绪态；
+        # 错误收场除外：error 信号先于 finished 到达，就绪态会把错误页盖掉（用户就什么都看不到了）
+        if not self._got_record and not self._errored and self._stack.currentIndex() == _PAGE_SESSION:
             self.session.set_mode(MODE_READY)
             self.session.set_timer("00:00", tr("live.status.waiting"))
             self.session.set_record_title(tr("live.ready.title"), tr("live.ready.desc"))
 
     def _on_error(self, message: str) -> None:
         try:
+            self._errored = True
             lowered = message.lower()
             if "quota" in lowered or "concurren" in lowered or "并发" in message:
                 friendly = tr("live.error.concurrency_full")
