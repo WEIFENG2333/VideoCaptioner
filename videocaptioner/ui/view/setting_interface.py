@@ -1852,10 +1852,10 @@ class SettingInterface(SettingsShell):
                 "model_options": cfg.official_model_options,
                 "default_base": "https://api.videocaptioner.cn/v1",
                 "models": [
-                    "gemini-2.5-flash",
-                    "gemini-2.5-pro",
+                    "gemini-flash-lite-latest",
+                    "gemini-flash-latest",
+                    "gpt-5-mini-2025-08-07",
                     "claude-sonnet-4-5-20250929",
-                    "gpt-4o-mini",
                     "deepseek-v3",
                 ],
             },

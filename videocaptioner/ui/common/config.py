@@ -175,7 +175,8 @@ class Config(SettingsState):
     openai_api_key = SettingField("LLM", "OpenAI_API_Key", "")
     openai_api_base = SettingField("LLM", "OpenAI_API_Base", "https://api.openai.com/v1")
 
-    official_model = SettingField("LLM", "Official_Model", "gemini-2.5-flash")
+    # 滚动别名：中转站会把它指向最新一代 flash-lite，默认值不随模型迭代过期
+    official_model = SettingField("LLM", "Official_Model", "gemini-flash-lite-latest")
     official_model_options = SettingField("LLM", "Official_ModelOptions", [])
     official_api_key = SettingField("LLM", "Official_API_Key", "")
     official_api_base = SettingField("LLM", "Official_API_Base", "https://api.videocaptioner.cn/v1")
