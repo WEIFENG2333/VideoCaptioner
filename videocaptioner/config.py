@@ -25,6 +25,8 @@ AUTHOR = "Weifeng"
 HELP_URL = "https://github.com/WEIFENG2333/VideoCaptioner"
 GITHUB_REPO_URL = "https://github.com/WEIFENG2333/VideoCaptioner"
 RELEASE_URL = "https://github.com/WEIFENG2333/VideoCaptioner/releases/latest"
+# 官方模型中转站（OpenAI 兼容网关）：注册 / 充值 / 创建 Key 的入口
+OFFICIAL_API_SITE_URL = "https://api.videocaptioner.cn/"
 FEEDBACK_URL = "https://github.com/WEIFENG2333/VideoCaptioner/issues"
 # 更新检查后端：客户端启动调它，一次拿 block / update / announcement（飞书多维表格驱动）。
 # 二进制仍在 GitHub Release，响应给直链；core/update 下载时自动加 ghproxy 镜像兜底 + 校验 sha256。

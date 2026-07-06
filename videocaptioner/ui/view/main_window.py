@@ -24,7 +24,7 @@ from videocaptioner.ui.common.theme_tokens import BG_DARK, BG_LIGHT
 from videocaptioner.ui.components.app_dialog import ConfirmDialog
 from videocaptioner.ui.components.donate_dialog import DonateDialog
 from videocaptioner.ui.components.sidebar import EXPANDED_WIDTH, Sidebar
-from videocaptioner.ui.components.update_banner import UpdateBanner
+from videocaptioner.ui.components.update_center import UpdateCenter, UpdateDialog
 from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.update_thread import UpdateCheckThread
 from videocaptioner.ui.view.batch_process_interface import BatchProcessInterface
@@ -72,8 +72,8 @@ class MainWindow(FluentWindow):
         # 设置页「检查更新」按钮 → 主动走同一套更新流程
         self.settingInterface.checkUpdateRequested.connect(self._on_manual_update_check)
 
-        # 启动时后台检查更新；有新版时弹出更新提示条（下载 + 重启安装一键完成）
-        self.updateBanner = None
+        # 启动时后台检查更新；有新版时静默后台下载 + 点亮侧栏底部更新入口
+        self.updateCenter = None
         self.updateCheckThread = None
         self._check_updates()
 
@@ -112,6 +112,8 @@ class MainWindow(FluentWindow):
             "settings", AppIcon.SETTING, tr("app.nav.settings"),
             lambda: self.openSettingsPage("transcribe"),
         )
+        # 最底部的更新入口：默认隐藏，检查到新版本后点亮（文案随下载状态刷新）
+        self.updateItem = self.sidebar.add_update_action(self._open_update_dialog)
         self.hBoxLayout.insertWidget(0, self.sidebar)
         self.sidebar.installEventFilter(self)  # 宽度动画期间标题栏持续跟随
         self._place_titlebar()
@@ -228,7 +230,7 @@ class MainWindow(FluentWindow):
         if result.announcement is not None:
             self._on_announcement(result.announcement)
         if result.block or result.update is not None:
-            self._show_update_banner(result.update, result.block)
+            self._show_update_entry(result.update, result.block)
         elif getattr(self, "_manual_update_check", False):
             self._on_up_to_date()
 
@@ -249,7 +251,8 @@ class MainWindow(FluentWindow):
         ).exec()
 
     def _on_manual_update_check(self):
-        if self.updateBanner is not None:  # 已有提示条在展示，直接复用
+        if self.updateCenter is not None:  # 已知有新版本：直接打开详情弹窗
+            self._open_update_dialog()
             return
         if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
             # 启动检查还没跑完就点了「检查更新」：给反馈，别让按钮像没反应（死点击）
@@ -264,18 +267,44 @@ class MainWindow(FluentWindow):
             return
         self._check_updates(manual=True)
 
-    def _show_update_banner(self, info, block):
-        """展示更新提示条（可用→下载中→重启安装）。版本被封禁且能自更新时锁死整个应用。"""
-        if self.updateBanner is not None:  # 防重复（手动检查叠加自动检查）
+    def _show_update_entry(self, info, block):
+        """发现新版本：静默后台下载 + 点亮侧栏更新入口（下载完一键重启安装）。"""
+        if self.updateCenter is not None:  # 防重复（手动检查叠加自动检查）
             return
-        self.updateBanner = UpdateBanner(
-            self, info, CACHE_PATH / "update", self._install_update, blocked=block
+        self.updateCenter = UpdateCenter(
+            info, CACHE_PATH / "update", self._install_update, blocked=block, parent=self
         )
-        self.updateBanner.show()
-        # 版本被封禁且能自更新：锁死整个应用，只留更新入口（提示条不可关）。不能自更新
+        self.updateCenter.stateChanged.connect(self._sync_update_item)
+        self.updateCenter.start()
+        self._sync_update_item()
+        # 版本被封禁且能自更新：锁死整个应用，立即弹出说明，只留更新出路。不能自更新
         # （开发态/pip/安装目录不可写）时不锁，否则把用户卡死在只能「前往下载」的死胡同。
         if block and can_self_update():
             self.stackedWidget.setEnabled(False)
+            self._open_update_dialog()
+
+    def _sync_update_item(self):
+        """把 UpdateCenter 的状态映射到侧栏更新入口的文案/色调。"""
+        center = self.updateCenter
+        if center is None:
+            return
+        state = center.state
+        if state == "downloading":
+            label, tone = tr("app.update.downloading", percent=center.percent), "accent"
+        elif state == "ready":
+            label, tone = tr("app.update.nav_ready"), "accent"
+        elif state == "failed":
+            label, tone = tr("app.update.nav_failed"), "danger"
+        else:
+            label, tone = tr("app.update.nav_available"), "accent"
+        self.updateItem.set_label(label)
+        self.updateItem.set_tone(tone)
+        self.updateItem.show()
+
+    def _open_update_dialog(self):
+        if self.updateCenter is None:
+            return
+        UpdateDialog(self.updateCenter, self).exec()
 
     def _on_up_to_date(self):
         InfoBar.success(
@@ -353,8 +382,8 @@ class MainWindow(FluentWindow):
             interface.close()
 
         # 停掉更新检查/下载线程，避免退出时销毁运行中的 QThread 触发 abort
-        if self.updateBanner is not None:
-            self.updateBanner.stop()
+        if self.updateCenter is not None:
+            self.updateCenter.stop()
         if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
             self.updateCheckThread.wait(2000)
 

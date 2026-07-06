@@ -59,7 +59,12 @@ def test_union_dedupes_and_preserves_order():
 
 
 def test_ui_options_pair_codes_with_chinese_labels():
+    from videocaptioner.config import I18N_PATH
+    from videocaptioner.ui import i18n
     from videocaptioner.ui.common.config import source_language_options
+
+    # 标签走 tr()，必须先装载目录；不能依赖恰好先跑的其它测试替本测试 init
+    i18n.init(I18N_PATH, "zh_CN")
 
     assert source_language_options("voxgate") == [
         ("auto", "自动识别"), ("zh", "中文"), ("en", "英语")]

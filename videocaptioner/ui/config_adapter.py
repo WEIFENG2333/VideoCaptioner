@@ -107,6 +107,11 @@ def _llm_from_ui(cfg) -> LLMSettings:
             cfg.openai_api_base,
             cfg.openai_model,
         ),
+        LLMServiceEnum.OFFICIAL: (
+            cfg.official_api_key,
+            cfg.official_api_base,
+            cfg.official_model,
+        ),
         LLMServiceEnum.SILICON_CLOUD: (
             cfg.silicon_cloud_api_key,
             cfg.silicon_cloud_api_base,

@@ -96,6 +96,16 @@ Provider-specific fields should only appear when that provider needs them. For
 example: Edge dubbing hides key rows; SiliconFlow/Gemini show TTS key/model
 rows; Whisper API and Fun-ASR show their own base/key/model fields.
 
+LLM providers: the base_url row is shown for every provider, but **editable only
+for 官方中转 (OFFICIAL, `https://api.videocaptioner.cn/v1`) / OpenAI 兼容 / Ollama
+/ LM Studio**; other providers get a read-only base that is force-reset to the
+default (`_refresh_llm_rows`). Adding a new LLM provider touches: `core/entities.py`
+(LLMServiceEnum), `ui/common/config.py` (4 SettingFields + LLM_SERVICE_KEYS + 4
+SharedConfigBindings), `ui/view/setting_interface.py` (`_llm_provider_specs`),
+`ui/config_adapter.py` (`_llm_from_ui` items), `cli/config_adapter.py`
+(`_llm_service_from_key`), plus i18n (`enum.LLMServiceEnum.<NAME>` comes from the
+runtime-key registry automatically; run the i18n pipeline).
+
 The transcribe settings page has one unified "测试转录" row for ALL ASR
 providers (B 接口 / J 接口 / Fun-ASR / Whisper API / whisper-cpp /
 faster-whisper). It runs a real short-audio transcription through
@@ -648,9 +658,11 @@ UI 国际化是 **key-based gettext**，**只翻 UI（PyQt）；core 与 CLI 不
 ## Software Update (自动更新)
 
 应用内自动更新 + 公告：启动后台调**自建后端** `GET /api/update/check` → 拿 `block`（版本封禁）/
-`update`（新版）/`announcement`（公告）→ 有新版弹「更新提示条」一键下载（带校验）→「重启并安装」；
-公告按 id 弹一次。后端（飞书多维表格驱动）决定一切版本逻辑，客户端只渲染。**二进制仍在 GitHub
-Release**，响应给直链。契约见 `docs/dev/update-api.md`（与 vc-backend 的 `docs/update-api.md` 同步）。
+`update`（新版）/`announcement`（公告）→ 有新版**静默后台自动下载**（带校验，对齐 Chrome/VS Code），
+同时点亮**侧栏底部更新入口**（accent 胶囊 + 角标圆点，文案随状态：下载中 NN% → 重启以更新 / 失败），
+点击弹详情弹窗（版本/说明/进度/状态化按钮）→「重启并安装」；公告按 id 弹一次。后端（飞书多维表格
+驱动）决定一切版本逻辑，客户端只渲染。**二进制仍在 GitHub Release**，响应给直链。契约见
+`docs/dev/update-api.md`（与 vc-backend 的 `docs/update-api.md` 同步）。
 **业务在 `core/update`（无 PyQt），UI 只是薄壳。**
 
 ```text
@@ -659,7 +671,9 @@ core/update/client.py      调 /api/update/check（headers 带版本/平台/chan
 core/update/installer.py   下载（复用 core/download，sha256 校验）+ 退出后替换重启
                            （download_update / apply_update / can_self_update / install_root）
 ui/thread/update_thread.py UpdateCheckThread（启动后台检查，resultReady/checkFailed）/ UpdateDownloadThread
-ui/components/update_banner.py  提示条状态机：可用→下载中 NN%→重启并安装；失败可重试；blocked 态
+ui/components/update_center.py  UpdateCenter 状态机（available→downloading NN%→ready/failed，
+                           start() 即静默后台下载）+ UpdateDialog 详情弹窗（弹窗只是视图，关掉下载照跑）
+ui/components/sidebar.py   UpdateSidebarItem：侧栏底部更新入口（默认隐藏，主窗口 _sync_update_item 驱动）
 scripts/register_release.py  发版时 POST /api/admin/release 登记新版（CI 跑，带 CI_RELEASE_TOKEN）
 ```
 
@@ -674,7 +688,7 @@ scripts/register_release.py  发版时 POST /api/admin/release 登记新版（CI
   site-packages) / `pip`(wheel 装进 site-packages)。**dev 也检查**（看得到更新/公告便于调试）；
   `pip` 后端返回 `update=null`（交给 `pip install -U`）。不再有 `VERSION.startswith("0.0.0")` 跳过。
 - **block = 锁死整个应用**：`block` 非空且 `can_self_update()` 时 main_window `stackedWidget.setEnabled(False)`
-  + 提示条不可关，逼用户更新；不能自更新（dev/pip）时不锁、按钮变「前往下载」，避免卡死。
+  + 立即弹更新弹窗（无「稍后」按钮），逼用户更新；不能自更新（dev/pip）时不锁、按钮变「前往下载」，避免卡死。
 - **CI 发版几乎零手工**：`tag + push` → build-desktop 构建上传 zip 到 Release → `register` job 跑
   `register_release.py` POST `/api/admin/release` 登记（version/notes/各平台 url+sha256+size）。
   封禁老版本/灰度/发公告改飞书表，无需重新发版。改产物命名要同步 `register_release.py` 的 `_platform_key`。

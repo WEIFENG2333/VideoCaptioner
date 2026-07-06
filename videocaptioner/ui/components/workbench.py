@@ -1296,7 +1296,10 @@ class AppLineEdit(QLineEdit):
 
     def paintEvent(self, event):
         palette = app_palette()
-        if self.hasFocus():
+        # 只读态不给 accent 聚焦/悬停边框：可选中复制，但不暗示可编辑
+        if self.isReadOnly():
+            border = palette.line_soft
+        elif self.hasFocus():
             border = palette.accent
         elif self.underMouse() and self.isEnabled():
             border = palette.accent_border
@@ -1304,6 +1307,10 @@ class AppLineEdit(QLineEdit):
             border = palette.line_soft
         draw_rounded_surface(self, palette.field, border, 9)
         super().paintEvent(event)
+
+    def setReadOnly(self, read_only: bool) -> None:  # noqa: N802
+        super().setReadOnly(read_only)
+        self.syncStyle()  # 文字颜色随只读态切换
 
     def enterEvent(self, event):
         self.update()
@@ -1330,7 +1337,7 @@ class AppLineEdit(QLineEdit):
                 background: transparent;
                 border: none;
                 padding: 0 12px;
-                color: {palette.text};
+                color: {palette.subtle if self.isReadOnly() else palette.text};
                 selection-background-color: {rgba(palette.accent, 0.35)};
                 selection-color: {palette.text};
             }}

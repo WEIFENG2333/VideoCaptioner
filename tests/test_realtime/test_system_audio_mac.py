@@ -51,12 +51,14 @@ def test_missing_binary_raises(monkeypatch):
         MacSystemAudioCapture().start()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="假 helper 是 /bin/sh 脚本，Windows 无法 exec")
 def test_permission_denied_raises_friendly(tmp_path):
     cap = MacSystemAudioCapture(binary=_fake(tmp_path, "perm", _PERMISSION))
     with pytest.raises(MacSystemAudioPermissionError):
         cap.start()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="假 helper 是 /bin/sh 脚本，Windows 无法 exec")
 def test_happy_path_reads_pcm_then_stops(tmp_path):
     cap = MacSystemAudioCapture(binary=_fake(tmp_path, "happy", _HAPPY))
     cap.start()

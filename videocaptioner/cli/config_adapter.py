@@ -163,6 +163,7 @@ def _llm_service_from_key(value: str):
 
     return {
         "openai": LLMServiceEnum.OPENAI,
+        "official": LLMServiceEnum.OFFICIAL,
         "silicon_cloud": LLMServiceEnum.SILICON_CLOUD,
         "siliconcloud": LLMServiceEnum.SILICON_CLOUD,
         "deepseek": LLMServiceEnum.DEEPSEEK,

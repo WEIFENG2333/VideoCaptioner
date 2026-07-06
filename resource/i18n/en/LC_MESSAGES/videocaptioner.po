@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-25 20:45+0800\n"
+"POT-Creation-Date: 2026-07-07 00:17+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -86,8 +86,11 @@ msgstr "Expand"
 msgid "app.update.available"
 msgstr "A new version is available"
 
+msgid "app.update.background"
+msgstr "Download in background"
+
 msgid "app.update.cancel"
-msgstr "Cancel"
+msgstr "Cancel download"
 
 msgid "app.update.check_failed"
 msgstr "Update check failed"
@@ -113,11 +116,23 @@ msgstr "Restart & install"
 msgid "app.update.install_failed"
 msgstr "Install failed"
 
+msgid "app.update.later"
+msgstr "Later"
+
 msgid "app.update.mandatory"
 msgstr "You must update to the latest version to continue"
 
+msgid "app.update.nav_available"
+msgstr "Update available"
+
+msgid "app.update.nav_failed"
+msgstr "Update download failed"
+
+msgid "app.update.nav_ready"
+msgstr "Restart to update"
+
 msgid "app.update.ready"
-msgstr "Download complete"
+msgstr "Update downloaded — restart the app to finish installing"
 
 msgid "app.update.retry"
 msgstr "Retry"
@@ -1349,6 +1364,9 @@ msgstr "Free Community LLM"
 
 msgid "enum.LLMServiceEnum.LM_STUDIO"
 msgstr "LM Studio"
+
+msgid "enum.LLMServiceEnum.OFFICIAL"
+msgstr "Official Relay"
 
 msgid "enum.LLMServiceEnum.OLLAMA"
 msgstr "Ollama"
@@ -3164,7 +3182,9 @@ msgid "settings.llm.base_url"
 msgstr "Base URL"
 
 msgid "settings.llm.base_url.desc"
-msgstr "Only needs to be changed for OpenAI-compatible or local services."
+msgstr ""
+"Endpoint address. Customizable for the official relay, OpenAI-compatible "
+"and local services; fixed for other providers."
 
 msgid "settings.llm.connect_error"
 msgstr "LLM connection error"
@@ -3219,6 +3239,30 @@ msgid "settings.llm.no_models.desc"
 msgstr ""
 "No model list was retrieved from the current provider. Please check the "
 "Base URL and API Key."
+
+msgid "settings.llm.official_hint.desc"
+msgstr ""
+"A model relay maintained by the VideoCaptioner team: GPT, Claude, Gemini,"
+" DeepSeek and other mainstream models work out of the box. Overseas "
+"models cost roughly 1/7 of official pricing, billed by usage. Sign up, "
+"create an API Key and paste it above."
+
+msgid "settings.llm.official_hint.link"
+msgstr "Get a Key"
+
+msgid "settings.llm.official_hint.title"
+msgstr "About the official relay"
+
+msgid "settings.llm.openai_hint.desc"
+msgstr ""
+"Try the official relay: mainstream models at roughly 1/7 of official "
+"pricing. Any OpenAI-compatible endpoint works here too."
+
+msgid "settings.llm.openai_hint.link"
+msgstr "Official relay"
+
+msgid "settings.llm.openai_hint.title"
+msgstr "No API Key yet?"
 
 msgid "settings.llm.provider"
 msgstr "LLM provider"

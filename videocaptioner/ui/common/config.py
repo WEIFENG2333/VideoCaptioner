@@ -175,6 +175,11 @@ class Config(SettingsState):
     openai_api_key = SettingField("LLM", "OpenAI_API_Key", "")
     openai_api_base = SettingField("LLM", "OpenAI_API_Base", "https://api.openai.com/v1")
 
+    official_model = SettingField("LLM", "Official_Model", "gemini-2.5-flash")
+    official_model_options = SettingField("LLM", "Official_ModelOptions", [])
+    official_api_key = SettingField("LLM", "Official_API_Key", "")
+    official_api_base = SettingField("LLM", "Official_API_Base", "https://api.videocaptioner.cn/v1")
+
     silicon_cloud_model = SettingField("LLM", "SiliconCloud_Model", "gpt-4o-mini")
     silicon_cloud_model_options = SettingField("LLM", "SiliconCloud_ModelOptions", [])
     silicon_cloud_api_key = SettingField("LLM", "SiliconCloud_API_Key", "")
@@ -499,6 +504,7 @@ class SharedConfigBinding:
 
 LLM_SERVICE_KEYS = {
     LLMServiceEnum.OPENAI: "openai",
+    LLMServiceEnum.OFFICIAL: "official",
     LLMServiceEnum.SILICON_CLOUD: "silicon_cloud",
     LLMServiceEnum.DEEPSEEK: "deepseek",
     LLMServiceEnum.OLLAMA: "ollama",
@@ -710,6 +716,15 @@ def _bindings() -> list[SharedConfigBinding]:
         SharedConfigBinding(
             cfg.openai_model_options,
             "llm.providers.openai.model_options",
+            _model_options_to_toml,
+            _model_options_from_toml,
+        ),
+        SharedConfigBinding(cfg.official_api_key, "llm.providers.official.api_key"),
+        SharedConfigBinding(cfg.official_api_base, "llm.providers.official.api_base"),
+        SharedConfigBinding(cfg.official_model, "llm.providers.official.model"),
+        SharedConfigBinding(
+            cfg.official_model_options,
+            "llm.providers.official.model_options",
             _model_options_to_toml,
             _model_options_from_toml,
         ),

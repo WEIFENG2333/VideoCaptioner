@@ -26,7 +26,7 @@ from PyQt5.QtCore import (
     pyqtProperty,
     pyqtSignal,
 )
-from PyQt5.QtGui import QColor, QFont, QFontMetrics, QPainter
+from PyQt5.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PyQt5.QtWidgets import QAbstractButton, QFrame, QVBoxLayout
 
 from videocaptioner.ui.common.app_icons import AppIcon
@@ -195,6 +195,77 @@ class _SidebarSeparator(QFrame):
         painter.drawLine(ITEM_MARGIN_X + 4, y, self.width() - ITEM_MARGIN_X - 4, y)
 
 
+class UpdateSidebarItem(SidebarItem):
+    """底部更新入口：常驻醒目底色 + 图标角标圆点（收纳态唯一的「有更新」信号）。
+
+    默认隐藏；发现新版本后由宿主 show() 并按状态刷新文案。tone=danger 用于下载失败。
+    """
+
+    def __init__(self, parent: "Sidebar") -> None:
+        super().__init__("__update__", AppIcon.DOWNLOAD, "", parent, selectable=False)
+        self._tone = "accent"
+
+    def set_tone(self, tone: str) -> None:
+        assert tone in ("accent", "danger"), tone
+        if tone != self._tone:
+            self._tone = tone
+            self.update()
+
+    def set_label(self, label: str) -> None:
+        super().set_label(label)
+        self._sidebar._sync_tooltips()  # 文案含下载百分比会持续变化，收纳态 tooltip 须跟上
+
+    def paintEvent(self, event):
+        palette = app_palette()
+        accent = palette.accent if self._tone == "accent" else palette.danger
+        fg = palette.accent_text if self._tone == "accent" else palette.danger_fg
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+
+        # 醒目胶囊底：普通项无底色，此项常驻主题色薄底，hover 加深
+        pill = QRectF(
+            ITEM_MARGIN_X,
+            2,
+            self._sidebar.width() - ITEM_MARGIN_X * 2,
+            ITEM_HEIGHT - 4,
+        )
+        fill = QColor(accent)
+        fill.setAlphaF(0.28 if self._hover else 0.15)
+        painter.setPen(Qt.NoPen)  # type: ignore[arg-type]
+        painter.setBrush(fill)
+        painter.drawRoundedRect(pill, 10, 10)
+
+        pixmap = icon_pixmap(self._icon, fg, ICON_SIZE)
+        icon_x = COLLAPSED_WIDTH // 2 - ICON_SIZE // 2
+        icon_y = (ITEM_HEIGHT - ICON_SIZE) // 2
+        painter.drawPixmap(icon_x, icon_y, pixmap)
+
+        # 角标圆点：图标右上角，底色描边把它从图标上「抠」出来
+        painter.setBrush(QColor(accent))
+        painter.setPen(QPen(QColor(palette.bg), 2))
+        painter.drawEllipse(QRectF(icon_x + ICON_SIZE - 5, icon_y - 3, 8, 8))
+
+        progress = self._sidebar.expand_progress()
+        if progress > 0.05:
+            painter.setOpacity(progress)
+            painter.setPen(QColor(fg))
+            painter.setFont(self.font())
+            avail = int(pill.right()) - LABEL_X - 6
+            if avail > 12:
+                text = QFontMetrics(self.font()).elidedText(
+                    self._label, Qt.ElideRight, avail  # type: ignore[arg-type]
+                )
+                painter.drawText(
+                    LABEL_X,
+                    0,
+                    avail,
+                    ITEM_HEIGHT,
+                    Qt.AlignVCenter | Qt.AlignLeft,  # type: ignore[arg-type]
+                    text,
+                )
+
+
 class Sidebar(QFrame):
     """应用侧边导航栏。页面项互斥选中；动作项只触发回调（如 GitHub / 设置弹窗）。"""
 
@@ -246,6 +317,16 @@ class Sidebar(QFrame):
         item = self._make_item(key, icon, label, selectable=False)
         item.clicked.connect(on_click)
         self._layout.addWidget(item)
+
+    def add_update_action(self, on_click: Callable[[], None]) -> UpdateSidebarItem:
+        """最底部的更新入口（默认隐藏，发现新版本后由宿主 show + 刷新文案/色调）。"""
+        item = UpdateSidebarItem(self)
+        item.clicked.connect(on_click)
+        item.hide()
+        self._items[item.key] = item
+        self._layout.addWidget(item)
+        self._sync_tooltips()
+        return item
 
     def _make_item(self, key: str, icon: AppIcon, label: str, *, selectable: bool) -> SidebarItem:
         item = SidebarItem(key, icon, label, self, selectable=selectable)

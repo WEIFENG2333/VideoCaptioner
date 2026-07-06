@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-25 20:45+0800\n"
+"POT-Creation-Date: 2026-07-07 00:17+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -82,8 +82,11 @@ msgstr "展開"
 msgid "app.update.available"
 msgstr "有可用更新"
 
+msgid "app.update.background"
+msgstr "背景下載"
+
 msgid "app.update.cancel"
-msgstr "取消"
+msgstr "取消下載"
 
 msgid "app.update.check_failed"
 msgstr "檢查更新失敗"
@@ -109,11 +112,23 @@ msgstr "重啟並安裝"
 msgid "app.update.install_failed"
 msgstr "安裝失敗"
 
+msgid "app.update.later"
+msgstr "稍後"
+
 msgid "app.update.mandatory"
 msgstr "需更新到最新版本後才能繼續使用"
 
+msgid "app.update.nav_available"
+msgstr "有新版本"
+
+msgid "app.update.nav_failed"
+msgstr "更新下載失敗"
+
+msgid "app.update.nav_ready"
+msgstr "重啟以更新"
+
 msgid "app.update.ready"
-msgstr "下載完成"
+msgstr "新版本已下載完成，重新啟動應用程式即可完成安裝"
 
 msgid "app.update.retry"
 msgstr "重試"
@@ -1266,6 +1281,9 @@ msgstr "公益大模型"
 
 msgid "enum.LLMServiceEnum.LM_STUDIO"
 msgstr "LM Studio"
+
+msgid "enum.LLMServiceEnum.OFFICIAL"
+msgstr "官方中轉"
 
 msgid "enum.LLMServiceEnum.OLLAMA"
 msgstr "Ollama"
@@ -3041,7 +3059,7 @@ msgid "settings.llm.base_url"
 msgstr "Base URL"
 
 msgid "settings.llm.base_url.desc"
-msgstr "只需為 OpenAI 相容或本地服務修改。"
+msgstr "介面位址。官方中轉、OpenAI 相容與本地服務可自訂；其餘服務商為固定位址，不可修改。"
 
 msgid "settings.llm.connect_error"
 msgstr "LLM 連線錯誤"
@@ -3087,6 +3105,26 @@ msgstr "沒有可用模型"
 
 msgid "settings.llm.no_models.desc"
 msgstr "未能從目前提供商取得模型列表，請檢查 Base URL 和 API Key。"
+
+msgid "settings.llm.official_hint.desc"
+msgstr ""
+"卡卡字幕助手官方維護的模型中轉：GPT、Claude、Gemini、DeepSeek "
+"等主流模型開箱即用，中國大陸可直連；海外模型價格約為官方定價的 1/7，按用量計費。註冊後建立 API Key 填入上方即可。"
+
+msgid "settings.llm.official_hint.link"
+msgstr "取得 Key"
+
+msgid "settings.llm.official_hint.title"
+msgstr "關於官方中轉"
+
+msgid "settings.llm.openai_hint.desc"
+msgstr "可使用官方中轉站：主流海外模型價格約為官方定價的 1/7；此處也支援任意 OpenAI 相容介面。"
+
+msgid "settings.llm.openai_hint.link"
+msgstr "前往官方中轉"
+
+msgid "settings.llm.openai_hint.title"
+msgstr "還沒有 API Key？"
 
 msgid "settings.llm.provider"
 msgstr "LLM 提供商"

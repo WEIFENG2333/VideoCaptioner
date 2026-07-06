@@ -33,6 +33,7 @@ from videocaptioner.config import (
     AUTHOR,
     HELP_URL,
     MODEL_PATH,
+    OFFICIAL_API_SITE_URL,
     VERSION,
     YEAR,
 )
@@ -451,7 +452,6 @@ class SettingInterface(SettingsShell):
         )
 
         self.llmProviderRows: dict[LLMServiceEnum, list[SettingRow]] = {}
-        self.llmApiBaseRows: dict[LLMServiceEnum, SettingRow] = {}
         self.llmDefaultBases: dict[LLMServiceEnum, str] = {}
         self.llmProviderSpecs = self._llm_provider_specs()
         self.llmProviderControls: dict[LLMServiceEnum, dict[str, BoundLineEdit | BoundEditableComboBox]] = {}
@@ -488,7 +488,6 @@ class SettingInterface(SettingsShell):
                 )
             )
             rows = [api_key_row, api_base_row, model_row]
-            self.llmApiBaseRows[service] = api_base_row
             self.llmDefaultBases[service] = str(provider["default_base"])
             self.llmProviderRows[service] = rows
             self.llmProviderControls[service] = {
@@ -497,6 +496,32 @@ class SettingInterface(SettingsShell):
                 "model": model,
             }
 
+        # 选中「官方中转」时显示：定价/直连说明 + 跳官网注册取 Key
+        self.llmOfficialSiteButton = make_button(tr("settings.llm.official_hint.link"), parent=group)
+        self.llmOfficialSiteButton.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(OFFICIAL_API_SITE_URL))
+        )
+        self.llmOfficialHintRow = group.addRow(
+            SettingRow(
+                tr("settings.llm.official_hint.title"),
+                tr("settings.llm.official_hint.desc"),
+                self.llmOfficialSiteButton,
+                group,
+            )
+        )
+        # 选中「OpenAI 兼容」时显示：没有可用 Key 的用户指路官方中转（信息位，不抢焦点）
+        self.llmOpenAIHintButton = make_button(tr("settings.llm.openai_hint.link"), parent=group)
+        self.llmOpenAIHintButton.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(OFFICIAL_API_SITE_URL))
+        )
+        self.llmOpenAIHintRow = group.addRow(
+            SettingRow(
+                tr("settings.llm.openai_hint.title"),
+                tr("settings.llm.openai_hint.desc"),
+                self.llmOpenAIHintButton,
+                group,
+            )
+        )
         # 选中「公益大模型」时显示：免费免 key + 稳定性预防针；无任何可配置项
         self.llmImmersiveHintRow = group.addRow(
             SettingRow(
@@ -1326,21 +1351,28 @@ class SettingInterface(SettingsShell):
         # 公益大模型无可配置项：隐藏 provider 行与「加载模型」（模型固定），保留「测试连接」
         is_immersive = current == LLMServiceEnum.IMMERSIVE
         self.llmImmersiveHintRow.setVisible(is_immersive)
+        self.llmOfficialHintRow.setVisible(current == LLMServiceEnum.OFFICIAL)
+        self.llmOpenAIHintRow.setVisible(current == LLMServiceEnum.OPENAI)
         self.loadLLMModelsButton.setVisible(not is_immersive)
-        custom_base_services = {LLMServiceEnum.OPENAI, LLMServiceEnum.OLLAMA, LLMServiceEnum.LM_STUDIO}
+        # base_url 可编辑的服务商：自定义网关（OpenAI 兼容/官方中转）与本地服务（端口可变）。
+        # 其余服务商 base 固定：仍展示（用户能看到请求去哪）但只读，并强制回写默认值。
+        custom_base_services = {
+            LLMServiceEnum.OPENAI,
+            LLMServiceEnum.OFFICIAL,
+            LLMServiceEnum.OLLAMA,
+            LLMServiceEnum.LM_STUDIO,
+        }
         for service, rows in self.llmProviderRows.items():
             for row in rows:
                 row.setVisible(service == current)
-            base_row = self.llmApiBaseRows.get(service)
-            if base_row is not None:
-                base_row.setVisible(service == current and service in custom_base_services)
 
         controls = self.llmProviderControls.get(current)
         if controls is not None:
             self._apply_llm_model_options(current, self._llm_model_options(current))
+            api_base_control = controls["api_base"]
+            api_base_control.setReadOnly(current not in custom_base_services)
             if current not in custom_base_services:
                 default_base = self.llmDefaultBases.get(current, "")
-                api_base_control = controls["api_base"]
                 if default_base and api_base_control.text().strip() != default_base:
                     cfg.set(api_base_control.config_item, default_base)
             if current == LLMServiceEnum.OLLAMA and not controls["api_key"].text():
@@ -1811,6 +1843,20 @@ class SettingInterface(SettingsShell):
                     "claude-sonnet-4-5-20250929",
                     "gemini-2.5-flash",
                     "claude-haiku-4-5-20251001",
+                ],
+            },
+            LLMServiceEnum.OFFICIAL: {
+                "api_key": cfg.official_api_key,
+                "api_base": cfg.official_api_base,
+                "model": cfg.official_model,
+                "model_options": cfg.official_model_options,
+                "default_base": "https://api.videocaptioner.cn/v1",
+                "models": [
+                    "gemini-2.5-flash",
+                    "gemini-2.5-pro",
+                    "claude-sonnet-4-5-20250929",
+                    "gpt-4o-mini",
+                    "deepseek-v3",
                 ],
             },
             LLMServiceEnum.SILICON_CLOUD: {

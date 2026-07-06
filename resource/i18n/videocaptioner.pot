@@ -58,6 +58,9 @@ msgstr ""
 msgid "app.update.available"
 msgstr ""
 
+msgid "app.update.background"
+msgstr ""
+
 msgid "app.update.cancel"
 msgstr ""
 
@@ -85,7 +88,19 @@ msgstr ""
 msgid "app.update.install_failed"
 msgstr ""
 
+msgid "app.update.later"
+msgstr ""
+
 msgid "app.update.mandatory"
+msgstr ""
+
+msgid "app.update.nav_available"
+msgstr ""
+
+msgid "app.update.nav_failed"
+msgstr ""
+
+msgid "app.update.nav_ready"
 msgstr ""
 
 msgid "app.update.ready"
@@ -1235,6 +1250,9 @@ msgid "enum.LLMServiceEnum.IMMERSIVE"
 msgstr ""
 
 msgid "enum.LLMServiceEnum.LM_STUDIO"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.OFFICIAL"
 msgstr ""
 
 msgid "enum.LLMServiceEnum.OLLAMA"
@@ -3056,6 +3074,24 @@ msgid "settings.llm.no_models"
 msgstr ""
 
 msgid "settings.llm.no_models.desc"
+msgstr ""
+
+msgid "settings.llm.official_hint.desc"
+msgstr ""
+
+msgid "settings.llm.official_hint.link"
+msgstr ""
+
+msgid "settings.llm.official_hint.title"
+msgstr ""
+
+msgid "settings.llm.openai_hint.desc"
+msgstr ""
+
+msgid "settings.llm.openai_hint.link"
+msgstr ""
+
+msgid "settings.llm.openai_hint.title"
 msgstr ""
 
 msgid "settings.llm.provider"
