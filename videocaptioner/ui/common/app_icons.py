@@ -57,6 +57,7 @@ class AppIcon(str, Enum):
     MICROPHONE = "microphone"
     MUSIC = "music"
     PALETTE = "palette"
+    PANEL_LEFT = "panel-left"
     PHOTO = "photo"
     PLAY = "play"
     RIGHT_ARROW = "right_arrow"

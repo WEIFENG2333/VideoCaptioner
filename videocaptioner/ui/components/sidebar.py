@@ -55,12 +55,15 @@ class SidebarItem(QAbstractButton):
         parent: "Sidebar",
         *,
         selectable: bool = True,
+        variant: str = "nav",
     ) -> None:
         super().__init__(parent)
         self.key = key
         self._icon = icon
         self._label = label
         self._selectable = selectable
+        # "nav"=导航页面项（选中胶囊+文字）；"toggle"=展开/收纳控件（不同语义：图标按钮、无文字）
+        self._variant = variant
         self._active = False
         self._hover = False
         self._sidebar = parent
@@ -97,10 +100,35 @@ class SidebarItem(QAbstractButton):
         self.update()
         super().leaveEvent(event)
 
+    def _paint_toggle(self, painter: QPainter, palette) -> None:
+        """收纳/展开控件：与导航项不同语义 —— 无胶囊、无文字，紧凑图标按钮。
+
+        图标固定在图标列（与下方导航图标同一条竖线，两态都不移动），语义区分靠 panel 图标 +
+        无胶囊 + muted 色 + 下方分隔线。悬停只在图标周围显示小圆角方块，不占满整行。
+        """
+        icon_x = COLLAPSED_WIDTH // 2 - ICON_SIZE // 2
+        icon_y = (ITEM_HEIGHT - ICON_SIZE) // 2
+
+        if self._hover:
+            side = ICON_SIZE + 12
+            sq = QRectF(icon_x + ICON_SIZE / 2 - side / 2, (ITEM_HEIGHT - side) / 2, side, side)
+            hover = QColor(palette.field)
+            hover.setAlphaF(0.55)
+            painter.setPen(Qt.NoPen)  # type: ignore[arg-type]
+            painter.setBrush(hover)
+            painter.drawRoundedRect(sq, 9, 9)
+
+        color = palette.text if self._hover else palette.subtle
+        painter.drawPixmap(icon_x, icon_y, icon_pixmap(self._icon, color, ICON_SIZE))
+
     def paintEvent(self, event):
         palette = app_palette()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+
+        if self._variant == "toggle":
+            self._paint_toggle(painter, palette)
+            return
 
         # 胶囊底：active 实底、hover 弱底；宽度跟随当前侧栏宽度
         pill = QRectF(
@@ -148,6 +176,23 @@ class SidebarItem(QAbstractButton):
                 )
 
 
+class _SidebarSeparator(QFrame):
+    """控件区与导航区之间的细分隔线，随宽度内缩（收纳态更短、展开态更长）。"""
+
+    def __init__(self, parent: "Sidebar") -> None:
+        super().__init__(parent)
+        self.setFixedHeight(11)
+
+    def paintEvent(self, event):
+        palette = app_palette()
+        painter = QPainter(self)
+        color = QColor(palette.line_soft)
+        color.setAlphaF(0.7)
+        painter.setPen(color)
+        y = self.height() // 2
+        painter.drawLine(ITEM_MARGIN_X + 4, y, self.width() - ITEM_MARGIN_X - 4, y)
+
+
 class Sidebar(QFrame):
     """应用侧边导航栏。页面项互斥选中；动作项只触发回调（如 GitHub / 设置弹窗）。"""
 
@@ -170,13 +215,16 @@ class Sidebar(QFrame):
         self._layout.setContentsMargins(0, 8 + top_inset, 0, 10)
         self._layout.setSpacing(2)
 
-        # 顶部：展开/收纳开关（图标位置与普通项一致），文字随状态切换
+        # 顶部：展开/收纳控件。用 panel 图标 + toggle 变体（与下方导航项不同语义），仅图标无文字
         self._toggle = SidebarItem(
-            "__toggle__", AppIcon.MENU, self._toggle_label(), self, selectable=False
+            "__toggle__", AppIcon.PANEL_LEFT, self._toggle_label(), self,
+            selectable=False, variant="toggle",
         )
         self._toggle.clicked.connect(self.toggle)
+        self._toggle.setToolTip(self._toggle_label())  # 图标控件：两态都给 tooltip
         self._layout.addWidget(self._toggle)
-        self._layout.addSpacing(6)
+        # 控件区与导航区之间的分隔线，强化「不同语义」
+        self._layout.addWidget(_SidebarSeparator(self))
 
         self._main_index = self._layout.count()  # 页面项插入点
         self._layout.addStretch(1)  # 主区与底部区之间的弹性空隙
@@ -241,6 +289,7 @@ class Sidebar(QFrame):
         else:
             self.setFixedWidth(target)
         self._toggle.set_label(self._toggle_label())
+        self._toggle.setToolTip(self._toggle_label())
         self._sync_tooltips()
         self.expandedChanged.emit(expanded)
 
@@ -251,10 +300,10 @@ class Sidebar(QFrame):
         self.set_expanded(not self._expanded)
 
     def _sync_tooltips(self) -> None:
-        # 收纳态看不到文字，用 tooltip 兜底；展开态不打扰
+        # 导航项：收纳态看不到文字用 tooltip 兜底，展开态不打扰。
+        # toggle 是纯图标控件，两态都保留 tooltip（在 set_expanded 里维护）。
         for item in self._items.values():
             item.setToolTip("" if self._expanded else item.label())
-        self._toggle.setToolTip("" if self._expanded else self._toggle.label())
 
     # 动画属性：QFrame 没有 paneWidth，这里落到 fixedWidth 上驱动布局与子项重绘
     def _get_pane_width(self) -> int:
