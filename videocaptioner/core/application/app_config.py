@@ -192,8 +192,8 @@ def target_language_from_code(value: Any) -> TargetLanguage:
     return TargetLanguage.SIMPLIFIED_CHINESE
 
 
-# CLI 的 --asr 取值与枚举的唯一映射：parser choices 必须从这里派生，
-# 不要手写清单——多处手写会各自漂移、漏掉新引擎。
+# CLI 的 --asr 取值与枚举的唯一映射。parser choices 从这里派生，
+# 新增引擎只需改这一处。
 CLI_ASR_MAPPING: dict[str, TranscribeModelEnum] = {
     "bijian": TranscribeModelEnum.BIJIAN,
     "jianying": TranscribeModelEnum.JIANYING,

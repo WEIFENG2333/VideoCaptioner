@@ -43,12 +43,12 @@ StyleMode = SubtitleRenderer
 
 # 对齐字符串 -> ASS Alignment（数字小键盘布局，底部一行）。
 _ASS_ALIGNMENT = {"left": 1, "center": 2, "right": 3}
-# ASS 样式以 720p（约 1280 宽）为基准编写，渲染时再按视频高度缩放。
+# ASS 样式以 720p（1280 宽）为基准编写，渲染时按分辨率缩放（见 ass_renderer）。
 _ASS_REFERENCE_WIDTH = 1280
 
 
 def _ass_margin_lr(max_width: int) -> int:
-    """最大宽度百分比 -> ASS 左右边距（基准宽度像素）。100% 保留历史的 10px 安全边距。"""
+    """最大宽度百分比 -> ASS 左右边距（基准宽度像素）。100% 时仍留 10px 安全边距。"""
     if max_width >= 100:
         return 10
     return int(_ASS_REFERENCE_WIDTH * (100 - max_width) / 200)

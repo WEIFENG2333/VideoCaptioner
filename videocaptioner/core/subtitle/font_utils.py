@@ -1,4 +1,4 @@
-"""Font discovery and loading utilities"""
+"""字体发现与加载：内置字体优先，系统字体与多级回退兜底。"""
 
 from functools import lru_cache
 from pathlib import Path
@@ -16,7 +16,7 @@ logger = setup_logger("subtitle.font")
 
 
 def _get_font_family_name(font_path: Path, font_index: int = 0) -> Optional[str]:
-    """Extract font family name from font file (cross-platform)"""
+    """从字体文件读家族名（nameID 16 优先、1 兜底，跨平台）。"""
     try:
         font = TTFont(str(font_path), fontNumber=font_index)
         name_table = font.get("name")
@@ -51,7 +51,7 @@ def _get_font_family_name(font_path: Path, font_index: int = 0) -> Optional[str]
 
 @lru_cache(maxsize=1)
 def get_builtin_fonts() -> tuple[Dict[str, str], ...]:
-    """Get built-in fonts list with actual family names"""
+    """内置字体清单：[{name: 家族名, path: 文件路径}]。"""
     builtin_fonts = []
 
     if FONTS_PATH.exists():
@@ -70,7 +70,7 @@ def get_builtin_fonts() -> tuple[Dict[str, str], ...]:
 
 @lru_cache(maxsize=64)
 def get_font(size: int, font_name: str = "") -> FontType:
-    """Get font object (built-in fonts first, then system fonts)"""
+    """按名加载字体：内置 → 系统 → 常见 CJK 回退。"""
     if font_name:
         builtin_fonts = get_builtin_fonts()
         for builtin in builtin_fonts:
@@ -143,7 +143,7 @@ def get_ass_to_pil_ratio(font_name: str) -> float:
 
 
 def clear_font_cache():
-    """Clear font cache"""
+    """清空字体相关缓存（内置清单 / 字体对象 / 字号比值）。"""
     get_builtin_fonts.cache_clear()
     get_font.cache_clear()
     get_ass_to_pil_ratio.cache_clear()

@@ -175,8 +175,8 @@ class MainWindow(FluentWindow):
         win_h = max(560, min(760, avail.height() - 100))
         self.resize(win_w, win_h)
         self.setMinimumWidth(WINDOW_MINIMUM_WIDTH)
-        # 不要 setMaximumHeight/Width 防御页面超高：Qt 的最大尺寸会连「最大化」
-        # 一起 clamp，最大化铺不满屏幕、边缘露出底层窗口成一圈亮线。
+        # 窗口最大尺寸交给系统管理：Qt 的固定最大尺寸会连「最大化」一起 clamp，
+        # 最大化铺不满屏幕、边缘露出底层窗口。
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
         self.setWindowTitle(tr("app.window_title"))
 

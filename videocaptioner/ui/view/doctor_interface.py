@@ -181,9 +181,11 @@ class StatusPill(WbStatusPill):
 
 
 class _WrapDescription(QLabel):
-    """换行描述。QLabel(wordWrap) 的 sizeHint 按内部估算的窄宽度虚报多一行高，
-    而 QGridLayout 的跨行块不传播 heightForWidth——失败行（长描述换行）会被
-    虚高撑出大片上下空白。拿到真实宽度后把高度锁定为 heightForWidth 的精确值。"""
+    """随宽度精确定高的换行描述。
+
+    QLabel(wordWrap) 的 sizeHint 按内部估算的窄宽度虚报行数，QGridLayout 的
+    跨行块又不传播 heightForWidth；在 resizeEvent 里按真实宽度锁定精确高度，
+    行内的标题/描述才能贴合排布。"""
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

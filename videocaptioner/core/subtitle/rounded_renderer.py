@@ -33,6 +33,23 @@ def _get_video_info(video_path: str) -> Tuple[int, int, float]:
     return info.width, info.height, info.duration_seconds
 
 
+def _scaled_style(style: RoundedBgStyle, width: int, height: int) -> RoundedBgStyle:
+    """样式以 720p 为基准编写，按目标分辨率的短边等比缩放全部尺寸字段。"""
+    factor = min(width, height) / 720
+    if factor == 1.0:
+        return style
+    return replace(
+        style,
+        font_size=int(style.font_size * factor),
+        corner_radius=int(style.corner_radius * factor),
+        padding_h=int(style.padding_h * factor),
+        padding_v=int(style.padding_v * factor),
+        margin_bottom=int(style.margin_bottom * factor),
+        line_spacing=int(style.line_spacing * factor),
+        letter_spacing=int(style.letter_spacing * factor),
+    )
+
+
 def render_text_block(
     draw: ImageDraw.ImageDraw,
     texts: List[str],
@@ -246,20 +263,7 @@ def render_preview(
     else:
         background = Image.new("RGB", (width, height), (20, 20, 20))
 
-    # 从样式中获取参考高度，根据图片高度自动缩放样式
-    scale_factor = min(width, height) / 720
-
-    if scale_factor != 1.0:
-        style = replace(
-            style,
-            font_size=int(style.font_size * scale_factor),
-            corner_radius=int(style.corner_radius * scale_factor),
-            padding_h=int(style.padding_h * scale_factor),
-            padding_v=int(style.padding_v * scale_factor),
-            margin_bottom=int(style.margin_bottom * scale_factor),
-            line_spacing=int(style.line_spacing * scale_factor),
-            letter_spacing=int(style.letter_spacing * scale_factor),
-        )
+    style = _scaled_style(style, width, height)
 
     # 渲染字幕并叠加
     subtitle_img = render_subtitle_image(primary_text, secondary_text, width, height, style)
@@ -280,70 +284,37 @@ def render_rounded_video(
     preset: str = "medium",
     progress_callback: Optional[Callable] = None,
 ) -> None:
-    """
-    渲染圆角背景字幕到视频（分批overlay方案）
+    """把字幕以圆角气泡样式烧录进视频。
 
-    核心流程: 直接分批overlay字幕PNG到原视频
-    每批50个字幕，避免FFmpeg文件数量限制
-
-    Args:
-        video_path: 输入视频路径
-        asr_data: 字幕数据
-        output_path: 输出视频路径
-        rounded_style: 圆角背景样式配置字典
-        layout: 字幕布局
-        crf: 视频质量参数
-        preset: FFmpeg编码预设
-        progress_callback: 进度回调 (progress: int, message: str)
+    每帧字幕先渲染成透明 PNG，再分批 overlay 到视频上（每批 50 个，
+    避开 FFmpeg 的输入数量限制）。progress_callback(percent, message)。
     """
-    # 检查字幕数据
     if not asr_data or not asr_data.segments:
         raise ValueError("Empty subtitle data, cannot render video")
 
-    # 检查布局合理性
-    if layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
-        has_translation = any(
-            seg.translated_text and seg.translated_text.strip() for seg in asr_data.segments
-        )
-        if not has_translation:
-            layout = SubtitleLayoutEnum.ONLY_ORIGINAL
-    elif (
-        layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP
-        or layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP
+    # 无译文时双语/仅译文布局都退回仅原文
+    needs_translation = layout in (
+        SubtitleLayoutEnum.ONLY_TRANSLATE,
+        SubtitleLayoutEnum.TRANSLATE_ON_TOP,
+        SubtitleLayoutEnum.ORIGINAL_ON_TOP,
+    )
+    if needs_translation and not any(
+        seg.translated_text and seg.translated_text.strip() for seg in asr_data.segments
     ):
-        has_translation = any(
-            seg.translated_text and seg.translated_text.strip() for seg in asr_data.segments
-        )
-        if not has_translation:
-            layout = SubtitleLayoutEnum.ONLY_ORIGINAL
+        layout = SubtitleLayoutEnum.ONLY_ORIGINAL
 
-    # 获取视频信息
     width, height, video_duration = _get_video_info(video_path)
 
-    # 构建并缩放样式
     style_config = rounded_style or {}
     style_config["layout"] = layout
-    style = RoundedBgStyle(**style_config)
-
-    scale_factor = min(width, height) / 720
-    if scale_factor != 1.0:
-        style = replace(
-            style,
-            font_size=int(style.font_size * scale_factor),
-            corner_radius=int(style.corner_radius * scale_factor),
-            padding_h=int(style.padding_h * scale_factor),
-            padding_v=int(style.padding_v * scale_factor),
-            margin_bottom=int(style.margin_bottom * scale_factor),
-            line_spacing=int(style.line_spacing * scale_factor),
-            letter_spacing=int(style.letter_spacing * scale_factor),
-        )
+    style = _scaled_style(RoundedBgStyle(**style_config), width, height)
 
     with tempfile.TemporaryDirectory(prefix="rounded_subtitle_") as temp_dir:
         temp_path = Path(temp_dir)
 
-        # 步骤1: 生成All字幕PNG (0-30%)
+        # 步骤1: 生成全部字幕 PNG（进度 0-30%）
         logger.debug(
-            f"Generating subtitle PNGs图片（共{len(asr_data.segments)}个，布局: {layout.value}）"
+            "Generating %d subtitle PNGs (layout: %s)", len(asr_data.segments), layout.value
         )
         subtitle_frames = []
 

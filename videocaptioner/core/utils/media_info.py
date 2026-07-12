@@ -2,8 +2,7 @@
 
 ffmpeg 对只有 ``-i`` 的调用固定以非 0 退出，并把媒体元数据打印到 stderr；
 这里只做文本解析，因此桌面包只需携带 ffmpeg 一个二进制。
-全项目的「这个文件是什么媒体」问题都应经由 :func:`probe_media` 回答，
-不要再散落新的 ffmpeg/ffprobe 输出解析。
+全项目的「这个文件是什么媒体」问题统一经由 :func:`probe_media` 回答。
 """
 
 from __future__ import annotations

@@ -1,4 +1,10 @@
-"""ASS subtitle renderer"""
+"""ASS 硬字幕渲染：FFmpeg + libass 出预览图与合成视频。
+
+样式以 720p 横屏（1280x720）为基准编写；渲染前按目标分辨率缩放——
+字号/描边/字距/底距随「短边」（竖屏按高度缩放会让字幕占满半个画面），
+左右边距表达 max_width 画宽百分比，随实际画宽缩放。缩放后的 ASS 先经
+auto_wrap_ass_file 写好硬换行，再交给 FFmpeg 的 ass 滤镜。
+"""
 
 import os
 import re
@@ -22,6 +28,7 @@ if TYPE_CHECKING:
     from videocaptioner.core.asr.asr_data import ASRData
 
 logger = setup_logger("subtitle.ass")
+
 ASS_FILTER_ERROR = (
     "当前 FFmpeg 不支持 ASS 字幕渲染滤镜，无法使用“ASS 样式”生成硬字幕视频。"
     "请安装带 libass 的完整 FFmpeg，或在字幕样式里切换为“圆角背景”。"
@@ -39,16 +46,19 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 {dialogue}
 """
 
+_REFERENCE_SHORT = 720
+_REFERENCE_WIDTH = 1280
 
-def _check_cuda_available() -> bool:
-    """检查 CUDA 是否可用"""
-    from videocaptioner.core.utils.video_utils import check_cuda_available
+_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
 
-    return check_cuda_available()
+
+def _filter_path(path) -> str:
+    """FFmpeg 滤镜参数中的文件路径：正斜杠 + 转义盘符冒号。"""
+    return Path(path).as_posix().replace(":", r"\:")
 
 
 def ffmpeg_supports_ass_filter() -> bool:
-    """Return whether the active ffmpeg binary exposes the ASS subtitle filter."""
+    """当前 ffmpeg 是否带 ass 滤镜（发行版可能不含 libass）。"""
     try:
         result = subprocess.run(
             ["ffmpeg", "-hide_banner", "-filters"],
@@ -56,7 +66,7 @@ def ffmpeg_supports_ass_filter() -> bool:
             text=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
+            creationflags=_NO_WINDOW,
         )
     except (OSError, subprocess.SubprocessError):
         return False
@@ -76,18 +86,12 @@ def _ensure_ass_filter_supported() -> None:
         raise RuntimeError(ASS_FILTER_ERROR)
 
 
-# 样式以 720p 横屏（1280x720）为基准编写。字号/描边/字距/底距随分辨率
-# 「短边」缩放——竖屏若按高度缩放，字幕会占满半个画面；左右边距表达的是
-# max_width 画宽百分比，必须按实际画宽缩放，否则竖屏下百分比失真。
-_REFERENCE_SHORT = 720
-_REFERENCE_WIDTH = 1280
-
-
 def _style_scale(width: int, height: int) -> float:
     return min(width, height) / _REFERENCE_SHORT
 
 
 def _scale_ass_style(style_str: str, size_scale: float, width_scale: float) -> str:
+    """缩放 Style 行中的尺寸字段（详见模块 docstring 的缩放规则）。"""
     if size_scale == 1.0 and width_scale == 1.0:
         return style_str
 
@@ -96,12 +100,12 @@ def _scale_ass_style(style_str: str, size_scale: float, width_scale: float) -> s
         if line.startswith("Style:"):
             parts = line.split(",")
             if len(parts) >= 23:
-                # Fontsize / Spacing / Outline / MarginV 随短边缩放
+                # Fontsize / Spacing / Outline / MarginV 随短边
                 parts[2] = str(int(float(parts[2]) * size_scale))
                 parts[13] = str(float(parts[13]) * size_scale)
                 parts[16] = str(float(parts[16]) * size_scale)
                 parts[21] = str(int(float(parts[21]) * size_scale))
-                # MarginL / MarginR 随画宽缩放
+                # MarginL / MarginR 随画宽
                 parts[19] = str(int(float(parts[19]) * width_scale))
                 parts[20] = str(int(float(parts[20]) * width_scale))
                 line = ",".join(parts)
@@ -111,10 +115,10 @@ def _scale_ass_style(style_str: str, size_scale: float, width_scale: float) -> s
 
 
 def top_line_margin_v(style_str: str, line_gap: int) -> Optional[int]:
-    """双语时上行（Default）距底部的 MarginV = 底边距 + 副字幕行高估算 + 主副间距。
+    """双语时上行（Default）的绝对 MarginV：底边距 + 副字幕行高估算 + 主副间距。
 
-    line_gap<=0 时返回 None，表示沿用 libass 默认的紧贴堆叠（对存量样式零回归）。
-    style_str 应为已缩放的样式串，line_gap 也应是已缩放的像素值。
+    line_gap<=0 返回 None，表示沿用 libass 默认的紧贴堆叠。
+    style_str 与 line_gap 都应是已缩放的值。
     """
     if line_gap <= 0:
         return None
@@ -136,6 +140,14 @@ def top_line_margin_v(style_str: str, line_gap: int) -> Optional[int]:
     return base + int((sec_size or 30) * 1.2) + line_gap
 
 
+def _default_background(width: int, height: int) -> Path:
+    path = RESOURCE_PATH / "assets" / "default_bg.png"
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (width, height), (0, 0, 0)).save(path)
+    return path
+
+
 def render_ass_preview(
     style_str: str,
     preview_text: Tuple[str, Optional[str]],
@@ -144,33 +156,23 @@ def render_ass_preview(
     height: Optional[int] = None,
     line_gap: int = 0,
 ) -> str:
-    """
-    生成 ASS 样式字幕预览图
+    """在背景图上渲染一帧字幕预览，返回图片路径。
 
-    Args:
-        style_str: ASS 样式字符串（包含 PlayResY）
-        preview_text: (原文, 译文) 元组，译文可以为 None
-        bg_image_path: 背景图片路径
-        width: 图片宽度（None=从bg_image_path自动获取）
-        height: 图片高度（None=从bg_image_path自动获取）
-    Returns:
-        生成的预览图路径
+    preview_text 为 (原文, 译文)，译文为 None 时单语。宽高缺省取背景图尺寸。
+    结果按内容寻址缓存：同样的样式+文字+背景+尺寸只渲染一次。
     """
-    # 自动获取图片尺寸
     if width is None or height is None:
         bg_path = Path(bg_image_path)
         if bg_path.exists():
             with Image.open(bg_path) as img:
-                actual_width, actual_height = img.size
-                width = width or actual_width
-                height = height or actual_height
+                width = width or img.width
+                height = height or img.height
         else:
             width = width or 1920
             height = height or 1080
 
     original_text, translate_text = preview_text
 
-    # 内容寻址缓存：同样的样式 + 文字 + 背景 + 尺寸只渲染一次，来回切换/重复编辑直接命中
     output_path = preview_path(
         f"ass|{style_str}|{original_text}|{translate_text}|{bg_image_path}"
         f"|{width}x{height}|gap{line_gap}"
@@ -178,99 +180,61 @@ def render_ass_preview(
     if output_path.exists():
         return str(output_path)
 
-    # 先缩放样式（尺寸随短边、左右边距随画宽），再据此构建对话行
     scale_factor = _style_scale(width, height)
     style_str = _scale_ass_style(style_str, scale_factor, width / _REFERENCE_WIDTH)
 
-    # 双语时给上行（Default）一个绝对 MarginV，制造可控的主副间距
-    top_mv = top_line_margin_v(style_str, int(line_gap * scale_factor))
-    top_mv_field = top_mv if top_mv is not None else 0
+    # 双语时给上行（Default）绝对 MarginV，制造可控的主副间距
+    top_mv = top_line_margin_v(style_str, int(line_gap * scale_factor)) or 0
     if translate_text:
         dialogue = [
             f"Dialogue: 0,0:00:00.00,0:00:01.00,Secondary,,0,0,0,,{translate_text}",
-            f"Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,{top_mv_field},,{original_text}",
+            f"Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,{top_mv},,{original_text}",
         ]
     else:
         dialogue = [f"Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,{original_text}"]
 
-    # 生成缩放后的 ASS 内容
     ass_content = ASS_TEMPLATE.format(
         style_str=style_str,
-        dialogue=os.linesep.join(dialogue),
+        dialogue="\n".join(dialogue),
         video_width=width,
         video_height=height,
     )
 
-    # 创建临时 ASS 文件
     with tempfile.NamedTemporaryFile(mode="w", suffix=".ass", delete=False, encoding="utf-8") as f:
         f.write(ass_content)
         temp_ass_path = f.name
 
     processed_ass = temp_ass_path
     try:
-        # 自动换行处理
         processed_ass = auto_wrap_ass_file(temp_ass_path)
 
-        # 确保背景图片存在
         bg_path_obj = Path(bg_image_path)
         if not bg_path_obj.exists():
-            # 使用默认黑色背景
-            default_bg = RESOURCE_PATH / "assets" / "default_bg.png"
-            if not default_bg.exists():
-                default_bg.parent.mkdir(parents=True, exist_ok=True)
-                # 生成黑色背景
-                subprocess.run(
-                    [
-                        "ffmpeg",
-                        "-f",
-                        "lavfi",
-                        "-i",
-                        f"color=c=black:s={width}x{height}",
-                        "-frames:v",
-                        "1",
-                        "-update",
-                        "1",
-                        str(default_bg),
-                    ],
-                    capture_output=True,
-                    creationflags=(
-                        getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-                    ),
-                )
-            bg_path_obj = default_bg
+            bg_path_obj = _default_background(width, height)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # 处理 ASS 文件路径（Windows 兼容）
-        ass_file_escaped = processed_ass.replace("\\", "/").replace(":", r"\:")
-
-        # 添加内置字体目录支持
-        fonts_dir_escaped = str(FONTS_PATH).replace("\\", "/").replace(":", r"\:")
-
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-i",
-            str(bg_path_obj),
-            "-vf",
-            f"ass='{ass_file_escaped}':fontsdir='{fonts_dir_escaped}'",
-            "-frames:v",
-            "1",
-            "-update",
-            "1",
-            str(output_path),
-        ]
-
         result = subprocess.run(
-            cmd,
+            [
+                "ffmpeg",
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-i",
+                str(bg_path_obj),
+                "-vf",
+                f"ass='{_filter_path(processed_ass)}':fontsdir='{_filter_path(FONTS_PATH)}'",
+                "-frames:v",
+                "1",
+                "-update",
+                "1",
+                str(output_path),
+            ],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
+            creationflags=_NO_WINDOW,
         )
 
         if result.returncode != 0:
@@ -281,7 +245,6 @@ def render_ass_preview(
         return str(output_path)
 
     finally:
-        # 清理临时文件
         Path(temp_ass_path).unlink(missing_ok=True)
         if processed_ass != temp_ass_path:
             Path(processed_ass).unlink(missing_ok=True)
@@ -295,6 +258,57 @@ def _get_video_resolution(video_path: str) -> Tuple[int, int]:
     return 1920, 1080
 
 
+def _run_ffmpeg_with_progress(
+    cmd: list, progress_callback: Optional[Callable[[str, str], None]]
+) -> None:
+    """执行 FFmpeg，从 stderr 解析 time=/Duration 上报百分比进度；非零退出抛异常。"""
+    cmd_str = subprocess.list2cmdline(cmd)
+    logger.debug("FFmpeg cmd: %s", cmd_str)
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        creationflags=_NO_WINDOW,
+    )
+    try:
+        total_duration = None
+        while True:
+            line = process.stderr.readline()
+            if not line or process.poll() is not None:
+                break
+            if not progress_callback:
+                continue
+
+            if total_duration is None:
+                match = re.search(r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", line)
+                if match:
+                    h, m, s = map(float, match.groups())
+                    total_duration = h * 3600 + m * 60 + s
+
+            match = re.search(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", line)
+            if match and total_duration:
+                h, m, s = map(float, match.groups())
+                progress = (h * 3600 + m * 60 + s) / total_duration * 100
+                progress_callback(f"{round(progress)}", "正在合成")
+
+        return_code = process.wait()
+        if return_code != 0:
+            error_info = process.stderr.read()
+            logger.error("FFmpeg failed (code %s): %s\n%s", return_code, cmd_str, error_info or "")
+            raise RuntimeError(f"FFmpeg Return code: {return_code}")
+
+        if progress_callback:
+            progress_callback("100", "合成完成")
+    except BaseException:
+        if process.poll() is None:
+            process.kill()
+        raise
+
+
 def render_ass_video(
     video_path: str,
     asr_data: "ASRData",
@@ -306,32 +320,19 @@ def render_ass_video(
     progress_callback: Optional[Callable] = None,
     line_gap: int = 0,
 ) -> None:
-    """
-    渲染 ASS 样式字幕到视频（硬字幕）
+    """把字幕以 ASS 样式烧录进视频。
 
-    Args:
-        video_path: 输入视频路径
-        asr_data: 字幕数据
-        output_path: 输出视频路径
-        style_str: ASS 样式字符串（包含 PlayResY）
-        layout: 字幕布局
-        crf: 视频质量参数 (0-51，越小越好)
-        preset: FFmpeg 编码预设
-        progress_callback: 进度回调 (progress: str, message: str) -> None
+    progress_callback(percent_str, message) 在合成期间持续回调。
     """
-    # 检查字幕数据是否为空
     if not asr_data or not asr_data.segments:
         raise ValueError("Empty subtitle data, cannot render video")
 
     _ensure_ass_filter_supported()
 
-    # 获取视频分辨率
     width, height = _get_video_resolution(video_path)
-
     scale_factor = _style_scale(width, height)
     style_str = _scale_ass_style(style_str, scale_factor, width / _REFERENCE_WIDTH)
 
-    # 生成临时 ASS 文件（传入实际视频分辨率）
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".ass", delete=False, encoding="utf-8"
     ) as temp_file:
@@ -348,31 +349,19 @@ def render_ass_video(
 
     processed_subtitle = temp_ass_path
     try:
-        # 自动换行处理
         processed_subtitle = auto_wrap_ass_file(temp_ass_path)
 
-        # 转义字幕路径
-        subtitle_path_escaped = Path(processed_subtitle).as_posix().replace(":", r"\:")
-
-        # 构建 FFmpeg Command
         vcodec = "libx264"
         if Path(output_path).suffix.lower() == ".webm":
             vcodec = "libvpx-vp9"
-            logger.debug("WebM format, using libvpx-vp9")
 
-        # 添加内置字体目录支持
-        fonts_dir_escaped = FONTS_PATH.as_posix().replace(":", r"\:")
+        vf = f"ass='{_filter_path(processed_subtitle)}':fontsdir='{_filter_path(FONTS_PATH)}'"
 
-        # 统一使用 ass 滤镜
-        vf = f"ass='{subtitle_path_escaped}':fontsdir='{fonts_dir_escaped}'"
+        from videocaptioner.core.utils.video_utils import check_cuda_available
 
-        # 检查 CUDA 是否可用
-        use_cuda = _check_cuda_available()
         cmd = ["ffmpeg"]
-        if use_cuda:
-            logger.debug("Using CUDA acceleration")
+        if check_cuda_available():
             cmd.extend(["-hwaccel", "cuda"])
-
         cmd.extend(
             [
                 "-i",
@@ -392,85 +381,10 @@ def render_ass_video(
             ]
         )
 
-        cmd_str = subprocess.list2cmdline(cmd)
-        logger.debug(f"FFmpeg ASS render cmd: {cmd_str}")
-
-        # 执行 FFmpeg
-        process = None
-        try:
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-                ),
-            )
-
-            # 实时Reading输出并调用回调
-            total_duration = None
-            current_time = 0
-
-            while True:
-                output_line = process.stderr.readline()
-                if not output_line or (process.poll() is not None):
-                    break
-                if not progress_callback:
-                    continue
-
-                # 解析总时长
-                if total_duration is None:
-                    duration_match = re.search(
-                        r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                    )
-                    if duration_match:
-                        h, m, s = map(float, duration_match.groups())
-                        total_duration = h * 3600 + m * 60 + s
-
-                # 解析当前处理时间
-                time_match = re.search(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line)
-                if time_match:
-                    h, m, s = map(float, time_match.groups())
-                    current_time = h * 3600 + m * 60 + s
-
-                # 计算进度百分比
-                if total_duration:
-                    progress = (current_time / total_duration) * 100
-                    progress_callback(f"{round(progress)}", "正在合成")
-
-            if progress_callback:
-                progress_callback("100", "合成完成")
-
-            # 检查Return code
-            return_code = process.wait()
-            if return_code != 0:
-                error_info = process.stderr.read()
-                logger.error("FFmpeg ASS rendering failed")
-                logger.error(f"Return code: {return_code}")
-                logger.error(f"Command: {cmd_str}")
-                if error_info:
-                    logger.error(f"Error output: {error_info}")
-                raise Exception(f"FFmpeg Return code: {return_code}")
-
-            logger.debug("ASS subtitle rendering complete")
-
-        except subprocess.SubprocessError as e:
-            logger.error("FFmpeg process error")
-            logger.error(f"Error: {str(e)}")
-            if process and process.poll() is None:
-                process.kill()
-            raise
-        except Exception as e:
-            logger.error(f"ASS subtitle rendering error: {str(e)}")
-            if process and process.poll() is None:
-                process.kill()
-            raise
+        _run_ffmpeg_with_progress(cmd, progress_callback)
+        logger.debug("ASS subtitle rendering complete")
 
     finally:
-        # 清理临时文件
         Path(temp_ass_path).unlink(missing_ok=True)
         if processed_subtitle != temp_ass_path:
             Path(processed_subtitle).unlink(missing_ok=True)

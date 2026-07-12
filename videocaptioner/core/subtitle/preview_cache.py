@@ -28,8 +28,6 @@ def prune(keep: int = _MAX_FILES) -> None:
     """按修改时间保留最近 keep 个预览图，清掉更早的。"""
     if not _PREVIEW_DIR.exists():
         return
-    files = sorted(
-        _PREVIEW_DIR.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True
-    )
+    files = sorted(_PREVIEW_DIR.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True)
     for stale in files[keep:]:
         stale.unlink(missing_ok=True)

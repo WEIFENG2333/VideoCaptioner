@@ -113,7 +113,7 @@ class CaptionAssembler:
                     self._last_active = None
                 if self._active_inflight == sid:
                     # 该句定稿后，它那条在飞的当前句翻译已作废，立即释放在飞名额，
-                    # 别让下一句的预览翻译干等它空跑完。
+                    # 及时腾出通道，下一句的预览翻译才能立即开始。
                     self._active_inflight = None
             else:
                 self._last_active = sid
