@@ -185,6 +185,10 @@ Do not:
   text-document path can report a stale 2-line heightForWidth and the pair gets
   pushed apart (bit the doctor rows under LXGW WenKai; standalone labels don't
   reproduce). If a row's spacing balloons, drop one of the two flags first.
+  Wrap-only labels have their own variant: QLabel(wordWrap) sizeHint guesses a
+  narrow width (over-reporting height), and QGridLayout row-spanning blocks do
+  not propagate heightForWidth — lock the label to `heightForWidth(width())` in
+  `resizeEvent` (see `_WrapDescription` in `doctor_interface.py`).
 - Add explanatory cards just to fill space. This project prefers compact,
   task-oriented pages.
 
