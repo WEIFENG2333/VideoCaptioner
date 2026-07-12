@@ -37,8 +37,8 @@ class AppPalette:
     danger_fg: str
     danger_soft: str
     selected: str
-    # 内层卡/行的极淡叠色（在 panel 之上再抬一层）。过去各页内联 rgba 漂移成
-    # 6 种相近值（0.025/0.024/0.022/0.018…），统一到这两个 token。
+    # 内层卡/行的极淡叠色（在 panel 之上再抬一层）。各页必须用这两个 token，
+    # 不要内联 rgba——相近值会各自漂移。
     card_surface: str
     card_surface_hover: str
 

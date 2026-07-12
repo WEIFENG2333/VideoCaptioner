@@ -1,6 +1,8 @@
 import atexit
+import ctypes
 import os
 import shutil
+import sys
 from pathlib import Path
 
 import psutil
@@ -12,6 +14,8 @@ from qfluentwidgets import (
     InfoBar,
     InfoBarPosition,
     SplashScreen,
+    isDarkTheme,
+    qconfig,
 )
 
 from videocaptioner.config import ASSETS_PATH, CACHE_PATH, GITHUB_REPO_URL
@@ -52,6 +56,10 @@ class MainWindow(FluentWindow):
         # 窗口底色与调色板对齐：否则 qfluent 默认窗口底与页面自绘的
         # palette.bg 形成两层颜色，页面区域看起来像浮在窗口上的色块。
         self.setCustomBackgroundColor(QColor(BG_LIGHT), QColor(BG_DARK))
+        # Win11 的 1px DWM 窗口边框颜色跟系统主题——浅色系统 + 深色应用是一圈
+        # 白线（最大化后只剩顶边一条、格外扎眼），染成窗口背景色；主题切换跟随。
+        self._tint_native_border()
+        qconfig.themeChanged.connect(self._tint_native_border)
 
         # 创建子界面
         self.homeInterface = HomeInterface(self)
@@ -195,6 +203,24 @@ class MainWindow(FluentWindow):
 
         self.show()
         QApplication.processEvents()
+
+    def _tint_native_border(self) -> None:
+        """把 Win11 的 1px DWM 窗口边框染成窗口背景色（DWMWA_BORDER_COLOR）。
+
+        Win10 无此属性、非 Windows 无 dwmapi：调用静默失败，无需分支。
+        """
+        if sys.platform != "win32":
+            return
+        DWMWA_BORDER_COLOR = 34
+        color = QColor(BG_DARK if isDarkTheme() else BG_LIGHT)
+        # COLORREF 是 0x00BBGGRR
+        colorref = ctypes.c_int(color.red() | (color.green() << 8) | (color.blue() << 16))
+        try:
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                int(self.winId()), DWMWA_BORDER_COLOR, ctypes.byref(colorref), ctypes.sizeof(colorref)
+            )
+        except (OSError, AttributeError):
+            pass
 
     def onGithubDialog(self):
         """打开GitHub"""
