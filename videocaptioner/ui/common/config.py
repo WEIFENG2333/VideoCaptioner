@@ -170,7 +170,7 @@ class Config(SettingsState):
         EnumSettingSerializer(LLMServiceEnum),
     )
 
-    openai_model = SettingField("LLM", "OpenAI_Model", "gpt-4o-mini")
+    openai_model = SettingField("LLM", "OpenAI_Model", "gpt-5-mini")
     openai_model_options = SettingField("LLM", "OpenAI_ModelOptions", [])
     openai_api_key = SettingField("LLM", "OpenAI_API_Key", "")
     openai_api_base = SettingField("LLM", "OpenAI_API_Base", "https://api.openai.com/v1")
@@ -181,7 +181,7 @@ class Config(SettingsState):
     official_api_key = SettingField("LLM", "Official_API_Key", "")
     official_api_base = SettingField("LLM", "Official_API_Base", "https://api.videocaptioner.cn/v1")
 
-    silicon_cloud_model = SettingField("LLM", "SiliconCloud_Model", "gpt-4o-mini")
+    silicon_cloud_model = SettingField("LLM", "SiliconCloud_Model", "deepseek-ai/DeepSeek-V3.1")
     silicon_cloud_model_options = SettingField("LLM", "SiliconCloud_ModelOptions", [])
     silicon_cloud_api_key = SettingField("LLM", "SiliconCloud_API_Key", "")
     silicon_cloud_api_base = SettingField(
@@ -203,7 +203,7 @@ class Config(SettingsState):
     lm_studio_api_key = SettingField("LLM", "LmStudio_API_Key", "lmstudio")
     lm_studio_api_base = SettingField("LLM", "LmStudio_API_Base", "http://localhost:1234/v1")
 
-    gemini_model = SettingField("LLM", "Gemini_Model", "gemini-pro")
+    gemini_model = SettingField("LLM", "Gemini_Model", "gemini-3.5-flash")
     gemini_model_options = SettingField("LLM", "Gemini_ModelOptions", [])
     gemini_api_key = SettingField("LLM", "Gemini_API_Key", "")
     gemini_api_base = SettingField(
@@ -212,10 +212,11 @@ class Config(SettingsState):
         "https://generativelanguage.googleapis.com/v1beta/openai/",
     )
 
-    chatglm_model = SettingField("LLM", "ChatGLM_Model", "glm-4")
-    chatglm_model_options = SettingField("LLM", "ChatGLM_ModelOptions", [])
-    chatglm_api_key = SettingField("LLM", "ChatGLM_API_Key", "")
-    chatglm_api_base = SettingField("LLM", "ChatGLM_API_Base", "https://open.bigmodel.cn/api/paas/v4")
+    # 存储键沿用 ChatGLM_*（既有用户配置的磁盘契约）
+    zhipu_model = SettingField("LLM", "ChatGLM_Model", "glm-4.6")
+    zhipu_model_options = SettingField("LLM", "ChatGLM_ModelOptions", [])
+    zhipu_api_key = SettingField("LLM", "ChatGLM_API_Key", "")
+    zhipu_api_base = SettingField("LLM", "ChatGLM_API_Base", "https://open.bigmodel.cn/api/paas/v4")
 
     # ------------------- 翻译配置 -------------------
     translator_service = ChoiceSettingField(
@@ -511,7 +512,7 @@ LLM_SERVICE_KEYS = {
     LLMServiceEnum.OLLAMA: "ollama",
     LLMServiceEnum.LM_STUDIO: "lm_studio",
     LLMServiceEnum.GEMINI: "gemini",
-    LLMServiceEnum.CHATGLM: "chatglm",
+    LLMServiceEnum.ZHIPU: "chatglm",
     LLMServiceEnum.IMMERSIVE: "immersive",
 }
 KEY_TO_LLM_SERVICE = {value: key for key, value in LLM_SERVICE_KEYS.items()}
@@ -774,11 +775,11 @@ def _bindings() -> list[SharedConfigBinding]:
             _model_options_to_toml,
             _model_options_from_toml,
         ),
-        SharedConfigBinding(cfg.chatglm_api_key, "llm.providers.chatglm.api_key"),
-        SharedConfigBinding(cfg.chatglm_api_base, "llm.providers.chatglm.api_base"),
-        SharedConfigBinding(cfg.chatglm_model, "llm.providers.chatglm.model"),
+        SharedConfigBinding(cfg.zhipu_api_key, "llm.providers.chatglm.api_key"),
+        SharedConfigBinding(cfg.zhipu_api_base, "llm.providers.chatglm.api_base"),
+        SharedConfigBinding(cfg.zhipu_model, "llm.providers.chatglm.model"),
         SharedConfigBinding(
-            cfg.chatglm_model_options,
+            cfg.zhipu_model_options,
             "llm.providers.chatglm.model_options",
             _model_options_to_toml,
             _model_options_from_toml,

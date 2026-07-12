@@ -111,8 +111,15 @@ class LLMServiceEnum(Enum):
     OLLAMA = "Ollama"
     LM_STUDIO = "LM Studio"
     GEMINI = "Gemini"
-    CHATGLM = "ChatGLM"
+    ZHIPU = "Zhipu"
     IMMERSIVE = "公益大模型"
+
+    @classmethod
+    def _missing_(cls, value):
+        # 既有配置里序列化的是历史值 "ChatGLM"，反序列化时映射到现名
+        if value == "ChatGLM":
+            return cls.ZHIPU
+        return None
 
 
 class TranscribeModelEnum(Enum):

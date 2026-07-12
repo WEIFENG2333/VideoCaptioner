@@ -99,6 +99,7 @@ from videocaptioner.ui.components.settings_controls import (
     ColorSwatchButton,
     FolderPickerControl,
     Option,
+    SettingNote,
     SettingRow,
     SettingsGroup,
     SettingsShell,
@@ -461,6 +462,9 @@ class SettingInterface(SettingsShell):
         for service, provider in self.llmProviderSpecs.items():
             api_key = BoundLineEdit(provider["api_key"], "sk-", group, password=True)
             api_base = BoundLineEdit(provider["api_base"], provider["default_base"], group)
+            base_editable = bool(provider.get("base_editable", False))
+            if not base_editable:
+                api_base.setReadOnly(True)
             model = BoundEditableComboBox(
                 provider["model"],
                 self._llm_model_options_for_provider(provider),
@@ -477,7 +481,9 @@ class SettingInterface(SettingsShell):
             api_base_row = group.addRow(
                 SettingRow(
                     tr("settings.llm.base_url"),
-                    tr("settings.llm.base_url.desc"),
+                    tr("settings.llm.base_url.desc")
+                    if base_editable
+                    else tr("settings.llm.base_url.desc_fixed"),
                     api_base,
                     group,
                 )
@@ -499,32 +505,6 @@ class SettingInterface(SettingsShell):
                 "model": model,
             }
 
-        # 选中「官方中转」时显示：定价/直连说明 + 跳官网注册取 Key
-        self.llmOfficialSiteButton = make_button(tr("settings.llm.official_hint.link"), parent=group)
-        self.llmOfficialSiteButton.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(OFFICIAL_API_SITE_URL))
-        )
-        self.llmOfficialHintRow = group.addRow(
-            SettingRow(
-                tr("settings.llm.official_hint.title"),
-                tr("settings.llm.official_hint.desc"),
-                self.llmOfficialSiteButton,
-                group,
-            )
-        )
-        # 选中「OpenAI 兼容」时显示：没有可用 Key 的用户指路官方中转（信息位，不抢焦点）
-        self.llmOpenAIHintButton = make_button(tr("settings.llm.openai_hint.link"), parent=group)
-        self.llmOpenAIHintButton.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(OFFICIAL_API_SITE_URL))
-        )
-        self.llmOpenAIHintRow = group.addRow(
-            SettingRow(
-                tr("settings.llm.openai_hint.title"),
-                tr("settings.llm.openai_hint.desc"),
-                self.llmOpenAIHintButton,
-                group,
-            )
-        )
         # 选中「公益大模型」时显示：免费免 key + 稳定性预防针；无任何可配置项
         self.llmImmersiveHintRow = group.addRow(
             SettingRow(
@@ -541,6 +521,24 @@ class SettingInterface(SettingsShell):
                 tr("settings.llm.model_service"),
                 tr("settings.llm.model_service.desc"),
                 self._two_controls(self.loadLLMModelsButton, self.checkLLMButton, group),
+                group,
+            )
+        )
+        # 卡片下方注脚：按 provider 显示引导（非设置项，不占设置行）
+        open_site = lambda: QDesktopServices.openUrl(QUrl(OFFICIAL_API_SITE_URL))  # noqa: E731
+        self.llmOfficialNote = group.addFootnote(
+            SettingNote(
+                tr("settings.llm.official_note"),
+                tr("settings.llm.official_note.link"),
+                open_site,
+                group,
+            )
+        )
+        self.llmOpenAINote = group.addFootnote(
+            SettingNote(
+                tr("settings.llm.openai_note"),
+                tr("settings.llm.openai_note.link"),
+                open_site,
                 group,
             )
         )
@@ -1354,8 +1352,8 @@ class SettingInterface(SettingsShell):
         # 公益大模型无可配置项：隐藏 provider 行与「加载模型」（模型固定），保留「测试连接」
         is_immersive = current == LLMServiceEnum.IMMERSIVE
         self.llmImmersiveHintRow.setVisible(is_immersive)
-        self.llmOfficialHintRow.setVisible(current == LLMServiceEnum.OFFICIAL)
-        self.llmOpenAIHintRow.setVisible(current == LLMServiceEnum.OPENAI)
+        self.llmOfficialNote.setVisible(current == LLMServiceEnum.OFFICIAL)
+        self.llmOpenAINote.setVisible(current == LLMServiceEnum.OPENAI)
         self.loadLLMModelsButton.setVisible(not is_immersive)
         # base_url 可编辑的服务商：自定义网关（OpenAI 兼容/官方中转）与本地服务（端口可变）。
         # 其余服务商 base 固定：仍展示（用户能看到请求去哪）但只读，并强制回写默认值。
@@ -1840,12 +1838,14 @@ class SettingInterface(SettingsShell):
                 "model": cfg.openai_model,
                 "model_options": cfg.openai_model_options,
                 "default_base": "https://api.openai.com/v1",
+                "base_editable": True,
                 "models": [
-                    "gemini-2.5-pro",
-                    "gpt-5",
-                    "claude-sonnet-4-5-20250929",
-                    "gemini-2.5-flash",
+                    "gpt-5.5",
+                    "gpt-5-mini",
+                    "claude-sonnet-5",
                     "claude-haiku-4-5-20251001",
+                    "gemini-3.5-flash",
+                    "deepseek-chat",
                 ],
             },
             LLMServiceEnum.OFFICIAL: {
@@ -1858,8 +1858,11 @@ class SettingInterface(SettingsShell):
                     "gemini-flash-lite-latest",
                     "gemini-flash-latest",
                     "gpt-5-mini-2025-08-07",
+                    "gpt-5-2025-08-07",
                     "claude-sonnet-4-5-20250929",
-                    "deepseek-v3",
+                    "deepseek-v3.2-exp",
+                    "glm-4.6",
+                    "kimi-k2-250905",
                 ],
             },
             LLMServiceEnum.SILICON_CLOUD: {
@@ -1868,7 +1871,7 @@ class SettingInterface(SettingsShell):
                 "model": cfg.silicon_cloud_model,
                 "model_options": cfg.silicon_cloud_model_options,
                 "default_base": "https://api.siliconflow.cn/v1",
-                "models": ["moonshotai/Kimi-K2-Instruct-0905", "deepseek-ai/DeepSeek-V3"],
+                "models": ["moonshotai/Kimi-K2-Instruct-0905", "deepseek-ai/DeepSeek-V3.1", "zai-org/GLM-4.6"],
             },
             LLMServiceEnum.DEEPSEEK: {
                 "api_key": cfg.deepseek_api_key,
@@ -1884,6 +1887,7 @@ class SettingInterface(SettingsShell):
                 "model": cfg.ollama_model,
                 "model_options": cfg.ollama_model_options,
                 "default_base": "http://localhost:11434/v1",
+                "base_editable": True,
                 "models": ["qwen3:8b"],
             },
             LLMServiceEnum.LM_STUDIO: {
@@ -1892,6 +1896,7 @@ class SettingInterface(SettingsShell):
                 "model": cfg.lm_studio_model,
                 "model_options": cfg.lm_studio_model_options,
                 "default_base": "http://localhost:1234/v1",
+                "base_editable": True,
                 "models": ["qwen3:8b"],
             },
             LLMServiceEnum.GEMINI: {
@@ -1902,11 +1907,11 @@ class SettingInterface(SettingsShell):
                 "default_base": "https://generativelanguage.googleapis.com/v1beta/openai/",
                 "models": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash-lite"],
             },
-            LLMServiceEnum.CHATGLM: {
-                "api_key": cfg.chatglm_api_key,
-                "api_base": cfg.chatglm_api_base,
-                "model": cfg.chatglm_model,
-                "model_options": cfg.chatglm_model_options,
+            LLMServiceEnum.ZHIPU: {
+                "api_key": cfg.zhipu_api_key,
+                "api_base": cfg.zhipu_api_base,
+                "model": cfg.zhipu_model,
+                "model_options": cfg.zhipu_model_options,
                 "default_base": "https://open.bigmodel.cn/api/paas/v4",
                 "models": ["glm-4-plus", "glm-4-air-250414", "glm-4-flash"],
             },

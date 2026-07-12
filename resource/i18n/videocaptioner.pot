@@ -1234,9 +1234,6 @@ msgstr ""
 msgid "enum.FasterWhisperModelEnum.TINY"
 msgstr ""
 
-msgid "enum.LLMServiceEnum.CHATGLM"
-msgstr ""
-
 msgid "enum.LLMServiceEnum.DEEPSEEK"
 msgstr ""
 
@@ -1259,6 +1256,9 @@ msgid "enum.LLMServiceEnum.OPENAI"
 msgstr ""
 
 msgid "enum.LLMServiceEnum.SILICON_CLOUD"
+msgstr ""
+
+msgid "enum.LLMServiceEnum.ZHIPU"
 msgstr ""
 
 msgid "enum.SubtitleLayoutEnum.ONLY_ORIGINAL"
@@ -3028,6 +3028,9 @@ msgstr ""
 msgid "settings.llm.base_url.desc"
 msgstr ""
 
+msgid "settings.llm.base_url.desc_fixed"
+msgstr ""
+
 msgid "settings.llm.connect_error"
 msgstr ""
 
@@ -3073,22 +3076,16 @@ msgstr ""
 msgid "settings.llm.no_models.desc"
 msgstr ""
 
-msgid "settings.llm.official_hint.desc"
+msgid "settings.llm.official_note"
 msgstr ""
 
-msgid "settings.llm.official_hint.link"
+msgid "settings.llm.official_note.link"
 msgstr ""
 
-msgid "settings.llm.official_hint.title"
+msgid "settings.llm.openai_note"
 msgstr ""
 
-msgid "settings.llm.openai_hint.desc"
-msgstr ""
-
-msgid "settings.llm.openai_hint.link"
-msgstr ""
-
-msgid "settings.llm.openai_hint.title"
+msgid "settings.llm.openai_note.link"
 msgstr ""
 
 msgid "settings.llm.provider"
@@ -3182,9 +3179,6 @@ msgid "settings.personal.zoom"
 msgstr ""
 
 msgid "settings.placeholder.empty"
-msgstr ""
-
-msgid "settings.placeholder.not_selected"
 msgstr ""
 
 msgid "settings.restart.confirm"

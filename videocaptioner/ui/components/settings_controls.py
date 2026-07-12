@@ -321,6 +321,11 @@ class SettingsGroup(QFrame):
         self._refresh_row_edges()
         return row
 
+    def addFootnote(self, note: "SettingNote") -> "SettingNote":  # noqa: N802
+        """卡片下方的注脚行：提示/引导等非设置项内容，不占设置行的视觉重量。"""
+        self.rootLayout.addWidget(note)
+        return note
+
     def eventFilter(self, watched, event):  # noqa: N802
         if event.type() in {QEvent.Show, QEvent.Hide}:
             self._refresh_row_edges()
@@ -349,6 +354,52 @@ class SettingsGroup(QFrame):
         )
         for row in self._rows:
             row.syncStyle()
+
+
+class SettingNote(QFrame):
+    """设置组卡片下方的一行注脚：弱化小字 + 可选的文字链接动作。"""
+
+    def __init__(self, text: str, link_text: str = "", on_link=None, parent=None):
+        super().__init__(parent)
+        self.setObjectName("settingNote")
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(18, 8, 18, 0)
+        layout.setSpacing(6)
+
+        self.textLabel = QLabel(text, self)
+        self.textLabel.setObjectName("settingNoteText")
+        apply_font(self.textLabel, 12, 600)
+        layout.addWidget(self.textLabel)
+
+        self.linkButton: QPushButton | None = None
+        if link_text:
+            self.linkButton = QPushButton(link_text, self)
+            self.linkButton.setObjectName("settingNoteLink")
+            self.linkButton.setCursor(Qt.PointingHandCursor)  # type: ignore[arg-type]
+            self.linkButton.setFlat(True)
+            apply_font(self.linkButton, 12, 700)
+            if on_link is not None:
+                self.linkButton.clicked.connect(on_link)
+            layout.addWidget(self.linkButton)
+        layout.addStretch(1)
+        self.syncStyle()
+
+    def syncStyle(self) -> None:
+        palette = app_palette()
+        self.setStyleSheet(
+            f"""
+            QFrame#settingNote {{ background: transparent; border: none; }}
+            QLabel#settingNoteText {{ color: {palette.subtle}; background: transparent; }}
+            QPushButton#settingNoteLink {{
+                color: {palette.accent_text};
+                background: transparent;
+                border: none;
+                padding: 0;
+                text-align: left;
+            }}
+            QPushButton#settingNoteLink:hover {{ text-decoration: underline; }}
+            """
+        )
 
 
 class SettingRow(QFrame):

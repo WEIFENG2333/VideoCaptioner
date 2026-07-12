@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-13 00:00+0800\n"
+"POT-Creation-Date: 2026-07-13 00:45+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -1264,9 +1264,6 @@ msgstr "small"
 msgid "enum.FasterWhisperModelEnum.TINY"
 msgstr "tiny"
 
-msgid "enum.LLMServiceEnum.CHATGLM"
-msgstr "ChatGLM"
-
 msgid "enum.LLMServiceEnum.DEEPSEEK"
 msgstr "DeepSeek"
 
@@ -1290,6 +1287,9 @@ msgstr "OpenAI 兼容"
 
 msgid "enum.LLMServiceEnum.SILICON_CLOUD"
 msgstr "SiliconCloud"
+
+msgid "enum.LLMServiceEnum.ZHIPU"
+msgstr "Zhipu"
 
 msgid "enum.SubtitleLayoutEnum.ONLY_ORIGINAL"
 msgstr "只顯示原文"
@@ -3056,7 +3056,10 @@ msgid "settings.llm.base_url"
 msgstr "Base URL"
 
 msgid "settings.llm.base_url.desc"
-msgstr "介面位址。官方中轉、OpenAI 相容與本地服務可自訂；其餘服務商為固定位址，不可修改。"
+msgstr "OpenAI 相容的介面位址。"
+
+msgid "settings.llm.base_url.desc_fixed"
+msgstr "該服務的固定介面位址。"
 
 msgid "settings.llm.connect_error"
 msgstr "LLM 連線錯誤"
@@ -3086,7 +3089,7 @@ msgid "settings.llm.model_service"
 msgstr "模型服務"
 
 msgid "settings.llm.model_service.desc"
-msgstr "先載入可用模型，再用目前模型測試連通性。"
+msgstr "拉取可用模型清單，並測試當前模型連通性。"
 
 msgid "settings.llm.models_load_failed"
 msgstr "模型載入失敗"
@@ -3103,25 +3106,17 @@ msgstr "沒有可用模型"
 msgid "settings.llm.no_models.desc"
 msgstr "未能從目前提供商取得模型列表，請檢查 Base URL 和 API Key。"
 
-msgid "settings.llm.official_hint.desc"
-msgstr ""
-"卡卡字幕助手官方維護的模型中轉：GPT、Claude、Gemini、DeepSeek "
-"等主流模型開箱即用，中國大陸可直連；海外模型價格約為官方定價的 1/7，按用量計費。註冊後建立 API Key 填入上方即可。"
+msgid "settings.llm.official_note"
+msgstr "主流海外模型國內直連，價格約官方定價的 1/7。"
 
-msgid "settings.llm.official_hint.link"
-msgstr "取得 Key"
+msgid "settings.llm.official_note.link"
+msgstr "註冊獲取 Key"
 
-msgid "settings.llm.official_hint.title"
-msgstr "關於官方中轉"
+msgid "settings.llm.openai_note"
+msgstr "還沒有 Key？官方中轉開箱即用，相容本頁配置。"
 
-msgid "settings.llm.openai_hint.desc"
-msgstr "可使用官方中轉站：主流海外模型價格約為官方定價的 1/7；此處也支援任意 OpenAI 相容介面。"
-
-msgid "settings.llm.openai_hint.link"
+msgid "settings.llm.openai_note.link"
 msgstr "前往官方中轉"
-
-msgid "settings.llm.openai_hint.title"
-msgstr "還沒有 API Key？"
 
 msgid "settings.llm.provider"
 msgstr "LLM 提供商"
@@ -3215,9 +3210,6 @@ msgstr "介面縮放"
 
 msgid "settings.placeholder.empty"
 msgstr "未填寫"
-
-msgid "settings.placeholder.not_selected"
-msgstr "未選擇"
 
 msgid "settings.restart.confirm"
 msgstr "立即重新啟動"

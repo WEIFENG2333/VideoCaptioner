@@ -171,5 +171,6 @@ def _llm_service_from_key(value: str):
         "lm_studio": LLMServiceEnum.LM_STUDIO,
         "lmstudio": LLMServiceEnum.LM_STUDIO,
         "gemini": LLMServiceEnum.GEMINI,
-        "chatglm": LLMServiceEnum.CHATGLM,
+        "chatglm": LLMServiceEnum.ZHIPU,
+        "zhipu": LLMServiceEnum.ZHIPU,
     }.get(str(value or "openai").lower(), LLMServiceEnum.OPENAI)

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-13 00:00+0800\n"
+"POT-Creation-Date: 2026-07-13 00:45+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1345,9 +1345,6 @@ msgstr "small"
 msgid "enum.FasterWhisperModelEnum.TINY"
 msgstr "tiny"
 
-msgid "enum.LLMServiceEnum.CHATGLM"
-msgstr "ChatGLM"
-
 msgid "enum.LLMServiceEnum.DEEPSEEK"
 msgstr "DeepSeek"
 
@@ -1371,6 +1368,9 @@ msgstr "OpenAI Compatible"
 
 msgid "enum.LLMServiceEnum.SILICON_CLOUD"
 msgstr "SiliconCloud"
+
+msgid "enum.LLMServiceEnum.ZHIPU"
+msgstr "Zhipu"
 
 msgid "enum.SubtitleLayoutEnum.ONLY_ORIGINAL"
 msgstr "Original Only"
@@ -3177,9 +3177,10 @@ msgid "settings.llm.base_url"
 msgstr "Base URL"
 
 msgid "settings.llm.base_url.desc"
-msgstr ""
-"Endpoint address. Customizable for the official relay, OpenAI-compatible "
-"and local services; fixed for other providers."
+msgstr "OpenAI-compatible endpoint."
+
+msgid "settings.llm.base_url.desc_fixed"
+msgstr "Fixed endpoint of this service."
 
 msgid "settings.llm.connect_error"
 msgstr "LLM connection error"
@@ -3214,9 +3215,7 @@ msgid "settings.llm.model_service"
 msgstr "Model service"
 
 msgid "settings.llm.model_service.desc"
-msgstr ""
-"Load available models first, then test connectivity with the current "
-"model."
+msgstr "Fetch available models and test connectivity of the current one."
 
 msgid "settings.llm.models_load_failed"
 msgstr "Failed to load models"
@@ -3235,29 +3234,17 @@ msgstr ""
 "No model list was retrieved from the current provider. Please check the "
 "Base URL and API Key."
 
-msgid "settings.llm.official_hint.desc"
-msgstr ""
-"A model relay maintained by the VideoCaptioner team: GPT, Claude, Gemini,"
-" DeepSeek and other mainstream models work out of the box. Overseas "
-"models cost roughly 1/7 of official pricing, billed by usage. Sign up, "
-"create an API Key and paste it above."
+msgid "settings.llm.official_note"
+msgstr "Mainland-direct access to major overseas models at ~1/7 of list price."
 
-msgid "settings.llm.official_hint.link"
-msgstr "Get a Key"
+msgid "settings.llm.official_note.link"
+msgstr "Sign up for a key"
 
-msgid "settings.llm.official_hint.title"
-msgstr "About the official relay"
+msgid "settings.llm.openai_note"
+msgstr "No key yet? The official relay works out of the box with this page."
 
-msgid "settings.llm.openai_hint.desc"
-msgstr ""
-"Try the official relay: mainstream models at roughly 1/7 of official "
-"pricing. Any OpenAI-compatible endpoint works here too."
-
-msgid "settings.llm.openai_hint.link"
-msgstr "Official relay"
-
-msgid "settings.llm.openai_hint.title"
-msgstr "No API Key yet?"
+msgid "settings.llm.openai_note.link"
+msgstr "Open official relay"
 
 msgid "settings.llm.provider"
 msgstr "LLM provider"
@@ -3351,9 +3338,6 @@ msgstr "Interface scaling"
 
 msgid "settings.placeholder.empty"
 msgstr "Not filled in"
-
-msgid "settings.placeholder.not_selected"
-msgstr "Not selected"
 
 msgid "settings.restart.confirm"
 msgstr "Restart now"

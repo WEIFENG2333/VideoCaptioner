@@ -137,10 +137,10 @@ def _llm_from_ui(cfg) -> LLMSettings:
             cfg.gemini_api_base,
             cfg.gemini_model,
         ),
-        LLMServiceEnum.CHATGLM: (
-            cfg.chatglm_api_key,
-            cfg.chatglm_api_base,
-            cfg.chatglm_model,
+        LLMServiceEnum.ZHIPU: (
+            cfg.zhipu_api_key,
+            cfg.zhipu_api_base,
+            cfg.zhipu_model,
         ),
     }
     api_key, api_base, model = items.get(service, items[LLMServiceEnum.OPENAI])

@@ -1061,7 +1061,7 @@ def _current_llm_api_key() -> str:
         "OLLAMA": cfg.ollama_api_key.value,
         "LM_STUDIO": cfg.lm_studio_api_key.value,
         "GEMINI": cfg.gemini_api_key.value,
-        "CHATGLM": cfg.chatglm_api_key.value,
+        "ZHIPU": cfg.zhipu_api_key.value,
     }.get(service.name, "")
     return str(value or "").strip()
 
@@ -1075,7 +1075,7 @@ def _current_llm_api_base() -> str:
         "OLLAMA": cfg.ollama_api_base.value,
         "LM_STUDIO": cfg.lm_studio_api_base.value,
         "GEMINI": cfg.gemini_api_base.value,
-        "CHATGLM": cfg.chatglm_api_base.value,
+        "ZHIPU": cfg.zhipu_api_base.value,
     }.get(service.name, "")
     return str(value or "").strip()
 
@@ -1089,6 +1089,6 @@ def _current_llm_model() -> str:
         "OLLAMA": cfg.ollama_model.value,
         "LM_STUDIO": cfg.lm_studio_model.value,
         "GEMINI": cfg.gemini_model.value,
-        "CHATGLM": cfg.chatglm_model.value,
+        "ZHIPU": cfg.zhipu_model.value,
     }.get(service.name, "")
     return str(value or "").strip()
