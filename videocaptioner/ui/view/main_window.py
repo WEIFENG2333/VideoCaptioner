@@ -107,13 +107,13 @@ class MainWindow(FluentWindow):
         for key, page, icon, label in pages:
             self.stackedWidget.addWidget(page)
             self.sidebar.add_page(key, icon, label)
+        # 更新入口放底部动作区最上方：默认隐藏，检查到新版本后点亮（文案随下载状态刷新）
+        self.updateItem = self.sidebar.add_update_action(self._open_update_dialog)
         self.sidebar.add_action("github", AppIcon.GITHUB, "GitHub", self.onGithubDialog)
         self.sidebar.add_action(
             "settings", AppIcon.SETTING, tr("app.nav.settings"),
             lambda: self.openSettingsPage("transcribe"),
         )
-        # 最底部的更新入口：默认隐藏，检查到新版本后点亮（文案随下载状态刷新）
-        self.updateItem = self.sidebar.add_update_action(self._open_update_dialog)
         self.hBoxLayout.insertWidget(0, self.sidebar)
         self.sidebar.installEventFilter(self)  # 宽度动画期间标题栏持续跟随
         self._place_titlebar()

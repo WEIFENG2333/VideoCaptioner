@@ -284,8 +284,17 @@ class Sidebar(QFrame):
         self._width_anim.setEasingCurve(QEasingCurve.OutCubic)
         self.setFixedWidth(EXPANDED_WIDTH if expanded else COLLAPSED_WIDTH)
 
+        # toggle 放进顶部让位区（与宿主标题栏同一带）；严格垂直居中会贴着
+        # 窗口顶缘（48px 标题栏只剩 4px 顶距），故保证 12px 的舒适下限。
+        # 让位区不足以容纳时退化为普通顶距。
+        if top_inset >= ITEM_HEIGHT:
+            top_pad = max(12, (top_inset - ITEM_HEIGHT) // 2)
+            inset_rest = max(0, top_inset - ITEM_HEIGHT - top_pad)
+        else:
+            top_pad, inset_rest = 8 + top_inset, 0
+
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(0, 8 + top_inset, 0, 10)
+        self._layout.setContentsMargins(0, top_pad, 0, 10)
         self._layout.setSpacing(2)
 
         # 顶部：展开/收纳控件。用 panel 图标 + toggle 变体（与下方导航项不同语义），仅图标无文字
@@ -296,6 +305,8 @@ class Sidebar(QFrame):
         self._toggle.clicked.connect(self.toggle)
         self._toggle.setToolTip(self._toggle_label())  # 图标控件：两态都给 tooltip
         self._layout.addWidget(self._toggle)
+        if inset_rest:
+            self._layout.addSpacing(inset_rest)
         # 控件区与导航区之间的分隔线，强化「不同语义」
         self._layout.addWidget(_SidebarSeparator(self))
 
