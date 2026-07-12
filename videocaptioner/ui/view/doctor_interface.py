@@ -180,6 +180,19 @@ class StatusPill(WbStatusPill):
         self.setState(tr(_status_text(status)), _WB_LEVELS[_status_level(status)])
 
 
+class _WrapDescription(QLabel):
+    """换行描述。QLabel(wordWrap) 的 sizeHint 按内部估算的窄宽度虚报多一行高，
+    而 QGridLayout 的跨行块不传播 heightForWidth——失败行（长描述换行）会被
+    虚高撑出大片上下空白。拿到真实宽度后把高度锁定为 heightForWidth 的精确值。"""
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        height = self.heightForWidth(self.width())
+        if height > 0 and height != self.maximumHeight():
+            self.setFixedHeight(height)
+            self.updateGeometry()
+
+
 class DiagnosticRow(QFrame):
     actionRequested = pyqtSignal(object)
 
@@ -208,7 +221,7 @@ class DiagnosticRow(QFrame):
         title = QLabel(item.title, self)
         title.setObjectName("rowTitle")
         apply_font(title, 16, 700)  # 正确字重(~72)；QSS font-weight 会被 Qt5 压成 ~98 黑体糊字
-        description = QLabel(item.description, self)
+        description = _WrapDescription(item.description, self)
         description.setObjectName("rowDescription")
         apply_font(description, 13, 450)
         # 不可选中：wordWrap + TextSelectableByMouse 组合走 QTextDocument 渲染，
