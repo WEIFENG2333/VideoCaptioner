@@ -74,12 +74,23 @@ jobs:
         if: runner.os == 'macOS'
         run: uv run python scripts/build_macos_dmg.py
 
-      - name: Upload desktop artifact
+      # 便携 zip（自动更新的下载源）与安装器分开上传，各自独立下载。
+      # register job 按 desktop-* 通配收集，两者都会被登记。
+      - name: Upload portable artifact
         uses: actions/upload-artifact@v7
         with:
-          name: desktop-${{ runner.os }}
-          # zip（自动更新源）+ setup.exe / dmg（人工下载）。manifest job 只挑 zip。
-          path: artifacts/*
+          name: desktop-${{ runner.os }}-portable
+          path: artifacts/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-${{ runner.os }}-installer
+          path: |
+            artifacts/*.exe
+            artifacts/*.dmg
           if-no-files-found: error
           retention-days: 14
 
