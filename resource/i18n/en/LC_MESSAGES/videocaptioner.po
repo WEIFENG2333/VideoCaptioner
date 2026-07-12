@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-07 00:17+0800\n"
+"POT-Creation-Date: 2026-07-12 22:59+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -351,11 +351,6 @@ msgid "batch.preflight.ffmpeg"
 msgstr ""
 "Video composition requires FFmpeg: please install it and ensure ffmpeg is"
 " in PATH."
-
-msgid "batch.preflight.ffprobe"
-msgstr ""
-"Dubbing needs ffprobe for audio processing. Please install the full "
-"FFmpeg suite (with ffprobe)."
 
 msgid "batch.preflight.llm"
 msgstr ""
@@ -4085,14 +4080,6 @@ msgstr "FFmpeg not found"
 msgid "synth.blocker.ffmpeg_missing_detail"
 msgstr "Please install FFmpeg and ensure ffmpeg is in PATH."
 
-msgid "synth.blocker.ffprobe_missing"
-msgstr "ffprobe missing — dubbing unavailable"
-
-msgid "synth.blocker.ffprobe_missing_detail"
-msgstr ""
-"Dubbing needs ffprobe for audio processing. Install the full FFmpeg suite"
-" (with ffprobe) and retry."
-
 msgid "synth.blocker.key_required"
 msgstr "Current voice requires API Key"
 
@@ -4246,9 +4233,6 @@ msgstr "Failed"
 
 msgid "synth.pill.missing_ffmpeg"
 msgstr "Missing FFmpeg"
-
-msgid "synth.pill.missing_ffprobe"
-msgstr "No ffprobe"
 
 msgid "synth.pill.missing_key"
 msgstr "Missing Key"

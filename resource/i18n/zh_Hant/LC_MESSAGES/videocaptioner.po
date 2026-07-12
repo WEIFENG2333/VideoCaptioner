@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-07 00:17+0800\n"
+"POT-Creation-Date: 2026-07-12 22:59+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -341,9 +341,6 @@ msgstr "目前配音音色需要 API Key，請檢查配音設定或切換至 Edg
 
 msgid "batch.preflight.ffmpeg"
 msgstr "影片合成需要 FFmpeg：請先安裝並確保 ffmpeg 在 PATH 中"
-
-msgid "batch.preflight.ffprobe"
-msgstr "配音需要 ffprobe 處理音訊，請確認 FFmpeg 套件完整（含 ffprobe）"
 
 msgid "batch.preflight.llm"
 msgstr "字幕處理需要大模型：請先設定可用的 API Key、介面地址和模型"
@@ -3924,12 +3921,6 @@ msgstr "找不到 FFmpeg"
 msgid "synth.blocker.ffmpeg_missing_detail"
 msgstr "請先安裝 FFmpeg，並確保 ffmpeg 在 PATH 中。"
 
-msgid "synth.blocker.ffprobe_missing"
-msgstr "缺少 ffprobe，無法配音"
-
-msgid "synth.blocker.ffprobe_missing_detail"
-msgstr "配音需要 ffprobe 處理音訊，請安裝完整的 FFmpeg 套件（含 ffprobe）後重試。"
-
 msgid "synth.blocker.key_required"
 msgstr "目前音色需要 API Key"
 
@@ -4079,9 +4070,6 @@ msgstr "失敗"
 
 msgid "synth.pill.missing_ffmpeg"
 msgstr "缺少 FFmpeg"
-
-msgid "synth.pill.missing_ffprobe"
-msgstr "缺 ffprobe"
 
 msgid "synth.pill.missing_key"
 msgstr "缺少 Key"

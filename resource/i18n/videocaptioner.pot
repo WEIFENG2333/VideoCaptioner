@@ -316,9 +316,6 @@ msgstr ""
 msgid "batch.preflight.ffmpeg"
 msgstr ""
 
-msgid "batch.preflight.ffprobe"
-msgstr ""
-
 msgid "batch.preflight.llm"
 msgstr ""
 
@@ -3880,12 +3877,6 @@ msgstr ""
 msgid "synth.blocker.ffmpeg_missing_detail"
 msgstr ""
 
-msgid "synth.blocker.ffprobe_missing"
-msgstr ""
-
-msgid "synth.blocker.ffprobe_missing_detail"
-msgstr ""
-
 msgid "synth.blocker.key_required"
 msgstr ""
 
@@ -4034,9 +4025,6 @@ msgid "synth.pill.failed"
 msgstr ""
 
 msgid "synth.pill.missing_ffmpeg"
-msgstr ""
-
-msgid "synth.pill.missing_ffprobe"
 msgstr ""
 
 msgid "synth.pill.missing_key"
