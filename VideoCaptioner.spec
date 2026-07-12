@@ -98,7 +98,42 @@ excludes = [
     "ruff",
     "test",
     "unittest",
+    # Widgets 应用不含 QML/Quick 场景
+    "PyQt5.QtQml",
+    "PyQt5.QtQuick",
+    "PyQt5.QtQuickWidgets",
+    "PyQt5.QtWebSockets",
+    # pywin32 的 MFC/GUI 组件（win32ui/Pythonwin），应用不引用
+    "win32ui",
+    "win32uiole",
+    "pythonwin",
 ]
+
+# 按文件名剔除 hook 仍会收进来的大块二进制：
+# - Qt5Qml/Qt5Quick 系与 d3dcompiler（ANGLE 编译器）：Widgets 应用用不到；
+# - opengl32sw（软件渲染 OpenGL 回退）：本应用无 OpenGL 视图，raster 渲染即可；
+# - opencv_videoio_ffmpeg（cv2 视频读写插件，惰性加载）：OCR 只用图像 API；
+# - 顶层重复的 OpenBLAS：numpy 实际从 numpy.libs 目录加载自己的那份。
+_DROP_BINARY_PATTERNS = (
+    "qt5qml",
+    "qt5quick",
+    "qt5websockets",
+    "d3dcompiler",
+    "opengl32sw",
+    "opencv_videoio_ffmpeg",
+    "mfc140u",
+)
+
+
+def _keep_binary(entry):
+    dest, _source, _kind = entry
+    name = Path(dest).name.lower()
+    if any(pattern in name for pattern in _DROP_BINARY_PATTERNS):
+        return False
+    # OpenBLAS 只保留 numpy.libs 里的那份
+    if name.startswith("libscipy_openblas") and "numpy.libs" not in dest.replace("\\", "/"):
+        return False
+    return True
 
 a = Analysis(
     [str(ROOT / "videocaptioner" / "__main__.py")],
@@ -115,6 +150,8 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
+
+a.binaries = [entry for entry in a.binaries if _keep_binary(entry)]
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 

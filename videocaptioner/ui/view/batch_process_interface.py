@@ -1423,9 +1423,6 @@ class BatchProcessInterface(QWidget):
         if ("synthesis" in stages or "dubbing" in stages) and not shutil.which("ffmpeg"):
             return tr("batch.preflight.ffmpeg")
         if "dubbing" in stages:
-            # pydub 读 mp3 段（Edge 默认输出）经 ffprobe，缺了会在任务中途裸崩
-            if not shutil.which("ffprobe"):
-                return tr("batch.preflight.ffprobe")
             provider = cfg.dubbing_provider.value
             if provider != "edge" and not cfg.dubbing_api_key.value.strip():
                 return tr("batch.preflight.dubbing_key")

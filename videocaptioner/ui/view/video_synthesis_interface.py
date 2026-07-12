@@ -1122,13 +1122,6 @@ class VideoSynthesisInterface(QWidget):
                 (tr("synth.pill.missing_ffmpeg"), "fail"),
                 tr("synth.blocker.ffmpeg_missing_detail"),
             )
-        if add_dubbing and not shutil.which("ffprobe"):
-            # pydub 读 mp3 段（Edge 默认输出）经 ffprobe，缺了会在任务中途裸崩
-            return (
-                tr("synth.blocker.ffprobe_missing"),
-                (tr("synth.pill.missing_ffprobe"), "fail"),
-                tr("synth.blocker.ffprobe_missing_detail"),
-            )
         if add_dubbing:
             provider = cfg.dubbing_provider.value
             if provider != "edge" and not cfg.dubbing_api_key.value.strip():

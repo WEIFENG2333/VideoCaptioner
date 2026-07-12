@@ -648,7 +648,7 @@ def _items_from_checks(checks: list[Check]) -> list[DiagnosticItem]:
     items: list[DiagnosticItem] = []
 
     ffmpeg_ass_check = checks_by_name.get("ffmpeg.ass_filter")
-    ffmpeg_status = _combined_status([checks_by_name.get("ffmpeg"), checks_by_name.get("ffprobe"), ffmpeg_ass_check])
+    ffmpeg_status = _combined_status([checks_by_name.get("ffmpeg"), ffmpeg_ass_check])
     ffmpeg_ass_failed = _check_status(ffmpeg_ass_check) == ItemStatus.ERROR
     # 缺二进制 → 直接下载安装；ASS 滤镜不全是构建变体问题 → 仍给文字处理建议
     ffmpeg_missing = _is_problem(ffmpeg_status) and not ffmpeg_ass_failed

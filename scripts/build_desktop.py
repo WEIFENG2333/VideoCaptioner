@@ -70,11 +70,11 @@ def clean() -> None:
 
 
 def prepare_ffmpeg() -> None:
-    """Download the current platform's static ffmpeg/ffprobe into runtime resources.
+    """Download the current platform's static ffmpeg into runtime resources.
 
-    应用自身的媒体探测统一走 ``ffmpeg -i``（core/utils/media_info.py），但配音
-    管线的 pydub 读 mp3 仍硬依赖 ffprobe（AudioSegment.from_file → mediainfo_json），
-    所以 ffprobe 必须随包，直到 pydub 被替换。
+    全应用只依赖 ffmpeg 一个二进制：媒体探测走 ``ffmpeg -i``
+    （core/utils/media_info.py），音频解码走 ffmpeg 管道
+    （core/utils/audio_io.py），ffprobe 不随包。
     """
     try:
         from static_ffmpeg.run import (
@@ -90,8 +90,8 @@ def prepare_ffmpeg() -> None:
     runtime_bin = RUNTIME_DIR / "resource" / "bin"
     runtime_bin.mkdir(parents=True, exist_ok=True)
     cache_dir = BUILD_DIR / "static-ffmpeg" / get_platform_key()
-    ffmpeg, ffprobe = get_or_fetch_platform_executables_else_raise(download_dir=str(cache_dir))
-    for src in [Path(ffmpeg), Path(ffprobe)]:
+    ffmpeg, _ffprobe = get_or_fetch_platform_executables_else_raise(download_dir=str(cache_dir))
+    for src in [Path(ffmpeg)]:
         dst = runtime_bin / src.name
         if dst.exists():
             dst.chmod(dst.stat().st_mode | stat.S_IWUSR)
@@ -196,7 +196,6 @@ def verify_bundle() -> None:
         data_root / "resource" / "fonts" / "NotoSansSC-Regular.ttf",
         data_root / "resource" / "subtitle_styles" / "ass" / "default.json",
         data_root / "resource" / "bin" / ("ffmpeg.exe" if platform.system() == "Windows" else "ffmpeg"),
-        data_root / "resource" / "bin" / ("ffprobe.exe" if platform.system() == "Windows" else "ffprobe"),
     ]
     missing = [str(path.relative_to(ROOT)) for path in required if not path.exists()]
     if missing:

@@ -49,7 +49,6 @@ def run_diagnostics(
     checks: list[Check] = []
     checks.append(_check_python())
     checks.append(_check_command("ffmpeg", "Required for audio extraction, media probing, timing fit, muxing, and hard subtitles."))
-    checks.append(_check_command("ffprobe", "Required by dubbing audio processing (pydub reads mp3 via ffprobe)."))
     checks.append(_check_ytdlp())
     checks.append(_check_config_file())
     checks.extend(_check_transcribe(config))

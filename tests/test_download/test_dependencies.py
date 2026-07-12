@@ -49,7 +49,7 @@ def test_ffmpeg_asset_main_repo_latest():
     ff = deps.dependency_for("ffmpeg").asset_for("windows", "x64")
     assert ff.asset == "ffmpeg-windows-x64.zip"
     assert ff.archive is True
-    assert ff.executables == ("ffmpeg.exe", "ffprobe.exe")
+    assert ff.executables == ("ffmpeg.exe",)
     assert ff.repo == "WEIFENG2333/VideoCaptioner" and ff.tag == "ffmpeg-bin"
 
 

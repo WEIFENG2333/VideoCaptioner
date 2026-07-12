@@ -3,11 +3,9 @@ import threading
 import time
 import uuid
 import zlib
-from io import BytesIO
 from typing import Callable, Optional, Union, cast
 
-from pydub import AudioSegment
-
+from videocaptioner.core.utils.audio_io import load_audio
 from videocaptioner.core.utils.cache import get_asr_cache, is_cache_enabled
 from videocaptioner.core.utils.logger import setup_logger
 
@@ -78,8 +76,7 @@ class BaseASR:
         if not self.file_binary:
             return 0.01
         try:
-            audio = AudioSegment.from_file(BytesIO(self.file_binary))
-            return audio.duration_seconds
+            return load_audio(self.file_binary).duration_seconds
         except Exception as e:
             logger.warning(f"Failed to get audio duration: {e}")
             return 60.0 * 10

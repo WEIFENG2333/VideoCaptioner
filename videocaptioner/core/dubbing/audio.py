@@ -5,12 +5,12 @@ from pathlib import Path
 
 from pydub import AudioSegment
 
+from videocaptioner.core.utils.audio_io import load_audio
 from videocaptioner.core.utils.media_info import probe_media
 
 
 def get_audio_duration_ms(path: str) -> int:
-    audio = AudioSegment.from_file(path)
-    return len(audio)
+    return len(load_audio(path))
 
 
 def change_tempo(input_path: str, output_path: str, factor: float) -> None:
@@ -42,7 +42,7 @@ def create_timeline_audio(
     timeline = AudioSegment.silent(duration=max(duration_ms, 1), frame_rate=48000)
     gain_db = _linear_to_db(volume)
     for audio_path, start_ms in segments:
-        clip = AudioSegment.from_file(audio_path)
+        clip = load_audio(audio_path)
         if volume != 1.0:
             clip += gain_db
         timeline = timeline.overlay(clip, position=max(0, start_ms))

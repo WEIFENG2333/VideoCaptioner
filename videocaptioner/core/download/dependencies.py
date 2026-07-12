@@ -144,8 +144,7 @@ def _ffmpeg_asset(os_key: str, arch: str) -> DependencyAsset:
     ext = ".exe" if os_key == "windows" else ""
     return DependencyAsset(
         asset=f"ffmpeg-{os_key}-{arch}.zip",
-        # ffprobe 一并装：应用探测只用 ffmpeg，但 pydub（配音）读 mp3 仍需 ffprobe
-        executables=(f"ffmpeg{ext}", f"ffprobe{ext}"),
+        executables=(f"ffmpeg{ext}",),
         archive=True,
         tag=_FFMPEG_TAG,
     )

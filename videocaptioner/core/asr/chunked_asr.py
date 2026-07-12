@@ -9,8 +9,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, List, Optional, Tuple
 
-from pydub import AudioSegment
-
+from ..utils.audio_io import load_audio
 from ..utils.logger import setup_logger
 from .asr_data import ASRData
 from .base import BaseASR
@@ -116,10 +115,10 @@ class ChunkedASR:
             raise ValueError("file_binary is None, cannot split audio")
 
         try:
-            audio = AudioSegment.from_file(self.audio_path)
+            audio = load_audio(self.audio_path)
         except Exception:
             logger.warning("Failed to load audio by path, falling back to in-memory bytes")
-            audio = AudioSegment.from_file(io.BytesIO(self.file_binary))
+            audio = load_audio(self.file_binary)
         total_duration_ms = len(audio)
 
         logger.debug(
