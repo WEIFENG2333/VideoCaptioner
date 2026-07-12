@@ -1,12 +1,7 @@
 import atexit
-import ctypes
 import os
 import shutil
-import sys
 from pathlib import Path
-
-if sys.platform == "win32":
-    import ctypes.wintypes
 
 import psutil
 from PyQt5.QtCore import QEvent, QSize, QUrl
@@ -17,8 +12,6 @@ from qfluentwidgets import (
     InfoBar,
     InfoBarPosition,
     SplashScreen,
-    isDarkTheme,
-    qconfig,
 )
 
 from videocaptioner.config import ASSETS_PATH, CACHE_PATH, GITHUB_REPO_URL
@@ -59,10 +52,6 @@ class MainWindow(FluentWindow):
         # 窗口底色与调色板对齐：否则 qfluent 默认窗口底与页面自绘的
         # palette.bg 形成两层颜色，页面区域看起来像浮在窗口上的色块。
         self.setCustomBackgroundColor(QColor(BG_LIGHT), QColor(BG_DARK))
-        # Win11 的 1px DWM 窗口边框颜色跟系统主题——浅色系统 + 深色应用是一圈
-        # 白线（最大化后只剩顶边一条、格外扎眼），染成窗口背景色；主题切换跟随。
-        self._tint_native_border()
-        qconfig.themeChanged.connect(self._tint_native_border)
 
         # 创建子界面
         self.homeInterface = HomeInterface(self)
@@ -186,8 +175,8 @@ class MainWindow(FluentWindow):
         win_h = max(560, min(760, avail.height() - 100))
         self.resize(win_w, win_h)
         self.setMinimumWidth(WINDOW_MINIMUM_WIDTH)
-        # 防御：任何页面的最小高度都不能把窗口顶出屏幕（否则底部播放条/按钮看不到）。
-        self.setMaximumHeight(avail.height() - 40)
+        # 不要 setMaximumHeight/Width 防御页面超高：Qt 的最大尺寸会连「最大化」
+        # 一起 clamp，最大化铺不满屏幕、边缘露出底层窗口成一圈亮线。
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
         self.setWindowTitle(tr("app.window_title"))
 
@@ -206,24 +195,6 @@ class MainWindow(FluentWindow):
 
         self.show()
         QApplication.processEvents()
-
-    def _tint_native_border(self) -> None:
-        """把 Win11 的 1px DWM 窗口边框染成窗口背景色（DWMWA_BORDER_COLOR）。
-
-        Win10 无此属性、非 Windows 无 dwmapi：调用静默失败，无需分支。
-        """
-        if sys.platform != "win32":
-            return
-        DWMWA_BORDER_COLOR = 34
-        color = QColor(BG_DARK if isDarkTheme() else BG_LIGHT)
-        # COLORREF 是 0x00BBGGRR
-        colorref = ctypes.c_int(color.red() | (color.green() << 8) | (color.blue() << 16))
-        try:
-            ctypes.windll.dwmapi.DwmSetWindowAttribute(
-                int(self.winId()), DWMWA_BORDER_COLOR, ctypes.byref(colorref), ctypes.sizeof(colorref)
-            )
-        except (OSError, AttributeError):
-            pass
 
     def onGithubDialog(self):
         """打开GitHub"""
@@ -384,18 +355,6 @@ class MainWindow(FluentWindow):
         if hasattr(self, "sidebar") and obj is self.sidebar and event.type() == QEvent.Resize:
             self._place_titlebar()
         return super().eventFilter(obj, event)
-
-    def nativeEvent(self, eventType, message):
-        handled, result = super().nativeEvent(eventType, message)
-        # qframelesswindow 在 WM_KILLFOCUS 把 DWM 边框色重置回系统默认、
-        # WM_SETFOCUS（系统开边框强调色时）染成强调色——每次都要在它之后补染，
-        # 否则失焦一次白边就回来。不能用 Qt 的 WindowDeactivate 代替：它源自
-        # WM_ACTIVATE，先于 WM_KILLFOCUS，补染完仍会被库清掉。
-        if sys.platform == "win32":
-            msg = ctypes.wintypes.MSG.from_address(int(message))
-            if msg.message in (0x0007, 0x0008):  # WM_SETFOCUS / WM_KILLFOCUS
-                self._tint_native_border()
-        return handled, result
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
