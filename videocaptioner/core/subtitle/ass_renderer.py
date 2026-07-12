@@ -43,6 +43,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 def _check_cuda_available() -> bool:
     """检查 CUDA 是否可用"""
     from videocaptioner.core.utils.video_utils import check_cuda_available
+
     return check_cuda_available()
 
 
@@ -55,9 +56,7 @@ def ffmpeg_supports_ass_filter() -> bool:
             text=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
         )
     except (OSError, subprocess.SubprocessError):
         return False
@@ -77,38 +76,34 @@ def _ensure_ass_filter_supported() -> None:
         raise RuntimeError(ASS_FILTER_ERROR)
 
 
-def _scale_ass_style(style_str: str, scale_factor: float) -> str:
-    """
-    缩放 ASS 样式中的数值参数
+# 样式以 720p 横屏（1280x720）为基准编写。字号/描边/字距/底距随分辨率
+# 「短边」缩放——竖屏若按高度缩放，字幕会占满半个画面；左右边距表达的是
+# max_width 画宽百分比，必须按实际画宽缩放，否则竖屏下百分比失真。
+_REFERENCE_SHORT = 720
+_REFERENCE_WIDTH = 1280
 
-    Args:
-        style_str: 原始 ASS 样式字符串（720P）
-        scale_factor: 缩放因子
 
-    Returns:
-        缩放后的 ASS 样式字符串
-    """
-    if scale_factor == 1.0:
+def _style_scale(width: int, height: int) -> float:
+    return min(width, height) / _REFERENCE_SHORT
+
+
+def _scale_ass_style(style_str: str, size_scale: float, width_scale: float) -> str:
+    if size_scale == 1.0 and width_scale == 1.0:
         return style_str
 
-    lines = style_str.split("\n")
     scaled_lines = []
-
-    for line in lines:
+    for line in style_str.split("\n"):
         if line.startswith("Style:"):
             parts = line.split(",")
             if len(parts) >= 23:
-                # parts[2]: Fontsize
-                parts[2] = str(int(float(parts[2]) * scale_factor))
-                # parts[13]: Spacing
-                parts[13] = str(float(parts[13]) * scale_factor)
-                # parts[16]: Outline
-                parts[16] = str(float(parts[16]) * scale_factor)
-                # parts[19]/parts[20]: MarginL/MarginR（最大宽度边距）
-                parts[19] = str(int(float(parts[19]) * scale_factor))
-                parts[20] = str(int(float(parts[20]) * scale_factor))
-                # parts[21]: MarginV (垂直间距)
-                parts[21] = str(int(float(parts[21]) * scale_factor))
+                # Fontsize / Spacing / Outline / MarginV 随短边缩放
+                parts[2] = str(int(float(parts[2]) * size_scale))
+                parts[13] = str(float(parts[13]) * size_scale)
+                parts[16] = str(float(parts[16]) * size_scale)
+                parts[21] = str(int(float(parts[21]) * size_scale))
+                # MarginL / MarginR 随画宽缩放
+                parts[19] = str(int(float(parts[19]) * width_scale))
+                parts[20] = str(int(float(parts[20]) * width_scale))
                 line = ",".join(parts)
         scaled_lines.append(line)
 
@@ -119,7 +114,7 @@ def top_line_margin_v(style_str: str, line_gap: int) -> Optional[int]:
     """双语时上行（Default）距底部的 MarginV = 底边距 + 副字幕行高估算 + 主副间距。
 
     line_gap<=0 时返回 None，表示沿用 libass 默认的紧贴堆叠（对存量样式零回归）。
-    style_str 应为已按视频高度缩放后的样式串，line_gap 也应是已缩放的像素值。
+    style_str 应为已缩放的样式串，line_gap 也应是已缩放的像素值。
     """
     if line_gap <= 0:
         return None
@@ -147,7 +142,6 @@ def render_ass_preview(
     bg_image_path: str,
     width: Optional[int] = None,
     height: Optional[int] = None,
-    reference_height: int = 720,
     line_gap: int = 0,
 ) -> str:
     """
@@ -159,7 +153,6 @@ def render_ass_preview(
         bg_image_path: 背景图片路径
         width: 图片宽度（None=从bg_image_path自动获取）
         height: 图片高度（None=从bg_image_path自动获取）
-        reference_height: 参考高度（固定720P）
     Returns:
         生成的预览图路径
     """
@@ -180,14 +173,14 @@ def render_ass_preview(
     # 内容寻址缓存：同样的样式 + 文字 + 背景 + 尺寸只渲染一次，来回切换/重复编辑直接命中
     output_path = preview_path(
         f"ass|{style_str}|{original_text}|{translate_text}|{bg_image_path}"
-        f"|{width}x{height}|ref{reference_height}|gap{line_gap}"
+        f"|{width}x{height}|gap{line_gap}"
     )
     if output_path.exists():
         return str(output_path)
 
-    # 先按图片高度缩放样式，主副间距也同比缩放，再据此构建对话行
-    scale_factor = height / reference_height
-    style_str = _scale_ass_style(style_str, scale_factor)
+    # 先缩放样式（尺寸随短边、左右边距随画宽），再据此构建对话行
+    scale_factor = _style_scale(width, height)
+    style_str = _scale_ass_style(style_str, scale_factor, width / _REFERENCE_WIDTH)
 
     # 双语时给上行（Default）一个绝对 MarginV，制造可控的主副间距
     top_mv = top_line_margin_v(style_str, int(line_gap * scale_factor))
@@ -198,9 +191,7 @@ def render_ass_preview(
             f"Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,{top_mv_field},,{original_text}",
         ]
     else:
-        dialogue = [
-            f"Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,{original_text}"
-        ]
+        dialogue = [f"Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,{original_text}"]
 
     # 生成缩放后的 ASS 内容
     ass_content = ASS_TEMPLATE.format(
@@ -211,9 +202,7 @@ def render_ass_preview(
     )
 
     # 创建临时 ASS 文件
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".ass", delete=False, encoding="utf-8"
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".ass", delete=False, encoding="utf-8") as f:
         f.write(ass_content)
         temp_ass_path = f.name
 
@@ -245,9 +234,7 @@ def render_ass_preview(
                     ],
                     capture_output=True,
                     creationflags=(
-                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
-                        if os.name == "nt"
-                        else 0
+                        getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
                     ),
                 )
             bg_path_obj = default_bg
@@ -283,9 +270,7 @@ def render_ass_preview(
             text=True,
             encoding="utf-8",
             errors="replace",
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0),
         )
 
         if result.returncode != 0:
@@ -319,7 +304,6 @@ def render_ass_video(
     crf: int = 23,
     preset: str = "medium",
     progress_callback: Optional[Callable] = None,
-    reference_height: int = 720,
     line_gap: int = 0,
 ) -> None:
     """
@@ -334,7 +318,6 @@ def render_ass_video(
         crf: 视频质量参数 (0-51，越小越好)
         preset: FFmpeg 编码预设
         progress_callback: 进度回调 (progress: str, message: str) -> None
-        reference_height: 参考高度（固定720P）
     """
     # 检查字幕数据是否为空
     if not asr_data or not asr_data.segments:
@@ -345,9 +328,8 @@ def render_ass_video(
     # 获取视频分辨率
     width, height = _get_video_resolution(video_path)
 
-    # 根据视频高度自动缩放样式
-    scale_factor = height / reference_height
-    style_str = _scale_ass_style(style_str, scale_factor)
+    scale_factor = _style_scale(width, height)
+    style_str = _scale_ass_style(style_str, scale_factor, width / _REFERENCE_WIDTH)
 
     # 生成临时 ASS 文件（传入实际视频分辨率）
     with tempfile.NamedTemporaryFile(
@@ -449,9 +431,7 @@ def render_ass_video(
                         total_duration = h * 3600 + m * 60 + s
 
                 # 解析当前处理时间
-                time_match = re.search(
-                    r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                )
+                time_match = re.search(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line)
                 if time_match:
                     h, m, s = map(float, time_match.groups())
                     current_time = h * 3600 + m * 60 + s

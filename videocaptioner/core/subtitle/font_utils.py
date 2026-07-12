@@ -63,9 +63,7 @@ def get_builtin_fonts() -> tuple[Dict[str, str], ...]:
             else:
                 display_name = font_file.stem
                 builtin_fonts.append({"name": display_name, "path": str(font_file)})
-                logger.debug(
-                    f"Cannot get family name for {font_file.name}, using filename"
-                )
+                logger.debug(f"Cannot get family name for {font_file.name}, using filename")
 
     return tuple(builtin_fonts)
 
@@ -119,44 +117,26 @@ def get_font(size: int, font_name: str = "") -> FontType:
 
 @lru_cache(maxsize=128)
 def get_ass_to_pil_ratio(font_name: str) -> float:
+    """ASS 字号 → PIL 字号的换算比：PIL_size = ASS_size / ratio。
+
+    libass 兼容 VSFilter，把字号解释为 Windows 行高（usWinAscent+usWinDescent），
+    PIL 的字号是 em 高（unitsPerEm）。比值经 libass 实测校准：文楷 1.317 实测
+    1.327、Noto Sans SC 1.448 实测 1.452，误差 <1%。
+
+    字体文件必须经 get_font 的加载结果定位（家族名 ≠ 文件名，按文件名 glob
+    会找不到而落到错误的默认值）。
     """
-    Get ASS to PIL font size conversion ratio
-
-    ASS uses Windows line height (usWinAscent + usWinDescent),
-    PIL uses em square (unitsPerEm).
-
-    For Noto Sans SC: ratio = 1.448
-    This means: PIL_size = ASS_size / 1.448
-
-    Returns:
-        Conversion ratio (typically 1.4-1.5 for CJK fonts)
-    """
-    # Find font file
-    font_path = None
-    for ext in [".ttf", ".otf", ".ttc"]:
-        candidates = list(FONTS_PATH.glob(f"**/{font_name}*{ext}"))
-        if candidates:
-            font_path = candidates[0]
-            break
-
+    font = get_font(100, font_name)
+    font_path = getattr(font, "path", None)
     if not font_path:
-        candidates = list(FONTS_PATH.glob(f"**/*{font_name}*"))
-        if candidates:
-            font_path = candidates[0]
-
-    # Default ratio for most CJK fonts
-    if not font_path:
-        logger.debug(f"Font file not found: {font_name}, using default ratio 1.448")
+        logger.debug(f"No font file for {font_name}, using default ratio 1.448")
         return 1.448
-
     try:
-        font = TTFont(str(font_path))
-        units_per_em = font["head"].unitsPerEm  # type: ignore
-        win_ascent = font["OS/2"].usWinAscent  # type: ignore
-        win_descent = font["OS/2"].usWinDescent  # type: ignore
-        ratio = (win_ascent + win_descent) / units_per_em
-        logger.debug(f"Font metrics for {font_name}: ratio={ratio:.3f}")
-        return ratio
+        tt = TTFont(font_path, fontNumber=0)
+        units_per_em = tt["head"].unitsPerEm  # type: ignore
+        win_ascent = tt["OS/2"].usWinAscent  # type: ignore
+        win_descent = tt["OS/2"].usWinDescent  # type: ignore
+        return (win_ascent + win_descent) / units_per_em
     except Exception as e:
         logger.warning(f"Failed to read font metrics for {font_name}: {e}")
         return 1.448

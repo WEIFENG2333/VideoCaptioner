@@ -112,13 +112,13 @@ class AssSubtitleStyle:
             f"Style: Default,{self.font_name},{self.font_size},"
             f"{primary},&H000000FF,{outline},&H00000000,"
             f"{bold_flag},0,0,0,100,100,{self.spacing},0,1,"
-            f"{self.outline_width},0,{align},{margin_lr},{margin_lr},{self.margin_bottom},1,\\q1"
+            f"{self.outline_width},0,{align},{margin_lr},{margin_lr},{self.margin_bottom},1"
         )
         secondary_line = (
             f"Style: Secondary,{secondary.font_name},{secondary.font_size},"
             f"{sec_color},&H000000FF,{sec_outline},&H00000000,"
             f"{sec_bold_flag},0,0,0,100,100,{secondary.spacing},0,1,"
-            f"{secondary.outline_width},0,{align},{margin_lr},{margin_lr},{self.margin_bottom},1,\\q1"
+            f"{secondary.outline_width},0,{align},{margin_lr},{margin_lr},{self.margin_bottom},1"
         )
         return f"{header}\n{default_line}\n{secondary_line}"
 
@@ -413,7 +413,7 @@ def style_id_from_filename(filename: str) -> str:
     stem = Path(filename).stem
     for prefix in ("ass-", "rounded-"):
         if stem.startswith(prefix):
-            return stem[len(prefix):]
+            return stem[len(prefix) :]
     return stem
 
 

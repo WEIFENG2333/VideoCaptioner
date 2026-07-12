@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .font_utils import get_ass_to_pil_ratio, get_font
-from .text_utils import is_mainly_cjk, wrap_text
+from .text_utils import wrap_text
 
 
 @dataclass
@@ -110,15 +110,9 @@ def parse_ass_info(ass_content: str) -> AssInfo:
                             if "BackColour" in field_map
                             else "&H00000000"
                         ),
-                        bold=(
-                            int(parts[field_map.get("Bold", -1)])
-                            if "Bold" in field_map
-                            else 0
-                        ),
+                        bold=(int(parts[field_map.get("Bold", -1)]) if "Bold" in field_map else 0),
                         italic=(
-                            int(parts[field_map.get("Italic", -1)])
-                            if "Italic" in field_map
-                            else 0
+                            int(parts[field_map.get("Italic", -1)]) if "Italic" in field_map else 0
                         ),
                         border_style=(
                             int(parts[field_map.get("BorderStyle", -1)])
@@ -176,47 +170,34 @@ def parse_ass_info(ass_content: str) -> AssInfo:
     return AssInfo(video_width, video_height, styles)
 
 
+# 测量与 libass 实渲难免有 ±1% 级误差（kerning/hinting），可用宽度再收一档兜底
+_SAFETY = 0.98
+
+
 def wrap_ass_text(
-    text: str, max_width: int, font_name: str, font_size: int, spacing: float = 0.0
+    text: str, max_width: float, font_name: str, font_size: int, spacing: float = 0.0
 ) -> str:
+    """按实际字体渲染宽度断行，返回以 \\N 连接的文本。
+
+    font_size 是 ASS 字号（Windows 行高语义），测量前须换算成 PIL 字号。
+    已含 \\N（手工断行）或含 override 标签的文本不动——标签会被误算进宽度。
     """
-    Wrap text using actual font rendering (accurate width calculation)
-
-    Note: ASS font size is based on Windows line height, while PIL uses em square.
-    We need to convert ASS font size to PIL font size for accurate measurement.
-
-    For most fonts: PIL_size = ASS_size / ratio, where ratio ≈ 1.4-1.5
-
-    Args:
-        text: Text to wrap
-        max_width: Maximum width in pixels
-        font_name: Font name for rendering
-        font_size: Font size (ASS font size, will be converted to PIL size)
-        spacing: Character spacing in ASS (affects text width)
-
-    Returns:
-        Wrapped text with \\N line breaks
-    """
-    # 已有换行符或空文本，直接返回
-    if not text or "\\N" in text:
+    if not text or "\\N" in text or "{" in text:
         return text
 
-    # 只处理 CJK 文本（英文由 FFmpeg ASS 引擎自动换行）
-    if not is_mainly_cjk(text):
-        return text
-
-    # Convert ASS font size to PIL font size
-    # ASS uses Windows line height, PIL uses em square
     ratio = get_ass_to_pil_ratio(font_name)
     pil_font_size = int(round(font_size / ratio))
-
-    # Load font with converted size and call wrap function
-    # Pass spacing directly to wrap_text for accurate width calculation
     font = get_font(pil_font_size, font_name)
-    lines = wrap_text(text, font, max_width, spacing=spacing)
-
-    # 用 \N 连接各行（ASS 格式的换行符）
+    lines = wrap_text(text, font, max_width * _SAFETY, spacing=spacing)
     return "\\N".join(lines)
+
+
+# Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+_DIALOGUE_RE = re.compile(
+    r"Dialogue:\s*[^,]*,[^,]*,[^,]*,(?P<style>[^,]*),[^,]*,"
+    r"(?P<ml>[^,]*),(?P<mr>[^,]*),[^,]*,[^,]*,(?P<text>.*?)$",
+    re.MULTILINE,
+)
 
 
 def auto_wrap_ass_file(
@@ -225,17 +206,10 @@ def auto_wrap_ass_file(
     video_width: Optional[int] = None,
     video_height: Optional[int] = None,
 ) -> str:
-    """
-    Auto-wrap text in ASS file using accurate font rendering
+    """对 ASS 文件的每行对话按可用宽度自动断行（预览与视频合成共用此入口）。
 
-    Args:
-        input_file: Input ASS file path
-        output_file: Output file path (overwrites input if None)
-        video_width: Video width (overrides ASS settings if provided)
-        video_height: Video height (not used, kept for compatibility)
-
-    Returns:
-        Output file path
+    可用宽度 = PlayResX − MarginL − MarginR，边距取 Dialogue 行的覆写值
+    （0 表示沿用样式定义）。
     """
     if output_file is None:
         output_file = input_file
@@ -243,43 +217,36 @@ def auto_wrap_ass_file(
     with open(input_file, "r", encoding="utf-8") as f:
         ass_content = f.read()
 
-    # 解析 ASS 文件信息
     ass_info = parse_ass_info(ass_content)
+    play_res_x = video_width or ass_info.video_width
 
-    if video_width is None:
-        video_width = ass_info.video_width
-
-    # 使用95%宽度作为最大文本宽度
-    max_text_width = int(video_width * 0.95)
-
-    def process_dialogue_line(match):
-        """处理每一行对话"""
+    def process_dialogue_line(match: re.Match) -> str:
         full_line = match.group(0)
+        style = ass_info.get_style(match.group("style").strip())
 
-        # 提取样式名称（Dialogue 行的第4个字段）
-        style_pattern = r"Dialogue:[^,]*,[^,]*,[^,]*,([^,]*),"
-        style_match = re.search(style_pattern, full_line)
-        style_name = style_match.group(1).strip() if style_match else "Default"
+        def margin(override: str, fallback: int) -> int:
+            try:
+                value = int(float(override))
+            except ValueError:
+                value = 0
+            return value if value > 0 else fallback
 
-        # 获取该样式对应的字体信息
-        style = ass_info.get_style(style_name)
-        text_part = match.group(1)
+        margin_l = margin(match.group("ml"), style.margin_l)
+        margin_r = margin(match.group("mr"), style.margin_r)
+        available = play_res_x - margin_l - margin_r
+        if available <= 0:
+            return full_line
 
-        # 使用实际字体渲染进行换行（考虑字符间距）
-        wrapped_text = wrap_ass_text(
-            text_part, max_text_width, style.font_name, style.font_size, style.spacing
+        text_part = match.group("text")
+        wrapped = wrap_ass_text(
+            text_part, available, style.font_name, style.font_size, style.spacing
         )
+        if wrapped == text_part:
+            return full_line
+        return full_line[: match.start("text") - match.start()] + wrapped
 
-        return full_line.replace(text_part, wrapped_text)
+    processed_content = _DIALOGUE_RE.sub(process_dialogue_line, ass_content)
 
-    # 匹配All对话行的文本部分（第10个字段）
-    # Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
-    pattern = r"Dialogue:[^,]*(?:,[^,]*){8},(.*?)$"
-    processed_content = re.sub(
-        pattern, process_dialogue_line, ass_content, flags=re.MULTILINE
-    )
-
-    # 写入处理后的文件
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(processed_content)
 
