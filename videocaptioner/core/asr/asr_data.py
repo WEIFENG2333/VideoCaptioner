@@ -588,10 +588,10 @@ class ASRData:
 
         # Detect bilingual mode: all 4-line + 70% different languages.
         #
-        # 性能：langdetect 首次调用要加载磁盘语言库(~200ms)，且每块原来调两次 detect，
-        # 上百次叠加会卡住 UI 线程（用户反馈"投入字幕后隔一会才加载"）。绝大多数双语字幕是
-        # 中↔英，用一个便宜的脚本类判定（含 CJK / 含拉丁）就能区分，零 langdetect 开销；
-        # 只有同为拉丁脚本(如 en↔ru)分不出时才退回 detect。
+        # 性能：langdetect 首次调用要加载磁盘语言库(~200ms)，逐块 detect 上百次
+        # 叠加会卡住 UI 线程。绝大多数双语字幕是中↔英，用一个便宜的脚本类判定
+        # （含 CJK / 含拉丁）就能区分，零 langdetect 开销；只有同为拉丁脚本
+        # (如 en↔ru)分不出时才退回 detect。
         def _script_class(text: str) -> str:
             has_cjk = any(
                 "一" <= ch <= "鿿"  # 汉字

@@ -105,8 +105,8 @@ GENDER_FILTER_TAGS = {"女声", "男声"}
 
 
 def _blend_color(foreground: str, background: str, alpha: float) -> QColor:
-    # foreground/background 恒为 app_palette() 的有效色；旧的无效兜底写死了非主题绿，
-    # 自定义主题时反而错，且从不触发，去掉。
+    # foreground/background 恒为 app_palette() 的有效色，无须无效兜底——
+    # 写死兜底色在自定义主题下反而是错的。
     fg = QColor(foreground)
     bg = QColor(background)
     alpha = max(0.0, min(1.0, alpha))

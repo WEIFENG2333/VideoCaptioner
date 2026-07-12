@@ -7,6 +7,7 @@ import os
 
 import pytest
 
+from videocaptioner.core.download.downloader import gh_mirror_urls
 from videocaptioner.core.update.client import (
     Announcement,
     UpdateInfo,
@@ -62,8 +63,9 @@ def test_parses_full_response():
     assert isinstance(res.update, UpdateInfo) and res.update.version == "2.3.0"
     assert res.update.size == 123 and res.update.sha256 == "abc"
     assert isinstance(res.announcement, Announcement) and res.announcement.id == "a1"
-    # 镜像兜底：原直链在末尾
-    assert res.update.urls[-1] == "https://github.com/x/y.zip" and len(res.update.urls) == 3
+    # 镜像兜底：加速镜像在前，GitHub 直连在末位
+    assert res.update.urls == gh_mirror_urls("https://github.com/x/y.zip")
+    assert res.update.urls[-1] == "https://github.com/x/y.zip"
 
 
 def test_all_null():

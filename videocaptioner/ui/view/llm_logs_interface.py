@@ -254,10 +254,9 @@ class LogDetailDialog(AppDialog):
 class LLMLogsInterface(QWidget):
     """LLM 请求日志界面。"""
 
-    # (列宽, 是否拉伸)；文件/模型两列自适应，其余定宽。
     # (label, fixed_width, mode)；mode ∈ {fixed, stretch, content}
     # 时间/阶段/模型 按内容自适应（绝不截断，时间是固定格式必须完整显示）；文件做唯一弹性列吸收余宽；
-    # 耗时/Tokens 定宽数字列。任务ID 对用户无意义、且占宽，已移除（搜索仍可匹配 task_id）。
+    # 耗时/Tokens 定宽数字列。不设任务ID列：对用户无意义且占宽（搜索仍可匹配 task_id）。
     _COLUMNS = (
         (N_("llmlog.col.time"), 0, "content"),
         (N_("llmlog.col.file"), 0, "stretch"),

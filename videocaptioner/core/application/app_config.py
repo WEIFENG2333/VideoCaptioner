@@ -193,7 +193,7 @@ def target_language_from_code(value: Any) -> TargetLanguage:
 
 
 # CLI 的 --asr 取值与枚举的唯一映射：parser choices 必须从这里派生，
-# 不要再手写清单（曾因三处手写各自漂移漏掉 faster-whisper / fun-asr）。
+# 不要手写清单——多处手写会各自漂移、漏掉新引擎。
 CLI_ASR_MAPPING: dict[str, TranscribeModelEnum] = {
     "bijian": TranscribeModelEnum.BIJIAN,
     "jianying": TranscribeModelEnum.JIANYING,

@@ -8,6 +8,7 @@ import zipfile
 
 import pytest
 
+from videocaptioner.core.download.downloader import gh_mirror_urls
 from videocaptioner.core.update import installer
 
 
@@ -124,7 +125,6 @@ def test_download_update_passes_sha256(monkeypatch, tmp_path):
     out = installer.download_update(info, tmp_path)
     assert out.name == "VideoCaptioner-3.0.0.zip"
     assert captured["sha256"] == "deadbeef"
-    # 镜像兜底：原直链在列表末尾，前面是 ghproxy 镜像
+    # 镜像兜底：加速镜像在前，GitHub 直连在末位
+    assert tuple(captured["urls"]) == gh_mirror_urls("https://github.com/x/y.zip")
     assert captured["urls"][-1] == "https://github.com/x/y.zip"
-    assert len(captured["urls"]) == 3
-    assert captured["urls"][-1] == "https://github.com/x/y.zip"  # 直连兜底在末位

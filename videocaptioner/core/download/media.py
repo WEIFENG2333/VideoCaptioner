@@ -324,8 +324,8 @@ def probe_summary(info: dict) -> dict:
     heights = sorted(
         {
             f["height"]
-            # 只排除明确的纯音频流（vcodec == "none"）；缺省 vcodec 的合流也保留——
-            # 某些 extractor 在 progressive/muxed 格式上不写 vcodec，旧逻辑会误删导致清晰度为空
+            # 只排除明确的纯音频流（vcodec == "none"）；某些 extractor 在
+            # progressive/muxed 格式上不写 vcodec，缺省不代表无视频，须保留
             for f in info.get("formats") or []
             if f.get("height") and f.get("vcodec") != "none"
         },

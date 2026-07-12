@@ -589,8 +589,7 @@ class SubtitleTablePanel(WorkbenchPanel):
         self.head.setObjectName("tableHead")
         self.head.setFixedHeight(56)
         head_layout = QHBoxLayout(self.head)
-        # 左右 22 与各页 PanelHeader 标题栏一致（右距曾是 14，导致折叠态
-        # 展开钮比转录/合成页偏右 8px）
+        # 左右 22 与各页 PanelHeader 标题栏一致，折叠态展开钮才能与转录/合成页对齐
         head_layout.setContentsMargins(22, 0, 22, 0)
         head_layout.setSpacing(9)  # 与 PanelHeader 的按钮间距一致
         self.fileIcon = QLabel(self.head)
