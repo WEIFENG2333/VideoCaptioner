@@ -2,8 +2,8 @@
 
 结构：标题栏 → 引擎页签（单引擎平台隐藏）→ 运行程序区（按平台给出
 变体行：检测 / 直接下载 / 复制命令 / 打开页面）→ 模型表（文件名 +
-用途 + 大小 + 状态点 + 下载/继续/删除/取消）→ 底栏（本地模型目录 +
-打开目录 + 关闭）。
+用途 + 大小 + 状态点 + 下载/继续/删除/取消）→ 底栏（打开模型目录 /
+打开程序目录 / 关闭）。
 
 状态约定：
 - 同一时刻只跑一个下载任务（模型或程序），其余操作按钮禁用；
@@ -568,7 +568,8 @@ class ModelManagerDialog(AppDialog):
             scroll.setFrameShape(QFrame.NoFrame)
             scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
             scroll.setWidget(list_host)
-            scroll.setFixedHeight(min(len(rows), 5) * 64 + 6)
+            # 最多露 3 行半：弹窗总高留在 ~700 内，半行提示下方还有内容可滚
+            scroll.setFixedHeight(min(len(rows) * 64, 3 * 64 + 32) + 6)
             self._style_scroll(scroll)
             table_layout.addWidget(scroll)
             column.addWidget(table)
@@ -576,17 +577,20 @@ class ModelManagerDialog(AppDialog):
             layout.addWidget(container)
             self._containers[kind] = container
 
-        # 底栏
-        self.footIcon = QLabel(card)
-        self.footerLayout.addWidget(self.footIcon)
-        self.footLabel = QLabel(tr("modelmgr.footer.model_dir"), card)
-        self.footLabel.setObjectName("modelFootLabel")
-        self.footLabel.setToolTip(str(MODEL_PATH))
-        apply_font(self.footLabel, 12, 700)
-        self.footerLayout.addWidget(self.footLabel)
+        # 底栏：模型与程序装在不同目录，各给一个直达入口
+        self.openModelDirButton = self.addFooterButton(
+            tr("modelmgr.footer.open_model_dir"), icon=AppIcon.FOLDER
+        )
+        self.openModelDirButton.setToolTip(str(MODEL_PATH))
+        self.openModelDirButton.clicked.connect(
+            lambda: self._open_dir(self._models_dir(self._kind))
+        )
+        self.openProgramDirButton = self.addFooterButton(
+            tr("modelmgr.footer.open_program_dir"), icon=AppIcon.FOLDER
+        )
+        self.openProgramDirButton.setToolTip(str(BIN_PATH))
+        self.openProgramDirButton.clicked.connect(lambda: self._open_dir(Path(BIN_PATH)))
         self.addFooterStretch()
-        self.openDirButton = self.addFooterButton(tr("modelmgr.footer.open_dir"), icon=AppIcon.FOLDER)
-        self.openDirButton.clicked.connect(self._open_models_dir)
         self.dismissButton = self.addFooterButton(tr("common.close"))
         self.dismissButton.clicked.connect(lambda: self.done(0))
         self.syncStyle()
@@ -637,7 +641,6 @@ class ModelManagerDialog(AppDialog):
 
     def extraStyleRules(self, palette) -> str:
         return f"""
-            QLabel#modelFootLabel {{ color: {palette.muted}; background: transparent; }}
             QFrame#modelTable {{
                 background: transparent;
                 border: 1px solid {palette.line_soft};
@@ -836,10 +839,10 @@ class ModelManagerDialog(AppDialog):
 
     # ------------------------------------------------------------- 工具
 
-    def _open_models_dir(self):
-        models_dir = self._models_dir(self._kind)
-        models_dir.mkdir(parents=True, exist_ok=True)
-        QDesktopServices.openUrl(QUrl.fromLocalFile(str(models_dir)))
+    @staticmethod
+    def _open_dir(directory: Path):
+        directory.mkdir(parents=True, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(directory)))
 
     def _info(self, title: str, message: str):
         from qfluentwidgets import InfoBar

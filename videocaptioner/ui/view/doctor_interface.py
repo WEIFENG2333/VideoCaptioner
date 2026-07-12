@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (
 from qfluentwidgets import (
     CaptionLabel,
     InfoBar,
-    ScrollArea,
     TitleLabel,
 )
 
@@ -30,12 +29,13 @@ from videocaptioner.ui.common.theme_tokens import (
     app_palette,
     rgba,
 )
-from videocaptioner.ui.components.workbench import StatusPill as WbStatusPill
 from videocaptioner.ui.components.workbench import (
+    AppScrollArea,
     WorkbenchButton,
     apply_font,
     draw_rounded_surface,
 )
+from videocaptioner.ui.components.workbench import StatusPill as WbStatusPill
 from videocaptioner.ui.i18n import N_, tr
 
 
@@ -331,7 +331,7 @@ class DiagnosticPanel(QFrame):
             self.rowsLayout.addWidget(row)
 
 
-class DoctorInterface(ScrollArea):
+class DoctorInterface(AppScrollArea):
     """桌面端诊断页。"""
 
     def __init__(self, parent=None):
@@ -357,7 +357,6 @@ class DoctorInterface(ScrollArea):
         self.setWidgetResizable(True)
         self.setObjectName("doctorInterface")
         self.scrollWidget.setObjectName("scrollWidget")
-        self.enableTransparentBackground()
 
         self.pageLayout.setSpacing(18)
         self.pageLayout.setContentsMargins(26, 20, 26, 22)

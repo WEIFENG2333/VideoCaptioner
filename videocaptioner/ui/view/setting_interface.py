@@ -317,7 +317,10 @@ class SettingInterface(SettingsShell):
                 group,
             )
         )
-        self.fasterWhisperDirControl = FolderPickerControl(group, placeholder=tr("settings.placeholder.not_selected"))
+        # 空值 = 跟随应用默认模型目录：显示默认路径而非「未选择」
+        self.fasterWhisperDirControl = FolderPickerControl(
+            group, placeholder=str(MODEL_PATH).replace(str(Path.home()), "~")
+        )
         self.fasterWhisperDirControl.setPath(str(cfg.faster_whisper_model_dir.value or ""))
         self.fasterWhisperDirRow = group.addRow(
             SettingRow(

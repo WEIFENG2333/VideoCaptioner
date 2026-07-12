@@ -56,6 +56,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QLineEdit,
     QPlainTextEdit,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -1194,6 +1195,61 @@ class ErrorCard(QFrame):
         css += f" QLabel#wbErrorMessage {{ color: {palette.danger_fg}; background: transparent; }}"
         self.setStyleSheet(css)
         self.update()
+
+
+class AppScrollArea(QScrollArea):
+    """全站统一滚动区：原生逐步滚轮（无惯性动画）、无边框、主题化细滚动条。
+
+    qfluent 的 ScrollArea 会隐藏原生滚动条、叠加 500ms 缓动的浮层条，
+    滚起来粘滞且样式脱离主题，站内滚动区一律用本类。
+    horizontal=True 为横向橱窗形态（关垂直条）；transparent=True 背景透出宿主。
+    """
+
+    def __init__(self, parent=None, *, horizontal: bool = False, transparent: bool = False):
+        super().__init__(parent)
+        self._transparent = transparent
+        self.setFrameShape(QFrame.NoFrame)
+        if horizontal:
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
+        else:
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
+        self.verticalScrollBar().setSingleStep(32)
+        self.horizontalScrollBar().setSingleStep(32)
+        self.syncScrollStyle()
+
+    def scrollToTop(self):
+        self.verticalScrollBar().setValue(0)
+
+    def syncScrollStyle(self):
+        palette = app_palette()
+        handle = rgba(palette.muted, 0.32)
+        handle_hover = rgba(palette.muted, 0.5)
+        for bar, orient in (
+            (self.verticalScrollBar(), "vertical"),
+            (self.horizontalScrollBar(), "horizontal"),
+        ):
+            thickness = "width: 9px" if orient == "vertical" else "height: 9px"
+            length = "min-height: 32px" if orient == "vertical" else "min-width: 32px"
+            bar.setStyleSheet(
+                f"""
+                QScrollBar:{orient} {{
+                    background: transparent; {thickness}; margin: 2px;
+                }}
+                QScrollBar::handle:{orient} {{
+                    background: {handle}; border-radius: 3px; {length};
+                }}
+                QScrollBar::handle:{orient}:hover {{ background: {handle_hover}; }}
+                QScrollBar::add-line:{orient}, QScrollBar::sub-line:{orient} {{
+                    width: 0; height: 0; background: transparent;
+                }}
+                QScrollBar::add-page:{orient}, QScrollBar::sub-page:{orient} {{
+                    background: transparent;
+                }}
+                """
+            )
+        if self._transparent:
+            self.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+            self.viewport().setStyleSheet("background: transparent;")
 
 
 class SectionLabel(QLabel):

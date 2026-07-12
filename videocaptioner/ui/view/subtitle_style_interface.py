@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import ImageLabel, InfoBar, InfoBarPosition, ScrollArea
+from qfluentwidgets import ImageLabel, InfoBar, InfoBarPosition
 
 from videocaptioner.config import ASSETS_PATH, USER_SUBTITLE_STYLE_PATH
 from videocaptioner.core.constant import INFOBAR_DURATION_SUCCESS, INFOBAR_DURATION_WARNING
@@ -55,6 +55,7 @@ from videocaptioner.ui.components.inspector_controls import (
 )
 from videocaptioner.ui.components.workbench import (
     AppLineEdit,
+    AppScrollArea,
     CompactButton,
     FilterTabs,
     PillSelect,
@@ -300,10 +301,8 @@ class SubtitleStyleInterface(QWidget):
         layout.addWidget(self._hline())
 
         # 单行横向滚动陈列所有样式
-        self.trackScroll = ScrollArea()
+        self.trackScroll = AppScrollArea(horizontal=True, transparent=True)
         self.trackScroll.setWidgetResizable(True)
-        self.trackScroll.enableTransparentBackground()
-        self.trackScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
         self.trackBody = QWidget()
         self.trackBody.setAttribute(Qt.WA_StyledBackground, True)  # type: ignore[arg-type]
         self.trackBody.setStyleSheet("background: transparent;")
@@ -375,10 +374,8 @@ class SubtitleStyleInterface(QWidget):
         layout.addLayout(head)
         layout.addWidget(self._hline())
 
-        scroll = ScrollArea()
+        scroll = AppScrollArea(transparent=True)
         scroll.setWidgetResizable(True)
-        scroll.enableTransparentBackground()
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore[arg-type]
         self.inspectorBody = QWidget()
         self.inspectorBody.setAttribute(Qt.WA_StyledBackground, True)  # type: ignore[arg-type]
         self.inspectorBody.setStyleSheet("background: transparent;")

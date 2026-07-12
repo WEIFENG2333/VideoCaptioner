@@ -21,7 +21,6 @@ from PyQt5.QtWidgets import (
 from qfluentwidgets import (
     ComboBox,
     EditableComboBox,
-    ScrollArea,
     SwitchButton,
 )
 
@@ -32,6 +31,7 @@ from videocaptioner.ui.common.settings_state import SettingField
 from videocaptioner.ui.common.theme_tokens import app_palette, is_dark_theme, rgba
 from videocaptioner.ui.components.workbench import (
     AppLineEdit,
+    AppScrollArea,
     RoundIconButton,
     WorkbenchButton,
     apply_font,
@@ -139,6 +139,7 @@ class SettingsShell(QWidget):
         if page is None:
             return False
         self.stack.setCurrentWidget(page)
+        page.scrollToTop()
         for page_key, button in self._nav_buttons.items():
             button.setChecked(page_key == key)
         self.pageChanged.emit(key)
@@ -208,7 +209,7 @@ class SettingsShell(QWidget):
             page.syncStyle()
 
 
-class SettingsPage(ScrollArea):
+class SettingsPage(AppScrollArea):
     def __init__(self, title: str, parent=None):
         super().__init__(parent)
         self.setObjectName("settingsPage")
@@ -278,20 +279,9 @@ class SettingsPage(ScrollArea):
                 color: {palette.text};
                 background: transparent;
             }}
-            QScrollBar:vertical {{
-                width: 6px;
-                background: transparent;
-            }}
-            QScrollBar::handle:vertical {{
-                background: {palette.line};
-                border-radius: 3px;
-            }}
-            QScrollBar::add-line:vertical,
-            QScrollBar::sub-line:vertical {{
-                height: 0;
-            }}
             """
         )
+        self.syncScrollStyle()
         for group in self._groups:
             group.syncStyle()
 
@@ -699,6 +689,7 @@ class BoundFloatSlider(QWidget):
     def __init__(self, config_item: SettingField, decimals: int = 2, parent=None):
         super().__init__(parent)
         self.config_item = config_item
+        self.setObjectName("settingsSliderControl")
         self.setFixedHeight(CONTROL_HEIGHT)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.decimals = decimals
@@ -712,6 +703,8 @@ class BoundFloatSlider(QWidget):
         self.label.setFixedWidth(48)
         self.label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[arg-type]
         self.slider = QSlider(Qt.Horizontal, self)
+        # syncStyle 的 QSS 按 objectName 选择；漏设会整体落回 Qt 原生样式
+        self.slider.setObjectName("settingsSlider")
         self.slider.setRange(int(float(minimum) * self.scale), int(float(maximum) * self.scale))
         self.slider.setFixedWidth(SLIDER_WIDTH)
         self.slider.setValue(int(float(config_item.value) * self.scale))

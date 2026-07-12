@@ -2653,10 +2653,10 @@ msgstr ""
 msgid "modelmgr.download.failed"
 msgstr ""
 
-msgid "modelmgr.footer.model_dir"
+msgid "modelmgr.footer.open_model_dir"
 msgstr ""
 
-msgid "modelmgr.footer.open_dir"
+msgid "modelmgr.footer.open_program_dir"
 msgstr ""
 
 msgid "modelmgr.program.available"

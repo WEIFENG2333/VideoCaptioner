@@ -24,7 +24,6 @@ from PyQt5.QtWidgets import (
 )
 from qfluentwidgets import (
     InfoBar,
-    ScrollArea,
 )
 
 from videocaptioner.config import CACHE_PATH
@@ -44,6 +43,7 @@ from videocaptioner.ui.common.dubbing_options import (
 )
 from videocaptioner.ui.common.theme_tokens import app_palette, rgba
 from videocaptioner.ui.components.workbench import (
+    AppScrollArea,
     AppTextEdit,
     ClickableFrame,
     CompactButton,
@@ -679,7 +679,7 @@ class PreviewPanel(ThemedSimpleCard):
         self.countLabel.setText(tr("dubbing.preview.char_count", count=len(self.text())))
 
 
-class DubbingInterface(ScrollArea):
+class DubbingInterface(AppScrollArea):
     """配音音色库与试听页。"""
 
     def __init__(self, parent=None):
@@ -710,12 +710,10 @@ class DubbingInterface(ScrollArea):
     def _init_ui(self):
         self.resize(1200, 820)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore
-        self.setViewportMargins(0, 0, 0, 0)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
         self.setObjectName("dubbingInterface")
         self.scrollWidget.setObjectName("scrollWidget")
-        self.enableTransparentBackground()
 
         # 页头：标题 + 描述，随内容滚动（与批量处理页 pageTitle/pageSubtitle
         # 同款）；不再用浮动绝对定位 + viewport 顶边距的旧写法。
