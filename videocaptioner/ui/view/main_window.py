@@ -5,6 +5,9 @@ import shutil
 import sys
 from pathlib import Path
 
+if sys.platform == "win32":
+    import ctypes.wintypes
+
 import psutil
 from PyQt5.QtCore import QEvent, QSize, QUrl
 from PyQt5.QtGui import QColor, QDesktopServices, QIcon
@@ -381,6 +384,18 @@ class MainWindow(FluentWindow):
         if hasattr(self, "sidebar") and obj is self.sidebar and event.type() == QEvent.Resize:
             self._place_titlebar()
         return super().eventFilter(obj, event)
+
+    def nativeEvent(self, eventType, message):
+        handled, result = super().nativeEvent(eventType, message)
+        # qframelesswindow 在 WM_KILLFOCUS 把 DWM 边框色重置回系统默认、
+        # WM_SETFOCUS（系统开边框强调色时）染成强调色——每次都要在它之后补染，
+        # 否则失焦一次白边就回来。不能用 Qt 的 WindowDeactivate 代替：它源自
+        # WM_ACTIVATE，先于 WM_KILLFOCUS，补染完仍会被库清掉。
+        if sys.platform == "win32":
+            msg = ctypes.wintypes.MSG.from_address(int(message))
+            if msg.message in (0x0007, 0x0008):  # WM_SETFOCUS / WM_KILLFOCUS
+                self._tint_native_border()
+        return handled, result
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
