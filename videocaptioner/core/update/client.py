@@ -17,13 +17,11 @@ from typing import Optional
 import requests
 
 from videocaptioner.config import APP_NAME, VERSION
+from videocaptioner.core.download.downloader import gh_mirror_urls
 from videocaptioner.core.feedback.diagnostics import get_or_create_client_id, platform_tag
 from videocaptioner.core.utils.logger import setup_logger
 
 logger = setup_logger("update_check")
-
-# GitHub 资产国内直连慢/被墙：ghproxy 镜像优先，原直链兜底（与 download 模块同策略）。
-_GH_MIRRORS = ("https://ghproxy.com/", "https://mirror.ghproxy.com/")
 
 
 def app_channel() -> str:
@@ -42,10 +40,6 @@ def app_channel() -> str:
     return "pip" if ("site-packages" in parts or "dist-packages" in parts) else "dev"
 
 
-def _mirror_urls(url: str) -> tuple[str, ...]:
-    return tuple(m + url for m in _GH_MIRRORS) + (url,)
-
-
 @dataclass(frozen=True)
 class UpdateInfo:
     version: str
@@ -57,7 +51,7 @@ class UpdateInfo:
     @property
     def urls(self) -> tuple[str, ...]:
         """资产下载地址：镜像优先 + 直连兜底。"""
-        return _mirror_urls(self.url)
+        return gh_mirror_urls(self.url)
 
 
 @dataclass(frozen=True)

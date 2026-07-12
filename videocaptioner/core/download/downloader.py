@@ -24,6 +24,16 @@ CONNECT_TIMEOUT = 10
 READ_TIMEOUT = 60
 CHUNK_SIZE = 256 * 1024
 
+# GitHub 资产国内直连慢/被墙：加速镜像优先、直连兜底。镜像生态更迭快、死镜像常以
+# 200 返回 HTML 错误页——调用方务必配 sha256/validate 验真。全项目共用这一份列表，
+# 避免各模块自带副本漂移（update 模块曾复制了一份早已失效的 ghproxy.com）。
+GH_MIRRORS = ("https://gh-proxy.com/", "https://ghfast.top/")
+
+
+def gh_mirror_urls(direct_url: str) -> tuple[str, ...]:
+    """一个 GitHub 直链的下载地址序列：镜像优先 + 直连兜底。"""
+    return tuple(mirror + direct_url for mirror in GH_MIRRORS) + (direct_url,)
+
 
 class DownloadError(Exception):
     """所有镜像都下载失败。"""

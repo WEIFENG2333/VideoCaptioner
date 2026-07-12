@@ -30,6 +30,7 @@ from videocaptioner.core.download.downloader import (
     DownloadProgress,
     ProgressCallback,
     download_file,
+    gh_mirror_urls,
 )
 from videocaptioner.core.utils.logger import setup_logger
 
@@ -51,15 +52,11 @@ _VOXGATE_SHA256 = {
     "voxgate_linux_arm64.tar.gz": "a9b285d5622d8b5f043ea97d90ce469c0b7bc3c97f6b188fa46c213d986ceb99",
     "voxgate_windows_amd64.zip": "c7f953490daf53ba9fd2fdcc6987c24bf9da0bc86a828c33427f63700329e138",
 }
-# 国内加速镜像优先，最后回落 GitHub 直连（download_file 会按顺序兜底）。
-# 加速镜像生态更迭快、死镜像常以 200 返回 HTML 页——下载后有压缩包验真兜底。
-_GH_MIRRORS = ("https://gh-proxy.com/", "https://ghfast.top/")
-
 PhaseCallback = Callable[[str], None]
 
 
 def _gh_urls(repo: str, tag: str, asset: str) -> tuple[str, ...]:
-    """某 release 资产的镜像兜底地址：ghproxy 镜像优先，GitHub 直连兜底。
+    """某 release 资产的镜像兜底地址：加速镜像优先，GitHub 直连兜底。
 
     tag="latest" 用 releases/latest/download（永远指向最新 release 的同名资产）；
     具体 tag 用 releases/download/<tag>（固定版本，可复现）。
@@ -68,7 +65,7 @@ def _gh_urls(repo: str, tag: str, asset: str) -> tuple[str, ...]:
         direct = f"https://github.com/{repo}/releases/latest/download/{asset}"
     else:
         direct = f"https://github.com/{repo}/releases/download/{tag}/{asset}"
-    return tuple(mirror + direct for mirror in _GH_MIRRORS) + (direct,)
+    return gh_mirror_urls(direct)
 
 
 def current_platform() -> tuple[str, str]:
