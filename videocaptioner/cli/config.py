@@ -42,6 +42,8 @@ ENV_MAP: Dict[str, str] = {
     "VIDEOCAPTIONER_LLM_MODEL": "llm.model",
     "VIDEOCAPTIONER_WHISPER_API_KEY": "whisper_api.api_key",
     "VIDEOCAPTIONER_WHISPER_API_BASE": "whisper_api.api_base",
+    "VIDEOCAPTIONER_SENSEVOICE_MODEL": "transcribe.sensevoice.model",
+    "VIDEOCAPTIONER_SENSEVOICE_DEVICE": "transcribe.sensevoice.device",
     "VIDEOCAPTIONER_DEEPLX_ENDPOINT": "translate.deeplx_endpoint",
     "VIDEOCAPTIONER_TARGET_LANG": "translate.target_language",
     "VIDEOCAPTIONER_DUBBING_PROVIDER": "dubbing.provider",
@@ -87,6 +89,10 @@ DEFAULTS: Dict[str, Any] = {
         },
         "whisper_cpp": {
             "model": "large-v2",
+        },
+        "sensevoice": {
+            "model": "iic/SenseVoiceSmall",
+            "device": "auto",
         },
     },
     "subtitle": {

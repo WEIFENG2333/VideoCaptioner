@@ -3,6 +3,7 @@ from videocaptioner.core.asr.bcut import BcutASR
 from videocaptioner.core.asr.chunked_asr import ChunkedASR
 from videocaptioner.core.asr.faster_whisper import FasterWhisperASR
 from videocaptioner.core.asr.jianying import JianYingASR
+from videocaptioner.core.asr.sensevoice import SenseVoiceASR
 from videocaptioner.core.asr.whisper_api import WhisperAPI
 from videocaptioner.core.asr.whisper_cpp import WhisperCppASR
 from videocaptioner.core.entities import TranscribeConfig, TranscribeModelEnum
@@ -68,6 +69,9 @@ def _create_asr_instance(audio_path: str, config: TranscribeConfig) -> ChunkedAS
 
     elif model_type == TranscribeModelEnum.FASTER_WHISPER:
         return _create_faster_whisper_asr(audio_path, config)
+
+    elif model_type == TranscribeModelEnum.SENSEVOICE:
+        return _create_sensevoice_asr(audio_path, config)
 
     else:
         raise ValueError(f"Invalid transcription model: {model_type}")
@@ -155,6 +159,24 @@ def _create_faster_whisper_asr(audio_path: str, config: TranscribeConfig) -> Chu
         asr_kwargs=asr_kwargs,
         chunk_concurrency=1,  # 本地转录使用单线程
         chunk_length=60 * 20,  # 每块20分钟
+    )
+
+
+def _create_sensevoice_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create a local SenseVoice ASR instance with chunking support."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "language": config.transcribe_language or "auto",
+        "model": config.sensevoice_model or SenseVoiceASR.DEFAULT_MODEL,
+        "device": config.sensevoice_device,
+    }
+    return ChunkedASR(
+        asr_class=SenseVoiceASR,
+        audio_path=audio_path,
+        asr_kwargs=asr_kwargs,
+        chunk_concurrency=1,
+        chunk_length=60 * 20,
     )
 
 

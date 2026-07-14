@@ -4,6 +4,7 @@ Each validator checks that required config/dependencies are available
 BEFORE starting the actual task, so users get clear error messages upfront.
 """
 
+import importlib.util
 import shutil
 from pathlib import Path
 
@@ -15,6 +16,7 @@ AUDIO_EXTENSIONS = frozenset({"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac",
 VIDEO_EXTENSIONS = frozenset({"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"})
 SUBTITLE_EXTENSIONS = frozenset({".srt", ".ass", ".vtt"})
 OUTPUT_EXTENSIONS = frozenset({".srt", ".ass", ".txt", ".json"})
+SENSEVOICE_RUNTIME_DEPENDENCIES = ("funasr", "torch", "torchaudio")
 
 
 def resolve_layout(cli_name: str):
@@ -157,6 +159,21 @@ def validate_whisper_cpp() -> bool:
     return True
 
 
+def missing_sensevoice_dependencies() -> list[str]:
+    """Return missing packages required by the optional SenseVoice runtime."""
+    return [name for name in SENSEVOICE_RUNTIME_DEPENDENCIES if importlib.util.find_spec(name) is None]
+
+
+def validate_sensevoice() -> bool:
+    """Check that the complete optional SenseVoice runtime is installed."""
+    missing = missing_sensevoice_dependencies()
+    if missing:
+        output.error(f"SenseVoice dependencies are not installed: {', '.join(missing)}")
+        output.hint("Install SenseVoice support: pip install 'videocaptioner[sensevoice]'")
+        return False
+    return True
+
+
 def validate_transcribe(config: dict) -> bool:
     """Validate config for transcribe command."""
     asr = get(config, "transcribe.asr", "faster-whisper")
@@ -167,6 +184,8 @@ def validate_transcribe(config: dict) -> bool:
         return validate_faster_whisper()
     if asr == "whisper-cpp":
         return validate_whisper_cpp()
+    if asr == "sensevoice":
+        return validate_sensevoice()
     # bijian/jianying: no config needed (public endpoints)
     return True
 

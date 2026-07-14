@@ -10,6 +10,7 @@ from datetime import date
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli.config import CONFIG_FILE, DEFAULTS, get
+from videocaptioner.cli.validators import missing_sensevoice_dependencies
 from videocaptioner.core.dubbing.presets import (
     get_dubbing_preset,
     normalize_dubbing_voice,
@@ -125,6 +126,15 @@ def _check_transcribe(config: dict) -> list[Check]:
         checks.append(Check("whisper_api.api_key", "error", "Whisper API key is missing", "Run 'videocaptioner config set whisper_api.api_key <key>'"))
     if asr == "whisper-cpp" and not any(shutil.which(n) for n in ["whisper-cpp", "whisper", "whisper-cpp-main"]):
         checks.append(Check("whisper-cpp", "error", "whisper.cpp binary not found", "Install whisper.cpp or choose --asr bijian/whisper-api"))
+    if asr == "sensevoice" and (missing := missing_sensevoice_dependencies()):
+        checks.append(
+            Check(
+                "sensevoice.dependencies",
+                "error",
+                f"SenseVoice dependencies are not installed: {', '.join(missing)}",
+                "Install SenseVoice support with: pip install 'videocaptioner[sensevoice]'",
+            )
+        )
     return checks
 
 

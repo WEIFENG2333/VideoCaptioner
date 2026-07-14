@@ -43,6 +43,11 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = []
+sensevoice = [
+    "funasr>=1.3.9,<2",
+    "torch>=1.13",
+    "torchaudio>=0.13",
+]
 
 [project.urls]
 Homepage = "https://github.com/WEIFENG2333/VideoCaptioner"

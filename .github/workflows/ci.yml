@@ -37,7 +37,7 @@ jobs:
         run: uv run pyright videocaptioner/cli/
 
       - name: Unit tests
-        run: uv run pytest tests/test_cli tests/test_dubbing -q
+        run: uv run pytest tests/test_cli tests/test_dubbing tests/test_asr/test_sensevoice_asr.py -q
 
       - name: Build package
         run: uv build

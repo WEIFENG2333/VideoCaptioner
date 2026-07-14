@@ -3,6 +3,8 @@
 import pytest
 
 from videocaptioner.cli import exit_codes as EXIT
+from videocaptioner.cli import validators
+from videocaptioner.cli.commands import doctor
 from videocaptioner.cli.commands.process import _resolve_final_output_path
 from videocaptioner.cli.main import main
 
@@ -70,6 +72,22 @@ class TestTranscribeParser:
         with pytest.raises(SystemExit) as exc:
             main(["transcribe", "test.mp4", "--asr", "invalid"])
         assert exc.value.code == 2
+
+    def test_sensevoice_options_are_accepted(self):
+        result = main(
+            [
+                "transcribe",
+                "/nonexistent/file.mp4",
+                "--asr",
+                "sensevoice",
+                "--sensevoice-model",
+                "iic/SenseVoiceSmall",
+                "--sensevoice-device",
+                "cpu",
+            ]
+        )
+
+        assert result == EXIT.FILE_NOT_FOUND
 
     def test_file_not_found(self):
         assert main(["transcribe", "/nonexistent/file.mp4"]) == EXIT.FILE_NOT_FOUND
@@ -272,3 +290,30 @@ class TestDoctorParser:
         out = capsys.readouterr().out
         assert "--json" in out
         assert "--check-api" in out
+
+
+class TestSenseVoiceDependencies:
+    def test_preflight_reports_all_missing_runtime_packages(self, monkeypatch, capsys):
+        monkeypatch.setattr(
+            validators.importlib.util,
+            "find_spec",
+            lambda name: object() if name == "funasr" else None,
+        )
+
+        assert validators.validate_sensevoice() is False
+        captured = capsys.readouterr()
+        assert "torch, torchaudio" in captured.out + captured.err
+
+    def test_doctor_reports_all_missing_runtime_packages(self, monkeypatch):
+        monkeypatch.setattr(
+            validators.importlib.util,
+            "find_spec",
+            lambda name: object() if name == "funasr" else None,
+        )
+
+        checks = doctor._check_transcribe({"transcribe": {"asr": "sensevoice"}})
+
+        dependency_checks = [check for check in checks if check.name == "sensevoice.dependencies"]
+        assert len(dependency_checks) == 1
+        assert dependency_checks[0].status == "error"
+        assert "torch, torchaudio" in dependency_checks[0].message

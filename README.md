@@ -10,7 +10,10 @@
 
 ```bash
 pip install videocaptioner          # 安装 CLI + GUI 桌面版
+pip install 'videocaptioner[sensevoice]'  # 可选：本地 SenseVoice/FunASR 转录
 ```
+
+SenseVoice extra 会安装 FunASR、PyTorch 和 torchaudio。GPU 用户如需特定 CUDA 构建，请先按 [PyTorch 官方说明](https://pytorch.org/get-started/locally/)安装相互匹配的 PyTorch 与 torchaudio。
 
 免费功能（必剪语音识别、必应/谷歌翻译）**无需任何配置，安装即用**。
 
@@ -19,6 +22,9 @@ pip install videocaptioner          # 安装 CLI + GUI 桌面版
 ```bash
 # 语音转录（免费，无需 API Key）
 videocaptioner transcribe video.mp4 --asr bijian
+
+# 本地 SenseVoice 转录（支持词级时间戳）
+videocaptioner transcribe video.mp4 --asr sensevoice --language auto
 
 # 字幕翻译（免费必应翻译）
 videocaptioner subtitle input.srt --translator bing --target-language en
@@ -49,7 +55,7 @@ videocaptioner config set llm.model gpt-4o-mini
 | 命令 | 说明 |
 |------|------|
 | `gui` | 打开桌面版。也可以直接运行 `videocaptioner-gui` |
-| `transcribe` | 语音转字幕。引擎：`faster-whisper`、`whisper-api`、`bijian`（免费）、`jianying`（免费）、`whisper-cpp` |
+| `transcribe` | 语音转字幕。引擎：`faster-whisper`、`sensevoice`、`whisper-api`、`bijian`（免费）、`jianying`（免费）、`whisper-cpp` |
 | `subtitle` | 字幕优化/翻译。翻译服务：`llm`、`bing`（免费）、`google`（免费） |
 | `dub` | 根据字幕生成配音音轨或配音视频 |
 | `synthesize` | 字幕烧录到视频（软字幕/硬字幕） |

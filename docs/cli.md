@@ -4,7 +4,10 @@
 
 ```bash
 pip install videocaptioner          # CLI + GUI 桌面版
+pip install 'videocaptioner[sensevoice]'  # 可选：本地 SenseVoice/FunASR 转录
 ```
+
+SenseVoice extra 会安装 FunASR、PyTorch 和 torchaudio。GPU 用户如需特定 CUDA 构建，请先按 [PyTorch 官方说明](https://pytorch.org/get-started/locally/)安装相互匹配的 PyTorch 与 torchaudio。
 
 免费功能（转录、必应/谷歌翻译）无需任何配置，安装后直接使用。
 需要桌面版时运行 `videocaptioner-gui`、`videocaptioner gui`，或直接运行无参数的 `videocaptioner`。
@@ -16,6 +19,9 @@ pip install videocaptioner          # CLI + GUI 桌面版
 ```bash
 # 语音转字幕（免费）
 videocaptioner transcribe video.mp4 --asr bijian
+
+# 本地 SenseVoice 转录
+videocaptioner transcribe video.mp4 --asr sensevoice --language auto
 
 # 翻译字幕（免费必应翻译）
 videocaptioner subtitle input.srt --translator bing --target-language en
@@ -48,12 +54,14 @@ videocaptioner transcribe <文件> [选项]
 
 | 选项 | 说明 |
 |------|------|
-| `--asr` | ASR 引擎：`bijian`(默认,免费) `jianying`(免费) `whisper-api` `whisper-cpp`。bijian/jianying 仅支持中英文，其他语言用 whisper-api 或 whisper-cpp |
+| `--asr` | ASR 引擎：`bijian`(默认,免费) `jianying`(免费) `whisper-api` `whisper-cpp` `sensevoice`。SenseVoice 在本地运行，默认模型支持中文、粤语、英语、日语和韩语 |
 | `--language CODE` | 源语言 ISO 639-1 代码，如 `zh` `en` `ja`，或 `auto`（默认） |
 | `--word-timestamps` | 输出词级时间戳（配合字幕断句使用） |
 | `--whisper-api-key` | Whisper API 密钥（仅 `--asr whisper-api`） |
 | `--whisper-api-base` | Whisper API 地址 |
 | `--whisper-model` | Whisper 模型名（whisper-api 默认 whisper-1，whisper-cpp 默认 large-v2） |
+| `--sensevoice-model` | FunASR 模型名或本地路径（默认 `iic/SenseVoiceSmall`） |
+| `--sensevoice-device` | SenseVoice 推理设备：`auto`(默认) `cuda` `cpu` `mps` |
 | `-o PATH` | 输出文件或目录路径 |
 | `--format` | 输出格式：`srt`(默认) `ass` `txt` `json` |
 

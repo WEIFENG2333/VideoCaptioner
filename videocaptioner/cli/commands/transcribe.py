@@ -82,6 +82,7 @@ def run(args: Namespace, config: dict) -> int:
         "bijian": TranscribeModelEnum.BIJIAN,
         "jianying": TranscribeModelEnum.JIANYING,
         "whisper-cpp": TranscribeModelEnum.WHISPER_CPP,
+        "sensevoice": TranscribeModelEnum.SENSEVOICE,
     }
 
     # Map CLI string values to enums
@@ -117,6 +118,11 @@ def run(args: Namespace, config: dict) -> int:
         whisper_api_base=get(config, "whisper_api.api_base", ""),
         whisper_api_model=get(config, "whisper_api.model", "whisper-1"),
         whisper_api_prompt=get(config, "whisper_api.prompt", ""),
+        # SenseVoice options
+        sensevoice_model=get(
+            config, "transcribe.sensevoice.model", "iic/SenseVoiceSmall"
+        ),
+        sensevoice_device=get(config, "transcribe.sensevoice.device", "auto"),
     )
 
 

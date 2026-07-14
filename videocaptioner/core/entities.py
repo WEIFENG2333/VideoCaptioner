@@ -121,6 +121,7 @@ class TranscribeModelEnum(Enum):
     WHISPER_API = "Whisper [API] ✨"
     FASTER_WHISPER = "FasterWhisper ✨"
     WHISPER_CPP = "WhisperCpp"
+    SENSEVOICE = "SenseVoice [FunASR] ✨"
 
 
 class TranslatorServiceEnum(Enum):
@@ -505,6 +506,16 @@ ASR_LANGUAGE_CAPABILITIES: dict[TranscribeModelEnum, ASRLanguageCapability] = {
         supported_languages=_get_all_languages_except_auto(),
         supports_auto=True,
     ),
+    TranscribeModelEnum.SENSEVOICE: ASRLanguageCapability(
+        supported_languages=[
+            TranscribeLanguageEnum.CHINESE,
+            TranscribeLanguageEnum.ENGLISH,
+            TranscribeLanguageEnum.YUE,
+            TranscribeLanguageEnum.JAPANESE,
+            TranscribeLanguageEnum.KOREAN,
+        ],
+        supports_auto=True,
+    ),
 }
 
 
@@ -573,6 +584,9 @@ class TranscribeConfig:
     faster_whisper_ff_mdx_kim2: bool = False
     faster_whisper_one_word: bool = True
     faster_whisper_prompt: Optional[str] = None
+    # SenseVoice 配置
+    sensevoice_model: str = "iic/SenseVoiceSmall"
+    sensevoice_device: str = "auto"
 
     def _mask_key(self, key: Optional[str]) -> str:
         """Mask sensitive key for display"""
@@ -616,6 +630,10 @@ class TranscribeConfig:
             lines.append(
                 f"Model: {self.whisper_model.value if self.whisper_model else 'None'}"
             )
+
+        elif self.transcribe_model == TranscribeModelEnum.SENSEVOICE:
+            lines.append(f"Model: {self.sensevoice_model}")
+            lines.append(f"Device: {self.sensevoice_device}")
 
         lines.append("=" * 42)
         return "\n".join(lines)
