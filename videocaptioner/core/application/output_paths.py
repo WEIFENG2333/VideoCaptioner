@@ -91,6 +91,8 @@ def product_path(
     :func:`unique_path`。
     """
     src = Path(source)
+    if not src.name:
+        raise ValueError(f"product_path needs a real source file, got {source!r}")
     for tag in tags:
         if tag not in _KNOWN_TAGS:
             raise ValueError(f"unknown output tag: {tag!r}")

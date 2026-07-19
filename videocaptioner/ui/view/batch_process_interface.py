@@ -55,6 +55,7 @@ from videocaptioner.core.entities import (
     TranscribeTask,
     TranslatorServiceEnum,
 )
+from videocaptioner.core.utils.logger import setup_logger
 from videocaptioner.core.utils.platform_utils import open_folder, reveal_in_explorer
 from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import cfg
@@ -204,6 +205,9 @@ def collect_files(paths: list[str], extensions: set[str]) -> tuple[list[str], in
         if os.path.isfile(path) and Path(path).suffix.lower() in extensions
     ]
     return valid, len(expanded) - len(valid)
+
+
+logger = setup_logger("batch_ui")
 
 
 class JobStatus(Enum):
@@ -1414,11 +1418,8 @@ class BatchProcessInterface(QWidget):
                 )
             )
             if needs_llm:
-                task = TaskFactory.create_subtitle_task(file_path="")
-                config = task.subtitle_config
-                if config is None or not (
-                    config.api_key and config.base_url and config.llm_model
-                ):
+                config = TaskFactory.create_subtitle_config()
+                if not (config.api_key and config.base_url and config.llm_model):
                     return tr("batch.preflight.llm")
         if ("synthesis" in stages or "dubbing" in stages) and not shutil.which("ffmpeg"):
             return tr("batch.preflight.ffmpeg")
@@ -1437,7 +1438,11 @@ class BatchProcessInterface(QWidget):
                 self.controller.pause()
             return
         if state in (PageState.READY, PageState.DONE):
-            error = self._preflight_error()
+            try:
+                error = self._preflight_error()
+            except Exception as exc:  # noqa: BLE001  预检异常必须可见，静默会表现成按钮没反应
+                logger.exception("batch preflight failed")
+                error = str(exc)
             if error is not None:
                 InfoBar.error(
                     tr("batch.cannot_start"), error,

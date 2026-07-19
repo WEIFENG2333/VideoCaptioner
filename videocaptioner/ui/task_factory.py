@@ -18,6 +18,11 @@ class TaskFactory:
         return TaskBuilder(app_config_from_ui(cfg))
 
     @staticmethod
+    def create_subtitle_config():
+        """当前设置下的字幕处理配置（预检/展示用，不创建任务）。"""
+        return TaskFactory._builder().create_subtitle_config()
+
+    @staticmethod
     def get_ass_style(style_name: str) -> str:
         return TaskFactory._builder().get_ass_style(style_name)
 
