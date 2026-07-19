@@ -44,10 +44,30 @@ def _install_app_font(app):
     qfluentwidgets.getFont = get_font
 
 
+def _suppress_subprocess_console_windows():
+    """GUI 进程的所有子进程统一不弹控制台窗口（Windows）。
+
+    打包版主程序无控制台，任何缺 CREATE_NO_WINDOW 的子进程调用（含 pydub、
+    yt-dlp 等三方库内部）都会闪黑框；在入口统一注入，覆盖全部调用点。
+    """
+    if os.name != "nt":
+        return
+    import subprocess
+
+    original_init = subprocess.Popen.__init__
+
+    def patched_init(self, *args, **kwargs):
+        kwargs["creationflags"] = kwargs.get("creationflags", 0) | subprocess.CREATE_NO_WINDOW
+        original_init(self, *args, **kwargs)
+
+    subprocess.Popen.__init__ = patched_init
+
+
 def main():
     import traceback
 
     _suppress_qt_font_alias_warning()
+    _suppress_subprocess_console_windows()
 
     from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication
