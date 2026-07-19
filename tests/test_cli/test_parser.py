@@ -13,6 +13,7 @@ class TestMainParser:
     def test_no_args_tries_gui(self, monkeypatch):
         # No args: tries to launch GUI. Mock GUI import to avoid opening it in tests.
         import builtins
+
         original_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
@@ -136,28 +137,34 @@ class TestSynthesizeParser:
 
 class TestProcessParser:
     def test_dub_options_parse_with_missing_input(self):
-        result = main([
-            "process",
-            "/no/video.mp4",
-            "--dub-only",
-            "--dub-provider",
-            "siliconflow",
-            "--dub-preset",
-            "siliconflow-cn-female",
-            "--tts-model",
-            "FunAudioLLM/CosyVoice2-0.5B",
-            "--voice",
-            "FunAudioLLM/CosyVoice2-0.5B:anna",
-        ])
+        result = main(
+            [
+                "process",
+                "/no/video.mp4",
+                "--dub-only",
+                "--dub-provider",
+                "siliconflow",
+                "--dub-preset",
+                "siliconflow-cn-female",
+                "--tts-model",
+                "FunAudioLLM/CosyVoice2-0.5B",
+                "--voice",
+                "FunAudioLLM/CosyVoice2-0.5B:anna",
+            ]
+        )
         assert result == EXIT.FILE_NOT_FOUND
 
     def test_process_dub_final_output_defaults_to_dubbed_captioned(self, tmp_path):
-        result = _resolve_final_output_path(None, tmp_path, tmp_path / "talk.mp4", True, False, False)
+        result = _resolve_final_output_path(
+            None, tmp_path, tmp_path / "talk.mp4", True, False, False
+        )
 
         assert result.endswith("talk_dubbed_captioned.mp4")
 
     def test_process_dub_only_uses_user_output_file(self, tmp_path):
-        result = _resolve_final_output_path(str(tmp_path / "final.mp4"), tmp_path, tmp_path / "talk.mp4", True, True, False)
+        result = _resolve_final_output_path(
+            str(tmp_path / "final.mp4"), tmp_path, tmp_path / "talk.mp4", True, True, False
+        )
 
         assert result.endswith("final.mp4")
 
@@ -200,18 +207,20 @@ class TestDubParser:
         ref = tmp_path / "ref.wav"
         ref.write_bytes(b"not real audio")
 
-        result = main([
-            "dub",
-            str(srt),
-            "--preset",
-            "gemini-en-friendly",
-            "--tts-api-key",
-            "test-key",
-            "--clone-audio",
-            str(ref),
-            "--clone-text",
-            "Hello",
-        ])
+        result = main(
+            [
+                "dub",
+                str(srt),
+                "--preset",
+                "gemini-en-friendly",
+                "--tts-api-key",
+                "test-key",
+                "--clone-audio",
+                str(ref),
+                "--clone-text",
+                "Hello",
+            ]
+        )
 
         assert result == EXIT.USAGE_ERROR
 
@@ -221,16 +230,18 @@ class TestDubParser:
         ref = tmp_path / "ref.wav"
         ref.write_bytes(b"not real audio")
 
-        result = main([
-            "dub",
-            str(srt),
-            "--preset",
-            "edge-cn-female",
-            "--clone-audio",
-            str(ref),
-            "--clone-text",
-            "Hello",
-        ])
+        result = main(
+            [
+                "dub",
+                str(srt),
+                "--preset",
+                "edge-cn-female",
+                "--clone-audio",
+                str(ref),
+                "--clone-text",
+                "Hello",
+            ]
+        )
 
         assert result == EXIT.USAGE_ERROR
 
@@ -268,7 +279,9 @@ class TestConfigParser:
         assert "config.toml" in out
 
     def test_init_print_template(self, capsys):
-        result = main(["config", "init", "--non-interactive", "--print-template", "--profile", "dubbing"])
+        result = main(
+            ["config", "init", "--non-interactive", "--print-template", "--profile", "dubbing"]
+        )
         assert result == EXIT.SUCCESS
         out = capsys.readouterr().out
         assert "[dubbing]" in out

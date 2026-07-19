@@ -83,9 +83,7 @@ def _create_jianying_asr(audio_path: str, config: TranscribeConfig) -> ChunkedAS
         "use_cache": True,
         "need_word_time_stamp": config.need_word_time_stamp,
     }
-    return ChunkedASR(
-        asr_class=JianYingASR, audio_path=audio_path, asr_kwargs=asr_kwargs
-    )
+    return ChunkedASR(asr_class=JianYingASR, audio_path=audio_path, asr_kwargs=asr_kwargs)
 
 
 def _create_bijian_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
@@ -125,9 +123,7 @@ def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> Chunke
         "base_url": config.whisper_api_base or "",
         "prompt": config.whisper_api_prompt or "",
     }
-    return ChunkedASR(
-        asr_class=WhisperAPI, audio_path=audio_path, asr_kwargs=asr_kwargs
-    )
+    return ChunkedASR(asr_class=WhisperAPI, audio_path=audio_path, asr_kwargs=asr_kwargs)
 
 
 def _create_faster_whisper_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
@@ -145,9 +141,7 @@ def _create_faster_whisper_asr(audio_path: str, config: TranscribeConfig) -> Chu
         "vad_filter": config.faster_whisper_vad_filter,
         "vad_threshold": config.faster_whisper_vad_threshold,
         "vad_method": (
-            config.faster_whisper_vad_method.value
-            if config.faster_whisper_vad_method
-            else ""
+            config.faster_whisper_vad_method.value if config.faster_whisper_vad_method else ""
         ),
         "ff_mdx_kim2": config.faster_whisper_ff_mdx_kim2,
         "one_word": config.faster_whisper_one_word,

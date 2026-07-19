@@ -1,4 +1,4 @@
-import builtins
+import importlib
 from pathlib import Path
 
 import pytest
@@ -142,14 +142,14 @@ def test_encoded_audio_bytes_are_converted_to_wav(test_audio_path_zh, monkeypatc
 
 def test_missing_optional_dependency_has_install_hint(test_audio_path_zh, monkeypatch):
     asr = SenseVoiceASR(str(test_audio_path_zh), device="cpu")
-    real_import = builtins.__import__
+    real_import_module = importlib.import_module
 
     def import_without_funasr(name, *args, **kwargs):
         if name == "funasr":
             raise ModuleNotFoundError("No module named 'funasr'")
-        return real_import(name, *args, **kwargs)
+        return real_import_module(name, *args, **kwargs)
 
-    monkeypatch.setattr(builtins, "__import__", import_without_funasr)
+    monkeypatch.setattr(importlib, "import_module", import_without_funasr)
 
     with pytest.raises(RuntimeError, match=r"videocaptioner\[sensevoice\]"):
         asr._create_model("cpu")
