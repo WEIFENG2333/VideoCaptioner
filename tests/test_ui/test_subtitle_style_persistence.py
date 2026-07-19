@@ -93,3 +93,23 @@ def test_no_accumulation_across_restarts(qapp, isolated_styles, monkeypatch):
 
     # 三轮下来仍只有一个用户样式，而不是 3 个 -custom-N
     assert _user_style_files(isolated_styles) == ["ass/default-custom.json"]
+
+
+def test_rebuilding_inspector_never_promotes_old_groups_to_windows(
+    qapp, isolated_styles, monkeypatch
+):
+    cfg.set(cfg.subtitle_style_name, "ass/default", save=False)
+    page = _make_page(monkeypatch)
+    page.show()
+    qapp.processEvents()
+
+    old_groups = [
+        page.inspectorLayout.itemAt(i).widget()
+        for i in range(page.inspectorLayout.count() - 1)
+    ]
+    page._on_mode_changed("rounded")
+
+    assert old_groups
+    assert all(not group.isWindow() for group in old_groups)
+    assert all(not group.isVisible() for group in old_groups)
+    page.close()

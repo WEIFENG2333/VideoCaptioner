@@ -85,6 +85,7 @@ class BingTranslator(BaseTranslator):
                     ]
 
             except Exception as e:
+                self.last_error = str(e)
                 logger.error(f"Bing translation failed: {str(e)}")
                 resp = locals().get("response")
                 if "token" in str(e).lower() or (

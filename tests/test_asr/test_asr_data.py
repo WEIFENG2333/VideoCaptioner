@@ -498,8 +498,8 @@ Valid
         assert len(asr_data.segments) == 1
         assert asr_data.segments[0].text == "Valid"
 
-    def test_parse_srt_97_percent_translation(self):
-        """测试97%翻译(低于98%阈值)"""
+    def test_parse_srt_tolerates_a_few_single_line_cues(self):
+        """少量单行异常不应拖垮整份双轨字幕；异常条自身仍按单语保留。"""
         # 100个块，97个有翻译
         blocks = []
         for i in range(97):
@@ -513,8 +513,10 @@ Valid
 
         srt = "\n".join(blocks)
         asr_data = ASRData.from_srt(srt)
-        # 低于98%不应识别为翻译格式
-        assert not asr_data.segments[0].translated_text
+        assert asr_data.segments[0].translated_text == "Trans0"
+        assert asr_data.segments[96].translated_text == "Trans96"
+        assert asr_data.segments[97].text == "Text97"
+        assert not asr_data.segments[97].translated_text
 
     def test_parse_json_non_numeric_keys(self):
         """测试JSON非数字键"""
@@ -595,7 +597,7 @@ class TestFromSrtBilingualDetection:
 
     def test_zh_en_bilingual_via_heuristic(self, monkeypatch):
         # 中↔英 4 行块应判为双语：原文中文、译文英文；且不应调用 langdetect
-        import videocaptioner.core.asr.asr_data as mod
+        import videocaptioner.core.asr.srt_parser as mod
 
         def _boom(*_a, **_k):  # langdetect 一旦被调用就炸，证明走的是启发式
             raise AssertionError("langdetect.detect should not be called for CJK pairs")
@@ -612,7 +614,7 @@ class TestFromSrtBilingualDetection:
 
     def test_single_language_multiline_not_bilingual(self, monkeypatch):
         # 同语种(都英文)的 4 行块不应判为双语：两行合成一条多行字幕，无译文
-        import videocaptioner.core.asr.asr_data as mod
+        import videocaptioner.core.asr.srt_parser as mod
 
         monkeypatch.setattr(mod, "detect", lambda _t: "en")  # 同语种 → detect 都返回 en
         srt = self._srt([("First line here", "second line continues")] * 4)
@@ -620,3 +622,32 @@ class TestFromSrtBilingualDetection:
         assert len(data.segments) == 4
         assert data.segments[0].translated_text == ""
         assert "\n" in data.segments[0].text  # 多行合并而非原文/译文拆分
+
+    def test_same_language_revisions_are_parallel_tracks(self, monkeypatch):
+        """中文原句+中文校订也属于双轨，不应塞进原文单元格成为两行。"""
+        import videocaptioner.core.asr.srt_parser as mod
+
+        monkeypatch.setattr(mod, "detect", lambda _t: "zh-cn")
+        pairs = [
+            ("大家好", "大家好"),
+            ("虽不至于失明", "虽然不至于失明"),
+            ("我父亲是教师希望我将来也能运用所学", "我父亲是教师，希望我将来也能运用所学"),
+            ("他们会有一些自卑不愿意接触社会", "他们可能会感到自卑，不愿意接触社会"),
+        ]
+        data = ASRData.from_srt(self._srt(pairs))
+        assert [seg.text for seg in data.segments] == [pair[0] for pair in pairs]
+        assert [seg.translated_text for seg in data.segments] == [pair[1] for pair in pairs]
+
+    def test_mixed_cross_language_and_same_language_tracks(self, monkeypatch):
+        """真实文件会在中文双轨中夹杂英→中，仍应作为一个平行轨文件解析。"""
+        import videocaptioner.core.asr.srt_parser as mod
+
+        monkeypatch.setattr(mod, "detect", lambda _t: "zh-cn")
+        pairs = [
+            ("大家好", "大家好"),
+            ("I came to Nanjing Special Education University", "我来到了南京特殊教育大学"),
+            ("音乐带我走出人生的阴霾", "音乐带我走出人生的阴霾"),
+            ("因为视力问题", "因为视力问题"),
+        ]
+        data = ASRData.from_srt(self._srt(pairs))
+        assert all(seg.translated_text for seg in data.segments)

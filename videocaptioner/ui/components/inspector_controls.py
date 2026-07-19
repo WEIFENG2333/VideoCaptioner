@@ -392,7 +392,7 @@ class StyleCard(QFrame):
                 self._swatch_widgets.append(dot)
         while len(self._swatch_widgets) > len(colors):
             dot = self._swatch_widgets.pop()
-            dot.setParent(None)
+            dot.hide()
             dot.deleteLater()
 
     def mousePressEvent(self, event):

@@ -52,6 +52,7 @@ from videocaptioner.core.download.programs import (
     detect_program,
     program_install_plan,
     program_variants,
+    record_program_variant_install,
 )
 from videocaptioner.core.download.source_check import (
     DOWNLOAD_SOURCES,
@@ -93,6 +94,7 @@ __all__ = [
     "detect_program",
     "program_install_plan",
     "program_variants",
+    "record_program_variant_install",
     "DEPENDENCIES",
     "DependencyAsset",
     "DependencySpec",

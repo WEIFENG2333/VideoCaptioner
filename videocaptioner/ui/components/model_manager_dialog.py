@@ -43,6 +43,7 @@ from videocaptioner.core.download import (
     iter_models,
     model_install_state,
     program_variants,
+    record_program_variant_install,
     remove_model,
 )
 from videocaptioner.ui.common.app_icons import AppIcon
@@ -813,6 +814,8 @@ class ModelManagerDialog(AppDialog):
         thread.start()
 
     def _on_program_downloaded(self, path: str):
+        if self._active_program is not None:
+            record_program_variant_install(self._active_program.variant, Path(BIN_PATH))
         if self._kind == "faster-whisper":
             from videocaptioner.ui.common.config import cfg
 
@@ -842,8 +845,19 @@ class ModelManagerDialog(AppDialog):
             self._thread.stop()
 
     def done(self, code: int):  # noqa: A003
-        # 关闭即取消进行中的下载（.part 保留，下次显示「继续」）
-        self._cancel_active()
+        if self._busy:
+            box = ConfirmDialog(
+                tr("modelmgr.close_busy.title"),
+                tr("modelmgr.close_busy.body"),
+                self,
+                confirm_text=tr("modelmgr.close_busy.confirm"),
+                danger=True,
+                icon=AppIcon.CANCEL,
+            )
+            if not box.exec():
+                return
+            # Keep the .part file so a later attempt can resume.
+            self._cancel_active()
         super().done(code)
 
     # ------------------------------------------------------------- 工具

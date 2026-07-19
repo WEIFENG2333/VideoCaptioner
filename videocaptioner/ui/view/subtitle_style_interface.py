@@ -436,9 +436,9 @@ class SubtitleStyleInterface(QWidget):
             item = self.inspectorLayout.takeAt(0)
             widget = item.widget()
             if widget is not None:
-                # 先脱离父级立即从显示移除：deleteLater 是异步的，
-                # 否则重建时旧控件未销毁会与新控件叠成重影。
-                widget.setParent(None)
+                # setParent(None) 会把可见控件提升成顶层窗口；连续切换
+                # 样式时，它们会在 deleteLater 生效前闪成独立窗口。
+                widget.hide()
                 widget.deleteLater()
 
     def _stepper(self, value, minimum, maximum, step=1, decimals=0, suffix=""):
@@ -642,13 +642,13 @@ class SubtitleStyleInterface(QWidget):
     # ---------------------------------------------------------------- 样式库
 
     def _clear_dock_cards(self):
-        """清空横向轨道（setParent(None) 立即脱离，避免 deleteLater 异步重影）。"""
+        """清空横向轨道；先隐藏再延迟销毁，避免提升成顶层窗口。"""
         self._cards = []
         while self.trackLayout.count() > 1:  # 保留末尾 stretch
             item = self.trackLayout.takeAt(0)
             widget = item.widget()
             if widget is not None:
-                widget.setParent(None)
+                widget.hide()
                 widget.deleteLater()
 
     def _set_current_style(self, style_id: str):

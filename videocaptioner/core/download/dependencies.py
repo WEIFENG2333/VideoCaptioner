@@ -352,7 +352,12 @@ def _is_shared_lib(name: str) -> bool:
 
 def _validate_archive(path: Path) -> None:
     """压缩包验真：失效镜像会以 HTTP 200 返回 HTML 错误页，必须当场识破换下一个镜像。"""
-    if path.suffix.lower() == ".7z":
+    # Downloads are validated before the atomic rename, so the file normally
+    # ends in ``.part`` (for example ``runtime.7z.part``).  Inspect the name
+    # before that transport suffix instead of mistaking every 7z download for
+    # an unknown archive type.
+    archive_name = path.name[:-5] if path.name.lower().endswith(".part") else path.name
+    if Path(archive_name).suffix.lower() == ".7z":
         import py7zr
 
         if not py7zr.is_7zfile(path):

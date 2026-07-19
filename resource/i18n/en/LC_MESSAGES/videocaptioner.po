@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 16:22+0800\n"
+"POT-Creation-Date: 2026-07-20 02:09+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -2756,6 +2756,17 @@ msgstr "Download"
 msgid "modelmgr.action.resume"
 msgstr "Continue"
 
+msgid "modelmgr.close_busy.body"
+msgstr ""
+"Closing this window will cancel the current download. The downloaded part"
+" will be kept so you can resume later."
+
+msgid "modelmgr.close_busy.confirm"
+msgstr "Cancel Download and Close"
+
+msgid "modelmgr.close_busy.title"
+msgstr "Download in Progress"
+
 msgid "modelmgr.col.action"
 msgstr "Action"
 
@@ -3670,6 +3681,24 @@ msgstr "Translation Service"
 
 msgid "settings.translate_service.service.desc"
 msgstr "Select the service used for subtitle translation."
+
+msgid "settings.translate_service.test"
+msgstr "Test Translation"
+
+msgid "settings.translate_service.test.desc"
+msgstr "Translate a short sentence with the current service to verify its network connection and configuration."
+
+msgid "settings.translate_service.test_error"
+msgstr "Translation Test Error"
+
+msgid "settings.translate_service.test_failed"
+msgstr "Translation Test Failed"
+
+msgid "settings.translate_service.test_result"
+msgstr "Test translation: {text}"
+
+msgid "settings.translate_service.test_success"
+msgstr "Translation Service Available"
 
 msgid "settings.translate_service.thread_num"
 msgstr "Concurrency"
@@ -4650,4 +4679,3 @@ msgstr "Audio Track 1"
 
 msgid "workbench.drop.or"
 msgstr "or"
-

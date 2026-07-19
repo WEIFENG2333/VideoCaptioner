@@ -2623,6 +2623,15 @@ msgstr ""
 msgid "modelmgr.action.resume"
 msgstr ""
 
+msgid "modelmgr.close_busy.body"
+msgstr ""
+
+msgid "modelmgr.close_busy.confirm"
+msgstr ""
+
+msgid "modelmgr.close_busy.title"
+msgstr ""
+
 msgid "modelmgr.col.action"
 msgstr ""
 
@@ -3494,6 +3503,24 @@ msgid "settings.translate_service.service"
 msgstr ""
 
 msgid "settings.translate_service.service.desc"
+msgstr ""
+
+msgid "settings.translate_service.test"
+msgstr ""
+
+msgid "settings.translate_service.test.desc"
+msgstr ""
+
+msgid "settings.translate_service.test_error"
+msgstr ""
+
+msgid "settings.translate_service.test_failed"
+msgstr ""
+
+msgid "settings.translate_service.test_result"
+msgstr ""
+
+msgid "settings.translate_service.test_success"
 msgstr ""
 
 msgid "settings.translate_service.thread_num"

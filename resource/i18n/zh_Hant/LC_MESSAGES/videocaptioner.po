@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 16:22+0800\n"
+"POT-Creation-Date: 2026-07-20 02:09+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -2653,6 +2653,15 @@ msgstr "下載"
 msgid "modelmgr.action.resume"
 msgstr "繼續"
 
+msgid "modelmgr.close_busy.body"
+msgstr "關閉視窗將取消目前的下載。已下載的部分會保留，下次可以繼續下載。"
+
+msgid "modelmgr.close_busy.confirm"
+msgstr "取消下載並關閉"
+
+msgid "modelmgr.close_busy.title"
+msgstr "下載仍在進行"
+
 msgid "modelmgr.col.action"
 msgstr "操作"
 
@@ -3525,6 +3534,24 @@ msgstr "翻譯服務"
 
 msgid "settings.translate_service.service.desc"
 msgstr "選擇字幕翻譯使用的服務。"
+
+msgid "settings.translate_service.test"
+msgstr "測試翻譯"
+
+msgid "settings.translate_service.test.desc"
+msgstr "使用目前服務實際翻譯一句短文字，驗證網路與設定是否可用。"
+
+msgid "settings.translate_service.test_error"
+msgstr "翻譯測試發生錯誤"
+
+msgid "settings.translate_service.test_failed"
+msgstr "翻譯測試失敗"
+
+msgid "settings.translate_service.test_result"
+msgstr "測試譯文：{text}"
+
+msgid "settings.translate_service.test_success"
+msgstr "翻譯服務可用"
 
 msgid "settings.translate_service.thread_num"
 msgstr "並發數"
@@ -4491,4 +4518,3 @@ msgstr "音軌 1"
 
 msgid "workbench.drop.or"
 msgstr "或"
-

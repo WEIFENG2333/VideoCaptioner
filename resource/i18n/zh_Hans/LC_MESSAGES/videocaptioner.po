@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 16:22+0800\n"
+"POT-Creation-Date: 2026-07-20 02:09+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hans\n"
@@ -2654,6 +2654,15 @@ msgstr "下载"
 msgid "modelmgr.action.resume"
 msgstr "继续"
 
+msgid "modelmgr.close_busy.body"
+msgstr "关闭窗口将取消当前下载。已下载的部分会保留，下次可以继续下载。"
+
+msgid "modelmgr.close_busy.confirm"
+msgstr "取消下载并关闭"
+
+msgid "modelmgr.close_busy.title"
+msgstr "下载仍在进行"
+
 msgid "modelmgr.col.action"
 msgstr "操作"
 
@@ -3526,6 +3535,24 @@ msgstr "翻译服务"
 
 msgid "settings.translate_service.service.desc"
 msgstr "选择字幕翻译使用的服务。"
+
+msgid "settings.translate_service.test"
+msgstr "测试翻译"
+
+msgid "settings.translate_service.test.desc"
+msgstr "使用当前服务真实翻译一句短文本，验证网络与配置是否可用。"
+
+msgid "settings.translate_service.test_error"
+msgstr "翻译测试出错"
+
+msgid "settings.translate_service.test_failed"
+msgstr "翻译测试失败"
+
+msgid "settings.translate_service.test_result"
+msgstr "测试译文：{text}"
+
+msgid "settings.translate_service.test_success"
+msgstr "翻译服务可用"
 
 msgid "settings.translate_service.thread_num"
 msgstr "并发数"

@@ -30,6 +30,9 @@ class BaseTranslator(ABC):
         self.is_running = True
         self.update_callback = update_callback
         self.executor = None
+        # Providers that intentionally keep per-item failures non-fatal expose
+        # the latest cause here so diagnostics can still give actionable text.
+        self.last_error = ""
         self._cache = get_translate_cache()
 
         self._init_thread_pool()

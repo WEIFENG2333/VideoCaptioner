@@ -58,7 +58,7 @@ WHISPER_CPP_GPU_ASSET = DependencyAsset(
 # Faster-Whisper-XXL 完整包：exe 依赖同级 _xxl_data 目录，须保留目录结构解压
 FASTER_WHISPER_XXL_ASSET = DependencyAsset(
     asset="Faster-Whisper-XXL_r245.2_windows.7z",
-    executables=(r"Faster-Whisper-XXLaster-whisper-xxl.exe",),
+    executables=(r"Faster-Whisper-XXL\faster-whisper-xxl.exe",),
     archive=True,
     extract="tree",
     size_bytes=1_400_000_000,
@@ -101,9 +101,33 @@ class ProgramVariant:
     download: ModelFile | None = None
     asset: DependencyAsset | None = None
     link: str | None = None
+    marker: str | None = None
 
     def detect(self, extra_dirs: tuple[Path, ...] | None = None) -> ProgramStatus:
-        return _detect_executables(self.executables, extra_dirs)
+        dirs = extra_dirs if extra_dirs is not None else _default_bin_dirs()
+        if self.marker:
+            marker_path = dirs[0] / self.marker
+            if marker_path.is_file():
+                return _detect_executables(self.executables, dirs)
+            # CPU and GPU archives both contain whisper-cli.exe.  Once an
+            # installer marker exists, only its matching row may report ready.
+            if any(dirs[0].glob(".whisper-cpp-*.installed")):
+                return ProgramStatus(False)
+            # A legacy/manual unmarked executable is treated as the safe CPU
+            # variant instead of incorrectly claiming both variants exist.
+            if self.key != "cpu":
+                return ProgramStatus(False)
+        return _detect_executables(self.executables, dirs)
+
+
+def record_program_variant_install(variant: ProgramVariant, bin_dir: Path) -> None:
+    """Record which mutually-exclusive runtime archive currently occupies bin_dir."""
+    if not variant.marker:
+        return
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    for old in bin_dir.glob(".whisper-cpp-*.installed"):
+        old.unlink(missing_ok=True)
+    (bin_dir / variant.marker).write_text(variant.key, encoding="ascii")
 
 
 @dataclass(frozen=True)
@@ -167,6 +191,7 @@ def program_variants(kind: str, platform: str | None = None) -> tuple[ProgramVar
                 description_ready="运行程序已就绪",
                 executables=WHISPER_CPP_EXECUTABLES,
                 asset=WHISPER_CPP_CPU_ASSET,
+                marker=".whisper-cpp-cpu.installed",
             ),
             ProgramVariant(
                 key="gpu",
@@ -175,6 +200,7 @@ def program_variants(kind: str, platform: str | None = None) -> tuple[ProgramVar
                 description_ready="运行程序已就绪",
                 executables=WHISPER_CPP_EXECUTABLES,
                 asset=WHISPER_CPP_GPU_ASSET,
+                marker=".whisper-cpp-gpu.installed",
             ),
         )
     if kind == KIND_FASTER_WHISPER:

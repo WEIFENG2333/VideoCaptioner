@@ -66,6 +66,7 @@ from videocaptioner.core.speech import (
     SynthesisRequest,
     create_speech_synthesizer,
 )
+from videocaptioner.core.translate.check import check_translation
 from videocaptioner.core.utils.cache import disable_cache, enable_cache
 from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import (
@@ -588,6 +589,17 @@ class SettingInterface(SettingsShell):
                 tr("settings.translate_service.thread_num"),
                 tr("settings.translate_service.thread_num.desc"),
                 BoundSlider(cfg.thread_num, group),
+                group,
+            )
+        )
+        self.checkTranslationButton = make_button(
+            tr("settings.translate_service.test"), parent=group
+        )
+        self.checkTranslationRow = group.addRow(
+            SettingRow(
+                tr("settings.translate_service.test"),
+                tr("settings.translate_service.test.desc"),
+                self.checkTranslationButton,
                 group,
             )
         )
@@ -1191,6 +1203,7 @@ class SettingInterface(SettingsShell):
 
         self.translatorServiceControl.currentValueChanged.connect(self._refresh_translate_rows)
         cfg.translator_service.valueChanged.connect(self._refresh_translate_rows)
+        self.checkTranslationButton.clicked.connect(self.check_translation_connection)
 
         self.subtitleStyleButton.clicked.connect(self._open_subtitle_style_page)
 
@@ -1660,6 +1673,47 @@ class SettingInterface(SettingsShell):
             self._on_transcribe_check_error,
         )
 
+    def check_translation_connection(self) -> None:
+        """Run one real short translation through the selected production provider."""
+        from videocaptioner.ui.config_adapter import app_config_from_ui
+
+        config = TaskBuilder(app_config_from_ui(cfg)).create_subtitle_config()
+        self._run_button_thread(
+            self.checkTranslationButton,
+            tr("settings.translate_service.test"),
+            tr("settings.busy.testing"),
+            TranslationCheckThread(config),
+            self._on_translation_check_finished,
+            self._on_translation_check_error,
+        )
+
+    def _on_translation_check_finished(
+        self, success: bool, detail: str, translated_text: str
+    ) -> None:
+        if success:
+            text = translated_text if len(translated_text) <= 100 else translated_text[:99] + "…"
+            InfoBar.success(
+                tr("settings.translate_service.test_success"),
+                tr("settings.translate_service.test_result", text=text),
+                duration=INFOBAR_DURATION_SUCCESS,
+                parent=self._toast_parent(),
+            )
+        else:
+            InfoBar.error(
+                tr("settings.translate_service.test_failed"),
+                detail,
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self._toast_parent(),
+            )
+
+    def _on_translation_check_error(self, message: str) -> None:
+        InfoBar.error(
+            tr("settings.translate_service.test_error"),
+            message,
+            duration=INFOBAR_DURATION_ERROR,
+            parent=self._toast_parent(),
+        )
+
     def _transcribe_check_missing(self) -> str:
         """当前转录服务缺少的必填配置；齐全返回空串。"""
         model = cfg.transcribe_model.value
@@ -2069,6 +2123,24 @@ class TranscribeCheckThread(QThread):
         try:
             result = check_transcribe(self.config)
             self.finished.emit(result.success, result.detail)
+        except Exception as exc:
+            self.error.emit(str(exc))
+
+
+class TranslationCheckThread(QThread):
+    """Run the shared core translation check away from the GUI thread."""
+
+    finished = pyqtSignal(bool, str, str)
+    error = pyqtSignal(str)
+
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+
+    def run(self) -> None:
+        try:
+            result = check_translation(self.config)
+            self.finished.emit(result.success, result.detail, result.translated_text)
         except Exception as exc:
             self.error.emit(str(exc))
 

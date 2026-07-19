@@ -112,3 +112,19 @@ def test_variant_detect(tmp_path, monkeypatch):
     assert not cpu.detect(extra_dirs=(tmp_path,)).installed
     (tmp_path / "whisper-faster.exe").write_bytes(b"x")
     assert cpu.detect(extra_dirs=(tmp_path,)).installed
+
+
+def test_whisper_cpp_variants_do_not_both_report_installed(tmp_path, monkeypatch):
+    from videocaptioner.core.download import program_variants, record_program_variant_install
+
+    monkeypatch.setattr("shutil.which", lambda _n: None)
+    cpu, gpu = program_variants("whisper-cpp", platform="win32")
+    (tmp_path / "whisper-cli.exe").write_bytes(b"exe")
+
+    # Legacy/manual installs have no variant identity and default to CPU only.
+    assert cpu.detect(extra_dirs=(tmp_path,)).installed
+    assert not gpu.detect(extra_dirs=(tmp_path,)).installed
+
+    record_program_variant_install(gpu, tmp_path)
+    assert not cpu.detect(extra_dirs=(tmp_path,)).installed
+    assert gpu.detect(extra_dirs=(tmp_path,)).installed

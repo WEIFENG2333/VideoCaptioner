@@ -6,10 +6,9 @@ import re
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from langdetect import LangDetectException, detect
-
 from ..entities import SubtitleLayoutEnum
 from ..utils.text_utils import is_mainly_cjk
+from .srt_parser import split_srt_tracks
 
 # 多语言分词模式(支持词级和字符级语言)
 _WORD_SPLIT_PATTERN = (
@@ -569,98 +568,13 @@ class ASRData:
 
     @staticmethod
     def from_srt(srt_str: str) -> "ASRData":
-        """Create ASRData from SRT format string.
-
-        Uses language detection to distinguish between bilingual subtitles
-        (original + translation) and multiline single-language subtitles.
-
-        Args:
-            srt_str: SRT format subtitle string
-
-        Returns:
-            Parsed ASRData instance
-        """
-        segments = []
-        srt_time_pattern = re.compile(
-            r"(\d{2}):(\d{2}):(\d{1,2})[.,](\d{3})\s-->\s(\d{2}):(\d{2}):(\d{1,2})[.,](\d{3})"
+        """Create ASRData from SRT, including file-level parallel-track inference."""
+        return ASRData(
+            [
+                ASRDataSeg(source, start, end, translation)
+                for start, end, source, translation in split_srt_tracks(srt_str)
+            ]
         )
-        blocks = re.split(r"\n\s*\n", srt_str.strip())
-
-        # Detect bilingual mode: all 4-line + 70% different languages.
-        #
-        # 性能：langdetect 首次调用要加载磁盘语言库(~200ms)，逐块 detect 上百次
-        # 叠加会卡住 UI 线程。绝大多数双语字幕是中↔英，用一个便宜的脚本类判定
-        # （含 CJK / 含拉丁）就能区分，零 langdetect 开销；只有同为拉丁脚本
-        # (如 en↔ru)分不出时才退回 detect。
-        def _script_class(text: str) -> str:
-            has_cjk = any(
-                "一" <= ch <= "鿿"  # 汉字
-                or "぀" <= ch <= "ヿ"  # 假名
-                or "가" <= ch <= "힣"  # 谚文
-                for ch in text
-            )
-            if has_cjk:
-                return "cjk"
-            return "latin" if any(ch.isalpha() for ch in text) else "other"
-
-        def is_different_lang(block: str) -> bool:
-            lines = block.splitlines()
-            if len(lines) != 4:
-                return False
-            top, bottom = lines[2], lines[3]
-            ct, cb = _script_class(top), _script_class(bottom)
-            if ct == "cjk" or cb == "cjk":
-                # 任一含 CJK：脚本类不同即判为不同语种（覆盖主力中↔英/日/韩双语），不碰 langdetect
-                return ct != cb
-            try:
-                return detect(top) != detect(bottom)
-            except LangDetectException:
-                return False
-
-        all_four_lines = all(len(b.splitlines()) == 4 for b in blocks)
-        is_bilingual = (
-            all_four_lines and sum(map(is_different_lang, blocks[:50])) / min(len(blocks), 50) >= 0.7
-        )
-
-        # Process all blocks based on detected mode
-        for block in blocks:
-            lines = block.splitlines()
-            if len(lines) < 3:
-                continue
-
-            match = srt_time_pattern.match(lines[1])
-            if not match:
-                continue
-
-            time_parts = list(map(int, match.groups()))
-            start_time = sum(
-                [
-                    time_parts[0] * 3600000,
-                    time_parts[1] * 60000,
-                    time_parts[2] * 1000,
-                    time_parts[3],
-                ]
-            )
-            end_time = sum(
-                [
-                    time_parts[4] * 3600000,
-                    time_parts[5] * 60000,
-                    time_parts[6] * 1000,
-                    time_parts[7],
-                ]
-            )
-
-            text_lines = lines[2:]
-            if is_bilingual and len(text_lines) >= 2:
-                # First line = original, second line = translation
-                segments.append(ASRDataSeg(text_lines[0], start_time, end_time, text_lines[1]))
-            elif len(text_lines) == 1:
-                segments.append(ASRDataSeg(text_lines[0], start_time, end_time))
-            else:
-                # Multi-line subtitle: preserve line breaks with \n
-                segments.append(ASRDataSeg("\n".join(text_lines), start_time, end_time))
-
-        return ASRData(segments)
 
     @staticmethod
     def from_vtt(vtt_str: str) -> "ASRData":

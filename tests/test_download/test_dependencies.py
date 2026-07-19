@@ -148,6 +148,18 @@ def test_extract_from_tar(tmp_path):
     assert placed[0].read_bytes() == b"X"
 
 
+def test_validate_7z_part_uses_underlying_archive_suffix(tmp_path):
+    import py7zr
+
+    payload = tmp_path / "payload.txt"
+    payload.write_text("ok", encoding="utf-8")
+    archive = tmp_path / "runtime.7z.part"
+    with py7zr.SevenZipFile(archive, "w") as seven_zip:
+        seven_zip.write(payload, "payload.txt")
+
+    deps._validate_archive(archive)
+
+
 def test_install_unsupported_platform_raises(tmp_path, monkeypatch):
     spec = deps.dependency_for("voxgate")
     monkeypatch.setattr(deps, "asset_for", lambda s: None)
