@@ -3982,6 +3982,12 @@ msgstr ""
 msgid "synth.opt.audio_mode"
 msgstr ""
 
+msgid "synth.opt.bilingual_order"
+msgstr ""
+
+msgid "synth.opt.display_content"
+msgstr ""
+
 msgid "synth.opt.render_mode"
 msgstr ""
 

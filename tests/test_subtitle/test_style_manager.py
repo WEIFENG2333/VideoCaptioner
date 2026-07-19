@@ -62,6 +62,31 @@ def test_builtin_styles_are_typed_and_grouped_by_renderer():
     assert all(isinstance(style.style, RoundedSubtitleStyle) for style in rounded_styles)
 
 
+def test_prefixed_id_wins_over_conflicting_renderer_config():
+    # 配置漂移场景：样式还是 ass/xxx，渲染模式已切到 rounded。
+    # 无 renderer 要求时按前缀解析成功；显式要求另一渲染器时按未命中返回
+    # None（调用方回退默认），而不是在错误列表里找不到导致空样式→乱码。
+    assert load_style("ass/anime") is not None
+    assert load_style("ass/anime", renderer=SubtitleRenderer.ROUNDED) is None
+    assert load_style("ass/anime", renderer=SubtitleRenderer.ASS) is not None
+
+
+def test_synthesis_config_never_uses_empty_style():
+    from videocaptioner.core.application.app_config import AppConfig, SynthesisSettings
+    from videocaptioner.core.application.task_builder import TaskBuilder
+    from videocaptioner.core.entities import SubtitleRenderModeEnum
+
+    config = AppConfig(
+        synthesis=SynthesisSettings(
+            render_mode=SubtitleRenderModeEnum.ROUNDED_BG, style_id="ass/anime"
+        )
+    )
+    synth = TaskBuilder(config).create_synthesis_config()
+    # 渲染管线跟随样式前缀（ass），并且样式串非空
+    assert synth.render_mode == SubtitleRenderModeEnum.ASS_STYLE
+    assert synth.ass_style.strip()
+
+
 def test_load_style_uses_renderer_to_disambiguate_default():
     ass = load_style("default", renderer=SubtitleRenderer.ASS)
     rounded = load_style("default", renderer=SubtitleRenderer.ROUNDED)

@@ -244,6 +244,24 @@ class SubtitleStyleInterface(QWidget):
 
         self._build_ui()
         self._on_mode_changed(self._renderer_key(), initial=True)
+        # 布局与渲染模式也能在合成页/设置弹窗修改：外部变更实时回灌本页控件
+        cfg.subtitle_layout.valueChanged.connect(self._on_external_layout_changed)
+        cfg.subtitle_render_mode.valueChanged.connect(self._on_external_render_mode_changed)
+
+    def _on_external_layout_changed(self, _value=None):
+        if self._loading:
+            return
+        self._loading = True
+        try:
+            self._apply_layout_to_controls(cfg.subtitle_layout.value)
+        finally:
+            self._loading = False
+        self.update_preview()
+
+    def _on_external_render_mode_changed(self, _value=None):
+        key = self._renderer_key()
+        if key != self._mode_key:
+            self._on_mode_changed(key)
 
     # ---------------------------------------------------------------- 构建
 

@@ -43,6 +43,7 @@ from videocaptioner.core.application import output_paths
 from videocaptioner.core.dubbing import get_dubbing_preset
 from videocaptioner.core.entities import (
     DubbingTask,
+    SubtitleLayoutEnum,
     SubtitleRenderModeEnum,
     SupportedSubtitleFormats,
     SupportedVideoFormats,
@@ -121,6 +122,38 @@ def AUDIO_MODE_LABELS() -> dict[str, str]:
         "mix": tr("synth.audio_mode.mix"),
         "duck": tr("synth.audio_mode.duck"),
     }
+
+
+def DISPLAY_CONTENT_LABELS() -> dict[str, str]:
+    return {
+        "bilingual": tr("substyle.content.bilingual"),
+        "source": tr("substyle.content.source"),
+        "target": tr("substyle.content.target"),
+    }
+
+
+def BILINGUAL_ORDER_LABELS() -> dict[SubtitleLayoutEnum, str]:
+    return {
+        SubtitleLayoutEnum.TRANSLATE_ON_TOP: tr("substyle.order.target_top"),
+        SubtitleLayoutEnum.ORIGINAL_ON_TOP: tr("substyle.order.source_top"),
+    }
+
+
+def _split_layout(layout: SubtitleLayoutEnum) -> tuple[str, SubtitleLayoutEnum]:
+    """布局枚举 → (显示内容 key, 双语顺序)。单语时顺序返回缺省（控件隐藏）。"""
+    if layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
+        return "source", SubtitleLayoutEnum.TRANSLATE_ON_TOP
+    if layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
+        return "target", SubtitleLayoutEnum.TRANSLATE_ON_TOP
+    return "bilingual", layout
+
+
+def _join_layout(content: str, order: SubtitleLayoutEnum) -> SubtitleLayoutEnum:
+    if content == "source":
+        return SubtitleLayoutEnum.ONLY_ORIGINAL
+    if content == "target":
+        return SubtitleLayoutEnum.ONLY_TRANSLATE
+    return order
 
 
 def SUBTITLE_MODE_LABELS() -> dict[bool, str]:
@@ -607,6 +640,15 @@ class GeneratePanel(WorkbenchPanel):
         subtitle_layout.addWidget(_section_label(tr("synth.section.subtitle_params"), self))
         self.subtitleModeSelect = PillSelect(self)
         subtitle_layout.addWidget(OptionCard(tr("synth.opt.subtitle_mode"), self.subtitleModeSelect, self))
+        self.displayContentSelect = PillSelect(self)
+        subtitle_layout.addWidget(
+            OptionCard(tr("synth.opt.display_content"), self.displayContentSelect, self)
+        )
+        self.bilingualOrderSelect = PillSelect(self)
+        self.bilingualOrderCard = OptionCard(
+            tr("synth.opt.bilingual_order"), self.bilingualOrderSelect, self
+        )
+        subtitle_layout.addWidget(self.bilingualOrderCard)
         self.styleSwitch = ToggleSwitch(parent=self)
         self.styleCard = OptionCard(tr("synth.opt.subtitle_style"), self.styleSwitch, self)
         subtitle_layout.addWidget(self.styleCard)
@@ -907,6 +949,8 @@ class VideoSynthesisInterface(QWidget):
             lambda checked: self._set_config_bool(cfg.dubbing_enabled, checked)
         )
         panel.subtitleModeSelect.currentTextChanged.connect(self._on_subtitle_mode)
+        panel.displayContentSelect.currentTextChanged.connect(self._on_layout_control)
+        panel.bilingualOrderSelect.currentTextChanged.connect(self._on_layout_control)
         panel.renderModeSelect.currentTextChanged.connect(self._on_render_mode)
         panel.qualitySelect.currentTextChanged.connect(self._on_quality)
         panel.voiceSelect.currentTextChanged.connect(self._on_voice)
@@ -922,6 +966,18 @@ class VideoSynthesisInterface(QWidget):
 
         self._connect_config_signal(cfg.need_video, self._on_outputs_changed)
         self._connect_config_signal(cfg.dubbing_enabled, self._on_outputs_changed)
+        # 同一批参数还出现在设置弹窗与字幕样式页：外部改动实时回灌本页控件
+        for shared in (
+            cfg.soft_subtitle,
+            cfg.subtitle_render_mode,
+            cfg.subtitle_layout,
+            cfg.video_quality,
+            cfg.dubbing_text_track,
+            cfg.dubbing_timing,
+            cfg.dubbing_audio_mode,
+            cfg.dubbing_preset,
+        ):
+            self._connect_config_signal(shared, self._on_shared_config_changed)
 
     def _connect_config_signal(self, option, handler: Callable):
         option.valueChanged.connect(handler)
@@ -946,6 +1002,14 @@ class VideoSynthesisInterface(QWidget):
             list(subtitle_mode_labels.values()),
             subtitle_mode_labels[bool(cfg.soft_subtitle.value)],
         )
+        content_labels = DISPLAY_CONTENT_LABELS()
+        order_labels = BILINGUAL_ORDER_LABELS()
+        content, order = _split_layout(cfg.subtitle_layout.value)
+        panel.displayContentSelect.setItems(
+            list(content_labels.values()), content_labels[content]
+        )
+        panel.bilingualOrderSelect.setItems(list(order_labels.values()), order_labels[order])
+        panel.bilingualOrderCard.setVisible(content == "bilingual")
         panel.renderModeSelect.setItems(
             enum_options(SubtitleRenderModeEnum),
             enum_label(cfg.subtitle_render_mode.value),
@@ -1000,6 +1064,26 @@ class VideoSynthesisInterface(QWidget):
         soft = label == SUBTITLE_MODE_LABELS()[True]
         self._set_config_bool(cfg.soft_subtitle, soft)
         self._refresh_param_locks()
+
+    def _on_shared_config_changed(self, _value=None):
+        self._load_options_from_config()
+
+    def _on_layout_control(self, _label: str):
+        panel = self.generatePanel
+        content_labels = DISPLAY_CONTENT_LABELS()
+        content = next(
+            (k for k, v in content_labels.items() if v == panel.displayContentSelect.currentText()),
+            "bilingual",
+        )
+        order_labels = BILINGUAL_ORDER_LABELS()
+        order = next(
+            (k for k, v in order_labels.items() if v == panel.bilingualOrderSelect.currentText()),
+            SubtitleLayoutEnum.TRANSLATE_ON_TOP,
+        )
+        layout = _join_layout(content, order)
+        panel.bilingualOrderCard.setVisible(content == "bilingual")
+        if cfg.subtitle_layout.value != layout:
+            cfg.set(cfg.subtitle_layout, layout)
 
     def _on_render_mode(self, label: str):
         mode = enum_from_label(SubtitleRenderModeEnum, label)

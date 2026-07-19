@@ -353,8 +353,13 @@ def load_style(
     """
     renderer_hint = renderer if renderer is not None else mode
     wanted_id = normalize_style_id(name, renderer_hint)
-    renderer_filter = normalize_renderer(renderer_hint) if renderer_hint is not None else None
-    candidates = list_styles(styles_dir, renderer_filter)
+    # 样式 id 自带渲染器前缀（ass/rounded），它是唯一真源；renderer 参数
+    # 表达调用方「必须是该渲染器」的要求——与前缀冲突时按未命中处理，
+    # 由调用方回退默认样式，而不是在错误的渲染器列表里查找。
+    prefix_renderer = normalize_renderer(wanted_id.split("/", 1)[0])
+    if renderer_hint is not None and normalize_renderer(renderer_hint) != prefix_renderer:
+        return None
+    candidates = list_styles(styles_dir, prefix_renderer)
 
     # Prefer user styles when the full ID matches, but built-ins are read-only
     # and cannot be overwritten on disk.

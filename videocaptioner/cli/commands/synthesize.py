@@ -66,10 +66,13 @@ def _resolve_style(config: dict, verbose: bool) -> tuple:
             output.hint('Example: --style-override \'{"outline_color": "#ff0000", "font_size": 48}\'')
             return None, None, None, None, None
 
-    # Load base style from preset
+    # Load base style from preset. 样式 id 的渲染器前缀是唯一真源：
+    # 带前缀时渲染管线跟随前缀，render_mode 只给无前缀的名字补默认。
     style_id = normalize_style_id(style_name, render_mode)
-    renderer = SubtitleRenderer.ROUNDED if render_mode == "rounded" else SubtitleRenderer.ASS
-    style = load_style(style_id, renderer=renderer)
+    style = load_style(style_id)
+    if style is not None:
+        render_mode = "rounded" if style.renderer == SubtitleRenderer.ROUNDED else "ass"
+        renderer = style.renderer
     if style is None:
         names = available_style_names()
         output.error(f"Style preset not found: '{style_name}'")

@@ -42,15 +42,17 @@ class TaskBuilder:
         return str(output_paths.new_task_dir(self.config.work_dir or WORK_PATH, source, task_type))
 
     def get_ass_style(self, style_name: Optional[str] = None) -> str:
-        style = load_style(style_name or self.config.subtitle.style_name, renderer=SubtitleRenderer.ASS)
+        wanted = normalize_style_id(style_name or self.config.subtitle.style_name, "ass")
+        style = load_style(wanted, renderer=SubtitleRenderer.ASS) or load_style(
+            "ass/default", renderer=SubtitleRenderer.ASS
+        )
         return style.to_ass_string() if style is not None else ""
 
     def get_rounded_style(self) -> dict:
-        style_id = normalize_style_id(
-            self.config.synthesis.style_id,
-            self.config.synthesis.render_mode.value,
+        wanted = normalize_style_id(self.config.synthesis.style_id, "rounded")
+        style = load_style(wanted, renderer=SubtitleRenderer.ROUNDED) or load_style(
+            "rounded/default", renderer=SubtitleRenderer.ROUNDED
         )
-        style = load_style(style_id, renderer=SubtitleRenderer.ROUNDED)
         return style.to_rounded_dict() if style is not None else {}
 
     def create_transcribe_config(self, *, need_word_timestamp: bool) -> TranscribeConfig:
@@ -179,22 +181,29 @@ class TaskBuilder:
         settings = self.config.synthesis
         subtitle = self.config.subtitle
         hard_subtitle = not settings.soft_subtitle
+        # 样式 id 的渲染器前缀是唯一真源：render_mode 只在 id 无前缀时补默认。
+        # 解析失败回退该渲染器的内置 default——空样式会让 libass 落到无中文
+        # 字形的系统字体，成片直接乱码。
         style_id = normalize_style_id(settings.style_id, settings.render_mode.value)
+        style = load_style(style_id) or load_style(f"{style_id.split('/', 1)[0]}/default")
+        render_mode = (
+            SubtitleRenderModeEnum.ASS_STYLE
+            if style is not None and style.renderer == SubtitleRenderer.ASS
+            else SubtitleRenderModeEnum.ROUNDED_BG
+        )
         ass_style = ""
         ass_line_gap = 0
         rounded_style = None
-        if hard_subtitle:
-            if settings.render_mode == SubtitleRenderModeEnum.ASS_STYLE:
-                style = load_style(style_id, renderer=SubtitleRenderer.ASS)
-                ass_style = style.to_ass_string() if style is not None else ""
-                ass_line_gap = getattr(style.style, "line_gap", 0) if style is not None else 0
+        if hard_subtitle and style is not None:
+            if render_mode == SubtitleRenderModeEnum.ASS_STYLE:
+                ass_style = style.to_ass_string()
+                ass_line_gap = getattr(style.style, "line_gap", 0)
             else:
-                style = load_style(style_id, renderer=SubtitleRenderer.ROUNDED)
-                rounded_style = style.to_rounded_dict() if style is not None else {}
+                rounded_style = style.to_rounded_dict()
         return SynthesisConfig(
             need_video=settings.need_video,
             soft_subtitle=settings.soft_subtitle,
-            render_mode=settings.render_mode,
+            render_mode=render_mode,
             video_quality=settings.video_quality,
             subtitle_layout=subtitle.layout,
             ass_style=ass_style,

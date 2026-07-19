@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 15:58+0800\n"
+"POT-Creation-Date: 2026-07-19 16:22+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hans\n"
@@ -4024,6 +4024,12 @@ msgstr "音色库"
 
 msgid "synth.opt.audio_mode"
 msgstr "音频处理"
+
+msgid "synth.opt.bilingual_order"
+msgstr "双语顺序"
+
+msgid "synth.opt.display_content"
+msgstr "显示内容"
 
 msgid "synth.opt.render_mode"
 msgstr "渲染模式"
