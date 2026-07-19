@@ -97,6 +97,36 @@ def program_download_thread(
     return ArtifactDownloadThread(job, parent)
 
 
+def asset_install_thread(asset, display_name: str, parent=None) -> ArtifactDownloadThread:
+    """下载并安装一个具体资产（压缩包解压 / 单文件落地）到应用 bin 目录。"""
+    from videocaptioner.core.download.dependencies import install_asset
+
+    def job(report, should_cancel) -> str:
+        def on_progress(progress):
+            total = progress.total or getattr(asset, "size_bytes", None)
+            if total:
+                percent = int(progress.received * 100 / total)
+                position = f"{_size_text(progress.received)} / {_size_text(total)}"
+            else:
+                percent = -1
+                position = _size_text(progress.received)
+            report(percent, f"{progress.file_name} · {position}")
+
+        def on_phase(message: str):
+            report(-1, message)
+
+        path = install_asset(
+            asset,
+            display_name,
+            on_progress=on_progress,
+            on_phase=on_phase,
+            should_cancel=should_cancel,
+        )
+        return str(path)
+
+    return ArtifactDownloadThread(job, parent)
+
+
 def dependency_download_thread(
     spec: DependencySpec, parent=None
 ) -> ArtifactDownloadThread:

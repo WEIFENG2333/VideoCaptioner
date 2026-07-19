@@ -53,7 +53,7 @@ def test_faster_whisper_plan_windows_has_direct_download():
     assert plan.download is not None
     assert plan.download.name == "whisper-faster.exe"
     assert plan.download.size_bytes
-    assert plan.link and plan.link.endswith(".7z")
+    assert plan.link  # 引导页兜底
 
 
 def test_faster_whisper_plan_mac_unsupported():
@@ -90,7 +90,10 @@ def test_program_variants_faster_whisper_windows():
     variants = program_variants("faster-whisper", platform="win32")
     assert [v.key for v in variants] == ["cpu", "gpu"]
     assert variants[0].download is not None
-    assert variants[1].link and variants[1].link.endswith(".7z")
+    # GPU 完整包应用内一键安装：7z 压缩包 + 保留目录结构解压
+    assert variants[1].asset is not None
+    assert variants[1].asset.asset.endswith(".7z")
+    assert variants[1].asset.extract == "tree"
     # CPU/GPU 检测名单互不重叠
     assert not set(variants[0].executables) & set(variants[1].executables)
 

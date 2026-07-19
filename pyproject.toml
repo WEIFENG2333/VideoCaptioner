@@ -32,6 +32,8 @@ dependencies = [
     "pillow>=12.2.0",
     "fonttools>=4.63.0",
     "platformdirs>=4.10.0",
+    # Faster-Whisper-XXL 完整包为 .7z，应用内一键安装需要解压支持
+    "py7zr>=0.22.0",
     "tomli>=2.0.0; python_version < '3.11'",
     "PyQt5==5.15.11",
     "PyQt-Fluent-Widgets==1.8.4",

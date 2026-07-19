@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-13 00:45+0800\n"
+"POT-Creation-Date: 2026-07-19 15:58+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hant\n"
@@ -2675,7 +2675,7 @@ msgid "modelmgr.command.copy"
 msgstr "複製指令"
 
 msgid "modelmgr.download.done_body"
-msgstr "{name} 下載完成。"
+msgstr "{name} 已就緒，可以開始轉錄。"
 
 msgid "modelmgr.download.done_title"
 msgstr "模型已就緒"
@@ -2690,13 +2690,13 @@ msgid "modelmgr.footer.open_program_dir"
 msgstr "程式目錄"
 
 msgid "modelmgr.program.available"
-msgstr "可用"
+msgstr "已安裝"
 
 msgid "modelmgr.program.found"
 msgstr "已找到 {name}"
 
 msgid "modelmgr.program.missing"
-msgstr "缺失"
+msgstr "未安裝"
 
 msgid "modelmgr.program.open_page"
 msgstr "開啟頁面"
@@ -2708,7 +2708,7 @@ msgid "modelmgr.program.opened_title"
 msgstr "已在瀏覽器開啟"
 
 msgid "modelmgr.program.ready_body"
-msgstr "可以繼續下載模型。"
+msgstr "現在到下方下載一個模型就能開始轉錄了。"
 
 msgid "modelmgr.program.ready_title"
 msgstr "執行程式已就緒"
@@ -2723,10 +2723,19 @@ msgid "modelmgr.recheck.available_body"
 msgstr "已找到 {name}。"
 
 msgid "modelmgr.recheck.available_title"
-msgstr "執行程式可用"
+msgstr "運行程式已就緒"
+
+msgid "modelmgr.recheck.hint_command"
+msgstr "在終端執行安裝命令，完成後再點「重新檢測」。"
+
+msgid "modelmgr.recheck.hint_download"
+msgstr "點右側「下載」即可一鍵安裝。"
+
+msgid "modelmgr.recheck.hint_link"
+msgstr "從官方頁面下載後，放入下方「程式目錄」。"
 
 msgid "modelmgr.recheck.missing_title"
-msgstr "仍未檢測到"
+msgstr "還沒有找到運行程式"
 
 msgid "modelmgr.remove.body"
 msgstr "將刪除 {name}（{size}），需要時須重新下載。"
@@ -2741,10 +2750,10 @@ msgid "modelmgr.remove.title"
 msgstr "刪除模型"
 
 msgid "modelmgr.section.models"
-msgstr "模型檔案"
+msgstr "第 2 步 · 下載模型（至少一個）"
 
 msgid "modelmgr.section.programs"
-msgstr "執行程式"
+msgstr "第 1 步 · 安裝運行程式（任裝一個）"
 
 msgid "modelmgr.status.downloading"
 msgstr "下載中"
@@ -2756,7 +2765,7 @@ msgid "modelmgr.status.paused"
 msgstr "已暫停"
 
 msgid "modelmgr.status.pending"
-msgstr "待下載"
+msgstr "未下載"
 
 msgid "modelmgr.title"
 msgstr "本地模型管理"

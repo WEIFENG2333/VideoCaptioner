@@ -2695,6 +2695,15 @@ msgstr ""
 msgid "modelmgr.recheck.available_title"
 msgstr ""
 
+msgid "modelmgr.recheck.hint_command"
+msgstr ""
+
+msgid "modelmgr.recheck.hint_download"
+msgstr ""
+
+msgid "modelmgr.recheck.hint_link"
+msgstr ""
+
 msgid "modelmgr.recheck.missing_title"
 msgstr ""
 

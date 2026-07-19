@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QScrollArea,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -61,6 +62,7 @@ from videocaptioner.ui.components.workbench import (
 from videocaptioner.ui.i18n import tr
 from videocaptioner.ui.thread.artifact_download_thread import (
     ArtifactDownloadThread,
+    asset_install_thread,
     model_download_thread,
     program_download_thread,
 )
@@ -245,7 +247,7 @@ class _ProgramRow(QFrame):
             self.descLabel.setText(self.variant.description_missing)
             self.descLabel.setToolTip("")
             self.status.setState(tr("modelmgr.program.missing"), "missing")
-            if self.variant.download is not None:
+            if self.variant.download is not None or self.variant.asset is not None:
                 self.actionButton.setText(tr("modelmgr.action.download"))
                 self.actionButton.setIcon(AppIcon.DOWNLOAD)
                 self.actionButton.show()
@@ -514,7 +516,9 @@ class ModelManagerDialog(AppDialog):
         self.engineTabs.setVisible(len(self._kinds) > 1)
         layout.addWidget(self.engineTabs)
 
-        # 每个引擎一个内容容器
+        # 每个引擎一页，QStackedWidget 取最高页等高，切换页签弹窗高度不跳变
+        self.engineStack = QStackedWidget(card)
+        layout.addWidget(self.engineStack)
         for kind in self._kinds:
             container = QWidget(card)
             column = QVBoxLayout(container)
@@ -572,9 +576,9 @@ class ModelManagerDialog(AppDialog):
             scroll.setFixedHeight(min(len(rows) * 64, 3 * 64 + 32) + 6)
             self._style_scroll(scroll)
             table_layout.addWidget(scroll)
+            column.addStretch(1)
             column.addWidget(table)
-            container.hide()
-            layout.addWidget(container)
+            self.engineStack.addWidget(container)
             self._containers[kind] = container
 
         # 底栏：模型与程序装在不同目录，各给一个直达入口
@@ -667,10 +671,8 @@ class ModelManagerDialog(AppDialog):
 
     def _switch_kind(self, kind: str):
         self._kind = kind
-        for name in self._kinds:
-            self._containers[name].setVisible(name == kind)
+        self.engineStack.setCurrentWidget(self._containers[kind])
         self._refresh_current()
-        self.widget.adjustSize()
 
     def _refresh_current(self):
         models_dir = self._models_dir(self._kind)
@@ -769,7 +771,7 @@ class ModelManagerDialog(AppDialog):
             return
         if self._busy:
             return
-        if variant.download is not None:
+        if variant.download is not None or variant.asset is not None:
             self._start_program_download(variant, row)
         elif variant.link:
             QDesktopServices.openUrl(QUrl(variant.link))
@@ -784,15 +786,22 @@ class ModelManagerDialog(AppDialog):
                 tr("modelmgr.recheck.available_body", name=status.name or row.variant.title),
             )
         else:
-            self._warn(
-                tr("modelmgr.recheck.missing_title"),
-                row.variant.description_missing,
-            )
+            variant = row.variant
+            if variant.download is not None or variant.asset is not None:
+                hint = tr("modelmgr.recheck.hint_download")
+            elif variant.command:
+                hint = tr("modelmgr.recheck.hint_command")
+            else:
+                hint = tr("modelmgr.recheck.hint_link")
+            self._warn(tr("modelmgr.recheck.missing_title"), hint)
 
     def _start_program_download(self, variant: ProgramVariant, row: _ProgramRow | None):
-        if variant.download is None or row is None:
+        if row is None or (variant.download is None and variant.asset is None):
             return
-        thread = program_download_thread(variant.download, Path(BIN_PATH), self)
+        if variant.asset is not None:
+            thread = asset_install_thread(variant.asset, variant.title, self)
+        else:
+            thread = program_download_thread(variant.download, Path(BIN_PATH), self)
         self._thread = thread
         self._active_program = row
         row.showDownloading()

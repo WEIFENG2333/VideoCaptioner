@@ -102,6 +102,51 @@ def prepare_ffmpeg() -> None:
         print(f"Bundled {dst.relative_to(ROOT)}")
 
 
+def prepare_whisper_cpp() -> None:
+    """Bundle the official whisper.cpp CPU build into runtime resources (Windows only).
+
+    本地转录开箱即用：桌面包自带 whisper-cli（BLAS CPU 版，~20MB），用户装好
+    模型即可转录；GPU 版仍走应用内「管理模型」一键下载。固定 tag + sha256 可复现。
+    """
+    if platform.system() != "Windows":
+        return
+    import hashlib
+    import io
+    import urllib.request
+    import zipfile
+
+    url = (
+        "https://github.com/ggml-org/whisper.cpp/releases/download/"
+        "v1.9.1/whisper-blas-bin-x64.zip"
+    )
+    sha256 = "3c319eab3e87f85883e1ff3d14426c0a1986c661c5eb5985e8af431ed9c4f71f"
+    runtime_bin = RUNTIME_DIR / "resource" / "bin"
+    runtime_bin.mkdir(parents=True, exist_ok=True)
+    if (runtime_bin / "whisper-cli.exe").exists():
+        print("whisper-cli.exe already prepared")
+        return
+
+    cache = BUILD_DIR / "whisper-cpp" / Path(url).name
+    if not cache.exists():
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Downloading {url}")
+        with urllib.request.urlopen(url, timeout=300) as resp:
+            data = resp.read()
+        cache.write_bytes(data)
+    digest = hashlib.sha256(cache.read_bytes()).hexdigest()
+    if digest != sha256:
+        cache.unlink(missing_ok=True)
+        raise RuntimeError(f"whisper.cpp checksum mismatch: {digest}")
+
+    wanted_exe = "whisper-cli.exe"
+    with zipfile.ZipFile(io.BytesIO(cache.read_bytes())) as zf:
+        for info in zf.infolist():
+            base = Path(info.filename).name
+            if base == wanted_exe or (base.endswith(".dll") and base != "SDL2.dll"):
+                (runtime_bin / base).write_bytes(zf.read(info))
+    print(f"Bundled whisper-cli.exe into {runtime_bin.relative_to(ROOT)}")
+
+
 def prepare_macsysaudio() -> None:
     """Build the macOS system-audio helper (ScreenCaptureKit) into runtime resources.
 
@@ -231,6 +276,7 @@ def main() -> int:
         clean()
     ensure_version_file(version)
     prepare_ffmpeg()
+    prepare_whisper_cpp()
     prepare_macsysaudio()
     build_pyinstaller()
     verify_bundle()

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-13 00:45+0800\n"
+"POT-Creation-Date: 2026-07-19 15:58+0800\n"
 "PO-Revision-Date: 2026-06-21 23:08+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -2778,7 +2778,7 @@ msgid "modelmgr.command.copy"
 msgstr "Copy Command"
 
 msgid "modelmgr.download.done_body"
-msgstr "{name} download complete."
+msgstr "{name} is ready to use."
 
 msgid "modelmgr.download.done_title"
 msgstr "Model ready"
@@ -2793,13 +2793,13 @@ msgid "modelmgr.footer.open_program_dir"
 msgstr "Programs Folder"
 
 msgid "modelmgr.program.available"
-msgstr "Available"
+msgstr "Installed"
 
 msgid "modelmgr.program.found"
 msgstr "Found {name}"
 
 msgid "modelmgr.program.missing"
-msgstr "Missing"
+msgstr "Not installed"
 
 msgid "modelmgr.program.open_page"
 msgstr "Open page"
@@ -2811,7 +2811,7 @@ msgid "modelmgr.program.opened_title"
 msgstr "Opened in browser"
 
 msgid "modelmgr.program.ready_body"
-msgstr "You can continue downloading the model."
+msgstr "Now grab a model below and you're ready to transcribe."
 
 msgid "modelmgr.program.ready_title"
 msgstr "Runtime is ready"
@@ -2826,10 +2826,21 @@ msgid "modelmgr.recheck.available_body"
 msgstr "Found {name}."
 
 msgid "modelmgr.recheck.available_title"
-msgstr "Runtime available"
+msgstr "Runtime ready"
+
+msgid "modelmgr.recheck.hint_command"
+msgstr "Run the install command in a terminal, then hit Re-detect."
+
+msgid "modelmgr.recheck.hint_download"
+msgstr "Click Download on the right to install it in one step."
+
+msgid "modelmgr.recheck.hint_link"
+msgstr ""
+"Download it from the official page and drop it into the Programs folder "
+"below."
 
 msgid "modelmgr.recheck.missing_title"
-msgstr "Still not detected"
+msgstr "Runtime not found yet"
 
 msgid "modelmgr.remove.body"
 msgstr ""
@@ -2846,10 +2857,10 @@ msgid "modelmgr.remove.title"
 msgstr "Delete model"
 
 msgid "modelmgr.section.models"
-msgstr "Model file"
+msgstr "Step 2 · Download a model (at least one)"
 
 msgid "modelmgr.section.programs"
-msgstr "Runtime"
+msgstr "Step 1 · Install a runtime (either one)"
 
 msgid "modelmgr.status.downloading"
 msgstr "Downloading"
@@ -2861,7 +2872,7 @@ msgid "modelmgr.status.paused"
 msgstr "Paused"
 
 msgid "modelmgr.status.pending"
-msgstr "Pending download"
+msgstr "Not downloaded"
 
 msgid "modelmgr.title"
 msgstr "Local Model Management"

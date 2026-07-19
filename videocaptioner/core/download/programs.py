@@ -16,6 +16,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from videocaptioner.core.download.dependencies import DependencyAsset
 from videocaptioner.core.download.models import KIND_FASTER_WHISPER, KIND_WHISPER_CPP, ModelFile
 
 WHISPER_CPP_EXECUTABLES = ("whisper-cli", "whisper-cpp", "whisper", "whisper-cpp-main")
@@ -31,13 +32,43 @@ _EXECUTABLES = {
     KIND_FASTER_WHISPER: FASTER_WHISPER_EXECUTABLES,
 }
 
-WHISPER_CPP_RELEASES_URL = "https://github.com/ggerganov/whisper.cpp/releases"
-FASTER_WHISPER_XXL_7Z_URL = (
-    "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/"
-    "Faster-Whisper-XXL_r245.2_windows.7z"
+WHISPER_CPP_RELEASES_URL = "https://github.com/ggml-org/whisper.cpp/releases"
+_WHISPER_CPP_REPO = "ggml-org/whisper.cpp"
+_WHISPER_CPP_TAG = "v1.9.1"
+
+# 官方预编译包（sha256 来自 release 页）。CPU 用 BLAS 加速版；GPU 用 CUDA 12.4 版。
+WHISPER_CPP_CPU_ASSET = DependencyAsset(
+    asset="whisper-blas-bin-x64.zip",
+    executables=("whisper-cli.exe",),
+    archive=True,
+    sha256="3c319eab3e87f85883e1ff3d14426c0a1986c661c5eb5985e8af431ed9c4f71f",
+    size_bytes=20_800_000,
+    repo=_WHISPER_CPP_REPO,
+    tag=_WHISPER_CPP_TAG,
+)
+WHISPER_CPP_GPU_ASSET = DependencyAsset(
+    asset="whisper-cublas-12.4.0-bin-x64.zip",
+    executables=("whisper-cli.exe",),
+    archive=True,
+    sha256="106a2030eff8998e4ef320fe72e263a78449e9040386ee27c41ea80b001b601b",
+    size_bytes=677_000_000,
+    repo=_WHISPER_CPP_REPO,
+    tag=_WHISPER_CPP_TAG,
+)
+# Faster-Whisper-XXL 完整包：exe 依赖同级 _xxl_data 目录，须保留目录结构解压
+FASTER_WHISPER_XXL_ASSET = DependencyAsset(
+    asset="Faster-Whisper-XXL_r245.2_windows.7z",
+    executables=(r"Faster-Whisper-XXLaster-whisper-xxl.exe",),
+    archive=True,
+    extract="tree",
+    size_bytes=1_400_000_000,
+    urls_override=(
+        "https://modelscope.cn/models/bkfengg/whisper-cpp/resolve/master/"
+        "Faster-Whisper-XXL_r245.2_windows.7z",
+    ),
 )
 
-# Windows CPU 版单文件程序（88.4 MB，2026-06-11 实测 Content-Range）
+# Windows CPU 版单文件程序（88.4 MB）
 _FASTER_WHISPER_CPU_EXE = ModelFile(
     name="whisper-faster.exe",
     urls=(
@@ -68,6 +99,7 @@ class ProgramVariant:
     executables: tuple[str, ...]
     command: str | None = None
     download: ModelFile | None = None
+    asset: DependencyAsset | None = None
     link: str | None = None
 
     def detect(self, extra_dirs: tuple[Path, ...] | None = None) -> ProgramStatus:
@@ -120,8 +152,8 @@ def program_variants(kind: str, platform: str | None = None) -> tuple[ProgramVar
                 ProgramVariant(
                     key="default",
                     title="Whisper CPP 程序",
-                    description_missing="未找到本地运行程序",
-                    description_ready="可执行文件已找到",
+                    description_missing="在终端执行右侧命令安装，装好后点「重新检测」",
+                    description_ready="运行程序已就绪",
                     executables=WHISPER_CPP_EXECUTABLES,
                     command="brew install whisper-cpp",
                     link=WHISPER_CPP_RELEASES_URL,
@@ -129,12 +161,20 @@ def program_variants(kind: str, platform: str | None = None) -> tuple[ProgramVar
             )
         return (
             ProgramVariant(
-                key="default",
-                title="Whisper CPP 程序",
-                description_missing="未找到本地运行程序，可从官方页面下载",
-                description_ready="可执行文件已找到",
+                key="cpu",
+                title="CPU 版",
+                description_missing="通用版本，无需显卡，约 20 MB",
+                description_ready="运行程序已就绪",
                 executables=WHISPER_CPP_EXECUTABLES,
-                link=WHISPER_CPP_RELEASES_URL,
+                asset=WHISPER_CPP_CPU_ASSET,
+            ),
+            ProgramVariant(
+                key="gpu",
+                title="GPU 版",
+                description_missing="需 NVIDIA 显卡，转录更快，约 650 MB",
+                description_ready="运行程序已就绪",
+                executables=WHISPER_CPP_EXECUTABLES,
+                asset=WHISPER_CPP_GPU_ASSET,
             ),
         )
     if kind == KIND_FASTER_WHISPER:
@@ -144,18 +184,18 @@ def program_variants(kind: str, platform: str | None = None) -> tuple[ProgramVar
             ProgramVariant(
                 key="cpu",
                 title="CPU 版",
-                description_missing="没有独立显卡也能用，安装最简单",
-                description_ready="可执行文件已找到",
+                description_missing="通用版本，无需显卡，约 88 MB",
+                description_ready="运行程序已就绪",
                 executables=("whisper-faster",),
                 download=_FASTER_WHISPER_CPU_EXE,
             ),
             ProgramVariant(
                 key="gpu",
                 title="GPU 版",
-                description_missing="有 NVIDIA 显卡时选择，长视频更快",
-                description_ready="已检测到，可用于长视频转录",
+                description_missing="需 NVIDIA 显卡，长视频更快，完整包约 1.4 GB",
+                description_ready="运行程序已就绪",
                 executables=("faster-whisper-xxl", "faster-whisper", "faster_whisper"),
-                link=FASTER_WHISPER_XXL_7Z_URL,
+                asset=FASTER_WHISPER_XXL_ASSET,
             ),
         )
     raise ValueError(f"unknown program kind: {kind}")
@@ -172,7 +212,8 @@ def program_install_plan(kind: str, platform: str | None = None) -> ProgramInsta
             )
         if plat.startswith("win"):
             return ProgramInstallPlan(
-                summary="下载官方预编译包，解压到任意 PATH 目录或应用 bin 目录。",
+                summary="在「设置 → 转录配置 → 管理模型」里一键下载 CPU 或 GPU 版。",
+                download=None,
                 link=WHISPER_CPP_RELEASES_URL,
             )
         return ProgramInstallPlan(
@@ -182,9 +223,9 @@ def program_install_plan(kind: str, platform: str | None = None) -> ProgramInsta
     if kind == KIND_FASTER_WHISPER:
         if plat.startswith("win"):
             return ProgramInstallPlan(
-                summary="可直接下载 CPU 版程序；需要 GPU 加速请手动下载 XXL 完整包。",
+                summary="在「设置 → 转录配置 → 管理模型」里一键下载 CPU 或 GPU 版。",
                 download=_FASTER_WHISPER_CPU_EXE,
-                link=FASTER_WHISPER_XXL_7Z_URL,
+                link=WHISPER_CPP_RELEASES_URL,
             )
         return ProgramInstallPlan(
             summary="Faster Whisper 独立程序仅支持 Windows，当前系统请改用 WhisperCpp。",

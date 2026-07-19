@@ -81,16 +81,20 @@ class DependencyAsset:
     """某依赖在某平台的下载件。"""
 
     asset: str  # release 资产名（也是 _gh_urls 的输入）
-    executables: tuple[str, ...]  # 安装后应落到 BIN_PATH 的可执行文件名（用于检测/解压匹配）
+    executables: tuple[str, ...]  # 主可执行文件（可含相对子路径，用于检测/解压匹配）
     archive: bool = False  # True=压缩包（解压取出可执行+随附动态库）；False=裸二进制（重命名落地）
+    extract: str = "flat"  # flat=按 basename 取 exe+动态库；tree=保留目录结构全量解压
     sha1: Optional[str] = None
     sha256: Optional[str] = None
     size_bytes: Optional[int] = None
     repo: str = _MAIN_REPO  # 资产所在仓库
     tag: str = "latest"  # release tag；latest=取最新
+    urls_override: tuple[str, ...] = ()  # 非空则直接用这些地址（非 GitHub 资产）
 
     @property
     def urls(self) -> tuple[str, ...]:
+        if self.urls_override:
+            return self.urls_override
         return _gh_urls(self.repo, self.tag, self.asset)
 
 
@@ -282,7 +286,26 @@ def install_dependency(
     asset = asset_for(spec)
     if asset is None:
         raise DependencyUnsupported(f"{spec.display_name} 暂无适用于当前系统的预编译件")
+    return install_asset(
+        asset,
+        spec.display_name,
+        on_progress=on_progress,
+        on_phase=on_phase,
+        should_cancel=should_cancel,
+        bin_dir=bin_dir,
+    )
 
+
+def install_asset(
+    asset: DependencyAsset,
+    display_name: str,
+    *,
+    on_progress: Optional[ProgressCallback] = None,
+    on_phase: Optional[PhaseCallback] = None,
+    should_cancel: Optional[CancelCheck] = None,
+    bin_dir: Optional[Path] = None,
+) -> Path:
+    """下载并安装一个具体资产到 ``bin_dir``（默认 BIN_PATH），返回主可执行文件路径。"""
     bin_path = Path(bin_dir) if bin_dir is not None else Path(BIN_PATH)
     bin_path.mkdir(parents=True, exist_ok=True)
     cache_dir = Path(CACHE_PATH) / "deps"
@@ -301,11 +324,14 @@ def install_dependency(
     if asset.archive:
         if on_phase is not None:
             on_phase("正在解压…")
-        placed = _extract_runtime_files(download_dest, asset.executables, bin_path)
+        if asset.extract == "tree":
+            placed = _extract_tree(download_dest, bin_path)
+        else:
+            placed = _extract_runtime_files(download_dest, asset.executables, bin_path)
         download_dest.unlink(missing_ok=True)  # 解压完删压缩包，省空间
         main = bin_path / asset.executables[0]
-        if main not in placed:
-            raise RuntimeError(f"{spec.display_name} 安装失败：压缩包里没有 {asset.executables[0]}")
+        if not main.exists():
+            raise RuntimeError(f"{display_name} 安装失败：压缩包里没有 {asset.executables[0]}")
     else:
         main = bin_path / asset.executables[0]
         os.replace(download_dest, main)
@@ -314,7 +340,7 @@ def install_dependency(
     # 给可执行文件补 +x（动态库不必，但 chmod 也无害）
     for path in placed:
         _make_executable(path)
-    logger.info("%s 已安装：%s", spec.display_name, ", ".join(p.name for p in placed))
+    logger.info("%s 已安装：%s", display_name, f"{len(placed)} 个文件")
     return main
 
 
@@ -326,8 +352,35 @@ def _is_shared_lib(name: str) -> bool:
 
 def _validate_archive(path: Path) -> None:
     """压缩包验真：失效镜像会以 HTTP 200 返回 HTML 错误页，必须当场识破换下一个镜像。"""
+    if path.suffix.lower() == ".7z":
+        import py7zr
+
+        if not py7zr.is_7zfile(path):
+            raise DownloadError(f"{path.name}: 下载内容不是有效压缩包（镜像可能已失效）")
+        return
     if not (zipfile.is_zipfile(path) or tarfile.is_tarfile(path)):
         raise DownloadError(f"{path.name}: 下载内容不是有效压缩包（镜像可能已失效）")
+
+
+def _extract_tree(archive: Path, dest_dir: Path) -> list[Path]:
+    """全量解压并保留目录结构（Faster-Whisper-XXL 等 exe 依赖同级数据目录的包）。"""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    if archive.suffix.lower() == ".7z":
+        import py7zr
+
+        with py7zr.SevenZipFile(archive) as sz:
+            names = sz.getnames()
+            sz.extractall(dest_dir)
+        return [dest_dir / n for n in names]
+    if zipfile.is_zipfile(archive):
+        with zipfile.ZipFile(archive) as zf:
+            zf.extractall(dest_dir)
+            return [dest_dir / i.filename for i in zf.infolist() if not i.is_dir()]
+    if tarfile.is_tarfile(archive):
+        with tarfile.open(archive) as tf:
+            tf.extractall(dest_dir)
+            return [dest_dir / m.name for m in tf.getmembers() if m.isfile()]
+    raise RuntimeError(f"无法识别的压缩格式：{archive.name}")
 
 
 def _extract_runtime_files(archive: Path, executables: tuple[str, ...], dest_dir: Path) -> list[Path]:

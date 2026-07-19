@@ -13,9 +13,17 @@ qfluent MessageBox；确认返回 1，取消/Esc/关闭返回 0。
 
 from __future__ import annotations
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QEasingCurve, QPropertyAnimation, Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QDialog,
+    QFrame,
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from videocaptioner.ui.common.app_icons import AppIcon
@@ -90,6 +98,29 @@ class AppDialog(MaskDialogBase):
         self.cardLayout.addLayout(self.footerLayout)
 
         self.syncStyle()
+
+    # MaskDialogBase 的整窗淡入会逐帧重栅格整个卡片+阴影（大卡片 ~9ms/帧），
+    # 表现为弹窗「卡一下才出来」。只淡遮罩（纯色矩形），卡片即时出现。
+    def showEvent(self, event):  # noqa: N802
+        QDialog.showEvent(self, event)
+        self._fade_mask(0.0, 1.0, 140)
+
+    def done(self, code):  # noqa: N802
+        self._fade_mask(1.0, 0.0, 100, on_finish=lambda: QDialog.done(self, code))
+
+    def _fade_mask(self, start: float, end: float, duration: int, on_finish=None) -> None:
+        effect = QGraphicsOpacityEffect(self.windowMask)
+        self.windowMask.setGraphicsEffect(effect)
+        animation = QPropertyAnimation(effect, b"opacity", self)
+        animation.setStartValue(start)
+        animation.setEndValue(end)
+        animation.setDuration(duration)
+        animation.setEasingCurve(QEasingCurve.OutCubic)
+        animation.finished.connect(lambda: self.windowMask.setGraphicsEffect(None))
+        if on_finish is not None:
+            animation.finished.connect(on_finish)
+        animation.start()
+        self._mask_animation = animation  # 持引用，防动画被回收中断
 
     # ------------------------------------------------------------- helpers
 

@@ -153,6 +153,18 @@ a = Analysis(
 
 a.binaries = [entry for entry in a.binaries if _keep_binary(entry)]
 
+# Windows 的 exe/快捷方式图标须嵌进 PE：从 logo.png 生成多尺寸 ico
+_icon_file = None
+if sys.platform == "win32":
+    from PIL import Image as _Image
+
+    _icon_file = ROOT / "build" / "appicon.ico"
+    _icon_file.parent.mkdir(parents=True, exist_ok=True)
+    _Image.open(ROOT / "resource" / "assets" / "logo.png").save(
+        _icon_file,
+        sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
+    )
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
@@ -172,6 +184,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=str(_icon_file) if _icon_file else None,
 )
 
 coll = COLLECT(
