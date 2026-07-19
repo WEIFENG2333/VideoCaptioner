@@ -3,6 +3,8 @@
 import pytest
 
 from videocaptioner.cli import exit_codes as EXIT
+from videocaptioner.cli import validators
+from videocaptioner.cli.commands import doctor
 from videocaptioner.cli.commands.process import _resolve_final_output_path
 from videocaptioner.cli.main import main
 
@@ -11,6 +13,7 @@ class TestMainParser:
     def test_no_args_tries_gui(self, monkeypatch):
         # No args: tries to launch GUI. Mock GUI import to avoid opening it in tests.
         import builtins
+
         original_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
@@ -71,6 +74,22 @@ class TestTranscribeParser:
             main(["transcribe", "test.mp4", "--asr", "invalid"])
         assert exc.value.code == 2
 
+    def test_sensevoice_options_are_accepted(self):
+        result = main(
+            [
+                "transcribe",
+                "/nonexistent/file.mp4",
+                "--asr",
+                "sensevoice",
+                "--sensevoice-model",
+                "iic/SenseVoiceSmall",
+                "--sensevoice-device",
+                "cpu",
+            ]
+        )
+
+        assert result == EXIT.FILE_NOT_FOUND
+
     def test_file_not_found(self):
         assert main(["transcribe", "/nonexistent/file.mp4"]) == EXIT.FILE_NOT_FOUND
 
@@ -118,28 +137,34 @@ class TestSynthesizeParser:
 
 class TestProcessParser:
     def test_dub_options_parse_with_missing_input(self):
-        result = main([
-            "process",
-            "/no/video.mp4",
-            "--dub-only",
-            "--dub-provider",
-            "siliconflow",
-            "--dub-preset",
-            "siliconflow-cn-female",
-            "--tts-model",
-            "FunAudioLLM/CosyVoice2-0.5B",
-            "--voice",
-            "FunAudioLLM/CosyVoice2-0.5B:anna",
-        ])
+        result = main(
+            [
+                "process",
+                "/no/video.mp4",
+                "--dub-only",
+                "--dub-provider",
+                "siliconflow",
+                "--dub-preset",
+                "siliconflow-cn-female",
+                "--tts-model",
+                "FunAudioLLM/CosyVoice2-0.5B",
+                "--voice",
+                "FunAudioLLM/CosyVoice2-0.5B:anna",
+            ]
+        )
         assert result == EXIT.FILE_NOT_FOUND
 
     def test_process_dub_final_output_defaults_to_dubbed_captioned(self, tmp_path):
-        result = _resolve_final_output_path(None, tmp_path, tmp_path / "talk.mp4", True, False, False)
+        result = _resolve_final_output_path(
+            None, tmp_path, tmp_path / "talk.mp4", True, False, False
+        )
 
         assert result.endswith("talk_dubbed_captioned.mp4")
 
     def test_process_dub_only_uses_user_output_file(self, tmp_path):
-        result = _resolve_final_output_path(str(tmp_path / "final.mp4"), tmp_path, tmp_path / "talk.mp4", True, True, False)
+        result = _resolve_final_output_path(
+            str(tmp_path / "final.mp4"), tmp_path, tmp_path / "talk.mp4", True, True, False
+        )
 
         assert result.endswith("final.mp4")
 
@@ -182,18 +207,20 @@ class TestDubParser:
         ref = tmp_path / "ref.wav"
         ref.write_bytes(b"not real audio")
 
-        result = main([
-            "dub",
-            str(srt),
-            "--preset",
-            "gemini-en-friendly",
-            "--tts-api-key",
-            "test-key",
-            "--clone-audio",
-            str(ref),
-            "--clone-text",
-            "Hello",
-        ])
+        result = main(
+            [
+                "dub",
+                str(srt),
+                "--preset",
+                "gemini-en-friendly",
+                "--tts-api-key",
+                "test-key",
+                "--clone-audio",
+                str(ref),
+                "--clone-text",
+                "Hello",
+            ]
+        )
 
         assert result == EXIT.USAGE_ERROR
 
@@ -203,16 +230,18 @@ class TestDubParser:
         ref = tmp_path / "ref.wav"
         ref.write_bytes(b"not real audio")
 
-        result = main([
-            "dub",
-            str(srt),
-            "--preset",
-            "edge-cn-female",
-            "--clone-audio",
-            str(ref),
-            "--clone-text",
-            "Hello",
-        ])
+        result = main(
+            [
+                "dub",
+                str(srt),
+                "--preset",
+                "edge-cn-female",
+                "--clone-audio",
+                str(ref),
+                "--clone-text",
+                "Hello",
+            ]
+        )
 
         assert result == EXIT.USAGE_ERROR
 
@@ -250,7 +279,9 @@ class TestConfigParser:
         assert "config.toml" in out
 
     def test_init_print_template(self, capsys):
-        result = main(["config", "init", "--non-interactive", "--print-template", "--profile", "dubbing"])
+        result = main(
+            ["config", "init", "--non-interactive", "--print-template", "--profile", "dubbing"]
+        )
         assert result == EXIT.SUCCESS
         out = capsys.readouterr().out
         assert "[dubbing]" in out
@@ -272,3 +303,30 @@ class TestDoctorParser:
         out = capsys.readouterr().out
         assert "--json" in out
         assert "--check-api" in out
+
+
+class TestSenseVoiceDependencies:
+    def test_preflight_reports_all_missing_runtime_packages(self, monkeypatch, capsys):
+        monkeypatch.setattr(
+            validators.importlib.util,
+            "find_spec",
+            lambda name: object() if name == "funasr" else None,
+        )
+
+        assert validators.validate_sensevoice() is False
+        captured = capsys.readouterr()
+        assert "torch, torchaudio" in captured.out + captured.err
+
+    def test_doctor_reports_all_missing_runtime_packages(self, monkeypatch):
+        monkeypatch.setattr(
+            validators.importlib.util,
+            "find_spec",
+            lambda name: object() if name == "funasr" else None,
+        )
+
+        checks = doctor._check_transcribe({"transcribe": {"asr": "sensevoice"}})
+
+        dependency_checks = [check for check in checks if check.name == "sensevoice.dependencies"]
+        assert len(dependency_checks) == 1
+        assert dependency_checks[0].status == "error"
+        assert "torch, torchaudio" in dependency_checks[0].message

@@ -130,6 +130,26 @@ class TestConfigRoundtrip:
         assert loaded["subtitle"]["thread_num"] == 8
         assert loaded["subtitle"]["optimize"] is False
 
+    def test_sensevoice_settings_save_and_load(self, tmp_path):
+        config_file = tmp_path / "config.toml"
+
+        save_config_value(
+            "transcribe.sensevoice.model",
+            "iic/SenseVoiceSmall",
+            config_path=config_file,
+        )
+        save_config_value(
+            "transcribe.sensevoice.device",
+            "cpu",
+            config_path=config_file,
+        )
+
+        loaded = load_config_file(config_file)
+        assert loaded["transcribe"]["sensevoice"] == {
+            "model": "iic/SenseVoiceSmall",
+            "device": "cpu",
+        }
+
 
 class TestBuildConfig:
     def test_defaults_only(self):
@@ -162,3 +182,14 @@ class TestBuildConfig:
         assert overrides["dubbing"]["tts_workers"] == 3
         assert overrides["dubbing"]["rewrite_too_long"] is True
         assert overrides["dubbing"]["mix_original_audio"] is False
+
+    def test_sensevoice_env_overrides(self, monkeypatch):
+        monkeypatch.setenv("VIDEOCAPTIONER_SENSEVOICE_MODEL", "iic/SenseVoiceSmall")
+        monkeypatch.setenv("VIDEOCAPTIONER_SENSEVOICE_DEVICE", "cpu")
+
+        overrides = load_env_overrides()
+
+        assert overrides["transcribe"]["sensevoice"] == {
+            "model": "iic/SenseVoiceSmall",
+            "device": "cpu",
+        }

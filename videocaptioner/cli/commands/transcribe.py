@@ -44,6 +44,7 @@ def run(args: Namespace, config: dict) -> int:
 
     # Validate output format
     from videocaptioner.cli.validators import validate_output_format
+
     err = validate_output_format(Path(output_path))
     if err is not None:
         return err
@@ -82,6 +83,7 @@ def run(args: Namespace, config: dict) -> int:
         "bijian": TranscribeModelEnum.BIJIAN,
         "jianying": TranscribeModelEnum.JIANYING,
         "whisper-cpp": TranscribeModelEnum.WHISPER_CPP,
+        "sensevoice": TranscribeModelEnum.SENSEVOICE,
     }
 
     # Map CLI string values to enums
@@ -117,8 +119,10 @@ def run(args: Namespace, config: dict) -> int:
         whisper_api_base=get(config, "whisper_api.api_base", ""),
         whisper_api_model=get(config, "whisper_api.model", "whisper-1"),
         whisper_api_prompt=get(config, "whisper_api.prompt", ""),
+        # SenseVoice options
+        sensevoice_model=get(config, "transcribe.sensevoice.model", "iic/SenseVoiceSmall"),
+        sensevoice_device=get(config, "transcribe.sensevoice.device", "auto"),
     )
-
 
     # Progress callback
     progress = None if quiet else output.ProgressLine(f"Transcribing [{asr_engine}]").start()
@@ -130,6 +134,7 @@ def run(args: Namespace, config: dict) -> int:
     try:
         # Auto-convert video to audio if needed
         from videocaptioner.cli.validators import AUDIO_EXTENSIONS
+
         audio_path = str(input_path)
         temp_audio = None
 
@@ -145,6 +150,7 @@ def run(args: Namespace, config: dict) -> int:
             import tempfile
 
             from videocaptioner.core.utils.video_utils import video2audio
+
             temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             temp_audio.close()
             if not video2audio(str(input_path), output=temp_audio.name):
@@ -157,6 +163,7 @@ def run(args: Namespace, config: dict) -> int:
             audio_path = temp_audio.name
 
         from videocaptioner.core.asr import transcribe
+
         asr_data = transcribe(audio_path, transcribe_config, callback=callback)
 
         # Save output
@@ -164,7 +171,9 @@ def run(args: Namespace, config: dict) -> int:
 
         if progress:
             n = len(asr_data.segments)
-            progress.finish(f"Transcription complete -> {output_path} ({n} segment{'' if n == 1 else 's'})")
+            progress.finish(
+                f"Transcription complete -> {output_path} ({n} segment{'' if n == 1 else 's'})"
+            )
         if quiet:
             print(output_path)
         return EXIT.SUCCESS
@@ -177,6 +186,7 @@ def run(args: Namespace, config: dict) -> int:
             output.error(msg)
         if verbose:
             import traceback
+
             traceback.print_exc()
         return EXIT.RUNTIME_ERROR
     finally:

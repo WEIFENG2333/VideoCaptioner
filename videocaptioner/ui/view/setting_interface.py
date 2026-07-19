@@ -481,11 +481,30 @@ class SettingInterface(ScrollArea):
             self.transcribeGroup,
         )
 
+        self.senseVoiceModelCard = LineEditSettingCard(
+            cfg.sensevoice_model,
+            FIF.ROBOT,  # type: ignore
+            self.tr("SenseVoice 模型"),
+            self.tr("输入 FunASR 模型名称或本地路径"),
+            "iic/SenseVoiceSmall",
+            self.transcribeGroup,
+        )
+        self.senseVoiceDeviceCard = ComboBoxSettingCard(
+            cfg.sensevoice_device,
+            FIF.SPEED_HIGH,
+            self.tr("SenseVoice 设备"),
+            self.tr("选择本地推理设备"),
+            texts=["auto", "cuda", "cpu", "mps"],
+            parent=self.transcribeGroup,
+        )
+
         # 默认隐藏 Whisper API 配置卡片（仅在选择 Whisper API 时显示）
         self.whisperApiBaseCard.setVisible(False)
         self.whisperApiKeyCard.setVisible(False)
         self.whisperApiModelCard.setVisible(False)
         self.checkWhisperConnectionCard.setVisible(False)
+        self.senseVoiceModelCard.setVisible(False)
+        self.senseVoiceDeviceCard.setVisible(False)
 
     def __createTranslateServiceCards(self):
         """创建翻译服务相关的配置卡片"""
@@ -602,6 +621,8 @@ class SettingInterface(ScrollArea):
         self.transcribeGroup.addSettingCard(self.whisperApiKeyCard)
         self.transcribeGroup.addSettingCard(self.whisperApiModelCard)
         self.transcribeGroup.addSettingCard(self.checkWhisperConnectionCard)
+        self.transcribeGroup.addSettingCard(self.senseVoiceModelCard)
+        self.transcribeGroup.addSettingCard(self.senseVoiceDeviceCard)
 
         # 添加LLM配置卡片
         self.llmGroup.addSettingCard(self.llmServiceCard)
@@ -897,6 +918,11 @@ class SettingInterface(ScrollArea):
         is_whisper_api = model_name == TranscribeModelEnum.WHISPER_API.value
         for card in whisper_api_cards:
             card.setVisible(is_whisper_api)
+
+        sensevoice_cards = [self.senseVoiceModelCard, self.senseVoiceDeviceCard]
+        is_sensevoice = model_name == TranscribeModelEnum.SENSEVOICE.value
+        for card in sensevoice_cards:
+            card.setVisible(is_sensevoice)
 
         # 更新布局
         self.transcribeGroup.adjustSize()

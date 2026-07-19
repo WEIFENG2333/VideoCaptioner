@@ -42,6 +42,8 @@ ENV_MAP: Dict[str, str] = {
     "VIDEOCAPTIONER_LLM_MODEL": "llm.model",
     "VIDEOCAPTIONER_WHISPER_API_KEY": "whisper_api.api_key",
     "VIDEOCAPTIONER_WHISPER_API_BASE": "whisper_api.api_base",
+    "VIDEOCAPTIONER_SENSEVOICE_MODEL": "transcribe.sensevoice.model",
+    "VIDEOCAPTIONER_SENSEVOICE_DEVICE": "transcribe.sensevoice.device",
     "VIDEOCAPTIONER_DEEPLX_ENDPOINT": "translate.deeplx_endpoint",
     "VIDEOCAPTIONER_TARGET_LANG": "translate.target_language",
     "VIDEOCAPTIONER_DUBBING_PROVIDER": "dubbing.provider",
@@ -87,6 +89,10 @@ DEFAULTS: Dict[str, Any] = {
         },
         "whisper_cpp": {
             "model": "large-v2",
+        },
+        "sensevoice": {
+            "model": "iic/SenseVoiceSmall",
+            "device": "auto",
         },
     },
     "subtitle": {
@@ -183,6 +189,7 @@ def load_config_file(path: Optional[Path] = None) -> dict:
             return tomllib.load(f)
     except Exception as e:
         import sys
+
         print(f"! Warning: Failed to parse config file {path}: {e}", file=sys.stderr)
         print("  Run 'videocaptioner config init' to recreate it.", file=sys.stderr)
         return {}
@@ -298,12 +305,13 @@ def _toml_value(value: Any) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, str):
-        escaped = (value
-            .replace("\\", "\\\\")
+        escaped = (
+            value.replace("\\", "\\\\")
             .replace('"', '\\"')
             .replace("\n", "\\n")
             .replace("\r", "\\r")
-            .replace("\t", "\\t"))
+            .replace("\t", "\\t")
+        )
         return f'"{escaped}"'
     return f'"{value!s}"'
 

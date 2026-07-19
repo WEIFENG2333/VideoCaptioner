@@ -2,6 +2,7 @@
 跨平台工具函数
 """
 
+import importlib.util
 import logging
 import os
 import platform
@@ -10,6 +11,8 @@ import subprocess
 from videocaptioner.core.entities import TranscribeModelEnum
 
 logger = logging.getLogger(__name__)
+
+SENSEVOICE_RUNTIME_DEPENDENCIES = ("funasr", "torch", "torchaudio")
 
 
 def open_folder(path):
@@ -130,20 +133,12 @@ def get_available_transcribe_models() -> list[TranscribeModelEnum]:
     """
     获取当前平台可用的转录模型列表
 
-    macOS 上不支持 FasterWhisper，因为它依赖 CUDA/CuDNN
+    macOS 上不支持 FasterWhisper；SenseVoice 需要完整的可选运行时依赖。
 
     Returns:
         list[TranscribeModelEnum]: 可用的转录模型列表
     """
-    all_models = list(TranscribeModelEnum)
-
-    # macOS 上过滤掉 FasterWhisper
-    if is_macos():
-        return [
-            model for model in all_models if model != TranscribeModelEnum.FASTER_WHISPER
-        ]
-
-    return all_models
+    return [model for model in TranscribeModelEnum if is_model_available(model)]
 
 
 def is_model_available(model: TranscribeModelEnum) -> bool:
@@ -156,8 +151,12 @@ def is_model_available(model: TranscribeModelEnum) -> bool:
     Returns:
         bool: 如果模型可用返回 True，否则返回 False
     """
-    # FasterWhisper 在 macOS 上不可用
     if is_macos() and model == TranscribeModelEnum.FASTER_WHISPER:
         return False
+
+    if model == TranscribeModelEnum.SENSEVOICE:
+        return all(
+            importlib.util.find_spec(name) is not None for name in SENSEVOICE_RUNTIME_DEPENDENCIES
+        )
 
     return True
