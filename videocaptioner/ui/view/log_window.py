@@ -52,7 +52,7 @@ class LogWindow(QWidget):
         # 获取日志文件路径并打开文件
         self.log_path = LOG_PATH / "app.log"
         try:
-            self.log_file = open(self.log_path, "r", encoding="utf-8")
+            self.log_file = open(self.log_path, "rb")
             self.load_last_lines(20480)
             self.log_text.moveCursor(QTextCursor.End)
             self.log_text.insertPlainText(
@@ -62,17 +62,12 @@ class LogWindow(QWidget):
             self.log_file = None
             self.log_text.setPlainText(tr("logwin.error.open_failed", error=str(e)))
 
-        # 添加文件大小跟踪
-        self.last_position = self.log_file.tell()
-        self.max_lines = 100  # 最多显示100行
-
-        self.auto_scroll = True  # 添加自动滚动标志
+        self.last_position = self.log_file.tell() if self.log_file else 0
+        self.auto_scroll = True
 
         # 监听滚动条变化
         self.log_text.verticalScrollBar().valueChanged.connect(self.on_scroll_changed)
 
-        # # 初始加载日志
-        # self.update_log()
 
     def load_last_lines(self, read_size):
         """加载文件最后的内容
@@ -80,21 +75,13 @@ class LogWindow(QWidget):
             read_size: 要读取的字节数，比如102400表示读取最后100KB
         """
         try:
-            # 移动到文件末尾
+            # 只读末尾一段：全量读取在无轮转的大日志上会卡住打开
             self.log_file.seek(0, 2)
             file_size = self.log_file.tell()
-
-            # 向前读取指定大小或整个文件
-            read_size = min(read_size, file_size)
-
-            # 从文件开头读取以确保不会破坏UTF-8编码
-            self.log_file.seek(0)
-            content = self.log_file.read()
-
-            # 只保留最后一部分内容
-            if len(content) > read_size:
-                content = content[-read_size:]
-                # 找到第一个完整的行
+            start = max(0, file_size - read_size)
+            self.log_file.seek(start)
+            content = self.log_file.read().decode("utf-8", errors="replace")
+            if start > 0:
                 newline_pos = content.find("\n")
                 if newline_pos != -1:
                     content = content[newline_pos + 1 :]
@@ -149,17 +136,11 @@ class LogWindow(QWidget):
         try:
             # 移动到上次读取的位置
             self.log_file.seek(self.last_position)
-            new_content = self.log_file.read()
+            new_content = self.log_file.read().decode("utf-8", errors="replace")
 
             if new_content:
-                # 按行分割内容
-                lines = new_content.splitlines(True)  # keepends=True 保留换行符
-                for line in lines:
-                    self.log_text.moveCursor(QTextCursor.End)
-                    self.log_text.insertPlainText(line)
-                    # time.sleep(0.02)
-                    self.log_text.repaint()
-
+                self.log_text.moveCursor(QTextCursor.End)
+                self.log_text.insertPlainText(new_content)
                 self.last_position = self.log_file.tell()
 
                 if self.auto_scroll:
