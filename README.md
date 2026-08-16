@@ -143,4 +143,4 @@ uv run pytest tests/test_cli/ -q      # 运行测试
 
 [GPL-3.0](LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=WEIFENG2333/VideoCaptioner&type=Date)](https://star-history.com/#WEIFENG2333/VideoCaptioner&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=WEIFENG2333/VideoCaptioner&type=Date)](https://star-history.dera.page/#WEIFENG2333/VideoCaptioner&Date)
