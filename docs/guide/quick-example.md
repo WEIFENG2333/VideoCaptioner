@@ -323,9 +323,7 @@ VideoCaptioner 使用**反思翻译**技术，每句字幕都经过两次优化�
 
 掌握了基本流程后，你可以：
 
-- 🎨 [自定义字幕样式](./subtitle-style.md) - 打造独特风格
-- ⚙️ [调整高级参数](./advanced-settings.md) - 进一步提升质量
-- 🚀 [批量处理视频](./batch-processing.md) - 提高工作效率
+- ⚙️ [调整高级参数](./configuration.md) - 进一步提升质量
 - 📖 [查看完整文档](./getting-started.md) - 了解所有功能
 
 ---

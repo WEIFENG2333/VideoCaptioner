@@ -149,6 +149,4 @@ VideoCaptioner 使用 [yt-dlp](https://github.com/yt-dlp/yt-dlp) 作为下载引
 
 配置完成后，你可以：
 
-- 查看 [快速开始指南](./getting-started.md) 下载并处理视频
-- 了解 [批量处理功能](./batch-processing.md) 处理多个视频
-- 探索 [视频下载技巧](./video-download.md)
+- 查看 [快速开始指南](./getting-started.md) 下载并处理视频，了解批量处理功能

@@ -169,6 +169,4 @@ SiliconCloud 对并发请求有限制，建议将 **线程数** 设置为 **5 �
 
 配置完成后，你可以：
 
-- 查看 [快速开始指南](./getting-started.md) 处理你的第一个视频
-- 了解 [字幕优化功能](./subtitle-optimization.md)
-- 探索 [批量处理功能](./batch-processing.md)
+- 查看 [快速开始指南](./getting-started.md) 处理你的第一个视频，了解字幕优化与批量处理功能
