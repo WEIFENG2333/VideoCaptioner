@@ -1,5 +1,6 @@
 import datetime
 import tempfile
+import threading
 from pathlib import Path
 
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -7,6 +8,10 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from videocaptioner.core.asr.asr_data import ASRData
 from videocaptioner.core.entities import SynthesisTask
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.subprocess_helper import (
+    SynthesisCancelled,
+    remove_partial_output,
+)
 from videocaptioner.core.utils.video_utils import add_subtitles, add_subtitles_with_style
 
 logger = setup_logger("video_synthesis_thread")
@@ -16,17 +21,28 @@ class VideoSynthesisThread(QThread):
     finished = pyqtSignal(SynthesisTask)
     progress = pyqtSignal(int, str)
     error = pyqtSignal(str)
+    cancelled = pyqtSignal()
 
     def __init__(self, task: SynthesisTask):
         super().__init__()
         self.task = task
+        self._cancel_event = threading.Event()
         logger.debug(f"初始化 VideoSynthesisThread，任务: {self.task}")
 
+    def cancel(self) -> None:
+        """Request cancellation of the running synthesis process."""
+        logger.info("收到取消合成请求")
+        self._cancel_event.set()
+
     def run(self):
+        output_path = self.task.output_path
         try:
             self.task.started_at = datetime.datetime.now()
             config = self.task.synthesis_config
             logger.info(f"\n{config.print_config()}")
+
+            if self._cancel_event.is_set():
+                raise SynthesisCancelled("合成已取消")
 
             video_file = self.task.video_path
             subtitle_file = self.task.subtitle_path
@@ -77,6 +93,7 @@ class VideoSynthesisThread(QThread):
                         preset=preset,
                         soft_subtitle=True,
                         progress_callback=self.progress_callback,
+                        check_cancel_callback=self._cancel_event.is_set,
                     )
                 finally:
                     Path(temp_srt_path).unlink(missing_ok=True)
@@ -94,12 +111,22 @@ class VideoSynthesisThread(QThread):
                     crf=crf,
                     preset=preset,
                     progress_callback=self.progress_callback,
+                    check_cancel_callback=self._cancel_event.is_set,
                 )
+
+            if self._cancel_event.is_set():
+                raise SynthesisCancelled("合成已取消")
 
             self.progress.emit(100, self.tr("合成完成"))
             logger.info(f"视频合成完成，保存路径: {output_path}")
             self.finished.emit(self.task)
 
+        except SynthesisCancelled:
+            logger.info("视频合成已取消")
+            if output_path:
+                remove_partial_output(output_path)
+            self.progress.emit(0, self.tr("已取消合成"))
+            self.cancelled.emit()
         except Exception as e:
             logger.exception(f"视频合成失败: {e}")
             self.error.emit(str(e))

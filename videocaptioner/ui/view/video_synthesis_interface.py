@@ -126,8 +126,11 @@ class VideoSynthesisInterface(QWidget):
         self.status_label = BodyLabel(self.tr("就绪"), self)
         self.status_label.setMinimumWidth(100)  # 设置最小宽度
         self.status_label.setAlignment(Qt.AlignCenter)  # type: ignore  # 设置文本居中对齐
+        self.cancel_button = PushButton(self.tr("取消"), self, icon=FIF.CANCEL)
+        self.cancel_button.hide()
         self.bottom_layout.addWidget(self.progress_bar, 1)  # 进度条使用剩余空间
         self.bottom_layout.addWidget(self.status_label)  # 状态标签使用固定宽度
+        self.bottom_layout.addWidget(self.cancel_button)
         self.main_layout.addLayout(self.bottom_layout)
 
     def _setup_command_bar(self):
@@ -263,6 +266,7 @@ class VideoSynthesisInterface(QWidget):
         self.synthesize_button.clicked.connect(
             lambda: self.start_video_synthesis(need_create_task=True)
         )
+        self.cancel_button.clicked.connect(self.cancel_synthesis)
 
         # 全局 signalBus
         signalBus.soft_subtitle_changed.connect(self.on_soft_subtitle_changed)
@@ -474,6 +478,9 @@ class VideoSynthesisInterface(QWidget):
             self.subtitle_input.setText(self.task.subtitle_path)
 
     def start_video_synthesis(self, need_create_task=True):
+        if hasattr(self, "video_synthesis_thread") and self.video_synthesis_thread.isRunning():
+            return
+
         self.synthesize_button.setEnabled(False)
         self.progress_bar.resume()
         self.progress_bar.reset()
@@ -489,15 +496,23 @@ class VideoSynthesisInterface(QWidget):
                 self.on_video_synthesis_progress
             )
             self.video_synthesis_thread.error.connect(self.on_video_synthesis_error)
+            self.video_synthesis_thread.cancelled.connect(
+                self.on_video_synthesis_cancelled
+            )
+            self.cancel_button.setEnabled(True)
+            self.cancel_button.show()
             self.video_synthesis_thread.start()
         else:
             self.synthesize_button.setEnabled(True)
+            self.cancel_button.hide()
 
     def process(self):
         self.start_video_synthesis(need_create_task=False)
 
     def on_video_synthesis_finished(self, task):
         self.synthesize_button.setEnabled(True)
+        self.cancel_button.hide()
+        self.cancel_button.setEnabled(True)
         self.progress_bar.setValue(100)
         self.open_video_folder()
         InfoBar.success(
@@ -512,8 +527,33 @@ class VideoSynthesisInterface(QWidget):
         self.progress_bar.setValue(progress)
         self.status_label.setText(message)
 
+    def cancel_synthesis(self):
+        """Cancel the running video synthesis."""
+        thread = getattr(self, "video_synthesis_thread", None)
+        if thread and thread.isRunning():
+            self.cancel_button.setEnabled(False)
+            self.status_label.setText(self.tr("正在取消…"))
+            thread.cancel()
+
+    def on_video_synthesis_cancelled(self):
+        """Handle completion of a cancellation request."""
+        self.synthesize_button.setEnabled(True)
+        self.cancel_button.hide()
+        self.cancel_button.setEnabled(True)
+        self.progress_bar.setValue(0)
+        self.status_label.setText(self.tr("已取消合成"))
+        InfoBar.warning(
+            self.tr("已取消"),
+            self.tr("视频合成已取消"),
+            duration=INFOBAR_DURATION_WARNING,
+            position=InfoBarPosition.TOP,
+            parent=self,
+        )
+
     def on_video_synthesis_error(self, error):
         self.synthesize_button.setEnabled(True)
+        self.cancel_button.hide()
+        self.cancel_button.setEnabled(True)
         self.progress_bar.error()
         InfoBar.error(
             self.tr("错误"),

@@ -12,6 +12,11 @@ from PIL import Image
 from videocaptioner.config import CACHE_PATH, FONTS_PATH, RESOURCE_PATH
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.subprocess_helper import (
+    SynthesisCancelled,
+    remove_partial_output,
+    run_process_with_cancellation,
+)
 
 from .ass_utils import auto_wrap_ass_file
 
@@ -250,6 +255,7 @@ def render_ass_video(
     crf: int = 23,
     preset: str = "medium",
     progress_callback: Optional[Callable] = None,
+    check_cancel_callback: Optional[Callable[[], bool]] = None,
     reference_height: int = 720,
 ) -> None:
     """
@@ -269,6 +275,8 @@ def render_ass_video(
     # 检查字幕数据是否为空
     if not asr_data or not asr_data.segments:
         raise ValueError("Empty subtitle data, cannot render video")
+    if check_cancel_callback and check_cancel_callback():
+        raise SynthesisCancelled("合成已取消")
 
     # 获取视频分辨率
     width, height = _get_video_resolution(video_path)
@@ -341,79 +349,63 @@ def render_ass_video(
         logger.debug(f"FFmpeg ASS render cmd: {cmd_str}")
 
         # 执行 FFmpeg
-        process = None
+        total_duration = None
+        current_time = 0
+
+        def handle_stderr(line: str) -> None:
+            nonlocal total_duration, current_time
+            if not progress_callback:
+                return
+
+            if total_duration is None:
+                duration_match = re.search(
+                    r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", line
+                )
+                if duration_match:
+                    h, m, s = map(float, duration_match.groups())
+                    total_duration = h * 3600 + m * 60 + s
+
+            time_match = re.search(
+                r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", line
+            )
+            if time_match:
+                h, m, s = map(float, time_match.groups())
+                current_time = h * 3600 + m * 60 + s
+
+            if total_duration:
+                progress = (current_time / total_duration) * 100
+                progress_callback(f"{round(progress)}", "正在合成")
+
         try:
-            process = subprocess.Popen(
+            return_code, error_info = run_process_with_cancellation(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
+                check_cancel_callback=check_cancel_callback,
+                stderr_handler=handle_stderr,
                 creationflags=(
                     getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
                 ),
             )
-
-            # 实时Reading输出并调用回调
-            total_duration = None
-            current_time = 0
-
-            while True:
-                output_line = process.stderr.readline()
-                if not output_line or (process.poll() is not None):
-                    break
-                if not progress_callback:
-                    continue
-
-                # 解析总时长
-                if total_duration is None:
-                    duration_match = re.search(
-                        r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                    )
-                    if duration_match:
-                        h, m, s = map(float, duration_match.groups())
-                        total_duration = h * 3600 + m * 60 + s
-
-                # 解析当前处理时间
-                time_match = re.search(
-                    r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                )
-                if time_match:
-                    h, m, s = map(float, time_match.groups())
-                    current_time = h * 3600 + m * 60 + s
-
-                # 计算进度百分比
-                if total_duration:
-                    progress = (current_time / total_duration) * 100
-                    progress_callback(f"{round(progress)}", "正在合成")
-
-            if progress_callback:
-                progress_callback("100", "合成完成")
-
-            # 检查Return code
-            return_code = process.wait()
+            if check_cancel_callback and check_cancel_callback():
+                raise SynthesisCancelled("合成已取消")
             if return_code != 0:
-                error_info = process.stderr.read()
                 logger.error("FFmpeg ASS rendering failed")
                 logger.error(f"Return code: {return_code}")
                 logger.error(f"Command: {cmd_str}")
                 if error_info:
                     logger.error(f"Error output: {error_info}")
-                raise Exception(f"FFmpeg Return code: {return_code}")
+                remove_partial_output(output_path)
+                raise RuntimeError(f"FFmpeg Return code: {return_code}")
+            if progress_callback:
+                progress_callback("100", "合成完成")
 
             logger.debug("ASS subtitle rendering complete")
 
-        except subprocess.SubprocessError as e:
-            logger.error("FFmpeg process error")
-            logger.error(f"Error: {str(e)}")
-            if process and process.poll() is None:
-                process.kill()
+        except SynthesisCancelled:
+            remove_partial_output(output_path)
             raise
         except Exception as e:
             logger.error(f"ASS subtitle rendering error: {str(e)}")
-            if process and process.poll() is None:
-                process.kill()
+            remove_partial_output(output_path)
             raise
 
     finally:
