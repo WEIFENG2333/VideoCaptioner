@@ -17,6 +17,11 @@ from ..subtitle.ass_renderer import render_ass_video
 from ..subtitle.ass_utils import auto_wrap_ass_file
 from ..subtitle.rounded_renderer import render_rounded_video
 from ..utils.logger import setup_logger
+from ..utils.subprocess_helper import (
+    SynthesisCancelled,
+    remove_partial_output,
+    run_process_with_cancellation,
+)
 
 if TYPE_CHECKING:
     from videocaptioner.core.asr.asr_data import ASRData
@@ -189,9 +194,13 @@ def add_subtitles(
     vcodec: str = "libx264",
     soft_subtitle: bool = False,
     progress_callback: Optional[Callable] = None,
+    check_cancel_callback: Optional[Callable[[], bool]] = None,
 ) -> None:
     assert Path(input_file).is_file(), "输入文件不存在"
     assert Path(subtitle_file).is_file(), "字幕文件不存在"
+
+    if check_cancel_callback and check_cancel_callback():
+        raise SynthesisCancelled("合成已取消")
 
     # 使用临时文件上下文管理器处理字幕（自动清理）
     with temporary_subtitle_file(subtitle_file) as temp_subtitle_path:
@@ -225,28 +234,27 @@ def add_subtitles(
             ]
             logger.debug(f"FFmpeg soft subtitle cmd: {' '.join(cmd)}")
             try:
-                subprocess.run(
+                return_code, error_info = run_process_with_cancellation(
                     cmd,
-                    capture_output=True,
-                    check=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
+                    check_cancel_callback=check_cancel_callback,
                     creationflags=(
                         getattr(subprocess, "CREATE_NO_WINDOW", 0)
                         if os.name == "nt"
                         else 0
                     ),
                 )
+                if check_cancel_callback and check_cancel_callback():
+                    raise SynthesisCancelled("合成已取消")
+                if return_code != 0:
+                    logger.error("FFmpeg soft subtitle failed")
+                    logger.error(f"Return code: {return_code}")
+                    if error_info:
+                        logger.error(f"Error output: {error_info}")
+                    remove_partial_output(output)
+                    raise RuntimeError(f"FFmpeg Return code: {return_code}")
                 logger.debug("Soft subtitle added")
-            except subprocess.CalledProcessError as e:
-                logger.error("FFmpeg soft subtitle failed")
-                logger.error(f"Return code: {e.returncode}")
-                logger.error(f"Command: {' '.join(e.cmd)}")
-                if e.stdout:
-                    logger.error(f"stdout: {e.stdout}")
-                if e.stderr:
-                    logger.error(f"stderr: {e.stderr}")
+            except SynthesisCancelled:
+                remove_partial_output(output)
                 raise
         else:
             # 使用硬字幕
@@ -292,80 +300,65 @@ def add_subtitles(
             cmd_str = subprocess.list2cmdline(cmd)
             logger.debug(f"FFmpeg hard subtitle cmd: {cmd_str}")
 
-            process = None
+            total_duration = None
+            current_time = 0
+
+            def handle_stderr(line: str) -> None:
+                nonlocal total_duration, current_time
+                if not progress_callback:
+                    return
+
+                if total_duration is None:
+                    duration_match = re.search(
+                        r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", line
+                    )
+                    if duration_match:
+                        h, m, s = map(float, duration_match.groups())
+                        total_duration = h * 3600 + m * 60 + s
+                        logger.debug(f"Video duration: {total_duration}秒")
+
+                time_match = re.search(
+                    r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", line
+                )
+                if time_match:
+                    h, m, s = map(float, time_match.groups())
+                    current_time = h * 3600 + m * 60 + s
+
+                if total_duration:
+                    progress = (current_time / total_duration) * 100
+                    progress_callback(f"{round(progress)}", "正在合成")
+
             try:
-                process = subprocess.Popen(
+                return_code, error_info = run_process_with_cancellation(
                     cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
+                    check_cancel_callback=check_cancel_callback,
+                    stderr_handler=handle_stderr,
                     creationflags=(
                         getattr(subprocess, "CREATE_NO_WINDOW", 0)
                         if os.name == "nt"
                         else 0
                     ),
                 )
-
-                # 实时Reading输出并调用回调函数
-                total_duration = None
-                current_time = 0
-
-                while True:
-                    output_line = process.stderr.readline()
-                    if not output_line or (process.poll() is not None):
-                        break
-                    if not progress_callback:
-                        continue
-
-                    if total_duration is None:
-                        duration_match = re.search(
-                            r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                        )
-                        if duration_match:
-                            h, m, s = map(float, duration_match.groups())
-                            total_duration = h * 3600 + m * 60 + s
-                            logger.debug(f"Video duration: {total_duration}秒")
-
-                    # 解析当前处理时间
-                    time_match = re.search(
-                        r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})", output_line
-                    )
-                    if time_match:
-                        h, m, s = map(float, time_match.groups())
-                        current_time = h * 3600 + m * 60 + s
-
-                    # 计算进度百分比
-                    if total_duration:
-                        progress = (current_time / total_duration) * 100
-                        progress_callback(f"{round(progress)}", "正在合成")
-
-                if progress_callback:
-                    progress_callback("100", "合成完成")
-
-                # 检查进程的Return code
-                return_code = process.wait()
+                if check_cancel_callback and check_cancel_callback():
+                    raise SynthesisCancelled("合成已取消")
                 if return_code != 0:
-                    error_info = process.stderr.read()
                     logger.error("FFmpeg hard subtitle failed")
                     logger.error(f"Return code: {return_code}")
                     logger.error(f"Command: {cmd_str}")
                     if error_info:
                         logger.error(f"Error output: {error_info}")
-                    raise Exception(f"FFmpeg Return code: {return_code}")
+                    remove_partial_output(output)
+                    raise RuntimeError(f"FFmpeg Return code: {return_code}")
+                if progress_callback:
+                    progress_callback("100", "合成完成")
                 logger.debug("Video synthesis complete")
 
-            except subprocess.SubprocessError as e:
-                logger.error("FFmpeg process error")
-                logger.error(f"Error: {str(e)}")
-                if process and process.poll() is None:
-                    process.kill()
+            except SynthesisCancelled:
+                remove_partial_output(output)
                 raise
             except Exception as e:
                 logger.error(f"视频合成过程出错: {str(e)}")
-                if process and process.poll() is None:
-                    process.kill()
+                remove_partial_output(output)
                 raise
 
 
@@ -536,6 +529,7 @@ def add_subtitles_with_style(
     crf: int = 23,
     preset: PresetType = "medium",
     progress_callback: Optional[Callable] = None,
+    check_cancel_callback: Optional[Callable[[], bool]] = None,
 ) -> None:
     """
     根据渲染模式选择合成方式
@@ -564,6 +558,7 @@ def add_subtitles_with_style(
             crf=crf,
             preset=preset,
             progress_callback=progress_callback,
+            check_cancel_callback=check_cancel_callback,
         )
     else:
         # ASS 样式模式
@@ -576,4 +571,5 @@ def add_subtitles_with_style(
             crf=crf,
             preset=preset,
             progress_callback=progress_callback,
+            check_cancel_callback=check_cancel_callback,
         )

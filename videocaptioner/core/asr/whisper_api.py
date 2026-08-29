@@ -1,3 +1,6 @@
+import os
+import subprocess
+import tempfile
 from typing import Any, Callable, List, Optional, Union
 
 from openai import OpenAI
@@ -9,6 +12,7 @@ from .asr_data import ASRDataSeg
 from .base import BaseASR
 
 logger = setup_logger("whisper_api")
+MAX_UPLOAD_BYTES = 24 * 1024 * 1024
 
 
 class WhisperAPI(BaseASR):
@@ -88,6 +92,7 @@ class WhisperAPI(BaseASR):
 
     def _submit(self) -> dict:
         """Submit audio for transcription."""
+        temp_path = None
         try:
             if self.language == "zh" and not self.prompt:
                 self.prompt = "你好，我们需要使用简体中文，以下是普通话的句子"
@@ -95,10 +100,70 @@ class WhisperAPI(BaseASR):
             if not self.base_url:
                 raise ValueError("Whisper BASE_URL must be set")
 
+            audio_binary = self.file_binary or b""
+            if len(audio_binary) > MAX_UPLOAD_BYTES:
+                logger.info(
+                    "音频过大 (%d 字节)，使用 ffmpeg 压缩后上传...", len(audio_binary)
+                )
+                with tempfile.NamedTemporaryFile(
+                    suffix=".mp3", prefix="VideoCaptioner_whisper_", delete=False
+                ) as temp_file:
+                    temp_path = temp_file.name
+
+                cmd = ["ffmpeg", "-y"]
+                input_data = None
+                if isinstance(self.audio_input, str):
+                    cmd.extend(["-i", self.audio_input])
+                else:
+                    # Raw bytes do not carry a filename, so let ffmpeg probe stdin.
+                    cmd.extend(["-i", "pipe:0"])
+                    input_data = audio_binary
+                cmd.extend(
+                    [
+                        "-vn",
+                        "-ac",
+                        "1",
+                        "-ar",
+                        "16000",
+                        "-b:a",
+                        "32k",
+                        "-f",
+                        "mp3",
+                        temp_path,
+                    ]
+                )
+
+                result = subprocess.run(
+                    cmd,
+                    input=input_data,
+                    capture_output=True,
+                    creationflags=(
+                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                        if os.name == "nt"
+                        else 0
+                    ),
+                )
+                if (
+                    result.returncode != 0
+                    or not os.path.isfile(temp_path)
+                    or os.path.getsize(temp_path) == 0
+                ):
+                    raw_stderr = result.stderr or b""
+                    stderr = (
+                        raw_stderr.decode(errors="replace")
+                        if isinstance(raw_stderr, bytes)
+                        else str(raw_stderr)
+                    )
+                    raise RuntimeError(f"ffmpeg 压缩音频失败: {stderr}")
+
+                with open(temp_path, "rb") as compressed_file:
+                    audio_binary = compressed_file.read()
+                logger.info("压缩后音频大小: %d 字节", len(audio_binary))
+
             api_kwargs: dict[str, Any] = {
                 "model": self.model,
                 "response_format": "verbose_json",
-                "file": ("audio.mp3", self.file_binary or b"", "audio/mp3"),
+                "file": ("audio.mp3", audio_binary, "audio/mp3"),
                 "prompt": self.prompt,
                 "timestamp_granularities": ["word", "segment"],
             }
@@ -115,3 +180,9 @@ class WhisperAPI(BaseASR):
         except Exception:
             logger.exception("WhisperAPI failed")
             raise
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    logger.warning("无法删除 WhisperAPI 临时音频: %s", temp_path)

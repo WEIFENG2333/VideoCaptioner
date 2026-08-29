@@ -12,6 +12,11 @@ from PIL import Image, ImageDraw
 
 from videocaptioner.core.entities import SubtitleLayoutEnum
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.core.utils.subprocess_helper import (
+    SynthesisCancelled,
+    remove_partial_output,
+    run_process_with_cancellation,
+)
 
 from .font_utils import FontType, get_font
 from .styles import RoundedBgStyle
@@ -274,6 +279,7 @@ def render_rounded_video(
     crf: int = 23,
     preset: str = "medium",
     progress_callback: Optional[Callable] = None,
+    check_cancel_callback: Optional[Callable[[], bool]] = None,
     reference_height: int = 720,
 ) -> None:
     """
@@ -296,6 +302,8 @@ def render_rounded_video(
     # 检查字幕数据
     if not asr_data or not asr_data.segments:
         raise ValueError("Empty subtitle data, cannot render video")
+    if check_cancel_callback and check_cancel_callback():
+        raise SynthesisCancelled("合成已取消")
 
     # 检查布局合理性
     if layout == SubtitleLayoutEnum.ONLY_TRANSLATE:
@@ -343,6 +351,9 @@ def render_rounded_video(
         subtitle_frames = []
 
         for i, seg in enumerate(asr_data.segments):
+            if check_cancel_callback and check_cancel_callback():
+                raise SynthesisCancelled("合成已取消")
+
             # 根据布局确定主副文本
             if layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
                 primary, secondary = seg.text, ""
@@ -378,6 +389,10 @@ def render_rounded_video(
         total_batches = (len(subtitle_frames) + BATCH_SIZE - 1) // BATCH_SIZE
 
         for batch_idx in range(total_batches):
+            if check_cancel_callback and check_cancel_callback():
+                remove_partial_output(output_path)
+                raise SynthesisCancelled("合成已取消")
+
             start_idx = batch_idx * BATCH_SIZE
             end_idx = min((batch_idx + 1) * BATCH_SIZE, len(subtitle_frames))
             batch_frames = subtitle_frames[start_idx:end_idx]
@@ -436,19 +451,27 @@ def render_rounded_video(
                 cmd_str = subprocess.list2cmdline(cmd)
                 logger.debug(f"FFmpeg cmd: {cmd_str}")
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-                ),
-            )
+            try:
+                return_code, error_info = run_process_with_cancellation(
+                    cmd,
+                    check_cancel_callback=check_cancel_callback,
+                    creationflags=(
+                        getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                        if os.name == "nt"
+                        else 0
+                    ),
+                )
+            except SynthesisCancelled:
+                remove_partial_output(output_path)
+                raise
 
-            if result.returncode != 0:
-                logger.error(f"批次 {batch_idx + 1} 失败: {result.stderr}")
+            if check_cancel_callback and check_cancel_callback():
+                remove_partial_output(output_path)
+                raise SynthesisCancelled("合成已取消")
+
+            if return_code != 0:
+                logger.error(f"批次 {batch_idx + 1} 失败: {error_info}")
+                remove_partial_output(output_path)
                 raise RuntimeError(f"Subtitle processing failed（批次 {batch_idx + 1}）")
 
             # 更新进度 (30-100%)
@@ -458,5 +481,9 @@ def render_rounded_video(
 
             # 更新当前视频
             current_video = str(batch_output)
+
+        if check_cancel_callback and check_cancel_callback():
+            remove_partial_output(output_path)
+            raise SynthesisCancelled("合成已取消")
 
         logger.debug("Video synthesis complete")

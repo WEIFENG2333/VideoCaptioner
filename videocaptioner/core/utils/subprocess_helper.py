@@ -3,11 +3,16 @@
 import queue
 import subprocess
 import threading
+from pathlib import Path
 from typing import Callable, Optional, Tuple
 
 from ..utils.logger import setup_logger
 
 logger = setup_logger("subprocess_helper")
+
+
+class SynthesisCancelled(Exception):
+    """Raised when a video synthesis process is cancelled by the user."""
 
 
 class StreamReader:
@@ -85,6 +90,106 @@ class StreamReader:
     def is_empty(self) -> bool:
         """检查队列是否为空"""
         return self.output_queue.empty()
+
+
+def stop_process(process: subprocess.Popen, timeout: int = 3) -> None:
+    """Stop a child process gracefully, then force-kill it if necessary."""
+    if process.poll() is not None:
+        return
+
+    try:
+        process.terminate()
+    except OSError:
+        return
+
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        logger.warning("子进程未在限时内退出，强制结束进程")
+        try:
+            process.kill()
+        except OSError:
+            return
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            logger.warning("强制结束子进程超时")
+
+
+def remove_partial_output(output: str) -> None:
+    """Remove a file left behind by a cancelled or failed process."""
+    try:
+        output_path = Path(output)
+        if output_path.exists():
+            output_path.unlink()
+            logger.info("已删除未完成的输出文件: %s", output)
+    except OSError as exc:
+        logger.warning("删除未完成的输出文件失败: %s", exc)
+
+
+def run_process_with_cancellation(
+    cmd: list,
+    check_cancel_callback: Optional[Callable[[], bool]] = None,
+    stdout_handler: Optional[Callable[[str], None]] = None,
+    stderr_handler: Optional[Callable[[str], None]] = None,
+    poll_interval: float = 0.1,
+    **popen_kwargs,
+) -> Tuple[int, str]:
+    """Run a process while keeping its pipes drained and honoring cancellation.
+
+    Returns:
+        A tuple containing the return code and captured stderr text.
+
+    Raises:
+        SynthesisCancelled: If ``check_cancel_callback`` requests cancellation.
+    """
+    default_kwargs = {
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "text": True,
+        "encoding": "utf-8",
+        "errors": "replace",
+        "bufsize": 1,
+    }
+    default_kwargs.update(popen_kwargs)
+
+    process = subprocess.Popen(cmd, **default_kwargs)
+    reader = StreamReader(process)
+    reader.start_reading()
+    stderr_lines = []
+
+    def dispatch_output(output: Optional[Tuple[str, str]]) -> None:
+        if not output:
+            return
+        stream_name, line = output
+        if stream_name == "stdout" and stdout_handler:
+            stdout_handler(line)
+        elif stream_name == "stderr":
+            stderr_lines.append(line)
+            if stderr_handler:
+                stderr_handler(line)
+
+    try:
+        while process.poll() is None:
+            if check_cancel_callback and check_cancel_callback():
+                stop_process(process)
+                raise SynthesisCancelled("合成已取消")
+            dispatch_output(reader.get_output(timeout=poll_interval))
+
+        process.wait()
+        for thread in reader.threads:
+            thread.join(timeout=1)
+        while True:
+            output = reader.get_output(timeout=0)
+            if output is None:
+                break
+            dispatch_output(output)
+
+        return process.returncode, "".join(stderr_lines)
+    except BaseException:
+        if process.poll() is None:
+            stop_process(process)
+        raise
 
 
 def run_process_with_stream_reader(
