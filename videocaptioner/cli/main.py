@@ -50,13 +50,17 @@ def _add_hidden_llm_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--model", metavar="NAME", help=argparse.SUPPRESS)
 
 
-def _add_output_options(parser: argparse.ArgumentParser) -> None:
+def _add_output_options(
+    parser: argparse.ArgumentParser,
+    *,
+    formats: tuple[str, ...] = ("srt", "ass", "vtt", "txt", "json"),
+) -> None:
     """Add output-related options."""
     group = parser.add_argument_group("Output options")
     group.add_argument("-o", "--output", metavar="PATH", help="Output file or directory path")
     group.add_argument(
         "--format",
-        choices=["srt", "ass", "txt", "json"],
+        choices=formats,
         help="Output subtitle format (default: srt)",
     )
 
@@ -343,7 +347,7 @@ def _build_process_parser(subparsers) -> None:
     p.add_argument("input", help="Video or audio file path")
     _add_common_options(p)
     _add_llm_options(p)
-    _add_output_options(p)
+    _add_output_options(p, formats=("srt", "ass", "txt", "json"))
 
     pipe = p.add_argument_group("Pipeline options")
     pipe.add_argument("--no-optimize", action="store_true", help="Skip AI subtitle polish")

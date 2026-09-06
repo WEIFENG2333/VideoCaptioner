@@ -381,6 +381,81 @@ class TestFormatConversionEdgeCases:
             srt = asr_data.to_srt(layout=layout)
             assert "Hello" in srt  # 所有模式都应显示原文
 
+    def test_vtt_layout_modes_all(self):
+        """WebVTT output uses valid timestamps and honors bilingual layouts."""
+        from videocaptioner.core.entities import SubtitleLayoutEnum
+
+        asr_data = ASRData([ASRDataSeg("Hello", 1234, 5678, translated_text="你好")])
+
+        source_above = asr_data.to_vtt(layout=SubtitleLayoutEnum.ORIGINAL_ON_TOP)
+        assert source_above.startswith("WEBVTT\n\n")
+        assert "00:00:01.234 --> 00:00:05.678" in source_above
+        assert "Hello\n你好" in source_above
+
+        target_above = asr_data.to_vtt(layout=SubtitleLayoutEnum.TRANSLATE_ON_TOP)
+        assert "你好\nHello" in target_above
+
+        source_only = asr_data.to_vtt(layout=SubtitleLayoutEnum.ONLY_ORIGINAL)
+        assert "Hello" in source_only
+        assert "你好" not in source_only
+
+        target_only = asr_data.to_vtt(layout=SubtitleLayoutEnum.ONLY_TRANSLATE)
+        assert "你好" in target_only
+        assert "Hello" not in target_only
+
+    def test_vtt_save_and_load_roundtrip(self, tmp_path):
+        """The save dispatcher writes VTT files that the existing parser can read."""
+        output_path = tmp_path / "captions.vtt"
+        asr_data = ASRData(
+            [
+                ASRDataSeg("First cue", 0, 1000),
+                ASRDataSeg("Second\nline", 1500, 2750),
+            ]
+        )
+
+        asr_data.save(str(output_path))
+        loaded = ASRData.from_subtitle_file(str(output_path))
+
+        assert output_path.read_text(encoding="utf-8").startswith("WEBVTT\n\n")
+        assert [(seg.text, seg.start_time, seg.end_time) for seg in loaded.segments] == [
+            ("First cue", 0, 1000),
+            ("Second\nline", 1500, 2750),
+        ]
+
+    def test_vtt_escapes_cue_text_and_preserves_paragraph_breaks(self):
+        text = "AT&T <draft> x --> y > z\n\nNext paragraph"
+        asr_data = ASRData([ASRDataSeg(text, 0, 1000)])
+
+        vtt = asr_data.to_vtt()
+
+        assert (
+            "AT&amp;T &lt;draft&gt; x --&gt; y &gt; z\n&nbsp;\nNext paragraph"
+            in vtt
+        )
+        assert ASRData.from_vtt(vtt).segments[0].text == text
+
+    def test_save_accepts_case_insensitive_output_extension(self, tmp_path):
+        output_path = tmp_path / "captions.VTT"
+
+        ASRData([ASRDataSeg("Hello", 0, 1000)]).save(str(output_path))
+
+        assert output_path.read_text(encoding="utf-8").startswith("WEBVTT\n\n")
+
+    def test_save_supports_every_transcribe_output_format(self, tmp_path):
+        """Every format included by the GUI's All option can be exported."""
+        from videocaptioner.core.entities import TranscribeOutputFormatEnum
+
+        asr_data = ASRData([ASRDataSeg("Hello", 0, 1000)])
+        formats = (
+            fmt for fmt in TranscribeOutputFormatEnum
+            if fmt != TranscribeOutputFormatEnum.ALL
+        )
+
+        for output_format in formats:
+            output_path = tmp_path / f"captions.{output_format.value.lower()}"
+            asr_data.save(str(output_path))
+            assert output_path.is_file()
+
     def test_json_large_dataset(self):
         """测试大数据集JSON转换"""
         segments = [
