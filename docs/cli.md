@@ -55,7 +55,7 @@ videocaptioner transcribe <文件> [选项]
 | `--whisper-api-base` | Whisper API 地址 |
 | `--whisper-model` | Whisper 模型名（whisper-api 默认 whisper-1，whisper-cpp 默认 large-v2） |
 | `-o PATH` | 输出文件或目录路径 |
-| `--format` | 输出格式：`srt`(默认) `ass` `txt` `json` |
+| `--format` | 输出格式：`srt`(默认) `ass` `vtt` `txt` `json` |
 
 ---
 

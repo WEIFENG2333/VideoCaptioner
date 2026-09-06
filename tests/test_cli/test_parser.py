@@ -100,10 +100,31 @@ class TestSubtitleParser:
         result = main(["subtitle", str(srt), "--translator", "bing", "--target-language", "xyz"])
         assert result == EXIT.USAGE_ERROR
 
-    def test_invalid_format(self):
-        with pytest.raises(SystemExit) as exc:
-            main(["subtitle", "test.srt", "--format", "vtt"])
-        assert exc.value.code == 2
+    def test_vtt_output_format(self, tmp_path):
+        source = tmp_path / "input.srt"
+        source.write_text(
+            "1\n00:00:00,000 --> 00:00:01,000\nHello\n", encoding="utf-8"
+        )
+        output_path = tmp_path / "output.vtt"
+
+        result = main(
+            [
+                "subtitle",
+                str(source),
+                "--no-optimize",
+                "--no-split",
+                "--no-translate",
+                "--format",
+                "vtt",
+                "-o",
+                str(output_path),
+            ]
+        )
+
+        assert result == EXIT.SUCCESS
+        assert output_path.read_text(encoding="utf-8") == (
+            "WEBVTT\n\n1\n00:00:00.000 --> 00:00:01.000\nHello\n"
+        )
 
 
 class TestSynthesizeParser:
@@ -117,6 +138,11 @@ class TestSynthesizeParser:
 
 
 class TestProcessParser:
+    def test_vtt_format_is_not_exposed_for_process(self):
+        with pytest.raises(SystemExit) as exc:
+            main(["process", "test.mp4", "--format", "vtt"])
+        assert exc.value.code == 2
+
     def test_dub_options_parse_with_missing_input(self):
         result = main([
             "process",

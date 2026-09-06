@@ -1,3 +1,4 @@
+import html
 import json
 import math
 import os
@@ -232,16 +233,19 @@ class ASRData:
         """
         save_path = handle_long_path(save_path)
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+        suffix = Path(save_path).suffix.lower()
 
-        if save_path.endswith(".srt"):
+        if suffix == ".srt":
             self.to_srt(save_path=save_path, layout=layout)
-        elif save_path.endswith(".txt"):
+        elif suffix == ".txt":
             self.to_txt(save_path=save_path, layout=layout)
-        elif save_path.endswith(".json"):
+        elif suffix == ".json":
             with open(save_path, "w", encoding="utf-8") as f:
                 json.dump(self.to_json(), f, ensure_ascii=False, indent=2)
-        elif save_path.endswith(".ass"):
+        elif suffix == ".ass":
             self.to_ass(save_path=save_path, style_str=ass_style, layout=layout)
+        elif suffix == ".vtt":
+            self.to_vtt(save_path=save_path, layout=layout)
         else:
             raise ValueError(f"Unsupported file extension: {save_path}")
 
@@ -411,34 +415,52 @@ class ASRData:
                 f.write(ass_content)
         return ass_content
 
-    def to_vtt(self, save_path=None) -> str:
+    def to_vtt(
+        self,
+        save_path=None,
+        layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP,
+    ) -> str:
         """Convert to WebVTT subtitle format
 
         Args:
             save_path: Optional save path
+            layout: Subtitle layout mode
 
         Returns:
             WebVTT format subtitle content
         """
-        raise NotImplementedError("WebVTT format is not supported")
-        # # WebVTT头部
-        # vtt_lines = ["WEBVTT\n"]
+        cues = []
+        for n, seg in enumerate(self.segments, 1):
+            original = seg.text
+            translated = seg.translated_text
 
-        # for n, seg in enumerate(self.segments, 1):
-        #     # 转换时间戳格式从毫秒到 HH:MM:SS.mmm
-        #     start_time = seg._ms_to_srt_time(seg.start_time).replace(",", ".")
-        #     end_time = seg._ms_to_srt_time(seg.end_time).replace(",", ".")
+            if layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
+                text = f"{original}\n{translated}" if translated else original
+            elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
+                text = f"{translated}\n{original}" if translated else original
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
+                text = original
+            else:  # ONLY_TRANSLATE
+                text = translated if translated else original
 
-        #     # 添加序号（可选）和时间戳
-        #     vtt_lines.append(f"{n}\n{start_time} --> {end_time}\n{seg.transcript}\n")
+            text = html.escape(text.replace("\r\n", "\n").replace("\r", "\n"), quote=False)
+            # An empty physical line terminates a WebVTT cue. Keep paragraph
+            # breaks renderable by giving otherwise-empty cue lines one space.
+            text = "\n".join(line or "&nbsp;" for line in text.split("\n"))
 
-        # vtt_text = "\n".join(vtt_lines)
+            start_time = seg._ms_to_srt_time(seg.start_time).replace(",", ".")
+            end_time = seg._ms_to_srt_time(seg.end_time).replace(",", ".")
+            cues.append(f"{n}\n{start_time} --> {end_time}\n{text}")
 
-        # if save_path:
-        #     with open(save_path, "w", encoding="utf-8") as f:
-        #         f.write(vtt_text)
+        vtt_text = "WEBVTT\n\n"
+        if cues:
+            vtt_text += "\n\n".join(cues) + "\n"
 
-        # return vtt_text
+        if save_path:
+            save_path = handle_long_path(save_path)
+            with open(save_path, "w", encoding="utf-8") as f:
+                f.write(vtt_text)
+        return vtt_text
 
     def merge_segments(
         self, start_index: int, end_index: int, merged_text: Optional[str] = None
@@ -703,7 +725,10 @@ class ASRData:
             # Remove VTT inline tags: timestamps, <c>, <b>, <i>, <u>, <ruby>, etc.
             cleaned_text = re.sub(r"<\d{2}:\d{2}:\d{2}\.\d{3}>", "", text_line)
             cleaned_text = re.sub(r"</?[a-zA-Z][^>]*>", "", cleaned_text)
-            cleaned_text = cleaned_text.strip()
+            cleaned_text = html.unescape(cleaned_text)
+            cleaned_text = "\n".join(
+                "" if not line.strip() else line for line in cleaned_text.splitlines()
+            ).strip()
 
             if cleaned_text and cleaned_text != " ":
                 segments.append(ASRDataSeg(cleaned_text, start_time, end_time))

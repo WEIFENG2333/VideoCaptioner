@@ -14,7 +14,7 @@ from videocaptioner.cli.config import get
 AUDIO_EXTENSIONS = frozenset({"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac", "wma"})
 VIDEO_EXTENSIONS = frozenset({"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"})
 SUBTITLE_EXTENSIONS = frozenset({".srt", ".ass", ".vtt"})
-OUTPUT_EXTENSIONS = frozenset({".srt", ".ass", ".txt", ".json"})
+OUTPUT_EXTENSIONS = frozenset({".srt", ".ass", ".vtt", ".txt", ".json"})
 
 
 def resolve_layout(cli_name: str):
