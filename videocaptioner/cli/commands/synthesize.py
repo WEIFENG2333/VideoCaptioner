@@ -235,14 +235,27 @@ def run(args: Namespace, config: dict) -> int:
                     progress.fail("Style configuration error")
                 return EXIT.USAGE_ERROR
 
+            # 样式 id 的渲染器前缀是唯一真源：显式 --render-mode 与所选样式前缀冲突时
+            # 会被忽略，提示用户改用对应前缀的样式，避免"传了 flag 却不生效"的困惑。
+            if render_arg and render_arg != mode:
+                style_name = get(config, "synthesize.style", "default")
+                output.warn(
+                    f"--render-mode {render_arg} 被忽略：样式 '{style_name}' 的前缀决定了"
+                    f"渲染模式为 {mode}。如需 {render_arg} 渲染，请改用 {render_arg}/ 前缀的样式"
+                    f"（运行 'videocaptioner style' 查看）。"
+                )
+
             from videocaptioner.cli.validators import resolve_layout
+            from videocaptioner.core.asr.asr_data import ASRData
             layout_str = get(config, "synthesize.layout", "target-above")
             layout = resolve_layout(layout_str)
 
+            # 字幕文件的行序即布局；按文件行序原样烧录，不二次翻转已排版的双语文件。
+            asr_data = ASRData.from_subtitle_file(str(subtitle_path))
+            layout = asr_data.resolve_layout_from_file(layout)
+
             if mode == "rounded":
-                from videocaptioner.core.asr.asr_data import ASRData
                 from videocaptioner.core.subtitle.rounded_renderer import render_rounded_video
-                asr_data = ASRData.from_subtitle_file(str(subtitle_path))
                 render_rounded_video(
                     video_path=str(video_path),
                     asr_data=asr_data,
@@ -254,9 +267,7 @@ def run(args: Namespace, config: dict) -> int:
                     progress_callback=progress_callback,
                 )
             else:
-                from videocaptioner.core.asr.asr_data import ASRData
                 from videocaptioner.core.subtitle.ass_renderer import render_ass_video
-                asr_data = ASRData.from_subtitle_file(str(subtitle_path))
 
                 # Register custom font if provided
                 if font_file:

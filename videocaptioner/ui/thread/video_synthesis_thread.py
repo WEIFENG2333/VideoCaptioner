@@ -54,15 +54,18 @@ class VideoSynthesisThread(WorkerThread):
         crf = config.video_quality.get_crf()
         preset = config.video_quality.get_preset()
 
+        # 字幕文件的行序即布局；按文件行序原样烧录，不二次翻转已排版的双语文件。
+        render_layout = asr_data.resolve_layout_from_file(config.subtitle_layout)
+
         if config.soft_subtitle:
-            self._synthesize_soft(asr_data, config, crf, preset)
+            self._synthesize_soft(asr_data, render_layout, crf, preset)
         else:
             add_subtitles_with_style(
                 video_path=self.task.video_path,
                 asr_data=asr_data,
                 output_path=self.task.output_path,
                 render_mode=config.render_mode,
-                subtitle_layout=config.subtitle_layout,
+                subtitle_layout=render_layout,
                 ass_style=config.ass_style,
                 rounded_style=config.rounded_style,
                 ass_line_gap=config.ass_line_gap,
@@ -75,7 +78,7 @@ class VideoSynthesisThread(WorkerThread):
         logger.info("视频合成完成，保存路径: %s", self.task.output_path)
         self.finished.emit(self.task)
 
-    def _synthesize_soft(self, asr_data, config, crf: int, preset: str):
+    def _synthesize_soft(self, asr_data, layout, crf: int, preset: str):
         """软字幕：转为 SRT 临时文件后内嵌字幕轨。"""
         with tempfile.NamedTemporaryFile(
             mode="w",
@@ -84,7 +87,7 @@ class VideoSynthesisThread(WorkerThread):
             encoding="utf-8",
             prefix="VideoCaptioner_soft_",
         ) as handle:
-            handle.write(asr_data.to_srt(layout=config.subtitle_layout))
+            handle.write(asr_data.to_srt(layout=layout))
             temp_srt = handle.name
         try:
             add_subtitles(

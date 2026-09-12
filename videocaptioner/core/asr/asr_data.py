@@ -442,6 +442,25 @@ class ASRData:
                 f.write(vtt_text)
         return vtt_text
 
+    def resolve_layout_from_file(
+        self, layout: SubtitleLayoutEnum
+    ) -> SubtitleLayoutEnum:
+        """把"来自文件的双语数据"的渲染布局归一到文件行序。
+
+        字幕文件的行序本身已经编码了上下布局（第 1 行在上），由 subtitle 步骤按
+        用户 layout 落盘决定一次。文件读回后 `text`/`translated_text` 退化为"行1/
+        行2"的位置语义（split_srt_tracks / from_ass 按位置赋值）。此时若再套用
+        `译文在上`(TRANSLATE_ON_TOP) 会把已排好版的双语行二次翻转，导致往返错乱。
+
+        因此渲染文件来源的双语数据时，`译文在上` 归一到"文件行序"
+        (`原文在上` = 第 1 行在上)；单语与 仅原文/仅译文 原样返回。想改上下顺序应在
+        subtitle 步骤用对应 `--layout` 重新导出，而非在合成时翻转。
+        """
+        has_translation = any(seg.translated_text for seg in self.segments)
+        if has_translation and layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
+            return SubtitleLayoutEnum.ORIGINAL_ON_TOP
+        return layout
+
     def merge_segments(
         self, start_index: int, end_index: int, merged_text: Optional[str] = None
     ):

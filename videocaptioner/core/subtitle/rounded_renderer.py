@@ -348,8 +348,11 @@ def render_rounded_video(
             raise ValueError("No valid subtitle images generated")
 
         # 步骤2: 分批overlay到视频 (30-100%)
+        # 每批把整段视频重编码一次（链式），批越大 → 重编码遍数越少。中间批用 CRF 0
+        # 无损，链式重编码不掉画质；每批产出后立即删除上一批中间文件，把磁盘占用限制在
+        # ~1 个中间文件（否则长视频会因无损中间文件累积而撑爆磁盘）。
         logger.debug("Overlaying subtitle batches onto video")
-        BATCH_SIZE = 50
+        BATCH_SIZE = 150
         current_video = video_path
         total_batches = (len(subtitle_frames) + BATCH_SIZE - 1) // BATCH_SIZE
 
@@ -426,15 +429,24 @@ def render_rounded_video(
             )
 
             if result.returncode != 0:
-                logger.error(f"批次 {batch_idx + 1} 失败: {result.stderr}")
-                raise RuntimeError(f"Subtitle processing failed（批次 {batch_idx + 1}）")
+                # 把 ffmpeg 真实 stderr 尾部放进异常给用户看；日志只记简短标识，
+                # 避免把超长/含特殊字符的 stderr 塞进日志记录触发 "--- Logging error ---"。
+                stderr_tail = (result.stderr or "").strip()[-1000:]
+                logger.error("Rounded 合成批次 %d 失败", batch_idx + 1)
+                raise RuntimeError(
+                    f"字幕合成失败（批次 {batch_idx + 1}/{total_batches}）：{stderr_tail}"
+                )
 
             # 更新进度 (30-100%)
             if progress_callback:
                 progress = 30 + int((batch_idx + 1) / total_batches * 70)
                 progress_callback(progress, f"合成视频 {batch_idx + 1}/{total_batches}")
 
-            # 更新当前视频
+            # 更新当前视频，并删除上一批的中间文件（不删原始输入），把磁盘占用限制在
+            # ~1 个中间文件，避免长视频因无损中间文件累积撑爆磁盘。
+            prev_video = current_video
             current_video = str(batch_output)
+            if prev_video != str(video_path):
+                Path(prev_video).unlink(missing_ok=True)
 
         logger.debug("Video synthesis complete")
