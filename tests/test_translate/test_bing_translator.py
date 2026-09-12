@@ -1,99 +1,85 @@
-"""Bing Translator integration tests."""
+"""Bing 免费翻译器的解析与站点回退测试（mock 网络）。
 
-import os
-from typing import Dict, List
+回归防护：Bing 无公开 API，靠抓 bing.com/translator 页面取 IG/IID/token/key 再 POST
+ttranslatev3。中国区 www.bing.com 会返回空、需回退 cn.bing.com。这里锁住页面解析正则
+与站点自动择优逻辑，避免上游/区域变动悄悄把默认免费翻译打挂。
+"""
+
+import json
 
 import pytest
 
-from tests.conftest import assert_translation_quality
-from videocaptioner.core.asr.asr_data import ASRData
-from videocaptioner.core.translate import SubtitleProcessData, TargetLanguage
-from videocaptioner.core.translate.bing_translator import BingTranslator
+from videocaptioner.core.entities import SubtitleProcessData
+from videocaptioner.core.translate import bing_translator as bt
+from videocaptioner.core.translate.types import TargetLanguage
 
-
-@pytest.mark.integration
-@pytest.mark.skipif(
-    os.getenv("RUN_LIVE_TRANSLATION_TESTS") != "1"
-    and os.getenv("RUN_BING_TRANSLATOR_TESTS") != "1",
-    reason="Bing free translation endpoint is network-dependent; set RUN_BING_TRANSLATOR_TESTS=1 to run.",
+_PAGE_HTML = (
+    'window.stuff;IG:"IG123456";more '
+    '<div data-iid="translator.5023"></div>'
+    "var params_AbusePreventionHelper = [1700000000000,\"TOKEN_ABC\",3600000];"
 )
-class TestBingTranslator:
-    """Test suite for BingTranslator using public API endpoints."""
 
-    @pytest.fixture
-    def bing_translator(self, target_language: TargetLanguage) -> BingTranslator:
-        """Create BingTranslator instance for testing."""
-        return BingTranslator(
-            thread_num=2,
-            batch_num=5,
-            target_language=target_language,
-            update_callback=None,
+
+class _FakeResp:
+    def __init__(self, text: str, status: int = 200):
+        self.text = text
+        self.status_code = status
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return json.loads(self.text)
+
+
+class _FakeSession:
+    """www.bing.com POST 返回空（模拟中国区），cn.bing.com 返回正常 JSON。"""
+
+    def __init__(self):
+        self.posted_hosts = []
+
+    def get(self, url, **kwargs):
+        return _FakeResp(_PAGE_HTML)
+
+    def post(self, url, data=None, **kwargs):
+        self.posted_hosts.append(url)
+        if "www.bing.com" in url:
+            return _FakeResp("")  # 空响应 → 触发回退
+        return _FakeResp(
+            json.dumps([{"translations": [{"text": "你好世界", "to": "zh-Hans"}]}])
         )
 
-    @pytest.mark.parametrize(
-        "target_language",
-        [TargetLanguage.SIMPLIFIED_CHINESE, TargetLanguage.JAPANESE],
+
+@pytest.fixture
+def fake_session(monkeypatch):
+    session = _FakeSession()
+    monkeypatch.setattr(bt.requests, "Session", lambda: session)
+    return session
+
+
+def test_falls_back_to_cn_when_www_empty(fake_session):
+    tr = bt.BingTranslator(
+        thread_num=1,
+        batch_num=5,
+        target_language=TargetLanguage.SIMPLIFIED_CHINESE,
+        update_callback=None,
     )
-    def test_translate_simple_text(
-        self,
-        bing_translator: BingTranslator,
-        sample_asr_data: ASRData,
-        expected_translations: Dict[str, Dict[str, List[str]]],
-        target_language: TargetLanguage,
-    ) -> None:
-        """Test translating simple ASR data with quality validation."""
-        result = bing_translator.translate_subtitle(sample_asr_data)
+    # www 返回空 → 锁定 cn.bing.com
+    assert tr._bing.host == "cn.bing.com"
+    # 凭证解析正确
+    assert tr._bing.ig == "IG123456"
+    assert tr._bing.iid == "translator.5023"
+    assert tr._bing.token == "TOKEN_ABC"
+    assert tr._bing.key == "1700000000000"
 
-        print("\n" + "=" * 60)
-        print(f"Bing Translation Results (to {target_language.value}):")
-        for i, seg in enumerate(result.segments, 1):
-            print(f"  [{i}] {seg.text} → {seg.translated_text}")
-        print("=" * 60)
 
-        assert len(result.segments) == len(sample_asr_data.segments)
-
-        # Get expected keywords for target language
-        lang_expectations = expected_translations.get(target_language.value, {})
-
-        # Validate translation quality
-        for seg in result.segments:
-            if seg.text in lang_expectations:
-                assert_translation_quality(
-                    seg.text, seg.translated_text, lang_expectations[seg.text]
-                )
-            else:
-                assert seg.translated_text, f"Translation is empty for: {seg.text}"
-
-    def test_translate_chunk(
-        self,
-        bing_translator: BingTranslator,
-        sample_translate_data: list[SubtitleProcessData],
-        expected_translations: Dict[str, Dict[str, List[str]]],
-        target_language: TargetLanguage,
-    ) -> None:
-        """Test translating a single chunk of data with quality validation."""
-        result = bing_translator._translate_chunk(sample_translate_data)
-
-        print("\n" + "=" * 60)
-        print(f"Bing Chunk Translation Results (to {target_language.value}):")
-        for data in result:
-            print(f"  [{data.index}] {data.original_text} → {data.translated_text}")
-        print("=" * 60)
-
-        assert len(result) == len(sample_translate_data)
-
-        # Get expected keywords for target language
-        lang_expectations = expected_translations.get(target_language.value, {})
-
-        # Validate translation quality
-        for data in result:
-            if data.original_text in lang_expectations:
-                assert_translation_quality(
-                    data.original_text,
-                    data.translated_text,
-                    lang_expectations[data.original_text],
-                )
-            else:
-                assert (
-                    data.translated_text
-                ), f"Translation is empty for: {data.original_text}"
+def test_translate_chunk_fills_translation(fake_session):
+    tr = bt.BingTranslator(
+        thread_num=1,
+        batch_num=5,
+        target_language=TargetLanguage.SIMPLIFIED_CHINESE,
+        update_callback=None,
+    )
+    chunk = [SubtitleProcessData(index=1, original_text="hello world", translated_text="")]
+    out = tr._translate_chunk(chunk)
+    assert out[0].translated_text == "你好世界"

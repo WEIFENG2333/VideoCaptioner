@@ -142,7 +142,10 @@ class BaseTranslator(ABC):
             if self.update_callback:
                 self.update_callback(result)
 
-            self._cache.set(cache_key, result, expire=86400 * 7)
+            # 仅缓存成功翻译（每条都有译文）。失败/空结果不入缓存，否则一次临时故障
+            # 会把空翻译污染缓存 7 天，之后静默返回无译文。
+            if result and all((item.translated_text or "").strip() for item in result):
+                self._cache.set(cache_key, result, expire=86400 * 7)
             return result
 
         except Exception as e:
