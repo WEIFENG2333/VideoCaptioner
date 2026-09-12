@@ -114,7 +114,7 @@ def _build_transcribe_parser(subparsers) -> None:
     asr.add_argument(
         "--asr",
         choices=CLI_ASR_CHOICES,
-        help="ASR engine (default: bijian). "
+        help="ASR engine (default: your configured engine, else bijian). "
              "bijian/jianying: free, no setup, Chinese & English only. "
              "fun-asr: Bailian recorded-file ASR. "
              "For other languages use fun-asr, whisper-api, whisper-cpp or faster-whisper",
@@ -402,7 +402,7 @@ def _build_process_parser(subparsers) -> None:
     pipe.add_argument("--dub-only", action="store_true", help="Output only the dubbed result, skipping subtitle burn/embedding")
 
     pipe.add_argument("--asr", choices=CLI_ASR_CHOICES,
-                      help="ASR engine (default: bijian)")
+                      help="ASR engine (default: your configured engine, else bijian)")
     pipe.add_argument("--language", metavar="CODE",
                       help="Source language as ISO 639-1 code, or 'auto' (default: auto)")
     pipe.add_argument("--whisper-api-key", metavar="KEY", help="Whisper API key (for --asr whisper-api)")

@@ -203,18 +203,23 @@ def run(args: Namespace, config: dict) -> int:
             progress.update(pct)
 
     try:
-        # 1. Split (if word-level timestamps available)
-        if need_split and asr_data.is_word_timestamp():
-            if progress:
-                progress.update(5, "Splitting subtitles...")
-            from videocaptioner.core.split.split import SubtitleSplitter
-            splitter = SubtitleSplitter(
-                thread_num=thread_num,
-                model=llm_model,
-                max_word_count_cjk=max_cjk,
-                max_word_count_english=max_english,
-            )
-            asr_data = splitter.split_subtitle(asr_data)
+        # 1. Split：无词级时间戳时先就地拆成词级（对齐 GUI 流水线）。否则 fun-asr /
+        #    whisper-api 等不产词级时间戳的 ASR，其超长整句永远不会被断句，字幕会超长。
+        #    断句在 LLM 不可用时自动降级为规则分割（见 SubtitleSplitter），不会硬失败。
+        if need_split:
+            if not asr_data.is_word_timestamp():
+                asr_data = asr_data.split_to_word_segments()
+            if asr_data.is_word_timestamp():
+                if progress:
+                    progress.update(5, "Splitting subtitles...")
+                from videocaptioner.core.split.split import SubtitleSplitter
+                splitter = SubtitleSplitter(
+                    thread_num=thread_num,
+                    model=llm_model,
+                    max_word_count_cjk=max_cjk,
+                    max_word_count_english=max_english,
+                )
+                asr_data = splitter.split_subtitle(asr_data)
 
         # 2. Optimize
         if need_optimize:

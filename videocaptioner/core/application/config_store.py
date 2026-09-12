@@ -171,7 +171,9 @@ DEFAULTS: Dict[str, Any] = {
     "subtitle": {
         "optimize": False,
         "translate": False,
-        "split": False,
+        # 默认开启断句：ASR 常产出整段长句，不断句会得到超长、难读的字幕行。
+        # 断句在无 LLM 时自动降级为规则分割，不强依赖付费模型。
+        "split": True,
         "max_word_count_cjk": 28,
         "max_word_count_english": 20,
         "thread_num": 10,

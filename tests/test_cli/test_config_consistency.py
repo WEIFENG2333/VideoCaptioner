@@ -77,7 +77,8 @@ class TestCliDefaultsMatchStore:
         assert ac.subtitle.thread_num == get_nested(DEFAULTS, "subtitle.thread_num") == 10
         assert ac.subtitle.batch_size == get_nested(DEFAULTS, "subtitle.batch_size") == 10
         assert ac.subtitle.need_optimize is False
-        assert ac.subtitle.need_split is False
+        # 断句默认开启：不断句 ASR 长句会得到超长字幕行（无 LLM 时规则回退）
+        assert ac.subtitle.need_split is True
         assert ac.subtitle.max_word_count_cjk == 28
         assert ac.subtitle.max_word_count_english == 20
 
