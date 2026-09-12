@@ -127,6 +127,7 @@ def run_process_with_stream_reader(
         "stderr": subprocess.PIPE,
         "text": True,
         "encoding": "utf-8",
+        "errors": "replace",  # 坏字节降级为占位符，不让解码错误杀掉读取线程
         "bufsize": 1,  # 行缓冲
     }
     default_kwargs.update(popen_kwargs)

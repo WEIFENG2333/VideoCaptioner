@@ -7,7 +7,7 @@
 ### `transcribe()`
 
 ```python
-from app.core.asr import transcribe
+from videocaptioner.core.asr import transcribe
 
 result = transcribe(
     audio_path="video.mp4",

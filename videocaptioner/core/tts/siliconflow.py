@@ -23,8 +23,8 @@ class VoiceCloneManager:
             api_key: API 密钥
             base_url: API 基础 URL
         """
-        self.api_key = api_key
-        self.base_url = base_url
+        self.api_key = api_key.strip()
+        self.base_url = base_url.strip().rstrip("/")
         self.cache = get_tts_cache()
 
     def upload_voice(

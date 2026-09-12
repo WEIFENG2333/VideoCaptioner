@@ -1,56 +1,81 @@
 import atexit
 import os
 import shutil
+from pathlib import Path
 
 import psutil
-from PyQt5.QtCore import QSize, QThread, QUrl
-from PyQt5.QtGui import QDesktopServices, QIcon
+from PyQt5.QtCore import QEvent, QSize, QUrl
+from PyQt5.QtGui import QColor, QDesktopServices, QIcon
 from PyQt5.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     FluentWindow,
     InfoBar,
     InfoBarPosition,
-    MessageBox,
-    NavigationItemPosition,
     SplashScreen,
 )
 
-from videocaptioner.config import ASSETS_PATH, GITHUB_REPO_URL
+from videocaptioner.config import ASSETS_PATH, CACHE_PATH, GITHUB_REPO_URL
 from videocaptioner.core.constant import INFOBAR_DURATION_FOREVER
+from videocaptioner.core.update import apply_update, can_self_update
+from videocaptioner.core.utils.cache import get_version_state_cache
+from videocaptioner.ui.common.app_icons import AppIcon
 from videocaptioner.ui.common.config import cfg
-from videocaptioner.ui.components.DonateDialog import DonateDialog
-from videocaptioner.ui.thread.version_checker_thread import VersionChecker
+from videocaptioner.ui.common.theme_tokens import BG_DARK, BG_LIGHT
+from videocaptioner.ui.components.app_dialog import ConfirmDialog
+from videocaptioner.ui.components.donate_dialog import DonateDialog
+from videocaptioner.ui.components.sidebar import EXPANDED_WIDTH, Sidebar
+from videocaptioner.ui.components.update_center import UpdateCenter, UpdateDialog
+from videocaptioner.ui.i18n import tr
+from videocaptioner.ui.thread.update_thread import UpdateCheckThread
 from videocaptioner.ui.view.batch_process_interface import BatchProcessInterface
+from videocaptioner.ui.view.doctor_interface import DoctorInterface
+from videocaptioner.ui.view.dubbing_interface import DubbingInterface
+from videocaptioner.ui.view.hardsub_interface import HardsubInterface
 from videocaptioner.ui.view.home_interface import HomeInterface
+from videocaptioner.ui.view.live_caption_interface import LiveCaptionInterface
 from videocaptioner.ui.view.llm_logs_interface import LLMLogsInterface
-from videocaptioner.ui.view.setting_interface import SettingInterface
+from videocaptioner.ui.view.setting_interface import SettingsDialog
 from videocaptioner.ui.view.subtitle_style_interface import SubtitleStyleInterface
 
 LOGO_PATH = ASSETS_PATH / "logo.png"
+# 字幕样式页是三栏布局，最窄需约 950px；窗口最小宽要容纳它 + 导航栏，否则右栏被切。
+WINDOW_MINIMUM_WIDTH = 1020
+TITLEBAR_GAP = 12  # 标题栏文字与侧栏右缘的间隙
+# 内容区 < 该宽度时自动收纳侧栏（展开态侧栏挤压三栏页面）；再变宽且非手动收纳时自动还原
+SIDEBAR_AUTO_COLLAPSE_WIDTH = WINDOW_MINIMUM_WIDTH + EXPANDED_WIDTH - 64
 
 
 class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
         self.initWindow()
+        # 窗口底色与调色板对齐：否则 qfluent 默认窗口底与页面自绘的
+        # palette.bg 形成两层颜色，页面区域看起来像浮在窗口上的色块。
+        self.setCustomBackgroundColor(QColor(BG_LIGHT), QColor(BG_DARK))
 
         # 创建子界面
         self.homeInterface = HomeInterface(self)
-        self.settingInterface = SettingInterface(self)
+        # 设置不再是导航 tab，而是定制大弹窗；SettingInterface 内嵌在弹窗里（长生命周期单例）
+        self.settingsDialog = SettingsDialog(self)
+        self.settingInterface = self.settingsDialog.settingInterface
         self.subtitleStyleInterface = SubtitleStyleInterface(self)
+        self.hardsubInterface = HardsubInterface(self)
+        self.dubbingInterface = DubbingInterface(self)
+        self.liveCaptionInterface = LiveCaptionInterface(self)
+        self.doctorInterface = DoctorInterface(self)
         self.batchProcessInterface = BatchProcessInterface(self)
         self.llmLogsInterface = LLMLogsInterface(self)
 
-        # 初始化版本检查器
-        self.versionChecker = VersionChecker()
-        self.versionChecker.newVersionAvailable.connect(self.onNewVersion)
-        self.versionChecker.announcementAvailable.connect(self.onAnnouncement)
+        # 硬字幕提取「送入字幕优化」：切到主页字幕优化 tab 并载入提取出的字幕
+        self.hardsubInterface.sendToOptimize.connect(self._on_hardsub_to_optimize)
 
-        self.versionThread = QThread()
-        self.versionChecker.moveToThread(self.versionThread)
-        self.versionThread.started.connect(self.versionChecker.perform_check)
-        self.versionThread.start()
+        # 设置页「检查更新」按钮 → 主动走同一套更新流程
+        self.settingInterface.checkUpdateRequested.connect(self._on_manual_update_check)
+
+        # 启动时后台检查更新；有新版时静默后台下载 + 点亮侧栏底部更新入口
+        self.updateCenter = None
+        self.updateCheckThread = None
+        self._check_updates()
 
         # 初始化导航界面
         self.initNavigation()
@@ -63,46 +88,97 @@ class MainWindow(FluentWindow):
         atexit.register(self.stop)
 
     def initNavigation(self):
-        """初始化导航栏"""
-        # 添加导航项
-        self.addSubInterface(self.homeInterface, FIF.HOME, self.tr("主页"))
-        self.addSubInterface(self.batchProcessInterface, FIF.VIDEO, self.tr("批量处理"))
-        self.addSubInterface(self.subtitleStyleInterface, FIF.FONT, self.tr("字幕样式"))
-        self.addSubInterface(self.llmLogsInterface, FIF.HISTORY, self.tr("请求日志"))
+        """初始化导航：自研 Sidebar 替代 qfluent NavigationInterface（后者隐藏不用）。"""
+        self.navigationInterface.hide()
 
-        self.navigationInterface.addSeparator()
+        pages = [
+            ("home", self.homeInterface, AppIcon.HOME, tr("app.nav.home")),
+            ("batch", self.batchProcessInterface, AppIcon.VIDEO, tr("app.nav.batch")),
+            ("substyle", self.subtitleStyleInterface, AppIcon.SUBTITLE, tr("app.nav.subtitle_style")),
+            ("dubbing", self.dubbingInterface, AppIcon.VOLUME, tr("app.nav.dubbing")),
+            ("live", self.liveCaptionInterface, AppIcon.MICROPHONE, tr("app.nav.live_caption")),
+            ("hardsub", self.hardsubInterface, AppIcon.HARDSUB, tr("app.nav.hardsub")),
+            ("logs", self.llmLogsInterface, AppIcon.HISTORY, tr("app.nav.request_logs")),
+            ("doctor", self.doctorInterface, AppIcon.DIAGNOSTIC, tr("app.nav.doctor")),
+        ]
+        self._page_by_key = {key: page for key, page, _, _ in pages}
 
-        # 在底部添加自定义小部件
-        self.navigationInterface.addItem(
-            routeKey="avatar",
-            text="GitHub",
-            icon=FIF.GITHUB,
-            onClick=self.onGithubDialog,
-            position=NavigationItemPosition.BOTTOM,
+        self.sidebar = Sidebar(self, top_inset=self.titleBar.height())
+        for key, page, icon, label in pages:
+            self.stackedWidget.addWidget(page)
+            self.sidebar.add_page(key, icon, label)
+        # 更新入口放底部动作区最上方：默认隐藏，检查到新版本后点亮（文案随下载状态刷新）
+        self.updateItem = self.sidebar.add_update_action(self._open_update_dialog)
+        self.sidebar.add_action("github", AppIcon.GITHUB, "GitHub", self.onGithubDialog)
+        self.sidebar.add_action(
+            "settings", AppIcon.SETTING, tr("app.nav.settings"),
+            lambda: self.openSettingsPage("transcribe"),
         )
-        self.addSubInterface(
-            self.settingInterface,
-            FIF.SETTING,
-            self.tr("Settings"),
-            NavigationItemPosition.BOTTOM,
-        )
+        self.hBoxLayout.insertWidget(0, self.sidebar)
+        self.sidebar.installEventFilter(self)  # 宽度动画期间标题栏持续跟随
+        self._place_titlebar()
 
-        # 设置默认界面
+        self.sidebar.currentChanged.connect(
+            lambda key: self.switchTo(self._page_by_key[key])
+        )
+        # 程序化 switchTo（如硬字幕→字幕优化）也要同步侧栏高亮
+        self.stackedWidget.currentChanged.connect(self._sync_sidebar_highlight)
+        self._sidebar_user_collapsed = False  # 手动收纳后窗口变宽不自动展开
+        self.sidebar.expandedChanged.connect(self._on_sidebar_toggled)
+
+        # 设置默认界面（home 是 index 0，currentChanged 不触发，需显式点亮）
         self.switchTo(self.homeInterface)
+        self.sidebar.set_current("home")
+
+    def _sync_sidebar_highlight(self, _index: int) -> None:
+        widget = self.stackedWidget.currentWidget()
+        for key, page in self._page_by_key.items():
+            if page is widget:
+                self.sidebar.set_current(key)
+                return
+
+    def _on_sidebar_toggled(self, expanded: bool) -> None:
+        # 只把「窗口够宽时的手动收纳」记为用户意愿；窄窗自动收纳不算
+        if self.width() >= SIDEBAR_AUTO_COLLAPSE_WIDTH:
+            self._sidebar_user_collapsed = not expanded
+
+    def _auto_fit_sidebar(self) -> None:
+        """窄窗自动收纳，变宽且非手动收纳时还原（展开态侧栏会挤压三栏页面）。"""
+        if self.width() < SIDEBAR_AUTO_COLLAPSE_WIDTH:
+            if self.sidebar.is_expanded():
+                self.sidebar.set_expanded(False)
+        elif not self._sidebar_user_collapsed and not self.sidebar.is_expanded():
+            self.sidebar.set_expanded(True)
+
+    def _on_hardsub_to_optimize(self, subtitle_path: str, video_path: str) -> None:
+        """硬字幕提取 → 主页字幕优化页（载入提取出的字幕，等用户配置优化/翻译）。"""
+        self.switchTo(self.homeInterface)
+        self.homeInterface.load_subtitle_for_optimize(subtitle_path, video_path)
 
     def switchTo(self, interface):
         if interface.windowTitle():
             self.setWindowTitle(interface.windowTitle())
         else:
-            self.setWindowTitle(self.tr("卡卡字幕助手 -- VideoCaptioner"))
+            self.setWindowTitle(tr("app.window_title"))
         self.stackedWidget.setCurrentWidget(interface, popOut=False)
+
+    def openSettingsPage(self, page_key: str) -> bool:  # noqa: N802
+        """弹出设置 modal 并切到指定分类；分类无效返回 False。"""
+        return self.settingsDialog.open_at(page_key)
 
     def initWindow(self):
         """初始化窗口"""
-        self.resize(1050, 800)
-        self.setMinimumWidth(700)
+        # 初始尺寸自适应屏幕：默认 1050x760，但绝不超过可用屏幕（留出菜单栏/Dock/标题栏余量）。
+        # 否则在小屏笔记本上窗口会被「撑」到比屏幕还高，底部内容（如播放条/按钮）看不全。
+        avail = QApplication.desktop().availableGeometry()
+        win_w = max(WINDOW_MINIMUM_WIDTH, min(1050, avail.width() - 80))
+        win_h = max(560, min(760, avail.height() - 100))
+        self.resize(win_w, win_h)
+        self.setMinimumWidth(WINDOW_MINIMUM_WIDTH)
+        # 窗口最大尺寸交给系统管理：Qt 的固定最大尺寸会连「最大化」一起 clamp，
+        # 最大化铺不满屏幕、边缘露出底层窗口。
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
-        self.setWindowTitle(self.tr("卡卡字幕助手 -- VideoCaptioner"))
+        self.setWindowTitle(tr("app.window_title"))
 
         self.setMicaEffectEnabled(cfg.get(cfg.micaEnabled))
 
@@ -111,86 +187,208 @@ class MainWindow(FluentWindow):
         self.splashScreen.setIconSize(QSize(106, 106))
         self.splashScreen.raise_()
 
-        # 设置窗口位置, 居中
-        desktop = QApplication.desktop().availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        # 设置窗口位置, 居中（用可用区原点偏移，避开菜单栏/任务栏，多屏也正确）
+        self.move(
+            avail.x() + (avail.width() - self.width()) // 2,
+            avail.y() + (avail.height() - self.height()) // 2,
+        )
 
         self.show()
         QApplication.processEvents()
 
     def onGithubDialog(self):
         """打开GitHub"""
-        w = MessageBox(
-            self.tr("GitHub信息"),
-            self.tr(
-                "VideoCaptioner 由本人在课余时间独立开发完成，目前托管在GitHub上，欢迎Star和Fork。项目诚然还有很多地方需要完善，遇到软件的问题或者BUG欢迎提交Issue。\n\n https://github.com/WEIFENG2333/VideoCaptioner"
-            ),
+        w = ConfirmDialog(
+            tr("app.github.title"),
+            tr("app.github.body"),
             self,
+            confirm_text=tr("app.github.open"),
+            cancel_text=tr("app.github.support_author"),
+            icon=AppIcon.GITHUB,
         )
-        w.yesButton.setText(self.tr("打开 GitHub"))
-        w.cancelButton.setText(self.tr("支持作者"))
+        # 「支持作者」是动作而非放弃：点它打开捐赠弹窗，Esc/关闭则什么都不做
+        open_donate = []
+        assert w.cancelButton is not None
+        w.cancelButton.clicked.connect(lambda: open_donate.append(True))
         if w.exec():
             QDesktopServices.openUrl(QUrl(GITHUB_REPO_URL))
+        elif open_donate:
+            DonateDialog(self).exec_()
+
+    def _check_updates(self, *, manual=False):
+        """启动后台检查更新。manual=True 时（设置页按钮触发）额外提示「已是最新/检查失败」。"""
+        if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
+            return
+        self._manual_update_check = manual
+        self.updateCheckThread = UpdateCheckThread(self)
+        self.updateCheckThread.resultReady.connect(self._on_check_result)
+        self.updateCheckThread.checkFailed.connect(self._on_check_failed)
+        self.updateCheckThread.start()
+
+    def _on_check_result(self, result):
+        """一次检查的结果：公告（去重弹）+ 封禁/更新（提示条）。"""
+        if result.announcement is not None:
+            self._on_announcement(result.announcement)
+        if result.block or result.update is not None:
+            self._show_update_entry(result.update, result.block)
+        elif getattr(self, "_manual_update_check", False):
+            self._on_up_to_date()
+
+    def _on_announcement(self, ann):
+        """展示线上公告（按 id 去重，只弹一次）。公告与是否有新版无关。"""
+        cache = get_version_state_cache()
+        key = f"announcement_shown_{ann.id}"
+        if cache.get(key, default=False):
+            return
+        cache.set(key, True)
+        ConfirmDialog(
+            ann.title or tr("app.announcement.title"),
+            ann.content,
+            self,
+            confirm_text=tr("app.announcement.got_it"),
+            cancel_text=None,
+            icon=AppIcon.DOCUMENT,
+        ).exec()
+
+    def _on_manual_update_check(self):
+        if self.updateCenter is not None:  # 已知有新版本：直接打开详情弹窗
+            self._open_update_dialog()
+            return
+        if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
+            # 启动检查还没跑完就点了「检查更新」：给反馈，别让按钮像没反应（死点击）
+            InfoBar.info(
+                title=tr("app.update.checking"),
+                content="",
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+            return
+        self._check_updates(manual=True)
+
+    def _show_update_entry(self, info, block):
+        """发现新版本：静默后台下载 + 点亮侧栏更新入口（下载完一键重启安装）。"""
+        if self.updateCenter is not None:  # 防重复（手动检查叠加自动检查）
+            return
+        self.updateCenter = UpdateCenter(
+            info, CACHE_PATH / "update", self._install_update, blocked=block, parent=self
+        )
+        self.updateCenter.stateChanged.connect(self._sync_update_item)
+        self.updateCenter.start()
+        self._sync_update_item()
+        # 版本被封禁且能自更新：锁死整个应用，立即弹出说明，只留更新出路。不能自更新
+        # （开发态/pip/安装目录不可写）时不锁，否则把用户卡死在只能「前往下载」的死胡同。
+        if block and can_self_update():
+            self.stackedWidget.setEnabled(False)
+            self._open_update_dialog()
+
+    def _sync_update_item(self):
+        """把 UpdateCenter 的状态映射到侧栏更新入口的文案/色调。"""
+        center = self.updateCenter
+        if center is None:
+            return
+        state = center.state
+        if state == "downloading":
+            label, tone = tr("app.update.downloading", percent=center.percent), "accent"
+        elif state == "ready":
+            label, tone = tr("app.update.nav_ready"), "accent"
+        elif state == "failed":
+            label, tone = tr("app.update.nav_failed"), "danger"
         else:
-            # 点击"支持作者"按钮时打开捐赠对话框
-            donate_dialog = DonateDialog(self)
-            donate_dialog.exec_()
+            label, tone = tr("app.update.nav_available"), "accent"
+        self.updateItem.set_label(label)
+        self.updateItem.set_tone(tone)
+        self.updateItem.show()
 
-    def onNewVersion(self, version, update_required, update_info, download_url):
-        """新版本提示"""
-        if update_required:
-            title = "发现新版本, 需要更新"
-            content = f"发现新版本 {version}\n\n" f"更新内容：\n{update_info}"
-        else:
-            title = "发现新版本"
-            content = f"发现新版本 {version}\n\n{update_info}"
+    def _open_update_dialog(self):
+        if self.updateCenter is None:
+            return
+        UpdateDialog(self.updateCenter, self).exec()
 
-        w = MessageBox(title, content, self)
-        w.yesButton.setText("立即更新")
-        w.cancelButton.setText("稍后再说")
+    def _on_up_to_date(self):
+        InfoBar.success(
+            title=tr("app.update.up_to_date"),
+            content="",
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=3000,
+            parent=self,
+        )
 
-        if w.exec() or update_required:
-            QDesktopServices.openUrl(QUrl(download_url))
+    def _on_check_failed(self, message):
+        # 仅手动「检查更新」时提示失败；启动自动检查失败静默忽略，不打扰
+        if not getattr(self, "_manual_update_check", False):
+            return
+        InfoBar.warning(
+            title=tr("app.update.check_failed"),
+            content=message,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=4000,
+            parent=self,
+        )
 
-        if update_required:
-            self.homeInterface.setEnabled(False)
-            self.batchProcessInterface.setEnabled(False)
+    def _install_update(self, zip_path):
+        """下载完成、用户点「重启并安装」：启动 helper 替换并退出本进程。"""
+        try:
+            apply_update(Path(zip_path))
+        except Exception as exc:  # noqa: BLE001 — 安装失败提示用户手动更新
             InfoBar.error(
-                title="需要更新",
-                content=self.tr("当前版本部分功能已被禁用。请尽快更新。"),
-                isClosable=False,
-                position=InfoBarPosition.BOTTOM,
+                title=tr("app.update.install_failed"),
+                content=str(exc),
+                isClosable=True,
+                position=InfoBarPosition.TOP,
                 duration=-1,
                 parent=self,
             )
+            return
+        QApplication.quit()
 
-    def onAnnouncement(self, content):
-        """显示公告"""
-        w = MessageBox("公告", content, self)
-        w.yesButton.setText("我知道了")
-        w.cancelButton.hide()
-        w.exec()
+    def _place_titlebar(self) -> None:
+        """标题栏从侧栏右缘开始（侧栏宽度动画期间经 eventFilter 持续跟随）。"""
+        inset = (self.sidebar.width() if hasattr(self, "sidebar") else 0) + TITLEBAR_GAP
+        self.titleBar.move(inset, 0)
+        self.titleBar.resize(self.width() - inset, self.titleBar.height())
+
+    def eventFilter(self, obj, event):
+        if hasattr(self, "sidebar") and obj is self.sidebar and event.type() == QEvent.Resize:
+            self._place_titlebar()
+        return super().eventFilter(obj, event)
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
+        self._place_titlebar()
         if hasattr(self, "splashScreen"):
             self.splashScreen.resize(self.size())
+        if hasattr(self, "sidebar"):
+            self._auto_fit_sidebar()
 
     def closeEvent(self, event):
-        # 关闭所有子界面
-        # self.homeInterface.close()
-        # self.batchProcessInterface.close()
-        # self.subtitleStyleInterface.close()
-        # self.settingInterface.close()
+        # 退出前关停所有子界面：各页 closeEvent/shutdown 会取消正在跑的
+        # QThread。Qt 只给顶层窗口派发 closeEvent，子 widget 必须显式
+        # close()，否则解释器 teardown 销毁 running QThread 会触发
+        # "QThread: Destroyed while thread is still running" abort。
+        for interface in (
+            self.homeInterface,
+            self.batchProcessInterface,
+            self.hardsubInterface,
+            self.subtitleStyleInterface,
+            self.dubbingInterface,
+            self.liveCaptionInterface,
+            self.doctorInterface,
+            self.settingInterface,
+        ):
+            interface.close()
+
+        # 停掉更新检查/下载线程，避免退出时销毁运行中的 QThread 触发 abort
+        if self.updateCenter is not None:
+            self.updateCenter.stop()
+        if self.updateCheckThread is not None and self.updateCheckThread.isRunning():
+            self.updateCheckThread.wait(2000)
+
         super().closeEvent(event)
-
-        # 强制退出应用程序
         QApplication.quit()
-
-        # 确保所有线程和进程都被终止 要是一些错误退出就不会处理了。
-        # import os
-        # os._exit(0)
 
     def stop(self):
         # 找到 FFmpeg 进程并关闭
@@ -202,8 +400,8 @@ class MainWindow(FluentWindow):
         """检查 FFmpeg 是否已安装"""
         if shutil.which("ffmpeg") is None:
             InfoBar.warning(
-                self.tr("FFmpeg 未安装"),
-                self.tr("软件处理音视频文件时需要 FFmpeg，请先安装"),
+                tr("app.ffmpeg.missing_title"),
+                tr("app.ffmpeg.missing_body"),
                 duration=INFOBAR_DURATION_FOREVER,
                 position=InfoBarPosition.BOTTOM,
                 parent=self,

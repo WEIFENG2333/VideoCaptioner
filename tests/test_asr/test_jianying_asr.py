@@ -1,5 +1,6 @@
 """JianYingASR integration tests."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,11 @@ from videocaptioner.core.asr.asr_data import ASRData
 
 @pytest.mark.integration
 @pytest.mark.slow
+@pytest.mark.skipif(
+    os.getenv("RUN_LIVE_ASR_TESTS") != "1"
+    and os.getenv("RUN_JIANYING_ASR_TESTS") != "1",
+    reason="JianYingASR uses an external signing/transcription service; set RUN_JIANYING_ASR_TESTS=1 to run.",
+)
 class TestJianYingASR:
     """Test suite for JianYingASR using public JianYing (CapCut) API.
 

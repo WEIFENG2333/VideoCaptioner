@@ -1,5 +1,6 @@
 """Google Translator integration tests."""
 
+import os
 from typing import Dict, List
 
 import pytest
@@ -11,6 +12,11 @@ from videocaptioner.core.translate.google_translator import GoogleTranslator
 
 
 @pytest.mark.integration
+@pytest.mark.skipif(
+    os.getenv("RUN_LIVE_TRANSLATION_TESTS") != "1"
+    and os.getenv("RUN_GOOGLE_TRANSLATOR_TESTS") != "1",
+    reason="Google free translation endpoint is network-dependent; set RUN_GOOGLE_TRANSLATOR_TESTS=1 to run.",
+)
 class TestGoogleTranslator:
     """Test suite for GoogleTranslator using public API endpoints."""
 

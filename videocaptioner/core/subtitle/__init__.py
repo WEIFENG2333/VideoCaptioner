@@ -19,12 +19,21 @@ from .font_utils import (
 )
 from .rounded_renderer import render_preview, render_rounded_video
 from .style_manager import (
+    AssSecondaryStyle,
+    AssSubtitleStyle,
+    RoundedSubtitleStyle,
     SecondaryStyle,
     StyleMode,
+    StyleSource,
+    SubtitleRenderer,
     SubtitleStyle,
+    SubtitleStylePreset,
     available_style_names,
+    delete_user_style,
     list_styles,
     load_style,
+    normalize_style_id,
+    save_user_style,
 )
 from .styles import RoundedBgStyle
 from .text_utils import hex_to_rgba, is_mainly_cjk, wrap_text
@@ -35,7 +44,7 @@ def get_subtitle_style(style_name: str) -> Optional[str]:
 
     Uses the unified style_manager (JSON-first, .txt fallback).
     """
-    style = load_style(style_name)
+    style = load_style(style_name, renderer=SubtitleRenderer.ASS)
     if style is None:
         return None
     return style.to_ass_string()
@@ -54,11 +63,20 @@ __all__ = [
     "RoundedBgStyle",
     "get_subtitle_style",
     "SubtitleStyle",
+    "SubtitleStylePreset",
+    "SubtitleRenderer",
+    "StyleSource",
+    "AssSubtitleStyle",
+    "AssSecondaryStyle",
+    "RoundedSubtitleStyle",
     "SecondaryStyle",
     "StyleMode",
     "load_style",
     "list_styles",
     "available_style_names",
+    "save_user_style",
+    "delete_user_style",
+    "normalize_style_id",
     "FontType",
     "get_font",
     "get_ass_to_pil_ratio",

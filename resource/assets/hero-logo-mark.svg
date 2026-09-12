@@ -1,0 +1,26 @@
+<svg width="168" height="168" viewBox="0 0 168 168" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 首页 hero 标志：原 logo 剪刀 + 右上「剪辑火花」（绿→青渐变，2.0 升级语义）。
+       QtSvg 渲染（QPixmap 加载），不要使用 filter/feDropShadow（不支持）。 -->
+  <defs>
+    <linearGradient id="spark" x1="700" y1="20" x2="960" y2="290" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08F08A"/>
+      <stop offset="1" stop-color="#22C8D7"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(12 12) scale(.144)">
+    <rect x="0" y="0" width="1000" height="1000" rx="150" fill="#2C2C2C"/>
+    <rect x="6" y="6" width="988" height="988" rx="144" fill="none" stroke="#ffffff" stroke-opacity=".05" stroke-width="12"/>
+    <g fill="#66BC7D" stroke="#66BC7D" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M499 548L440 606V692C440 762 404 795 318 795C225 795 171 756 171 661C171 580 206 536 288 527C333 522 361 532 382 537L499 548Z"/>
+      <path d="M501 548L560 606V692C560 762 596 795 682 795C775 795 819 756 819 661C819 580 784 536 702 527C657 522 629 532 608 537L501 548Z"/>
+      <path d="M416 500H580L610 530L512 560L500 548L484 560L386 530Z"/>
+      <path d="M264 184L610 530L580 560C520 545 460 520 416 500C398 455 360 405 315 360L235 280C205 250 222 212 264 184Z"/>
+      <path d="M733 184C763 210 784 235 770 278C760 308 733 326 710 350L606 454L543 376L696 223C708 211 721 198 733 184Z"/>
+    </g>
+    <path d="M500 566L517 592C531 614 535 640 532 672L500 645L468 672C465 640 469 614 483 592Z" fill="#2C2C2C"/>
+    <path d="M257 650L332 607C344 600 354 607 354 621V689C354 703 342 711 330 704L257 665C244 658 244 657 257 650Z" fill="#2C2C2C"/>
+    <path d="M743 650L668 607C656 600 646 607 646 621V689C646 703 658 711 670 704L743 665C756 658 756 657 743 650Z" fill="#2C2C2C"/>
+    <path d="M826 20 Q844 78 902 96 Q844 114 826 172 Q808 114 750 96 Q808 78 826 20 Z" fill="url(#spark)"/>
+    <path d="M915 198 Q923 224 949 232 Q923 240 915 266 Q907 240 881 232 Q907 224 915 198 Z" fill="url(#spark)" opacity=".8"/>
+  </g>
+</svg>

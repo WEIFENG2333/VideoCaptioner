@@ -1,0 +1,15 @@
+{
+  "name": "圆角胶囊",
+  "description": "半透明圆角背景，适合信息密度较高的视频",
+  "mode": "rounded",
+  "font_name": "LXGW WenKai",
+  "font_size": 28,
+  "text_color": "#000000",
+  "bg_color": "#0de3ffe5",
+  "corner_radius": 12,
+  "padding_h": 18,
+  "padding_v": 16,
+  "margin_bottom": 40,
+  "line_spacing": 10,
+  "letter_spacing": 2
+}

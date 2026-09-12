@@ -24,6 +24,49 @@ logger = setup_logger("subtitle_optimizer")
 MAX_STEPS = 3
 
 
+class LLMFatalError(RuntimeError):
+    """LLM 确定性硬失败（鉴权失效 / 余额不足 / 配额用尽等）。
+
+    这类错误重试也不会好，应立即中止整个流程并给一条清晰提示，而不是逐批吞掉、
+    刷屏几十条相同 ERROR 后硬撑到下一步才失败。
+    """
+
+
+_FATAL_LLM_STATUS = {401, 402, 403}
+_FATAL_LLM_HINTS = (
+    "balance",
+    "insufficient",
+    "invalid api key",
+    "invalid_api_key",
+    "unauthorized",
+    "quota",
+    "permission denied",
+)
+
+
+def _is_fatal_llm_error(exc: Exception) -> bool:
+    """判断 LLM 异常是否为鉴权/余额类确定性硬失败（重试无意义）。"""
+    status = getattr(exc, "status_code", None)
+    if isinstance(status, int) and status in _FATAL_LLM_STATUS:
+        return True
+    text = str(exc).lower()
+    return any(hint in text for hint in _FATAL_LLM_HINTS)
+
+
+# 相似度过低时，允许的"新增内容"占比上限。口语字幕优化以删除填充词/口吃为主
+# （optimized ⊆ original），字符相似度天然偏低但属于期望行为；只有当改动很大且
+# 引入大量原文没有的新内容（改写/翻译/幻觉）时才判为过度改动。
+NOVELTY_LIMIT = 0.15
+
+# 内容词切分：拉丁词整段、CJK 逐字（忽略标点/空白）。新增内容占比在词/字粒度上
+# 计算——字符级在句首删词后会碎片化误判合法删减为"新增"。
+_TOKEN_RE = re.compile(r"[a-zA-Z0-9]+|[一-鿿]")
+
+
+def _content_tokens(text: str) -> List[str]:
+    return _TOKEN_RE.findall(text.lower())
+
+
 class SubtitleOptimizer:
     """字幕优化器
 
@@ -48,7 +91,6 @@ class SubtitleOptimizer:
             batch_num: 每批处理的字幕数量
             model: LLM模型名称
             custom_prompt: 自定义优化提示词
-            temperature: LLM温度参数
             update_callback: 进度更新回调函数
         """
         self.thread_num = thread_num
@@ -98,6 +140,8 @@ class SubtitleOptimizer:
 
             return ASRData(new_segments)
 
+        except LLMFatalError:
+            raise  # 保留清晰的硬失败原文（余额/鉴权），不包成通用错误
         except Exception as e:
             logger.error(f"Optimization failed: {str(e)}")
             raise RuntimeError(f"Optimization failed: {str(e)}")
@@ -145,6 +189,10 @@ class SubtitleOptimizer:
             try:
                 result = future.result()
                 optimized_dict.update(result)
+            except LLMFatalError:
+                # 鉴权/余额类硬失败：立即中止，取消其余批次，避免刷屏几十条相同错误
+                self.stop()
+                raise
             except Exception as e:
                 logger.error(f"Optimization batch failed: {str(e)}")
                 optimized_dict.update(chunk)  # 失败时保留原文
@@ -180,30 +228,89 @@ class SubtitleOptimizer:
 
             return result
 
+        except LLMFatalError:
+            raise  # 鉴权/余额类硬失败：向上冒泡以立即中止，不逐批吞掉
         except Exception as e:
             logger.error(f"Optimization failed: {str(e)}")
             return subtitle_chunk
 
     def agent_loop(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:
-        """使用agent loop优化字幕
+        """使用 agent loop 优化字幕。
 
-        LLM → 验证 → 反馈 → 重试 (最多MAX_STEPS次)
+        逐行校验，只对未通过的行发起反馈重试（而非整批重发），
+        大幅降低口语素材下的重试放大。
 
         Args:
             subtitle_chunk: 字幕批次字典
 
         Returns:
-            优化后的字幕批次
+            优化后的字幕批次（键与顺序与输入一致）
 
         Raises:
             ValueError: LLM returned empty result
         """
-        # 构建提示词
+        accepted: Dict[str, str] = {}
+        best_effort = dict(subtitle_chunk)  # 每行的最优尝试，用尽重试后兜底
+        pending = dict(subtitle_chunk)  # 仍需优化的行
+
+        for step in range(MAX_STEPS):
+            result_dict = self._request_optimization(pending, retry=step > 0)
+
+            newly_valid: Dict[str, str] = {}
+            still_pending: Dict[str, str] = {}
+            for key, original_text in pending.items():
+                optimized_text = result_dict.get(key)
+                if not isinstance(optimized_text, str) or not optimized_text.strip():
+                    # 缺键或空结果：保留原文继续重试
+                    still_pending[key] = original_text
+                    continue
+                best_effort[key] = optimized_text
+                if self._line_is_valid(original_text, optimized_text)[0]:
+                    newly_valid[key] = optimized_text
+                else:
+                    still_pending[key] = original_text
+
+            accepted.update(newly_valid)
+
+            if not still_pending:
+                break
+
+            logger.warning(
+                f"优化验证未通过 {len(still_pending)} 行，仅重试这些行 (第{step + 1}次尝试)"
+            )
+            pending = still_pending
+
+        # 用尽重试：残余行取最优尝试兜底（尽量保留清理效果，而非退回原文）
+        for key in pending:
+            accepted[key] = best_effort.get(key, subtitle_chunk[key])
+
+        # 恢复输入顺序后再对齐修复
+        ordered = {key: accepted[key] for key in subtitle_chunk}
+        return self._repair_subtitle(subtitle_chunk, ordered)
+
+    def _request_optimization(
+        self, subtitle_chunk: Dict[str, str], retry: bool = False
+    ) -> Dict[str, str]:
+        """对一批字幕发起一次 LLM 优化请求并解析为字典。
+
+        Args:
+            subtitle_chunk: 待优化的字幕行
+            retry: 是否为重试请求（会追加"仅删减、勿改写"的强约束）
+
+        Returns:
+            优化后的字幕字典（键统一为字符串）
+        """
         user_prompt = (
-            f"Correct the following subtitles. Keep the original language, do not translate:\n"
+            "Correct the following subtitles. Keep the original language, do not translate:\n"
             f"<input_subtitle>{str(subtitle_chunk)}</input_subtitle>"
         )
-
+        if retry:
+            user_prompt += (
+                "\nThese lines were flagged for changing the wording too much. "
+                "Only fix clear recognition errors and drop filler words; do NOT add "
+                "new content or rephrase. Output ONLY a valid JSON dictionary with the "
+                "same keys."
+            )
         if self.custom_prompt:
             user_prompt += (
                 f"\nReference content:\n<reference>{self.custom_prompt}</reference>"
@@ -214,131 +321,66 @@ class SubtitleOptimizer:
             {"role": "user", "content": user_prompt},
         ]
 
-        last_result = None
+        try:
+            response = call_llm(messages=messages, model=self.model)
+        except Exception as e:
+            if _is_fatal_llm_error(e):
+                raise LLMFatalError(str(e)) from e
+            raise
+        result_text = response.choices[0].message.content
+        if not result_text:
+            raise ValueError("LLM returned empty result")
 
-        # Agent loop
-        for step in range(MAX_STEPS):
-            # 调用LLM
-            response = call_llm(
-                messages=messages,
-                model=self.model,
-                temperature=0.2,
+        parsed_result = json_repair.loads(result_text)
+        if not isinstance(parsed_result, dict):
+            raise ValueError(
+                f"LLM返回结果类型Error，期望dict，实际{type(parsed_result)}"
             )
+        return {str(key): value for key, value in parsed_result.items()}
 
-            result_text = response.choices[0].message.content
-            if not result_text:
-                raise ValueError("LLM returned empty result")
-
-            # 解析结果
-            parsed_result = json_repair.loads(result_text)
-            if not isinstance(parsed_result, dict):
-                raise ValueError(
-                    f"LLM返回结果类型Error，期望dict，实际{type(parsed_result)}"
-                )
-
-            result_dict: Dict[str, str] = parsed_result
-            last_result = result_dict
-
-            # 验证结果
-            is_valid, error_message = self._validate_optimization_result(
-                original_chunk=subtitle_chunk, optimized_chunk=result_dict
-            )
-
-            if is_valid:
-                return self._repair_subtitle(subtitle_chunk, result_dict)
-
-            # 验证失败，添加反馈
-            logger.warning(
-                f"优化验证失败，开始反馈循环 (第{step + 1}次尝试): {error_message}"
-            )
-            messages.append({"role": "assistant", "content": result_text})
-            messages.append(
-                {
-                    "role": "user",
-                    "content": (
-                        f"Validation failed: {error_message}\n"
-                        f"Please fix the errors and output ONLY a valid JSON dictionary."
-                    ),
-                }
-            )
-
-        # 达到最大步数
-        logger.warning(f"Max attempts reached({MAX_STEPS})，returning last result")
-        return (
-            self._repair_subtitle(subtitle_chunk, last_result)
-            if last_result
-            else subtitle_chunk
-        )
-
-    def _validate_optimization_result(
-        self, original_chunk: Dict[str, str], optimized_chunk: Dict[str, str]
+    def _line_is_valid(
+        self, original_text: str, optimized_text: str
     ) -> Tuple[bool, str]:
-        """验证优化结果
+        """判断单行优化是否忠实于原文。
 
-        检查:
-        1. 键是否完全匹配
-        2. 改动是否过大（相似度 < 0.7）
-
-        Args:
-            original_chunk: 原始字幕批次
-            optimized_chunk: 优化后字幕批次
+        口语字幕优化的核心动作是删除填充词/口吃（optimized ⊆ original），字符级
+        相似度会天然偏低但属于期望行为。因此仅当"改动很大"且"引入大量原文没有的
+        新内容"（改写/翻译/幻觉）时才判为过度改动；单纯删减一律放行。
 
         Returns:
-            (是否有效, Error反馈)
+            (是否忠实, 失败原因)
         """
-        expected_keys = set(original_chunk.keys())
-        actual_keys = set(optimized_chunk.keys())
+        original_cleaned = re.sub(r"\s+", " ", original_text).strip()
+        optimized_cleaned = re.sub(r"\s+", " ", optimized_text).strip()
 
-        # 检查键匹配
-        if expected_keys != actual_keys:
-            missing = expected_keys - actual_keys
-            extra = actual_keys - expected_keys
+        similarity = difflib.SequenceMatcher(
+            None, original_cleaned, optimized_cleaned
+        ).ratio()
+        threshold = 0.3 if count_words(original_text) <= 10 else 0.7
+        if similarity >= threshold:
+            return True, ""
 
-            error_parts = []
-            if missing:
-                error_parts.append(f"Missing keys: {sorted(missing)}")
-            if extra:
-                error_parts.append(f"Extra keys: {sorted(extra)}")
-
-            error_msg = (
-                "\n".join(error_parts) + f"\nRequired keys: {sorted(expected_keys)}\n"
-                f"Please return the COMPLETE optimized dictionary with ALL {len(expected_keys)} keys."
+        # 相似度低：在词/字粒度上区分"忠实删减"与"改写/新增"。
+        original_tokens = _content_tokens(original_cleaned)
+        optimized_tokens = _content_tokens(optimized_cleaned)
+        if not optimized_tokens:
+            return False, (
+                f"empty optimization. Original: '{original_text}' → Optimized: '{optimized_text}'"
             )
-            return False, error_msg
+        matched = sum(
+            block.size
+            for block in difflib.SequenceMatcher(
+                None, original_tokens, optimized_tokens
+            ).get_matching_blocks()
+        )
+        novelty = 1.0 - (matched / len(optimized_tokens))
+        if novelty <= NOVELTY_LIMIT:
+            return True, ""
 
-        # 检查改动是否过大（逐条比较相似度）
-        excessive_changes = []
-        for key in expected_keys:
-            original_text = original_chunk[key]
-            optimized_text = optimized_chunk[key]
-
-            # 清理文本用于比较
-            original_cleaned = re.sub(r"\s+", " ", original_text).strip()
-            optimized_cleaned = re.sub(r"\s+", " ", optimized_text).strip()
-
-            # 计算相似度
-            matcher = difflib.SequenceMatcher(None, original_cleaned, optimized_cleaned)
-            similarity = matcher.ratio()
-            similarity_threshold = 0.3 if count_words(original_text) <= 10 else 0.7
-
-            # 相似度过低
-            if similarity < similarity_threshold:
-                excessive_changes.append(
-                    f"Key '{key}': similarity {similarity:.1%} < {similarity_threshold:.0%}. "
-                    f"Original: '{original_text}' → Optimized: '{optimized_text}' "
-                )
-
-        if excessive_changes:
-            error_msg = ";\n".join(excessive_changes)
-            error_msg += (
-                "\n\nYour optimizations changed the text too much. "
-                "Keep high similarity (≥70% for normal text) by making MINIMAL changes: "
-                "only fix recognition errors and improve clarity, "
-                "but preserve the original wording, length and structure as much as possible."
-            )
-            return False, error_msg
-
-        return True, ""
+        return False, (
+            f"similarity {similarity:.1%} < {threshold:.0%}, {novelty:.0%} new content. "
+            f"Original: '{original_text}' → Optimized: '{optimized_text}'"
+        )
 
     @staticmethod
     def _repair_subtitle(

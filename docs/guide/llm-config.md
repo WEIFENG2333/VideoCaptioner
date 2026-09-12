@@ -150,7 +150,7 @@ SiliconCloud 对并发请求有限制，建议将 **线程数** 设置为 **5 �
 
 ### API Key 安全吗？
 
-- 所有 API Key 都保存在本地 `AppData/settings.json` 文件中
+- 所有 API Key 都保存在 VideoCaptioner AppData 目录的 `config.toml` 文件中
 - 不会上传到任何服务器
 - 建议定期轮换 API Key
 

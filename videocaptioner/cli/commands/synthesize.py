@@ -7,13 +7,15 @@ from typing import Literal, Optional
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.cli.config import get
 from videocaptioner.cli.validators import validate_synthesize
+from videocaptioner.core.application.config_store import get
 from videocaptioner.core.subtitle.style_manager import (
-    StyleMode,
-    SubtitleStyle,
+    StyleSource,
+    SubtitleRenderer,
     available_style_names,
     load_style,
+    normalize_style_id,
+    preset_from_json,
 )
 
 EncodePreset = Literal[
@@ -64,8 +66,13 @@ def _resolve_style(config: dict, verbose: bool) -> tuple:
             output.hint('Example: --style-override \'{"outline_color": "#ff0000", "font_size": 48}\'')
             return None, None, None, None, None
 
-    # Load base style from preset
-    style = load_style(style_name, mode=render_mode)
+    # Load base style from preset. 样式 id 的渲染器前缀是唯一真源：
+    # 带前缀时渲染管线跟随前缀，render_mode 只给无前缀的名字补默认。
+    style_id = normalize_style_id(style_name, render_mode)
+    style = load_style(style_id)
+    if style is not None:
+        render_mode = "rounded" if style.renderer == SubtitleRenderer.ROUNDED else "ass"
+        renderer = style.renderer
     if style is None:
         names = available_style_names()
         output.error(f"Style preset not found: '{style_name}'")
@@ -74,26 +81,18 @@ def _resolve_style(config: dict, verbose: bool) -> tuple:
         output.hint("Run 'videocaptioner style' to see all options")
         return None, None, None, None, None
 
-    # Mode mismatch
-    if render_mode == "rounded" and style.mode == StyleMode.ASS:
-        output.warn(f"'{style.name}' is an ASS preset. Switching to default rounded style.")
-        style = load_style("default", mode="rounded") or style
-    elif render_mode == "ass" and style.mode == StyleMode.ROUNDED:
-        output.warn(f"'{style.name}' is a rounded preset. Switching to default ASS style.")
-        style = load_style("default", mode="ass") or style
-
     # Apply --style-override on top of base style
     if override_dict:
         # Auto-detect mode from override fields
         if any(k in override_dict for k in ("bg_color", "text_color", "corner_radius")):
             if render_mode == "ass":
                 render_mode = "rounded"
-                # Reload with rounded base if currently ASS
-                if style.mode == StyleMode.ASS:
-                    style = load_style("default", mode="rounded") or style
+                renderer = SubtitleRenderer.ROUNDED
+                style = load_style("rounded/default", renderer=renderer) or style
         base = style.to_json_dict()
         base.update(override_dict)
-        style = SubtitleStyle.from_json(base)
+        base["id"] = normalize_style_id(base.get("id") or style.id, render_mode)
+        style = preset_from_json(base, source=StyleSource.USER, renderer_hint=renderer)
 
     # Print final style config
     if verbose:
@@ -186,13 +185,15 @@ def run(args: Namespace, config: dict) -> int:
     if soft and any([style_arg, override_arg, render_arg]):
         output.warn("Style options are ignored in soft subtitle mode (player controls rendering)")
 
-    # Output path
+    # Output path：软/硬是参数不是产物角色，统一 {stem}.subtitled.{ext}
     if args.output:
         output_path = args.output
     else:
-        stem = video_path.stem
-        suffix = "_captioned" if not soft else "_subtitled"
-        output_path = str(video_path.with_stem(stem + suffix))
+        from videocaptioner.core.application import output_paths
+
+        output_path = str(
+            output_paths.product_path(video_path, output_paths.TAG_SUBTITLED)
+        )
 
     # Check input != output
     if Path(output_path).resolve() == video_path.resolve():
@@ -234,14 +235,27 @@ def run(args: Namespace, config: dict) -> int:
                     progress.fail("Style configuration error")
                 return EXIT.USAGE_ERROR
 
+            # 样式 id 的渲染器前缀是唯一真源：显式 --render-mode 与所选样式前缀冲突时
+            # 会被忽略，提示用户改用对应前缀的样式，避免"传了 flag 却不生效"的困惑。
+            if render_arg and render_arg != mode:
+                style_name = get(config, "synthesize.style", "default")
+                output.warn(
+                    f"--render-mode {render_arg} 被忽略：样式 '{style_name}' 的前缀决定了"
+                    f"渲染模式为 {mode}。如需 {render_arg} 渲染，请改用 {render_arg}/ 前缀的样式"
+                    f"（运行 'videocaptioner style' 查看）。"
+                )
+
             from videocaptioner.cli.validators import resolve_layout
+            from videocaptioner.core.asr.asr_data import ASRData
             layout_str = get(config, "synthesize.layout", "target-above")
             layout = resolve_layout(layout_str)
 
+            # 字幕文件的行序即布局；按文件行序原样烧录，不二次翻转已排版的双语文件。
+            asr_data = ASRData.from_subtitle_file(str(subtitle_path))
+            layout = asr_data.resolve_layout_from_file(layout)
+
             if mode == "rounded":
-                from videocaptioner.core.asr.asr_data import ASRData
                 from videocaptioner.core.subtitle.rounded_renderer import render_rounded_video
-                asr_data = ASRData.from_subtitle_file(str(subtitle_path))
                 render_rounded_video(
                     video_path=str(video_path),
                     asr_data=asr_data,
@@ -253,9 +267,7 @@ def run(args: Namespace, config: dict) -> int:
                     progress_callback=progress_callback,
                 )
             else:
-                from videocaptioner.core.asr.asr_data import ASRData
                 from videocaptioner.core.subtitle.ass_renderer import render_ass_video
-                asr_data = ASRData.from_subtitle_file(str(subtitle_path))
 
                 # Register custom font if provided
                 if font_file:

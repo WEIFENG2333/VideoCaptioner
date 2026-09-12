@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>配音页声音克隆设计</title>
+  <style>
+    :root {
+      --bg: #202020;
+      --panel: #303030;
+      --field: #262827;
+      --line: #454545;
+      --soft: #3a3d3c;
+      --text: #f3f3f3;
+      --muted: #b8b8b8;
+      --subtle: #8f9492;
+      --accent: #00ef9f;
+      --accent-fg: #031f16;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .page { width: 1180px; margin: 0 auto; padding: 36px; }
+    h1 { margin: 0 0 20px; font-size: 34px; letter-spacing: 0; }
+    .providers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    .provider, .panel, .table { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; }
+    .provider { padding: 16px; height: 88px; }
+    .provider.active { border-color: var(--accent); background: #263b34; }
+    .provider b { display: block; margin-bottom: 8px; font-size: 15px; }
+    .provider span { color: var(--muted); font-size: 12px; }
+    .body { display: grid; grid-template-columns: 1fr 386px; gap: 18px; }
+    .filters { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; padding: 12px; border: 1px solid var(--soft); border-radius: 8px; background: var(--panel); }
+    .chip { min-width: 58px; height: 34px; display: grid; place-items: center; border-radius: 7px; background: var(--field); border: 1px solid var(--soft); color: var(--muted); font-weight: 700; }
+    .chip.active { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
+    .table { overflow: hidden; }
+    .row { height: 68px; display: grid; grid-template-columns: 1fr 92px; align-items: center; padding: 0 16px; border-top: 1px solid var(--soft); }
+    .row:first-child { height: 44px; border-top: 0; background: #242626; color: var(--subtle); font-size: 12px; font-weight: 700; }
+    .row.active { background: #263b34; outline: 1px solid var(--accent); }
+    .voice b { display: block; margin-bottom: 4px; }
+    .voice span { color: var(--muted); font-size: 12px; }
+    button { height: 36px; border: 1px solid var(--soft); border-radius: 7px; background: var(--field); color: var(--text); font-weight: 700; }
+    button.primary { width: 100%; height: 40px; color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
+    button.secondary { background: var(--field); color: var(--text); }
+    .side { display: grid; gap: 14px; align-content: start; }
+    .panel { padding: 18px; }
+    .panel h2 { margin: 0 0 14px; font-size: 18px; }
+    textarea, .filebox { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--text); }
+    textarea { height: 126px; padding: 14px; resize: none; }
+    .count { margin: 8px 0 12px; text-align: right; color: var(--subtle); font-size: 12px; }
+    .filebox { min-height: 52px; padding: 10px 12px; color: var(--muted); display: flex; align-items: center; }
+    .actions { display: grid; grid-template-columns: 1fr 92px 74px; gap: 8px; margin-top: 10px; }
+    .clone-note { margin-top: 10px; color: var(--subtle); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>配音</h1>
+    <section class="providers">
+      <div class="provider"><b>Edge 免费配音</b><span>免 API Key，适合快速生成。</span></div>
+      <div class="provider"><b>Gemini TTS</b><span>英文表达自然，需要 Key。</span></div>
+      <div class="provider active"><b>SiliconFlow CosyVoice</b><span>支持参考音频克隆。</span></div>
+    </section>
+    <section class="filters">
+      <span style="color:var(--muted)">声线</span>
+      <span class="chip active">全部</span>
+      <span class="chip">女声</span>
+      <span class="chip">男声</span>
+    </section>
+    <section class="body">
+      <div class="table">
+        <div class="row"><span>音色</span><span style="text-align:right">试听</span></div>
+        <div class="row active"><div class="voice"><b>Anna</b><span>自然中文女声，可配合参考音频克隆</span></div><button>试听</button></div>
+        <div class="row"><div class="voice"><b>Alex</b><span>自然中文男声，可配合参考音频克隆</span></div><button>试听</button></div>
+        <div class="row"><div class="voice"><b>Bella</b><span>热情中文女声，可克隆</span></div><button>试听</button></div>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h2>配音文案</h2>
+          <textarea>你好，这是我想用于测试的配音文案。请用自然清晰的语气朗读这一句话。</textarea>
+          <div class="count">33 字</div>
+          <h2 style="margin-top:18px">声音克隆</h2>
+          <div class="clone-note">参考音频</div>
+          <div class="filebox">未选择参考音频</div>
+          <div class="actions">
+            <button class="secondary">上传音频</button>
+            <button>录制</button>
+            <button>清除</button>
+          </div>
+          <div class="clone-note">参考文本</div>
+          <textarea style="height:82px;margin-top:12px" placeholder="输入参考音频里实际朗读的文字"></textarea>
+          <div class="clone-note">未上传参考音频时，直接使用上方文案试听当前音色。</div>
+          <button class="primary" style="margin-top:14px">试听这句话</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

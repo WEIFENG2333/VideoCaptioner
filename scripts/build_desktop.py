@@ -70,7 +70,12 @@ def clean() -> None:
 
 
 def prepare_ffmpeg() -> None:
-    """Download the current platform's static ffmpeg/ffprobe into runtime resources."""
+    """Download the current platform's static ffmpeg into runtime resources.
+
+    全应用只依赖 ffmpeg 一个二进制：媒体探测走 ``ffmpeg -i``
+    （core/utils/media_info.py），音频解码走 ffmpeg 管道
+    （core/utils/audio_io.py），ffprobe 不随包。
+    """
     try:
         from static_ffmpeg.run import (
             get_or_fetch_platform_executables_else_raise,
@@ -85,8 +90,8 @@ def prepare_ffmpeg() -> None:
     runtime_bin = RUNTIME_DIR / "resource" / "bin"
     runtime_bin.mkdir(parents=True, exist_ok=True)
     cache_dir = BUILD_DIR / "static-ffmpeg" / get_platform_key()
-    ffmpeg, ffprobe = get_or_fetch_platform_executables_else_raise(download_dir=str(cache_dir))
-    for src in [Path(ffmpeg), Path(ffprobe)]:
+    ffmpeg, _ffprobe = get_or_fetch_platform_executables_else_raise(download_dir=str(cache_dir))
+    for src in [Path(ffmpeg)]:
         dst = runtime_bin / src.name
         if dst.exists():
             dst.chmod(dst.stat().st_mode | stat.S_IWUSR)
@@ -95,6 +100,89 @@ def prepare_ffmpeg() -> None:
             mode = dst.stat().st_mode
             dst.chmod(mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         print(f"Bundled {dst.relative_to(ROOT)}")
+
+
+def prepare_whisper_cpp() -> None:
+    """Bundle the official whisper.cpp CPU build into runtime resources (Windows only).
+
+    本地转录开箱即用：桌面包自带 whisper-cli（BLAS CPU 版，~20MB），用户装好
+    模型即可转录；GPU 版仍走应用内「管理模型」一键下载。固定 tag + sha256 可复现。
+    """
+    if platform.system() != "Windows":
+        return
+    import hashlib
+    import io
+    import urllib.request
+    import zipfile
+
+    url = (
+        "https://github.com/ggml-org/whisper.cpp/releases/download/"
+        "v1.9.1/whisper-blas-bin-x64.zip"
+    )
+    sha256 = "3c319eab3e87f85883e1ff3d14426c0a1986c661c5eb5985e8af431ed9c4f71f"
+    runtime_bin = RUNTIME_DIR / "resource" / "bin"
+    runtime_bin.mkdir(parents=True, exist_ok=True)
+    if (runtime_bin / "whisper-cli.exe").exists():
+        print("whisper-cli.exe already prepared")
+        return
+
+    cache = BUILD_DIR / "whisper-cpp" / Path(url).name
+    if not cache.exists():
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Downloading {url}")
+        with urllib.request.urlopen(url, timeout=300) as resp:
+            data = resp.read()
+        cache.write_bytes(data)
+    digest = hashlib.sha256(cache.read_bytes()).hexdigest()
+    if digest != sha256:
+        cache.unlink(missing_ok=True)
+        raise RuntimeError(f"whisper.cpp checksum mismatch: {digest}")
+
+    wanted_exe = "whisper-cli.exe"
+    with zipfile.ZipFile(io.BytesIO(cache.read_bytes())) as zf:
+        for info in zf.infolist():
+            base = Path(info.filename).name
+            if base == wanted_exe or (base.endswith(".dll") and base != "SDL2.dll"):
+                (runtime_bin / base).write_bytes(zf.read(info))
+    print(f"Bundled whisper-cli.exe into {runtime_bin.relative_to(ROOT)}")
+
+
+def prepare_macsysaudio() -> None:
+    """Build the macOS system-audio helper (ScreenCaptureKit) into runtime resources.
+
+    macOS only, ~91KB static Swift binary — small + unchanging, so it ships INSIDE the
+    bundle (no download step, no signing needed: an unsigned helper still works, the user
+    just grants「屏幕录制」once and the grant persists for a never-updated app).
+
+    Same staging pattern as ffmpeg: build → copy into RUNTIME_DIR/resource/bin with +x;
+    PyInstaller's onedir COLLECT preserves the mode bit, so find_macsysaudio_binary finds
+    an executable at BUNDLED_BIN_PATH (else os.access(X_OK) fails and 「系统声音」 hides).
+
+    Best-effort: without the Swift toolchain (Xcode CLT) it warns and continues — the app
+    still runs, system audio capture is just unavailable. Needs native/macsysaudio/ in the
+    repo (git-tracked) for the build.sh source to exist on a fresh checkout.
+    """
+    if platform.system() != "Darwin":
+        return
+    runtime_bin = RUNTIME_DIR / "resource" / "bin"
+    runtime_bin.mkdir(parents=True, exist_ok=True)
+    build_sh = ROOT / "native" / "macsysaudio" / "build.sh"
+    src = ROOT / "resource" / "bin" / "macsysaudio"
+    try:
+        if build_sh.exists():
+            _run(["bash", str(build_sh)])
+    except Exception as exc:
+        print(f"WARNING: macsysaudio build failed ({exc}); system audio will be unavailable")
+    if not src.exists():
+        print("WARNING: macsysaudio binary not found (native/macsysaudio not built); "
+              "system audio capture will be unavailable in this build")
+        return
+    dst = runtime_bin / "macsysaudio"
+    if dst.exists():
+        dst.chmod(dst.stat().st_mode | stat.S_IWUSR)
+    shutil.copy2(src, dst)
+    dst.chmod(dst.stat().st_mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    print(f"Bundled {dst.relative_to(ROOT)}")
 
 
 def build_pyinstaller() -> None:
@@ -125,10 +213,16 @@ def _archive_dir(source: Path, archive: Path) -> None:
     archive.parent.mkdir(parents=True, exist_ok=True)
     if archive.exists():
         archive.unlink()
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
-        for file in sorted(source.rglob("*")):
-            if file.is_file():
-                zf.write(file, file.relative_to(source.parent))
+    if platform.system() == "Darwin":
+        # macOS 必须用 ditto：zipfile 会把符号链接拍平成普通文件、丢掉可执行位，解压出的
+        # .app（Python/Qt framework 的 Versions/Current 软链 + 主程序 +x）将无法启动。
+        # ditto 保留软链/权限/代码签名，且产物是标准 zip。客户端 _extract 对应也用 ditto。
+        _run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(source), str(archive)])
+    else:
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+            for file in sorted(source.rglob("*")):
+                if file.is_file():
+                    zf.write(file, file.relative_to(source.parent))
     print(f"Created {archive.relative_to(ROOT)}")
 
 
@@ -145,13 +239,16 @@ def verify_bundle() -> None:
     required = [
         data_root / "resource" / "assets" / "logo.png",
         data_root / "resource" / "fonts" / "NotoSansSC-Regular.ttf",
-        data_root / "resource" / "subtitle_style" / "ass-default.json",
+        data_root / "resource" / "subtitle_styles" / "ass" / "default.json",
         data_root / "resource" / "bin" / ("ffmpeg.exe" if platform.system() == "Windows" else "ffmpeg"),
-        data_root / "resource" / "bin" / ("ffprobe.exe" if platform.system() == "Windows" else "ffprobe"),
     ]
     missing = [str(path.relative_to(ROOT)) for path in required if not path.exists()]
     if missing:
         raise RuntimeError("Missing bundled resources:\n  - " + "\n  - ".join(missing))
+    if platform.system() == "Darwin":
+        # 软检查（不阻断构建）：缺它只是「系统声音」不可用，不是整包坏了。
+        helper = data_root / "resource" / "bin" / "macsysaudio"
+        print(f"  macsysaudio (系统声音): {'present' if helper.exists() else 'MISSING — system audio disabled'}")
     print(f"Verified desktop bundle: {bundle.relative_to(ROOT)}")
 
 
@@ -161,6 +258,10 @@ def archive(version: str) -> None:
     _archive_dir(bundle, ARTIFACT_DIR / f"VideoCaptioner-{version}-{tag}.zip")
     app = DIST_DIR / "VideoCaptioner.app"
     if app.exists():
+        # ad-hoc 签名后再打包：更新负载（app-zip）与 dmg 走同一签名姿态，规避 Apple Silicon
+        # 「已损坏」硬拦截。无 Apple 证书，ad-hoc 不消除 Gatekeeper 首启提示（需公证）。
+        if subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(app)]).returncode != 0:
+            print("⚠ ad-hoc codesign 失败（不阻断打包）")
         _archive_dir(app, ARTIFACT_DIR / f"VideoCaptioner-{version}-{tag}-app.zip")
 
 
@@ -175,6 +276,8 @@ def main() -> int:
         clean()
     ensure_version_file(version)
     prepare_ffmpeg()
+    prepare_whisper_cpp()
+    prepare_macsysaudio()
     build_pyinstaller()
     verify_bundle()
     if not args.no_archive:

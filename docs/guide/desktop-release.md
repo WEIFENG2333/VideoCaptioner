@@ -13,9 +13,13 @@ uv run python scripts/smoke_desktop.py dist/VideoCaptioner
 ```
 
 The build script downloads static `ffmpeg` and `ffprobe` for the current platform
-and bundles them under `resource/bin` inside the PyInstaller app. Runtime user data
-is kept in the system user-data directory, so app upgrades do not overwrite
-settings, logs, cache, models, or custom subtitle styles.
+and bundles them under `resource/bin` inside the PyInstaller app. On macOS it also
+builds the `macsysaudio` ScreenCaptureKit helper (`native/macsysaudio/build.sh`,
+needs the Swift toolchain / Xcode CLT) and bundles it the same way, so live-caption
+system-audio capture works out of the box — no download, no virtual sound card. The
+helper is unsigned; users grant「屏幕录制」once on first use. Runtime user data is
+kept in the system user-data directory, so app upgrades do not overwrite settings,
+logs, cache, models, or custom subtitle styles.
 
 ## CI and releases
 

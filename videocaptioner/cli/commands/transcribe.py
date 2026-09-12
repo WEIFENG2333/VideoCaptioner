@@ -6,8 +6,8 @@ from pathlib import Path
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.cli.config import get
 from videocaptioner.cli.validators import validate_transcribe
+from videocaptioner.core.application.config_store import get
 
 
 def run(args: Namespace, config: dict) -> int:
@@ -67,58 +67,11 @@ def run(args: Namespace, config: dict) -> int:
         if whisper_base:
             os.environ["OPENAI_BASE_URL"] = whisper_base
 
-    # Build TranscribeConfig
-    from videocaptioner.core.entities import (
-        FasterWhisperModelEnum,
-        TranscribeConfig,
-        TranscribeModelEnum,
-        VadMethodEnum,
-        WhisperModelEnum,
+    from videocaptioner.cli.config_adapter import app_config_from_cli
+    from videocaptioner.core.application import TaskBuilder
+    transcribe_config = TaskBuilder(app_config_from_cli(config)).create_transcribe_config(
+        need_word_timestamp=getattr(args, "word_timestamps", False)
     )
-
-    asr_map = {
-        "faster-whisper": TranscribeModelEnum.FASTER_WHISPER,
-        "whisper-api": TranscribeModelEnum.WHISPER_API,
-        "bijian": TranscribeModelEnum.BIJIAN,
-        "jianying": TranscribeModelEnum.JIANYING,
-        "whisper-cpp": TranscribeModelEnum.WHISPER_CPP,
-    }
-
-    # Map CLI string values to enums
-    fw_model_str = get(config, "transcribe.faster_whisper.model", "large-v3")
-    fw_model_enum = next((m for m in FasterWhisperModelEnum if m.value == fw_model_str), None)
-
-    vad_str = get(config, "transcribe.faster_whisper.vad_method", "silero-v4-fw")
-    vad_map = {v.value.replace("_", "-"): v for v in VadMethodEnum}
-    vad_enum = vad_map.get(vad_str.replace("_", "-"))
-
-    # WhisperCpp model enum
-    wcpp_model_str = get(config, "transcribe.whisper_cpp.model", "large-v2")
-    wcpp_model_enum = next((m for m in WhisperModelEnum if m.value == wcpp_model_str), None)
-
-    transcribe_config = TranscribeConfig(
-        transcribe_model=asr_map.get(asr_engine),
-        transcribe_language=language if language != "auto" else "",
-        need_word_time_stamp=getattr(args, "word_timestamps", False),
-        # FasterWhisper options
-        faster_whisper_model=fw_model_enum,
-        faster_whisper_model_dir=None,
-        faster_whisper_device=get(config, "transcribe.faster_whisper.device", "auto"),
-        faster_whisper_vad_filter=get(config, "transcribe.faster_whisper.vad_filter", True),
-        faster_whisper_vad_method=vad_enum,
-        faster_whisper_vad_threshold=get(config, "transcribe.faster_whisper.vad_threshold", 0.5),
-        faster_whisper_ff_mdx_kim2=get(config, "transcribe.faster_whisper.voice_extraction", False),
-        faster_whisper_one_word=True,
-        faster_whisper_prompt=get(config, "transcribe.faster_whisper.prompt", ""),
-        # WhisperCpp options
-        whisper_model=wcpp_model_enum,
-        # Whisper API options
-        whisper_api_key=get(config, "whisper_api.api_key", ""),
-        whisper_api_base=get(config, "whisper_api.api_base", ""),
-        whisper_api_model=get(config, "whisper_api.model", "whisper-1"),
-        whisper_api_prompt=get(config, "whisper_api.prompt", ""),
-    )
-
 
     # Progress callback
     progress = None if quiet else output.ProgressLine(f"Transcribing [{asr_engine}]").start()

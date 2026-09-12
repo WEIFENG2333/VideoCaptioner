@@ -5,7 +5,7 @@
 ## 模块结构
 
 ```
-app/core/translate/
+videocaptioner/core/translate/
 ├── __init__.py              # 模块导出
 ├── types.py                 # 翻译器类型枚举
 ├── base.py                  # 翻译器基类
@@ -49,7 +49,7 @@ app/core/translate/
 ### 基础使用
 
 ```python
-from app.core.translate import TranslatorFactory, TranslatorType
+from videocaptioner.core.translate import TranslatorFactory, TranslatorType
 
 # 创建 LLM 翻译器
 translator = TranslatorFactory.create_translator(
@@ -179,7 +179,7 @@ translator = TranslatorFactory.create_translator(
 3. 在 `factory.py` 中注册
 
 ```python
-from app.core.translate.base import BaseTranslator
+from videocaptioner.core.translate.base import BaseTranslator
 
 class MyTranslator(BaseTranslator):
     def _translate_chunk(self, subtitle_chunk: Dict[str, str]) -> Dict[str, str]:

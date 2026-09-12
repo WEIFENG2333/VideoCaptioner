@@ -8,16 +8,16 @@ from copy import deepcopy
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.cli.config import (
+from videocaptioner.core.application.config_store import (
     CONFIG_FILE,
     DEFAULTS,
-    _set_nested,
-    _write_toml,
     ensure_config_dir,
     format_config,
     get,
     load_config_file,
     save_config_value,
+    set_nested,
+    write_toml,
 )
 
 
@@ -70,6 +70,8 @@ def _set(key: str, value: str) -> int:
         output.error(str(e))
         return EXIT.GENERAL_ERROR
     # Mask sensitive values in success message
+    if "key" in key or "token" in key or "secret" in key:
+        value = value.strip()
     display = f"{value[:4]}...{value[-4:]}" if ("key" in key) and len(value) > 8 else value
     output.success(f"{key} = {display}")
     return EXIT.SUCCESS
@@ -129,23 +131,23 @@ def _interactive_init(args: Namespace, config_data: dict) -> int:
     print()
 
     try:
-        _set_nested(config_data, "transcribe.asr", _prompt("ASR engine [bijian]: ", "bijian"))
-        _set_nested(config_data, "subtitle.optimize", _yes_no("Enable AI subtitle polish? It fixes obvious ASR errors and punctuation. [Y/n]: ", True))
-        _set_nested(config_data, "subtitle.split", _yes_no("Enable subtitle re-segmentation? [Y/n]: ", True))
+        set_nested(config_data, "transcribe.asr", _prompt("ASR engine [bijian]: ", "bijian"))
+        set_nested(config_data, "subtitle.optimize", _yes_no("Enable AI subtitle polish? It fixes obvious ASR errors and punctuation. [Y/n]: ", True))
+        set_nested(config_data, "subtitle.split", _yes_no("Enable subtitle re-segmentation? [Y/n]: ", True))
         translator = _prompt("Translator [bing] (bing/google/llm): ", "bing")
-        _set_nested(config_data, "translate.service", translator)
+        set_nested(config_data, "translate.service", translator)
         print()
         print("LLM config is used for AI subtitle polish, LLM translation, and --adapt-length.")
-        _set_nested(config_data, "llm.api_key", _prompt("LLM API key [skip]: "))
-        _set_nested(config_data, "llm.api_base", _prompt(f"LLM API base [{DEFAULTS['llm']['api_base']}]: ", DEFAULTS["llm"]["api_base"]))
-        _set_nested(config_data, "llm.model", _prompt(f"LLM model [{DEFAULTS['llm']['model']}]: ", DEFAULTS["llm"]["model"]))
+        set_nested(config_data, "llm.api_key", _prompt("LLM API key [skip]: "))
+        set_nested(config_data, "llm.api_base", _prompt(f"LLM API base [{DEFAULTS['llm']['api_base']}]: ", DEFAULTS["llm"]["api_base"]))
+        set_nested(config_data, "llm.model", _prompt(f"LLM model [{DEFAULTS['llm']['model']}]: ", DEFAULTS["llm"]["model"]))
         print()
         print("Dubbing config is used by 'dub' and 'process --dub-only'.")
-        _set_nested(config_data, "dubbing.preset", _prompt("Dubbing preset [edge-cn-female] (no API key): ", "edge-cn-female"))
-        _set_nested(config_data, "dubbing.api_key", _prompt("TTS API key [skip; only needed for SiliconFlow/Gemini]: "))
-        _set_nested(config_data, "dubbing.voice", _prompt("Default voice [xiaoxiao]: ", "xiaoxiao"))
-        _set_nested(config_data, "dubbing.timing", _prompt("Timing [balanced] (balanced/strict/natural/none): ", "balanced"))
-        _set_nested(config_data, "dubbing.audio_mode", _prompt("Audio mode [replace] (replace/mix/duck): ", "replace"))
+        set_nested(config_data, "dubbing.preset", _prompt("Dubbing preset [edge-cn-female] (no API key): ", "edge-cn-female"))
+        set_nested(config_data, "dubbing.api_key", _prompt("TTS API key [skip; only needed for SiliconFlow/Gemini]: "))
+        set_nested(config_data, "dubbing.voice", _prompt("Default voice [xiaoxiao]: ", "xiaoxiao"))
+        set_nested(config_data, "dubbing.timing", _prompt("Timing [balanced] (balanced/strict/natural/none): ", "balanced"))
+        set_nested(config_data, "dubbing.audio_mode", _prompt("Audio mode [replace] (replace/mix/duck): ", "replace"))
     except (EOFError, KeyboardInterrupt):
         return EXIT.USAGE_ERROR
 
@@ -162,11 +164,11 @@ def _yes_no(prompt: str, default: bool) -> bool:
 
 def _build_onboarding_config(args: Namespace) -> dict:
     config_data = deepcopy(DEFAULTS)
-    _set_nested(config_data, "translate.service", "bing")
-    _set_nested(config_data, "dubbing.preset", "edge-cn-female")
-    _set_nested(config_data, "dubbing.voice", "xiaoxiao")
-    _set_nested(config_data, "dubbing.timing", "balanced")
-    _set_nested(config_data, "dubbing.audio_mode", "replace")
+    set_nested(config_data, "translate.service", "bing")
+    set_nested(config_data, "dubbing.preset", "edge-cn-female")
+    set_nested(config_data, "dubbing.voice", "xiaoxiao")
+    set_nested(config_data, "dubbing.timing", "balanced")
+    set_nested(config_data, "dubbing.audio_mode", "replace")
 
     mappings = {
         "llm_api_key": "llm.api_key",
@@ -183,11 +185,11 @@ def _build_onboarding_config(args: Namespace) -> dict:
     for attr, key in mappings.items():
         value = getattr(args, attr, None)
         if value is not None:
-            _set_nested(config_data, key, value)
+            set_nested(config_data, key, value)
     if getattr(args, "no_optimize", False):
-        _set_nested(config_data, "subtitle.optimize", False)
+        set_nested(config_data, "subtitle.optimize", False)
     if getattr(args, "no_split", False):
-        _set_nested(config_data, "subtitle.split", False)
+        set_nested(config_data, "subtitle.split", False)
     return config_data
 
 
@@ -202,12 +204,13 @@ def _render_onboarding_template(config_data: dict) -> str:
     f.write("# Keep API keys private. This file is written with 0600 permissions on Unix.\n\n")
     f.write("# [llm] is used for AI subtitle polish, LLM translation, reflective translation, and dubbing length adaptation.\n")
     f.write("# [whisper_api] is only needed when transcribe.asr = \"whisper-api\".\n")
+    f.write("# [fun_asr] is only needed when transcribe.asr = \"fun-asr\".\n")
     f.write("# [transcribe] controls speech-to-text. bijian/jianying need no key; whisper-cpp needs a local binary/model.\n")
     f.write("# [subtitle] split and AI polish use LLM; [translate] can use bing/google/llm.\n")
     f.write("# [synthesize] controls subtitle embedding/burning.\n")
     f.write("# [dubbing] preset selects provider/model/voice defaults; edge-* presets need no API key but require network access.\n")
     f.write("# timing controls speech fitting; audio_mode controls original audio.\n\n")
-    _write_toml(f, template_data)
+    write_toml(f, template_data)
     f.write("\n# Optional multi-speaker example:\n")
     f.write("# [dubbing.speakers.Alice]\n# voice = \"anna\"\n# [dubbing.speakers.Bob]\n# voice = \"benjamin\"\n# clone_audio = \"bob-reference.wav\"\n# clone_text = \"Exact words spoken in the reference audio.\"\n\n")
     return f.getvalue()
@@ -225,6 +228,11 @@ def _user_facing_config(config_data: dict) -> dict:
             "api_key": config_data["whisper_api"]["api_key"],
             "api_base": config_data["whisper_api"]["api_base"],
             "model": config_data["whisper_api"]["model"],
+        },
+        "fun_asr": {
+            "api_key": config_data["fun_asr"]["api_key"],
+            "api_base": config_data["fun_asr"]["api_base"],
+            "model": config_data["fun_asr"]["model"],
         },
         "transcribe": {
             "asr": config_data["transcribe"]["asr"],
@@ -281,9 +289,9 @@ def _edit() -> int:
     if not CONFIG_FILE.exists():
         ensure_config_dir()
         # Create with defaults
-        from videocaptioner.cli.config import _write_toml
+        from videocaptioner.core.application.config_store import write_toml
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            _write_toml(f, DEFAULTS)
+            write_toml(f, DEFAULTS)
         output.info(f"Created default config at {CONFIG_FILE}")
 
     editor = os.environ.get("EDITOR", os.environ.get("VISUAL", ""))

@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 任务创建设计 A</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --chrome: #101614;
+      --panel: #1d2522;
+      --panel2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line2: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --subtle: #7f8d88;
+      --accent: #07f08a;
+      --soft: rgba(7, 240, 138, .13);
+      --warn: #e8c75c;
+      --warn-soft: rgba(232, 199, 92, .14);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .16);
+      --shadow: rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 50% -12%, rgba(7, 240, 138, .13), transparent 34%),
+        var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .board {
+      width: 1560px;
+      margin: 0 auto;
+      padding: 34px 0 72px;
+    }
+
+    .board-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 28px;
+    }
+
+    .board-head h1 { font-size: 32px; line-height: 1.15; }
+    .board-head p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 680;
+    }
+
+    .chips, .file-actions, .footer-links, .media-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip, .status, .pill {
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .03);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .status.ok, .pill.ok {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .72);
+      background: var(--soft);
+    }
+
+    .status.warn {
+      color: var(--warn);
+      border-color: rgba(232, 199, 92, .68);
+      background: var(--warn-soft);
+    }
+
+    .status.fail {
+      color: #ffd2cd;
+      border-color: rgba(255, 128, 111, .72);
+      background: var(--danger-soft);
+    }
+
+    .version-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 32px 0 12px;
+    }
+
+    .version-title h2 { font-size: 22px; }
+
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      overflow: hidden;
+      border: 1px solid rgba(210, 230, 220, .14);
+      border-radius: 14px;
+      background: var(--app);
+      box-shadow: 0 28px 80px var(--shadow);
+    }
+
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line2);
+      background: #141917;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 820;
+    }
+
+    .dots {
+      position: absolute;
+      left: 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .dot { width: 14px; height: 14px; border-radius: 50%; display: block; }
+    .red { background: #ff5f57; }
+    .yellow { background: #febc2e; }
+    .green { background: #28c840; }
+
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line2);
+      background: var(--chrome);
+    }
+
+    .spacer { flex: 1; }
+
+    .nav {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    .nav.active { background: rgba(7, 240, 138, .16); }
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      width: 4px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .ico {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: brightness(0) saturate(100%) invert(78%) sepia(11%) saturate(248%) hue-rotate(107deg) brightness(88%) contrast(85%);
+    }
+
+    .active .ico img,
+    .file-link .ico img,
+    .flow-step.active .ico img,
+    .flow-step.done .ico img {
+      filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 42px 0;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(7, 240, 138, .10), transparent 30%),
+        var(--app);
+    }
+
+    .tabs {
+      height: 72px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      flex: 0 0 auto;
+    }
+
+    .tab {
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 70px;
+      right: 70px;
+      bottom: 0;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .home {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 48px;
+      padding-top: 28px;
+    }
+
+    .home-main {
+      min-height: 0;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      padding: 10px 0 28px;
+    }
+
+    .home-card {
+      width: min(900px, 100%);
+      display: grid;
+      gap: 22px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .hero-lockup {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      max-width: 100%;
+      text-align: left;
+    }
+
+    .hero-mark {
+      width: 112px;
+      height: 112px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .hero-title {
+      max-width: 610px;
+      font-size: 40px;
+      line-height: 1.12;
+      font-weight: 900;
+      text-wrap: balance;
+    }
+
+    .hero-subtitle {
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+      font-weight: 720;
+    }
+
+    .input-card {
+      width: min(860px, 100%);
+      display: grid;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background:
+        linear-gradient(90deg, rgba(7, 240, 138, .045), transparent 62%),
+        rgba(29, 37, 34, .92);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .input-field {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(37, 48, 44, .84);
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 760;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .input-field b {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .input-field span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn {
+      height: 58px;
+      min-width: 142px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 22px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 880;
+      white-space: nowrap;
+      transition: border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .btn.primary {
+      position: relative;
+      min-width: 160px;
+      overflow: hidden;
+      border-color: rgba(7, 240, 138, .78);
+      color: var(--accent);
+      background:
+        linear-gradient(180deg, rgba(7, 240, 138, .16), rgba(7, 240, 138, .07)),
+        rgba(20, 28, 25, .9);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .035),
+        0 10px 28px rgba(7, 240, 138, .10);
+    }
+
+    .btn.primary::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 0 28%, rgba(255, 255, 255, .18) 46%, transparent 64% 100%);
+      transform: translateX(-130%);
+      opacity: .7;
+      animation: buttonSweep 3.4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .btn.primary:hover {
+      border-color: rgba(7, 240, 138, .95);
+      background:
+        linear-gradient(180deg, rgba(7, 240, 138, .22), rgba(7, 240, 138, .11)),
+        rgba(20, 28, 25, .94);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    .btn.disabled {
+      color: var(--subtle);
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .btn.primary.disabled {
+      border-color: rgba(210, 230, 220, .16);
+      color: rgba(170, 183, 178, .58);
+      background: rgba(255, 255, 255, .035);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .btn.primary.disabled::before {
+      display: none;
+    }
+
+    .btn.disabled .ico img {
+      filter: brightness(0) saturate(100%) invert(52%) sepia(9%) saturate(275%) hue-rotate(107deg) brightness(91%) contrast(86%);
+    }
+
+    .quick-row {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--subtle);
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .file-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding-bottom: 3px;
+      color: var(--accent);
+      border-bottom: 2px solid rgba(7, 240, 138, .78);
+      font-weight: 900;
+    }
+
+    .status-panel {
+      width: min(860px, 100%);
+      min-height: 116px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 18px;
+      border: 1px solid var(--line2);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, .024);
+      text-align: left;
+    }
+
+    .status-main b {
+      display: block;
+      margin-bottom: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 19px;
+    }
+
+    .status-main > span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .media-meta { margin-top: 12px; }
+
+    .media-meta .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress-box {
+      width: min(860px, 100%);
+      display: grid;
+      grid-template-columns: 124px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 64px;
+      padding: 10px 14px;
+      border: 1px solid var(--line2);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .024);
+    }
+
+    .progress-head {
+      display: grid;
+      gap: 3px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 880;
+    }
+
+    .progress-head span:first-child {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .progress-head span:last-child {
+      color: var(--warn);
+      font-size: 18px;
+    }
+
+    .progress-box .media-meta {
+      margin-top: 0;
+      gap: 6px;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+    }
+
+    .progress-box .pill {
+      min-height: 26px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    .progress {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .progress i {
+      display: block;
+      width: var(--value);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .error-card {
+      width: min(860px, 100%);
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 128, 111, .72);
+      border-radius: 13px;
+      background: var(--danger-soft);
+      color: #ffd2cd;
+      font-size: 16px;
+      font-weight: 860;
+      text-align: left;
+    }
+
+    @keyframes buttonSweep {
+      0%, 42% { transform: translateX(-130%); }
+      62%, 100% { transform: translateX(130%); }
+    }
+
+    .flow-doodle {
+      --flow-progress: 9;
+      width: min(860px, 100%);
+      height: 116px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .flow-doodle.flow-input { --flow-progress: 8; }
+    .flow-doodle.flow-download { --flow-progress: 18; }
+    .flow-doodle.flow-transcribe { --flow-progress: 43; }
+    .flow-doodle.flow-process { --flow-progress: 68; }
+    .flow-doodle.flow-synthesis { --flow-progress: 96; }
+
+    .flow-sketch {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .flow-base {
+      fill: none;
+      stroke: rgba(170, 183, 178, .22);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-dasharray: 7 12;
+    }
+
+    .flow-live {
+      fill: none;
+      stroke: url(#flowInk);
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-dasharray: var(--flow-progress) 100;
+      filter: drop-shadow(0 0 8px rgba(7, 240, 138, .26));
+      transition: stroke-dasharray .28s ease;
+    }
+
+    .flow-glint {
+      fill: none;
+      stroke: rgba(255, 255, 255, .66);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 4 96;
+      animation: inkRun 3.2s linear infinite;
+    }
+
+    .flow-arrow {
+      fill: none;
+      stroke: rgba(232, 199, 92, .68);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    @keyframes inkRun {
+      from { stroke-dashoffset: 12; }
+      to { stroke-dashoffset: -88; }
+    }
+
+    .flow-step {
+      --tilt: 0deg;
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      width: 150px;
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      transform: translate(-50%, -50%) rotate(var(--tilt));
+      text-align: center;
+      z-index: 1;
+    }
+
+    .flow-marker {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(170, 183, 178, .28);
+      border-radius: 15px 17px 14px 18px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, .045), transparent 58%),
+        #151d1a;
+      box-shadow:
+        0 0 0 5px rgba(21, 27, 25, .95),
+        0 10px 22px rgba(0, 0, 0, .18);
+    }
+
+    .flow-marker .ico {
+      width: 21px;
+      height: 21px;
+    }
+
+    .flow-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 146px;
+      min-height: 28px;
+      gap: 6px;
+      padding: 4px 10px;
+      border: 1px solid rgba(170, 183, 178, .20);
+      border-radius: 999px;
+      background: rgba(20, 28, 25, .84);
+      color: var(--muted);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .13);
+    }
+
+    .flow-step b {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .flow-step span:not(.ico) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--subtle);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .flow-step.done .flow-marker {
+      border-color: rgba(7, 240, 138, .52);
+      background:
+        linear-gradient(145deg, rgba(7, 240, 138, .13), transparent 60%),
+        #15211d;
+    }
+
+    .flow-step.done .flow-label {
+      border-color: rgba(7, 240, 138, .30);
+      color: rgba(210, 230, 220, .78);
+    }
+
+    .flow-step.active .flow-marker {
+      border-color: rgba(7, 240, 138, .95);
+      background: var(--accent);
+      animation: markerFloat 2.4s ease-in-out infinite;
+      box-shadow:
+        0 0 0 5px rgba(21, 27, 25, .95),
+        0 0 0 8px rgba(7, 240, 138, .10),
+        0 16px 34px rgba(7, 240, 138, .18);
+    }
+
+    .flow-step.active .flow-marker .ico img {
+      filter: brightness(0) saturate(100%) invert(5%) sepia(26%) saturate(980%) hue-rotate(97deg) brightness(92%) contrast(96%);
+    }
+
+    .flow-step.active .flow-label {
+      border-color: rgba(7, 240, 138, .72);
+      background: rgba(7, 240, 138, .10);
+      color: var(--text);
+    }
+
+    @keyframes markerFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flow-glint,
+      .flow-step.active .flow-marker,
+      .btn.primary::before {
+        animation: none;
+      }
+    }
+
+    .home-footer {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 2px;
+      border-top: 1px solid rgba(210, 230, 220, .08);
+      color: rgba(170, 183, 178, .56);
+      font-size: 12px;
+      font-weight: 780;
+    }
+
+    .footer-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .footer-brand b {
+      color: rgba(244, 247, 245, .64);
+      font-weight: 850;
+    }
+
+    .footer-brand span {
+      color: rgba(170, 183, 178, .46);
+    }
+
+    .footer-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      min-width: 0;
+    }
+
+    .footer-action {
+      position: relative;
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 9px;
+      color: rgba(170, 183, 178, .58);
+      white-space: nowrap;
+      transition: color .16s ease;
+    }
+
+    .footer-action + .footer-action::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 1px;
+      height: 11px;
+      border-radius: 999px;
+      background: rgba(170, 183, 178, .18);
+    }
+
+    .footer-action:hover {
+      color: rgba(7, 240, 138, .88);
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>任务创建设计 A：首页入口版</h1>
+        <p>全局功能保留在侧边栏；首页负责导入、开始、版本和轻量状态。</p>
+      </div>
+      <div class="chips"><span class="chip">1440 × 900</span><span class="chip">方案 A</span><span class="chip">4 个状态</span></div>
+    </header>
+    <div id="root"></div>
+  </main>
+
+  <script>
+    const icon = (name) => `<span class="ico"><img src="../../resource/assets/icons/${name}.svg" alt=""></span>`;
+
+    const states = {
+      empty: {
+        label: "等待输入",
+        status: "等待输入",
+        bottom: "支持本地音频、视频和在线视频链接",
+        field: `${icon("link")}<span>粘贴视频链接，或拖入本地音视频文件</span>`,
+        primary: "选择文件",
+        primaryIcon: "folder_add",
+        secondary: `<span class="file-link">${icon("folder_add")}拖入文件</span>`,
+        panel: "",
+        flow: "input"
+      },
+      fileReady: {
+        label: "本地文件已就绪",
+        status: "可开始",
+        statusClass: "ok",
+        bottom: "开始后自动进入语音转录",
+        field: `${icon("video")}<b>线性代数基础与解法全集 p01.mp4</b>`,
+        primary: "开始处理",
+        primaryIcon: "play",
+        secondary: `<span>本地视频 · 10:24 · 128 MB</span>`,
+        panel: "file",
+        flow: "transcribe"
+      },
+      downloading: {
+        label: "链接下载中",
+        status: "36%",
+        statusClass: "warn",
+        bottom: "下载完成后自动进入下一步",
+        field: `${icon("link")}<b>https://www.bilibili.com/video/BV1Et421E7jk</b>`,
+        primary: "下载中",
+        primaryIcon: "sync",
+        disabled: true,
+        secondary: `<span>在线视频链接</span>`,
+        panel: "download",
+        flow: "download"
+      },
+      failed: {
+        label: "输入错误",
+        status: "输入无效",
+        statusClass: "fail",
+        bottom: "重新选择文件或粘贴完整链接",
+        field: `${icon("file")}<b>not-a-video</b>`,
+        primary: "选择文件",
+        primaryIcon: "folder_add",
+        secondary: `<span>无法识别输入内容</span>`,
+        panel: "failed",
+        flow: "input"
+      }
+    };
+
+    const nav = () => `
+      <aside class="sidebar">
+        <div class="nav active">${icon("home")}</div>
+        <div class="nav">${icon("video")}</div>
+        <div class="nav">${icon("font")}</div>
+        <div class="nav">${icon("volume")}</div>
+        <div class="nav">${icon("history")}</div>
+        <div class="nav">${icon("search")}</div>
+        <div class="spacer"></div>
+        <div class="nav">${icon("github")}</div>
+        <div class="nav">${icon("setting")}</div>
+      </aside>`;
+
+    const tabs = () => `
+      <nav class="tabs">
+        <div class="tab active">任务创建</div>
+        <div class="tab">语音转录</div>
+        <div class="tab">字幕优化与翻译</div>
+        <div class="tab">字幕视频合成</div>
+      </nav>`;
+
+    const shell = (body) => `
+      <article class="client">
+        <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>卡卡字幕助手 -- VideoCaptioner</div>
+        ${nav()}
+        <section class="app">${tabs()}${body}</section>
+      </article>`;
+
+    const detailPanel = (s) => {
+      if (s.panel === "file") {
+        return `
+          <div class="status-panel">
+            <div class="status-main">
+              <b>线性代数基础与解法全集 p01</b>
+              <span>/Users/bytedance/Desktop/课程素材/线性代数基础与解法全集 p01.mp4</span>
+              <div class="media-meta"><span class="pill">视频</span><span class="pill">mp4</span><span class="pill">10:24</span><span class="pill">128 MB</span></div>
+            </div>
+            <span class="status ok">已就绪</span>
+          </div>`;
+      }
+      if (s.panel === "download") {
+        return `
+          <div class="progress-box">
+            <div class="progress-head"><span>正在下载媒体</span><span>36%</span></div>
+            <div class="progress"><i style="--value:36%"></i></div>
+            <div class="media-meta"><span class="pill">4.6 MB/s</span><span class="pill">剩余 01:18</span><span class="pill">保存到工作目录</span></div>
+          </div>`;
+      }
+      if (s.panel === "failed") {
+        return `<div class="error-card">请输入有效的本地音视频文件，或完整的 http / https 链接。</div>`;
+      }
+      return "";
+    };
+
+    const flowStep = (active, key, iconName, title, detail, x, y, tilt) => {
+      const order = ["input", "transcribe", "process", "synthesis"];
+      const activeKey = active === "download" ? "input" : active;
+      const activeIndex = order.indexOf(activeKey);
+      const keyIndex = order.indexOf(key);
+      const cls = activeKey === key ? "active" : keyIndex >= 0 && activeIndex > keyIndex ? "done" : "";
+      return `
+        <div class="flow-step ${cls}" style="--x:${x}; --y:${y}px; --tilt:${tilt}deg">
+          <div class="flow-marker">${icon(iconName)}</div>
+          <div class="flow-label"><b>${title}</b><span>${detail}</span></div>
+        </div>`;
+    };
+
+    const flow = (active) => {
+      const inputDetail = active === "download" ? "下载媒体" : active === "input" ? "文件或链接" : "完成";
+      return `
+      <div class="flow-doodle flow-${active}">
+        <svg class="flow-sketch" viewBox="0 0 860 116" aria-hidden="true">
+          <defs>
+            <linearGradient id="flowInk" x1="72" y1="62" x2="778" y2="48" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#07F08A"/>
+              <stop offset=".58" stop-color="#22C8D7"/>
+              <stop offset="1" stop-color="#F2D35B"/>
+            </linearGradient>
+          </defs>
+          <path class="flow-base" pathLength="100" d="M72 64C156 18 228 42 298 58C392 80 438 98 510 64C600 22 686 22 778 52"/>
+          <path class="flow-live" pathLength="100" d="M72 64C156 18 228 42 298 58C392 80 438 98 510 64C600 22 686 22 778 52"/>
+          <path class="flow-glint" pathLength="100" d="M72 64C156 18 228 42 298 58C392 80 438 98 510 64C600 22 686 22 778 52"/>
+          <path class="flow-arrow" d="M244 50l14 8-14 8"/>
+          <path class="flow-arrow" d="M468 76l15-5-8 14"/>
+          <path class="flow-arrow" d="M688 43l15 7-14 9"/>
+        </svg>
+        ${flowStep(active, "input", "folder_add", "导入", inputDetail, "8%", 66, -2)}
+        ${flowStep(active, "transcribe", "microphone", "转录", "生成字幕", "34%", 46, 1.5)}
+        ${flowStep(active, "process", "subtitle", "处理", "校正翻译", "61%", 72, -1.5)}
+        ${flowStep(active, "synthesis", "video", "合成", "输出视频", "88%", 54, 2)}
+      </div>`;
+    };
+
+    const home = (stateKey) => {
+      const s = states[stateKey];
+      const primaryClass = s.disabled ? "btn primary disabled" : "btn primary";
+      return `
+        <div class="home">
+          <main class="home-main">
+            <section class="home-card">
+              <div class="hero-lockup">
+                <img class="hero-mark" src="../../resource/assets/hero-logo-mark.svg" alt="">
+                <h2 class="hero-title">导入视频，生成字幕与配音</h2>
+              </div>
+              <div class="input-card">
+                <div class="input-row">
+                  <div class="input-field">${s.field}</div>
+                  <div class="${primaryClass}">${icon(s.primaryIcon)}${s.primary}</div>
+                </div>
+                ${s.hideQuickRow ? "" : `<div class="quick-row"><span>${s.secondary}</span><span class="status ${s.statusClass || ""}">${s.status}</span></div>`}
+              </div>
+              ${detailPanel(s)}
+              ${flow(s.flow)}
+            </section>
+          </main>
+          <footer class="home-footer">
+            <div class="footer-brand">
+              <b>VideoCaptioner 1.4.3</b>
+              <span>Weifeng</span>
+            </div>
+            <div class="footer-actions">
+              <div class="footer-action">检查更新</div>
+              <div class="footer-action">查看日志</div>
+              <div class="footer-action">捐助</div>
+            </div>
+          </footer>
+        </div>`;
+    };
+
+    const pages = [
+      ["A", "首页空态", "empty"],
+      ["B", "本地文件已就绪", "fileReady"],
+      ["C", "链接下载中", "downloading"],
+      ["D", "输入错误", "failed"]
+    ];
+
+    document.getElementById("root").innerHTML = pages.map(([key, title, stateKey]) => {
+      const s = states[stateKey];
+      return `
+        <div class="version-title"><h2>状态 ${key}：${title}</h2><span class="status ${s.statusClass || ""}">${s.status}</span></div>
+        ${shell(home(stateKey))}
+      `;
+    }).join("");
+  </script>
+</body>
+</html>

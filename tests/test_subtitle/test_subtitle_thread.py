@@ -233,6 +233,11 @@ class TestSubtitleThreadTranslate:
             assert len(results["updates"]) > 0
 
     @pytest.mark.integration
+    @pytest.mark.skipif(
+        os.getenv("RUN_LIVE_TRANSLATION_TESTS") != "1"
+        and os.getenv("RUN_BING_TRANSLATOR_TESTS") != "1",
+        reason="Bing free translation endpoint is network-dependent; set RUN_BING_TRANSLATOR_TESTS=1 to run.",
+    )
     def test_translate_bing(self, subtitle_file, output_dir, base_config):
         """Test Bing Translate (free API)."""
         config = base_config

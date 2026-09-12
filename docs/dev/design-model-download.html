@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 本地模型弹窗设计 A</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --chrome: #101614;
+      --panel: #1d2522;
+      --panel-2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line-2: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --subtle: #7f8d88;
+      --accent: #07f08a;
+      --accent-soft: rgba(7, 240, 138, .13);
+      --danger: #f08a7c;
+      --danger-soft: rgba(240, 138, 124, .10);
+      --warn: #f2cf63;
+      --warn-soft: rgba(242, 207, 99, .10);
+      --shadow: 0 28px 80px rgba(0, 0, 0, .36);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 1520px;
+      color: var(--text);
+      background: var(--bg);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    button {
+      border: 0;
+      color: inherit;
+      background: transparent;
+      font: inherit;
+    }
+
+    .board {
+      width: 1520px;
+      margin: 0 auto;
+      padding: 34px 0 72px;
+    }
+
+    .board-head,
+    .state-title {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 0 40px;
+      margin-bottom: 24px;
+    }
+
+    .state-title {
+      align-items: center;
+      margin: 34px 0 12px;
+    }
+
+    .board-head h1 {
+      font-size: 32px;
+      line-height: 1.15;
+      font-weight: 860;
+    }
+
+    .board-head p,
+    .state-title p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 720;
+    }
+
+    .state-title h2 {
+      font-size: 22px;
+      font-weight: 860;
+    }
+
+    .placement {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .placement b {
+      color: var(--text);
+      font-weight: 820;
+    }
+
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      margin: 0 40px;
+      overflow: hidden;
+      border: 1px solid rgba(210, 230, 220, .14);
+      border-radius: 14px;
+      background: var(--app);
+      box-shadow: var(--shadow);
+    }
+
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line-2);
+      color: var(--muted);
+      background: #141917;
+      font-size: 14px;
+      font-weight: 820;
+    }
+
+    .dots {
+      position: absolute;
+      left: 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .red { background: #ff5f57; }
+    .yellow { background: #febc2e; }
+    .green { background: #28c840; }
+
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line-2);
+      background: var(--chrome);
+    }
+
+    .spacer { flex: 1; }
+
+    .nav {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+    }
+
+    .nav.active { background: rgba(7, 240, 138, .16); }
+
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      width: 4px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .ico {
+      width: 21px;
+      height: 21px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      filter: brightness(0) saturate(100%) invert(78%) sepia(11%) saturate(248%) hue-rotate(107deg) brightness(88%) contrast(85%);
+    }
+
+    .nav.active .ico img,
+    .button.primary .ico img,
+    .mini.primary .ico img,
+    .engine-tab.active .ico img {
+      filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 48% 4%, rgba(7, 240, 138, .08), transparent 34%),
+        var(--app);
+    }
+
+    .settings-bg {
+      position: absolute;
+      inset: 0;
+      padding: 42px 48px;
+      opacity: .55;
+      filter: blur(4px) saturate(.84);
+    }
+
+    .page-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    .page-row h2 {
+      font-size: 34px;
+      font-weight: 880;
+    }
+
+    .config-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .032);
+      overflow: hidden;
+    }
+
+    .setting-row {
+      height: 70px;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 180px;
+      align-items: center;
+      gap: 18px;
+      padding: 0 22px;
+      border-bottom: 1px solid var(--line-2);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .setting-row:last-child { border-bottom: 0; }
+
+    .setting-row strong {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 840;
+    }
+
+    .button,
+    .mini {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .035);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .button {
+      height: 44px;
+      padding: 0 17px;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 820;
+    }
+
+    .button.primary,
+    .mini.primary {
+      border-color: rgba(7, 240, 138, .34);
+      background: rgba(7, 240, 138, .07);
+      color: var(--text);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 8, 8, .48);
+      backdrop-filter: blur(6px);
+    }
+
+    .modal {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 920px;
+      height: 650px;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(210, 230, 220, .18);
+      border-radius: 18px;
+      background: #1a211f;
+      box-shadow: 0 32px 95px rgba(0, 0, 0, .46);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line-2);
+      flex: 0 0 auto;
+    }
+
+    .modal-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .modal-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .modal-title h3 {
+      font-size: 22px;
+      line-height: 1.15;
+      font-weight: 880;
+    }
+
+    .modal-title span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 730;
+    }
+
+    .close {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .close .ico { width: 18px; height: 18px; }
+
+    .engine-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin: 12px 18px 0;
+      padding: 4px;
+      border: 1px solid var(--line-2);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .024);
+      flex: 0 0 auto;
+    }
+
+    .engine-tab {
+      position: relative;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .engine-tab.active {
+      border-color: rgba(210, 230, 220, .13);
+      color: var(--text);
+      background: rgba(255, 255, 255, .06);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, .10);
+    }
+
+    .modal-body {
+      min-height: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 18px;
+      overflow: hidden;
+    }
+
+    .body-panel {
+      min-height: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--line-2);
+      border-radius: 15px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .section-label {
+      height: 38px;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 18px 9px;
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 880;
+      letter-spacing: .02em;
+      flex: 0 0 auto;
+    }
+
+    .runtime-row {
+      min-height: 70px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 110px 128px;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 18px;
+      margin: 0 18px 12px;
+      border: 1px solid rgba(210, 230, 220, .13);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .042);
+      flex: 0 0 auto;
+    }
+
+    .runtime-main,
+    .model-main {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+    }
+
+    .file-mark {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .036);
+      flex: 0 0 auto;
+    }
+
+    .file-mark .ico { width: 19px; height: 19px; }
+
+    .name-stack {
+      min-width: 0;
+    }
+
+    .name-stack strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 860;
+    }
+
+    .name-stack span {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 7px;
+      min-width: 78px;
+      height: 28px;
+      padding: 0 4px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--subtle);
+      flex: 0 0 auto;
+    }
+
+    .status.ok {
+      border-color: transparent;
+      background: transparent;
+      color: #c5d2cd;
+    }
+
+    .status.ok::before {
+      background: var(--accent);
+    }
+
+    .status.missing {
+      border-color: transparent;
+      background: transparent;
+      color: #eab5ae;
+    }
+
+    .status.missing::before {
+      background: var(--danger);
+    }
+
+    .status.warn {
+      border-color: transparent;
+      background: transparent;
+      color: var(--warn);
+    }
+
+    .status.warn::before {
+      background: var(--warn);
+    }
+
+    .mini {
+      width: 118px;
+      height: 36px;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 830;
+    }
+
+    .mini[disabled] {
+      color: var(--subtle);
+      opacity: .64;
+    }
+
+    .mini.danger {
+      border-color: rgba(240, 138, 124, .32);
+      color: #efc2bb;
+      background: rgba(240, 138, 124, .06);
+    }
+
+    .model-row .mini.primary {
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .035);
+      color: var(--text);
+    }
+
+    .model-row .mini.primary .ico img {
+      filter: brightness(0) invert(1);
+      opacity: .92;
+    }
+
+    .runtime-row .mini.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #07100c;
+    }
+
+    .runtime-row .mini.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(4%) sepia(12%) saturate(702%) hue-rotate(106deg) brightness(94%) contrast(94%);
+    }
+
+    .install-plan {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 118px;
+      align-items: center;
+      gap: 14px;
+      min-height: 54px;
+      margin: -4px 18px 12px;
+      padding: 0 14px;
+      border: 1px solid var(--line-2);
+      border-radius: 13px;
+      background: rgba(0, 0, 0, .08);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      flex: 0 0 auto;
+    }
+
+    .command {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, .14);
+      color: var(--text);
+      font-weight: 820;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .program-options {
+      display: grid;
+      gap: 10px;
+      margin: 0 18px 12px;
+      flex: 0 0 auto;
+    }
+
+    .program-option {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 92px 128px;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px 10px 14px;
+      border: 1px solid var(--line-2);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .026);
+    }
+
+    .program-option.featured {
+      border-color: rgba(7, 240, 138, .30);
+      background: rgba(7, 240, 138, .055);
+    }
+
+    .program-option.ready {
+      border-color: rgba(210, 230, 220, .15);
+      background: rgba(255, 255, 255, .038);
+    }
+
+    .program-option .mini.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #07100c;
+    }
+
+    .program-option .mini.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(4%) sepia(12%) saturate(702%) hue-rotate(106deg) brightness(94%) contrast(94%);
+    }
+
+    .table {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+      margin: 0 18px 14px;
+      border: 1px solid var(--line-2);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, .075);
+    }
+
+    .table-head,
+    .model-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 86px 104px 122px;
+      column-gap: 14px;
+      align-items: center;
+    }
+
+    .table-head {
+      height: 38px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line-2);
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 850;
+      flex: 0 0 auto;
+    }
+
+    .model-list {
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .model-list::-webkit-scrollbar { width: 8px; }
+    .model-list::-webkit-scrollbar-track { background: transparent; }
+    .model-list::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(170, 183, 178, .18);
+    }
+
+    .model-row {
+      min-height: 66px;
+      padding: 11px 18px;
+      border-bottom: 1px solid var(--line-2);
+    }
+
+    .model-row:last-child { border-bottom: 0; }
+
+    .size {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 830;
+      white-space: nowrap;
+    }
+
+    .progress-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 46px 78px;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .progress-track {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .progress-fill {
+      width: 47%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .progress-fill.program { width: 34%; }
+
+    .progress-number {
+      color: var(--warn);
+      text-align: right;
+      font-size: 13px;
+      font-weight: 880;
+    }
+
+    .progress-wrap .mini { width: 82px; }
+
+    .model-row.downloading {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+      min-height: 92px;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      background: rgba(255, 255, 255, .018);
+    }
+
+    .model-row.downloading .progress-wrap {
+      grid-column: 1;
+      width: min(620px, calc(100% - 54px));
+      margin-left: 54px;
+    }
+
+    .modal-foot {
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 18px;
+      border-top: 1px solid var(--line-2);
+      flex: 0 0 auto;
+    }
+
+    .foot-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .foot-left span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .foot-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>本地模型管理弹窗设计 A</h1>
+        <p>选择本地转录引擎，检查运行程序，并管理离线模型。</p>
+      </div>
+      <div class="placement"><span>入口</span><b>转录配置 · 模型管理</b></div>
+    </header>
+
+    <section class="state-title">
+      <div>
+        <h2>状态 A：已可使用</h2>
+        <p>运行程序可用时，用户只需要确认当前模型或下载其它模型。</p>
+      </div>
+    </section>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>卡卡字幕助手 -- VideoCaptioner</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div><div class="spacer"></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div><div class="nav active"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="settings-bg">
+          <div class="page-row"><h2>转录配置</h2><button class="button">保存配置</button></div>
+          <div class="config-card"><div class="setting-row"><strong>转录服务</strong><span>WhisperCpp</span><button class="button">更改</button></div><div class="setting-row"><strong>WhisperCpp 模型</strong><span>tiny</span><button class="button primary">模型管理</button></div><div class="setting-row"><strong>源语言</strong><span>自动检测</span><button class="button">选择</button></div></div>
+        </div>
+        <div class="overlay"></div>
+        <section class="modal">
+          <header class="modal-head">
+            <div class="modal-title"><div class="modal-mark"><span class="ico"><img src="../../resource/assets/icons/folder_add.svg" alt=""></span></div><h3>本地模型管理</h3></div>
+            <button class="close"><span class="ico"><img src="../../resource/assets/icons/close.svg" alt=""></span></button>
+          </header>
+          <div class="engine-tabs"><button class="engine-tab active">Whisper CPP</button><button class="engine-tab">Faster Whisper</button></div>
+          <div class="modal-body">
+            <div class="body-panel">
+              <div class="section-label">运行程序</div>
+              <div class="runtime-row">
+                <div class="runtime-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/terminal.svg" alt=""></span></span><div class="name-stack"><strong>whisper-cli</strong><span>可执行文件已找到</span></div></div>
+                <span class="status ok">可用</span>
+                <button class="mini">重新检测</button>
+              </div>
+              <div class="section-label">模型文件</div>
+              <div class="table">
+                <div class="table-head"><span>模型</span><span>大小</span><span>状态</span><span>操作</span></div>
+                <div class="model-list">
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-tiny.bin</strong><span>轻量测试和快速预览</span></div></div><span class="size">78 MB</span><span class="status ok">已下载</span><button class="mini" disabled>当前</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-base.bin</strong><span>速度和准确率更均衡</span></div></div><span class="size">148 MB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-small.bin</strong><span>课程视频常用模型</span></div></div><span class="size">488 MB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-medium.bin</strong><span>更高准确率</span></div></div><span class="size">1.5 GB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-large-v2.bin</strong><span>高准确率离线转录</span></div></div><span class="size">3.1 GB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="modal-foot"><div class="foot-left"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span><span>本地模型目录</span></div><div class="foot-actions"><button class="button">打开目录</button><button class="button">关闭</button></div></footer>
+        </section>
+      </section>
+    </article>
+
+    <section class="state-title">
+      <div>
+        <h2>状态 B：运行程序缺失</h2>
+        <p>程序缺失时，给出当前系统最直接的安装方式，同时保留模型管理。</p>
+      </div>
+    </section>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>卡卡字幕助手 -- VideoCaptioner</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div><div class="spacer"></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div><div class="nav active"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="settings-bg"><div class="page-row"><h2>转录配置</h2><button class="button">保存配置</button></div><div class="config-card"><div class="setting-row"><strong>转录服务</strong><span>WhisperCpp</span><button class="button">更改</button></div><div class="setting-row"><strong>WhisperCpp 模型</strong><span>base</span><button class="button primary">模型管理</button></div></div></div>
+        <div class="overlay"></div>
+        <section class="modal">
+          <header class="modal-head"><div class="modal-title"><div class="modal-mark"><span class="ico"><img src="../../resource/assets/icons/folder_add.svg" alt=""></span></div><h3>本地模型管理</h3></div><button class="close"><span class="ico"><img src="../../resource/assets/icons/close.svg" alt=""></span></button></header>
+          <div class="engine-tabs"><button class="engine-tab active">Whisper CPP</button><button class="engine-tab">Faster Whisper</button></div>
+          <div class="modal-body">
+            <div class="body-panel">
+              <div class="section-label">运行程序</div>
+              <div class="runtime-row">
+                <div class="runtime-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/terminal.svg" alt=""></span></span><div class="name-stack"><strong>Whisper CPP 程序</strong><span>未找到本地运行程序</span></div></div>
+                <span class="status missing">缺失</span>
+                <button class="mini">重新检测</button>
+              </div>
+              <div class="install-plan"><span class="command">brew install whisper-cpp</span><button class="mini primary">复制命令</button></div>
+              <div class="section-label">模型文件</div>
+              <div class="table">
+                <div class="table-head"><span>模型</span><span>大小</span><span>状态</span><span>操作</span></div>
+                <div class="model-list">
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-tiny.bin</strong><span>轻量测试和快速预览</span></div></div><span class="size">78 MB</span><span class="status ok">已下载</span><button class="mini danger">删除</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-base.bin</strong><span>速度和准确率更均衡</span></div></div><span class="size">148 MB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/file.svg" alt=""></span></span><div class="name-stack"><strong>ggml-medium.bin</strong><span>更高准确率</span></div></div><span class="size">1.5 GB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="modal-foot"><div class="foot-left"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span><span>本地模型目录</span></div><div class="foot-actions"><button class="button">打开目录</button><button class="button">关闭</button></div></footer>
+        </section>
+      </section>
+    </article>
+
+    <section class="state-title">
+      <div>
+        <h2>状态 C：Faster Whisper 程序选择</h2>
+        <p>CPU 版和 GPU 版分开放在运行程序区；用户先选程序，再管理模型。</p>
+      </div>
+    </section>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>卡卡字幕助手 -- VideoCaptioner</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div><div class="spacer"></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div><div class="nav active"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="settings-bg"><div class="page-row"><h2>转录配置</h2><button class="button">保存配置</button></div><div class="config-card"><div class="setting-row"><strong>转录服务</strong><span>Faster Whisper</span><button class="button">更改</button></div><div class="setting-row"><strong>Faster Whisper 模型</strong><span>tiny</span><button class="button primary">模型管理</button></div></div></div>
+        <div class="overlay"></div>
+        <section class="modal">
+          <header class="modal-head"><div class="modal-title"><div class="modal-mark"><span class="ico"><img src="../../resource/assets/icons/folder_add.svg" alt=""></span></div><h3>本地模型管理</h3></div><button class="close"><span class="ico"><img src="../../resource/assets/icons/close.svg" alt=""></span></button></header>
+          <div class="engine-tabs"><button class="engine-tab">Whisper CPP</button><button class="engine-tab active">Faster Whisper</button></div>
+          <div class="modal-body">
+            <div class="body-panel">
+              <div class="section-label">运行程序</div>
+              <div class="program-options">
+                <div class="program-option featured"><div class="runtime-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/terminal.svg" alt=""></span></span><div class="name-stack"><strong>CPU 版</strong><span>没有独立显卡也能用，安装最简单</span></div></div><span class="status missing">缺失</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                <div class="program-option"><div class="runtime-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/terminal.svg" alt=""></span></span><div class="name-stack"><strong>GPU 版</strong><span>有 NVIDIA 显卡时选择，长视频更快</span></div></div><span class="status missing">缺失</span><button class="mini">打开页面</button></div>
+              </div>
+              <div class="section-label">模型文件</div>
+              <div class="table">
+                <div class="table-head"><span>模型</span><span>大小</span><span>状态</span><span>操作</span></div>
+                <div class="model-list">
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></span><div class="name-stack"><strong>faster-whisper-tiny</strong><span>轻量测试和快速预览</span></div></div><span class="size">78 MB</span><span class="status ok">已下载</span><button class="mini danger">删除</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></span><div class="name-stack"><strong>faster-whisper-base</strong><span>速度和准确率更均衡</span></div></div><span class="size">148 MB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></span><div class="name-stack"><strong>faster-whisper-large-v3</strong><span>高准确率离线转录</span></div></div><span class="size">3.1 GB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="modal-foot"><div class="foot-left"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span><span>本地模型目录</span></div><div class="foot-actions"><button class="button">打开目录</button><button class="button">关闭</button></div></footer>
+        </section>
+      </section>
+    </article>
+
+    <section class="state-title">
+      <div>
+        <h2>状态 D：模型下载中</h2>
+        <p>下载时只显示当前文件进度和取消入口，保持其它操作位置稳定。</p>
+      </div>
+    </section>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>卡卡字幕助手 -- VideoCaptioner</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div><div class="spacer"></div><div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div><div class="nav active"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="settings-bg"><div class="page-row"><h2>转录配置</h2><button class="button">保存配置</button></div><div class="config-card"><div class="setting-row"><strong>转录服务</strong><span>Faster Whisper</span><button class="button">更改</button></div><div class="setting-row"><strong>Faster Whisper 模型</strong><span>large-v3-turbo</span><button class="button primary">模型管理</button></div></div></div>
+        <div class="overlay"></div>
+        <section class="modal">
+          <header class="modal-head"><div class="modal-title"><div class="modal-mark"><span class="ico"><img src="../../resource/assets/icons/folder_add.svg" alt=""></span></div><h3>本地模型管理</h3></div><button class="close"><span class="ico"><img src="../../resource/assets/icons/close.svg" alt=""></span></button></header>
+          <div class="engine-tabs"><button class="engine-tab">Whisper CPP</button><button class="engine-tab active">Faster Whisper</button></div>
+          <div class="modal-body">
+            <div class="body-panel">
+              <div class="section-label">运行程序</div>
+              <div class="program-options">
+                <div class="program-option"><div class="runtime-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/terminal.svg" alt=""></span></span><div class="name-stack"><strong>CPU 版</strong><span>没有独立显卡也能用，安装最简单</span></div></div><span class="status missing">缺失</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                <div class="program-option ready"><div class="runtime-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/terminal.svg" alt=""></span></span><div class="name-stack"><strong>GPU 版</strong><span>已检测到，可用于长视频转录</span></div></div><span class="status ok">可用</span><button class="mini">重新检测</button></div>
+              </div>
+              <div class="section-label">模型文件</div>
+              <div class="table">
+                <div class="table-head"><span>模型</span><span>大小</span><span>状态</span><span>操作</span></div>
+                <div class="model-list">
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></span><div class="name-stack"><strong>faster-whisper-tiny</strong><span>轻量测试和快速预览</span></div></div><span class="size">78 MB</span><span class="status ok">已下载</span><button class="mini danger">删除</button></div>
+                  <div class="model-row"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></span><div class="name-stack"><strong>faster-whisper-base</strong><span>速度和准确率更均衡</span></div></div><span class="size">148 MB</span><span class="status">待下载</span><button class="mini primary"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>下载</button></div>
+                  <div class="model-row downloading"><div class="model-main"><span class="file-mark"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></span><div class="name-stack"><strong>faster-whisper-large-v3-turbo</strong><span>model.bin · 760.4 MB / 1.6 GB</span></div></div><div class="progress-wrap"><div class="progress-track"><div class="progress-fill"></div></div><span class="progress-number">47%</span><button class="mini">取消</button></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="modal-foot"><div class="foot-left"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span><span>本地模型目录</span></div><div class="foot-actions"><button class="button">打开目录</button><button class="button">关闭</button></div></footer>
+        </section>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

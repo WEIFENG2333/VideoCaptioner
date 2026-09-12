@@ -7,11 +7,20 @@ SILICONFLOW_COSYVOICE2_MODEL = "FunAudioLLM/CosyVoice2-0.5B"
 SILICONFLOW_VOICE_ALIASES = {
     "anna": f"{SILICONFLOW_COSYVOICE2_MODEL}:anna",
     "alex": f"{SILICONFLOW_COSYVOICE2_MODEL}:alex",
+    "bella": f"{SILICONFLOW_COSYVOICE2_MODEL}:bella",
     "benjamin": f"{SILICONFLOW_COSYVOICE2_MODEL}:benjamin",
+    "charles": f"{SILICONFLOW_COSYVOICE2_MODEL}:charles",
+    "claire": f"{SILICONFLOW_COSYVOICE2_MODEL}:claire",
+    "david": f"{SILICONFLOW_COSYVOICE2_MODEL}:david",
+    "diana": f"{SILICONFLOW_COSYVOICE2_MODEL}:diana",
 }
 
 GEMINI_VOICES = {
+    "Achernar",
     "Achird",
+    "Algenib",
+    "Algieba",
+    "Alnilam",
     "Aoede",
     "Autonoe",
     "Callirrhoe",
@@ -44,10 +53,25 @@ EDGE_VOICE_ALIASES = {
     "xiaoyi": "zh-CN-XiaoyiNeural",
     "yunjian": "zh-CN-YunjianNeural",
     "yunxi": "zh-CN-YunxiNeural",
+    "yunxia": "zh-CN-YunxiaNeural",
     "yunyang": "zh-CN-YunyangNeural",
+    "hiugaai": "zh-HK-HiuGaaiNeural",
+    "hiumaan": "zh-HK-HiuMaanNeural",
+    "wanlung": "zh-HK-WanLungNeural",
+    "hsiaochen": "zh-TW-HsiaoChenNeural",
+    "hsiaoyu": "zh-TW-HsiaoYuNeural",
+    "yunjhe": "zh-TW-YunJheNeural",
+    "ava": "en-US-AvaNeural",
+    "andrew": "en-US-AndrewNeural",
+    "emma": "en-US-EmmaNeural",
+    "brian": "en-US-BrianNeural",
     "jenny": "en-US-JennyNeural",
     "guy": "en-US-GuyNeural",
     "aria": "en-US-AriaNeural",
+    "libby": "en-GB-LibbyNeural",
+    "ryan": "en-GB-RyanNeural",
+    "sonia": "en-GB-SoniaNeural",
+    "thomas": "en-GB-ThomasNeural",
 }
 
 
@@ -139,6 +163,97 @@ PRESETS: dict[str, DubbingPreset] = {
         voice=EDGE_VOICE_ALIASES["guy"],
     ),
 }
+
+for _preset_name, _alias, _prompt in [
+    ("siliconflow-cn-bella", "bella", "请用热情、清晰、适合视频配音的中文语气朗读。"),
+    ("siliconflow-cn-charles", "charles", "请用磁性、清晰、适合视频配音的中文语气朗读。"),
+    ("siliconflow-cn-claire", "claire", "请用温柔、清晰、适合视频配音的中文语气朗读。"),
+    ("siliconflow-cn-david", "david", "请用欢快、清晰、适合视频配音的中文语气朗读。"),
+    ("siliconflow-cn-diana", "diana", "请用欢快、清晰、适合视频配音的中文语气朗读。"),
+]:
+    PRESETS[_preset_name] = DubbingPreset(
+        name=_preset_name,
+        provider="siliconflow",
+        api_base="https://api.siliconflow.cn/v1",
+        model=SILICONFLOW_COSYVOICE2_MODEL,
+        voice=SILICONFLOW_VOICE_ALIASES[_alias],
+        style_prompt=_prompt,
+    )
+
+for _preset_name, _alias, _prompt in [
+    ("edge-cn-xiaoyi", "xiaoyi", ""),
+    ("edge-cn-yunjian", "yunjian", ""),
+    ("edge-cn-yunyang", "yunyang", ""),
+    ("edge-cn-yunxia", "yunxia", ""),
+    ("edge-hk-hiugaai", "hiugaai", ""),
+    ("edge-hk-hiumaan", "hiumaan", ""),
+    ("edge-hk-wanlung", "wanlung", ""),
+    ("edge-tw-hsiaochen", "hsiaochen", ""),
+    ("edge-tw-hsiaoyu", "hsiaoyu", ""),
+    ("edge-tw-yunjhe", "yunjhe", ""),
+    ("edge-en-ava", "ava", ""),
+    ("edge-en-andrew", "andrew", ""),
+    ("edge-en-emma", "emma", ""),
+    ("edge-en-brian", "brian", ""),
+    ("edge-en-aria", "aria", ""),
+    ("edge-en-libby", "libby", ""),
+    ("edge-en-ryan", "ryan", ""),
+    ("edge-en-sonia", "sonia", ""),
+    ("edge-en-thomas", "thomas", ""),
+]:
+    PRESETS[_preset_name] = DubbingPreset(
+        name=_preset_name,
+        provider="edge",
+        api_base="",
+        model="edge-tts",
+        voice=EDGE_VOICE_ALIASES[_alias],
+        style_prompt=_prompt,
+    )
+
+for _voice, _style in [
+    ("Zephyr", "bright"),
+    ("Puck", "upbeat"),
+    ("Charon", "informative"),
+    ("Kore", "firm"),
+    ("Fenrir", "excitable"),
+    ("Leda", "youthful"),
+    ("Orus", "firm"),
+    ("Aoede", "breezy"),
+    ("Callirrhoe", "easy-going"),
+    ("Autonoe", "bright"),
+    ("Enceladus", "breathy"),
+    ("Iapetus", "clear"),
+    ("Umbriel", "easy-going"),
+    ("Algieba", "smooth"),
+    ("Despina", "smooth"),
+    ("Erinome", "clear"),
+    ("Algenib", "gravelly"),
+    ("Rasalgethi", "informative"),
+    ("Laomedeia", "upbeat"),
+    ("Achernar", "soft"),
+    ("Alnilam", "firm"),
+    ("Schedar", "even"),
+    ("Gacrux", "mature"),
+    ("Pulcherrima", "forward"),
+    ("Achird", "friendly"),
+    ("Zubenelgenubi", "casual"),
+    ("Vindemiatrix", "gentle"),
+    ("Sadachbia", "lively"),
+    ("Sadaltager", "knowledgeable"),
+    ("Sulafat", "warm"),
+]:
+    _preset_name = f"gemini-{_voice.lower()}"
+    PRESETS.setdefault(
+        _preset_name,
+        DubbingPreset(
+            name=_preset_name,
+            provider="gemini",
+            api_base="https://generativelanguage.googleapis.com/v1beta",
+            model="gemini-3.1-flash-tts-preview",
+            voice=_voice,
+            style_prompt=f"Read in a {_style}, natural voice for a video dubbing track.",
+        ),
+    )
 
 
 def get_dubbing_preset(name: str) -> DubbingPreset:

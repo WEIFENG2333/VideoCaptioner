@@ -6,7 +6,8 @@ from pathlib import Path
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.cli.config import get
+from videocaptioner.core.application.config_store import get
+from videocaptioner.core.llm import free_model
 
 # BCP 47 → TargetLanguage.value (Chinese label) mapping for internal use
 _LANG_MAP = {
@@ -77,6 +78,10 @@ def run(args: Namespace, config: dict) -> int:
         if not validate_llm(config):
             return EXIT.USAGE_ERROR
     target_lang_code = get(config, "translate.target_language", "zh-Hans")
+    # 语言码尽早校验一次：默认输出名和翻译阶段共用解析结果
+    target_language = _resolve_target_language(target_lang_code) if need_translate else None
+    if need_translate and target_language is None:
+        return EXIT.USAGE_ERROR
     need_reflect = get(config, "translate.reflect", False)
     if need_reflect and translator_service in ("bing", "google"):
         output.warn("--reflect only works with LLM translator, ignored for " + translator_service)
@@ -110,13 +115,24 @@ def run(args: Namespace, config: dict) -> int:
     verbose = getattr(args, "verbose", False)
     quiet = getattr(args, "quiet", False)
 
-    # Build output path
+    # Build output path（命名语法统一走 output_paths：{stem}.{lang|optimized}.{ext}）
+    from videocaptioner.core.application import output_paths
+
+    def default_output(directory=None) -> str:
+        tag = (
+            output_paths.language_tag(target_language)
+            if target_language is not None
+            else output_paths.TAG_OPTIMIZED
+        )
+        return str(
+            output_paths.product_path(input_path, tag, ext=f".{out_fmt}", directory=directory)
+        )
+
     if args.output:
         out = Path(args.output)
         if out.is_dir() or str(args.output).endswith("/"):
             out.mkdir(parents=True, exist_ok=True)
-            suffix = f"_{target_lang_code}" if need_translate else "_optimized"
-            output_path = str(out / f"{input_path.stem}{suffix}.{out_fmt}")
+            output_path = default_output(directory=out)
         else:
             # If -o has no extension, auto-append from --format
             if not out.suffix:
@@ -127,8 +143,7 @@ def run(args: Namespace, config: dict) -> int:
                 if ext != out_fmt and out_fmt != "srt":
                     output.warn(f"--format {out_fmt} ignored; output format determined by -o extension (.{ext})")
     else:
-        suffix = f"_{target_lang_code}" if need_translate else "_optimized"
-        output_path = str(input_path.with_stem(input_path.stem + suffix).with_suffix(f".{out_fmt}"))
+        output_path = default_output()
 
     # Validate output format
     from videocaptioner.cli.validators import validate_output_format
@@ -137,13 +152,19 @@ def run(args: Namespace, config: dict) -> int:
         return err
 
     # Setup LLM environment
-    llm_api_key = get(config, "llm.api_key", "")
-    llm_api_base = get(config, "llm.api_base", "")
-    llm_model = get(config, "llm.model", "")
-    if llm_api_key:
-        os.environ["OPENAI_API_KEY"] = llm_api_key
-    if llm_api_base:
-        os.environ["OPENAI_BASE_URL"] = llm_api_base
+    if get(config, "llm.service", "") == "immersive":
+        # 公益大模型：base/model 固定，真实令牌在 LLM client 内实时取
+        os.environ["OPENAI_BASE_URL"] = free_model.BASE_URL
+        os.environ["OPENAI_API_KEY"] = free_model.PLACEHOLDER_KEY
+        llm_model = free_model.MODEL
+    else:
+        llm_api_key = get(config, "llm.api_key", "")
+        llm_api_base = get(config, "llm.api_base", "")
+        llm_model = get(config, "llm.model", "")
+        if llm_api_key:
+            os.environ["OPENAI_API_KEY"] = llm_api_key
+        if llm_api_base:
+            os.environ["OPENAI_BASE_URL"] = llm_api_base
 
     # Load custom prompt (only if LLM features are needed)
     custom_prompt = getattr(args, "prompt", None) or ""
@@ -182,18 +203,23 @@ def run(args: Namespace, config: dict) -> int:
             progress.update(pct)
 
     try:
-        # 1. Split (if word-level timestamps available)
-        if need_split and asr_data.is_word_timestamp():
-            if progress:
-                progress.update(5, "Splitting subtitles...")
-            from videocaptioner.core.split.split import SubtitleSplitter
-            splitter = SubtitleSplitter(
-                thread_num=thread_num,
-                model=llm_model,
-                max_word_count_cjk=max_cjk,
-                max_word_count_english=max_english,
-            )
-            asr_data = splitter.split_subtitle(asr_data)
+        # 1. Split：无词级时间戳时先就地拆成词级（对齐 GUI 流水线）。否则 fun-asr /
+        #    whisper-api 等不产词级时间戳的 ASR，其超长整句永远不会被断句，字幕会超长。
+        #    断句在 LLM 不可用时自动降级为规则分割（见 SubtitleSplitter），不会硬失败。
+        if need_split:
+            if not asr_data.is_word_timestamp():
+                asr_data = asr_data.split_to_word_segments()
+            if asr_data.is_word_timestamp():
+                if progress:
+                    progress.update(5, "Splitting subtitles...")
+                from videocaptioner.core.split.split import SubtitleSplitter
+                splitter = SubtitleSplitter(
+                    thread_num=thread_num,
+                    model=llm_model,
+                    max_word_count_cjk=max_cjk,
+                    max_word_count_english=max_english,
+                )
+                asr_data = splitter.split_subtitle(asr_data)
 
         # 2. Optimize
         if need_optimize:
@@ -215,16 +241,14 @@ def run(args: Namespace, config: dict) -> int:
             if progress:
                 progress.update(60, f"Translating to {target_lang_code}...")
 
-            target_language = _resolve_target_language(target_lang_code)
-            if not target_language:
-                if progress:
-                    progress.finish()  # Clean spinner without duplicate error
-                return EXIT.USAGE_ERROR
-
             from videocaptioner.core.translate.factory import TranslatorFactory
             from videocaptioner.core.translate.types import TranslatorType
 
-            type_map = {"llm": TranslatorType.OPENAI, "bing": TranslatorType.BING, "google": TranslatorType.GOOGLE}
+            type_map = {
+                "llm": TranslatorType.OPENAI,
+                "bing": TranslatorType.BING,
+                "google": TranslatorType.GOOGLE,
+            }
             translator = TranslatorFactory.create_translator(
                 translator_type=type_map.get(translator_service, TranslatorType.OPENAI),
                 thread_num=thread_num,

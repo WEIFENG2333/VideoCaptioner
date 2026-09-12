@@ -2,19 +2,28 @@ from videocaptioner.core.asr.asr_data import ASRData
 from videocaptioner.core.asr.bcut import BcutASR
 from videocaptioner.core.asr.chunked_asr import ChunkedASR
 from videocaptioner.core.asr.faster_whisper import FasterWhisperASR
+from videocaptioner.core.asr.fun_asr import BailianFunASR
 from videocaptioner.core.asr.jianying import JianYingASR
 from videocaptioner.core.asr.whisper_api import WhisperAPI
 from videocaptioner.core.asr.whisper_cpp import WhisperCppASR
 from videocaptioner.core.entities import TranscribeConfig, TranscribeModelEnum
 
 
-def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRData:
+def transcribe(
+    audio_path: str,
+    config: TranscribeConfig,
+    callback=None,
+    *,
+    use_cache: bool = True,
+) -> ASRData:
     """Transcribe audio file using specified configuration.
 
     Args:
         audio_path: Path to audio file
         config: Transcription configuration
         callback: Progress callback function(progress: int, message: str)
+        use_cache: Reuse cached recognition results; connectivity checks
+            must pass False so a stale hit cannot mask a broken provider
 
     Returns:
         ASRData: Transcription result data
@@ -30,7 +39,7 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
         raise ValueError("Transcription model not set")
 
     # Create ASR instance based on model type
-    asr = _create_asr_instance(audio_path, config)
+    asr = _create_asr_instance(audio_path, config, use_cache=use_cache)
 
     # Run transcription
     asr_data = asr.run(callback=callback)
@@ -42,12 +51,15 @@ def transcribe(audio_path: str, config: TranscribeConfig, callback=None) -> ASRD
     return asr_data
 
 
-def _create_asr_instance(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+def _create_asr_instance(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
     """Create appropriate ASR instance based on configuration.
 
     Args:
         audio_path: Path to audio file
         config: Transcription configuration
+        use_cache: Reuse cached recognition results
 
     Returns:
         ChunkedASR: Chunked ASR instance ready to run
@@ -55,28 +67,33 @@ def _create_asr_instance(audio_path: str, config: TranscribeConfig) -> ChunkedAS
     model_type = config.transcribe_model
 
     if model_type == TranscribeModelEnum.JIANYING:
-        return _create_jianying_asr(audio_path, config)
+        return _create_jianying_asr(audio_path, config, use_cache=use_cache)
 
     elif model_type == TranscribeModelEnum.BIJIAN:
-        return _create_bijian_asr(audio_path, config)
+        return _create_bijian_asr(audio_path, config, use_cache=use_cache)
 
     elif model_type == TranscribeModelEnum.WHISPER_CPP:
-        return _create_whisper_cpp_asr(audio_path, config)
+        return _create_whisper_cpp_asr(audio_path, config, use_cache=use_cache)
 
     elif model_type == TranscribeModelEnum.WHISPER_API:
-        return _create_whisper_api_asr(audio_path, config)
+        return _create_whisper_api_asr(audio_path, config, use_cache=use_cache)
+
+    elif model_type == TranscribeModelEnum.BAILIAN_FUN_ASR:
+        return _create_fun_asr(audio_path, config, use_cache=use_cache)
 
     elif model_type == TranscribeModelEnum.FASTER_WHISPER:
-        return _create_faster_whisper_asr(audio_path, config)
+        return _create_faster_whisper_asr(audio_path, config, use_cache=use_cache)
 
     else:
         raise ValueError(f"Invalid transcription model: {model_type}")
 
 
-def _create_jianying_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+def _create_jianying_asr(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
     """Create JianYing ASR instance with chunking support."""
     asr_kwargs = {
-        "use_cache": True,
+        "use_cache": use_cache,
         "need_word_time_stamp": config.need_word_time_stamp,
     }
     return ChunkedASR(
@@ -84,19 +101,23 @@ def _create_jianying_asr(audio_path: str, config: TranscribeConfig) -> ChunkedAS
     )
 
 
-def _create_bijian_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+def _create_bijian_asr(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
     """Create Bijian ASR instance with chunking support."""
     asr_kwargs = {
-        "use_cache": True,
+        "use_cache": use_cache,
         "need_word_time_stamp": config.need_word_time_stamp,
     }
     return ChunkedASR(asr_class=BcutASR, audio_path=audio_path, asr_kwargs=asr_kwargs)
 
 
-def _create_whisper_cpp_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+def _create_whisper_cpp_asr(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
     """Create WhisperCpp ASR instance with chunking support."""
     asr_kwargs = {
-        "use_cache": True,
+        "use_cache": use_cache,
         "need_word_time_stamp": config.need_word_time_stamp,
         "language": config.transcribe_language,
         "whisper_model": config.whisper_model.value if config.whisper_model else None,
@@ -110,10 +131,12 @@ def _create_whisper_cpp_asr(audio_path: str, config: TranscribeConfig) -> Chunke
     )
 
 
-def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+def _create_whisper_api_asr(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
     """Create Whisper API ASR instance with chunking support."""
     asr_kwargs = {
-        "use_cache": True,
+        "use_cache": use_cache,
         "need_word_time_stamp": config.need_word_time_stamp,
         "language": config.transcribe_language,
         "whisper_model": config.whisper_api_model or "whisper-1",
@@ -126,10 +149,34 @@ def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> Chunke
     )
 
 
-def _create_faster_whisper_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+def _create_fun_asr(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
+    """Create Bailian Fun-ASR instance with long-audio chunking support."""
+    asr_kwargs = {
+        "use_cache": use_cache,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "language": config.transcribe_language,
+        "api_key": config.fun_asr_api_key or "",
+        "api_base": config.fun_asr_api_base or "",
+        "model": config.fun_asr_model or "fun-asr",
+    }
+    return ChunkedASR(
+        asr_class=BailianFunASR,
+        audio_path=audio_path,
+        asr_kwargs=asr_kwargs,
+        chunk_concurrency=1,
+        chunk_length=60 * 20,
+        chunk_overlap=0,
+    )
+
+
+def _create_faster_whisper_asr(
+    audio_path: str, config: TranscribeConfig, *, use_cache: bool = True
+) -> ChunkedASR:
     """Create FasterWhisper ASR instance with chunking support."""
     asr_kwargs = {
-        "use_cache": True,
+        "use_cache": use_cache,
         "need_word_time_stamp": config.need_word_time_stamp,
         "faster_whisper_program": config.faster_whisper_program or "",
         "language": config.transcribe_language,

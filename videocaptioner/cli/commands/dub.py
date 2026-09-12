@@ -1,23 +1,23 @@
 """dub command -- generate dubbed audio/video from subtitles."""
 
+import tempfile
 from argparse import Namespace
 from pathlib import Path
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.cli.config import get
 from videocaptioner.cli.validators import (
     validate_dubbing,
     validate_subtitle_input,
     validate_video_input,
 )
+from videocaptioner.core.application import output_paths
+from videocaptioner.core.application.config_store import get
 from videocaptioner.core.dubbing import DubbingConfig, DubbingPipeline, SpeakerProfile
-from videocaptioner.core.dubbing.models import DubbingProvider, FitMode
-from videocaptioner.core.dubbing.presets import (
-    get_dubbing_preset,
-    normalize_dubbing_voice,
-    validate_dubbing_voice,
-)
+from videocaptioner.core.dubbing.config_builder import build_dubbing_config
+
+# 命令行里逐条展示的超时分段警告上限，其余折叠成一行计数
+_MAX_INLINE_WARNINGS = 5
 
 
 def run(args: Namespace, config: dict) -> int:
@@ -48,10 +48,10 @@ def run(args: Namespace, config: dict) -> int:
         output.error(str(exc))
         return EXIT.USAGE_ERROR
 
-    dub_config = _build_dubbing_config(config, speaker_profiles)
-    capability_error = _validate_provider_capabilities(dub_config)
-    if capability_error:
-        output.error(capability_error)
+    try:
+        dub_config = _build_dubbing_config(config, speaker_profiles)
+    except ValueError as exc:
+        output.error(str(exc))
         return EXIT.USAGE_ERROR
 
     audio_output, video_output = _resolve_outputs(args, subtitle_path, video_path)
@@ -71,16 +71,18 @@ def run(args: Namespace, config: dict) -> int:
                 last_logged_bucket = bucket
                 output.info(f"Dubbing progress: {percent}% - {message}")
 
+    # 变速分段等中间产物进临时目录，跑完即清；原始 TTS 分段在全局缓存里复用。
     try:
-        result = DubbingPipeline(dub_config).run(
-            str(subtitle_path),
-            str(audio_output),
-            video_path=str(video_path) if video_path else None,
-            output_video_path=str(video_output) if video_output else None,
-            text_track=getattr(args, "text_track", None) or "auto",
-            work_dir=str(audio_output.with_suffix("").with_name(audio_output.stem + "_parts")),
-            callback=progress_callback,
-        )
+        with tempfile.TemporaryDirectory(prefix="videocaptioner-dub-") as work_dir:
+            result = DubbingPipeline(dub_config).run(
+                str(subtitle_path),
+                str(audio_output),
+                work_dir=work_dir,
+                video_path=str(video_path) if video_path else None,
+                output_video_path=str(video_output) if video_output else None,
+                text_track=getattr(args, "text_track", None) or "auto",
+                callback=progress_callback,
+            )
     except Exception as exc:
         msg = output.clean_error(str(exc))
         if progress:
@@ -97,134 +99,47 @@ def run(args: Namespace, config: dict) -> int:
     if progress:
         progress.finish(f"Done -> {final_path}")
     if result.warnings and not quiet:
-        output.warn(f"{len(result.warnings)} segment(s) exceeded their target duration; see {result.audio_path.with_suffix('.dubbing.json')}")
+        output.warn(f"{len(result.warnings)} segment(s) exceeded their target duration:")
+        for warning in result.warnings[:_MAX_INLINE_WARNINGS]:
+            output.warn(f"  {warning}")
+        hidden = len(result.warnings) - _MAX_INLINE_WARNINGS
+        if hidden > 0:
+            output.warn(f"  ... and {hidden} more")
     if quiet:
         print(final_path)
     return EXIT.SUCCESS
 
 
 def _build_dubbing_config(config: dict, speaker_profiles: dict[str, SpeakerProfile]) -> DubbingConfig:
-    resolved = _resolve_dubbing_settings(config)
-    provider = _resolve_provider(resolved["provider"])
-    resolved["voice"] = normalize_dubbing_voice(provider, resolved["model"], resolved["voice"])
-    for profile in speaker_profiles.values():
-        if profile.voice:
-            profile.voice = normalize_dubbing_voice(provider, resolved["model"], profile.voice)
-    fit_mode, max_speed = _resolve_timing(config)
-    mix_original_audio, original_audio_volume = _resolve_audio_mix(config)
-    return DubbingConfig(
-        provider=provider,
+    return build_dubbing_config(
+        provider=get(config, "dubbing.provider", "edge"),
+        preset=get(config, "dubbing.preset", ""),
         api_key=get(config, "dubbing.api_key", ""),
-        base_url=resolved["api_base"],
-        model=resolved["model"],
-        voice=resolved["voice"],
+        api_base=get(config, "dubbing.api_base", ""),
+        model=get(config, "dubbing.model", ""),
+        voice=get(config, "dubbing.voice", ""),
         response_format=get(config, "dubbing.response_format", "mp3"),
         sample_rate=int(get(config, "dubbing.sample_rate", 32000)),
         speed=float(get(config, "dubbing.speed", 1.0)),
         gain=float(get(config, "dubbing.gain", 0)),
         use_cache=bool(get(config, "dubbing.use_cache", True)),
         tts_workers=int(get(config, "dubbing.tts_workers", 5)),
-        style_prompt=resolved["style_prompt"],
-        fit_mode=fit_mode,
-        max_speed=max_speed,
+        style_prompt=get(config, "dubbing.style_prompt", ""),
+        timing=get(config, "dubbing.timing", "balanced"),
+        audio_mode=get(config, "dubbing.audio_mode", "replace"),
+        fit_mode=get(config, "dubbing.fit_mode", None),
+        max_speed=float(get(config, "dubbing.max_speed", 2.0)),
         target_padding_ms=int(get(config, "dubbing.target_padding_ms", 80)),
         rewrite_too_long=bool(get(config, "dubbing.rewrite_too_long", False)),
         rewrite_threshold=float(get(config, "dubbing.rewrite_threshold", 1.15)),
         llm_api_key=get(config, "llm.api_key", ""),
         llm_api_base=get(config, "llm.api_base", ""),
         llm_model=get(config, "llm.model", ""),
-        mix_original_audio=mix_original_audio,
-        original_audio_volume=original_audio_volume,
+        mix_original_audio=bool(get(config, "dubbing.mix_original_audio", False)),
+        original_audio_volume=float(get(config, "dubbing.original_audio_volume", 0.25)),
         dubbed_audio_volume=float(get(config, "dubbing.dubbed_audio_volume", 1.0)),
         speaker_profiles=speaker_profiles,
     )
-
-
-def _resolve_dubbing_settings(config: dict) -> dict[str, str]:
-    preset_name = get(config, "dubbing.preset", "")
-    resolved = {
-        "provider": get(config, "dubbing.provider", "edge"),
-        "api_base": get(config, "dubbing.api_base", ""),
-        "model": get(config, "dubbing.model", ""),
-        "voice": get(config, "dubbing.voice", ""),
-        "style_prompt": get(config, "dubbing.style_prompt", ""),
-    }
-    if not preset_name:
-        return resolved
-
-    preset = get_dubbing_preset(preset_name)
-    default_preset = get_dubbing_preset("edge-cn-female")
-    defaults = {
-        "provider": default_preset.provider,
-        "api_base": default_preset.api_base,
-        "model": default_preset.model,
-        "voice": default_preset.voice,
-        "style_prompt": "",
-    }
-    preset_values = {
-        "provider": preset.provider,
-        "api_base": preset.api_base,
-        "model": preset.model,
-        "voice": preset.voice,
-        "style_prompt": preset.style_prompt,
-    }
-    for key, value in preset_values.items():
-        if not resolved[key] or resolved[key] == defaults[key]:
-            resolved[key] = value
-    return resolved
-
-
-def _resolve_provider(value: str) -> DubbingProvider:
-    if value == "siliconflow":
-        return "siliconflow"
-    if value == "gemini":
-        return "gemini"
-    if value == "edge":
-        return "edge"
-    raise ValueError(f"Unsupported dubbing provider: {value}")
-
-
-def _resolve_timing(config: dict) -> tuple[FitMode, float]:
-    timing = get(config, "dubbing.timing", "balanced")
-    explicit_fit = get(config, "dubbing.fit_mode", None)
-    explicit_max_speed = float(get(config, "dubbing.max_speed", 2.0))
-    if timing == "none":
-        return "none", explicit_max_speed
-    fit_mode: FitMode = "tempo" if explicit_fit not in {"tempo", "none"} else explicit_fit
-    if timing == "natural":
-        return fit_mode, min(explicit_max_speed, 1.25)
-    if timing == "strict":
-        return fit_mode, max(explicit_max_speed, 2.0)
-    return fit_mode, explicit_max_speed
-
-
-def _resolve_audio_mix(config: dict) -> tuple[bool, float]:
-    audio_mode = get(config, "dubbing.audio_mode", "replace")
-    explicit_mix = bool(get(config, "dubbing.mix_original_audio", False))
-    explicit_volume = float(get(config, "dubbing.original_audio_volume", 0.25))
-    if audio_mode == "replace":
-        return explicit_mix, explicit_volume
-    if audio_mode == "mix":
-        return True, explicit_volume
-    if audio_mode == "duck":
-        return True, min(explicit_volume, 0.12)
-    return explicit_mix, explicit_volume
-
-
-def _validate_provider_capabilities(config: DubbingConfig) -> str | None:
-    if config.provider == "gemini" and any(p.clone_audio_path for p in config.speaker_profiles.values()):
-        return "Gemini TTS does not support voice cloning. Use a SiliconFlow preset/provider for --clone-audio or --speaker-clone."
-    if config.provider == "edge" and any(p.clone_audio_path for p in config.speaker_profiles.values()):
-        return "Edge TTS does not support voice cloning. Use a SiliconFlow preset/provider for --clone-audio or --speaker-clone."
-    voice_error = validate_dubbing_voice(config.provider, config.voice)
-    if voice_error:
-        return voice_error
-    for name, profile in config.speaker_profiles.items():
-        if profile.voice:
-            voice_error = validate_dubbing_voice(config.provider, profile.voice)
-            if voice_error:
-                return f"Speaker {name}: {voice_error}"
-    return None
 
 
 def _apply_config_speaker_profiles(config: dict, profiles: dict[str, SpeakerProfile]) -> None:
@@ -290,14 +205,27 @@ def _resolve_outputs(
     subtitle_path: Path,
     video_path: Path | None,
 ) -> tuple[Path, Path | None]:
+    """默认输出：{stem}.dubbed.{ext}，音频与视频共用 dubbed tag。"""
     audio_arg = getattr(args, "audio_output", None)
     output_arg = getattr(args, "output", None)
 
     if video_path:
-        video_output = Path(output_arg) if output_arg else video_path.with_stem(video_path.stem + "_dubbed")
-        audio_output = Path(audio_arg) if audio_arg else video_output.with_suffix(".dub.wav")
+        video_output = (
+            Path(output_arg)
+            if output_arg
+            else output_paths.product_path(video_path, output_paths.TAG_DUBBED)
+        )
+        audio_output = (
+            Path(audio_arg)
+            if audio_arg
+            else output_paths.product_path(video_path, output_paths.TAG_DUBBED, ext=".wav")
+        )
         return audio_output, video_output
 
     chosen_output = output_arg or audio_arg
-    audio_output = Path(chosen_output) if chosen_output else subtitle_path.with_suffix(".dub.wav")
+    audio_output = (
+        Path(chosen_output)
+        if chosen_output
+        else output_paths.product_path(subtitle_path, output_paths.TAG_DUBBED, ext=".wav")
+    )
     return audio_output, None

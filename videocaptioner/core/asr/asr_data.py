@@ -6,10 +6,9 @@ import re
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from langdetect import LangDetectException, detect
-
 from ..entities import SubtitleLayoutEnum
 from ..utils.text_utils import is_mainly_cjk
+from .srt_parser import split_srt_tracks
 
 # 多语言分词模式(支持词级和字符级语言)
 _WORD_SPLIT_PATTERN = (
@@ -106,6 +105,11 @@ class ASRDataSeg:
 class ASRData:
     def __init__(self, segments: List[ASRDataSeg]):
         filtered_segments = [seg for seg in segments if seg.text and seg.text.strip()]
+        for seg in filtered_segments:
+            # 防御外部坏字幕：倒置的时间区间（end < start）按笔误交换，
+            # 否则会原样写回非法 SRT，下游播放器/渲染器行为未定义
+            if seg.end_time < seg.start_time:
+                seg.start_time, seg.end_time = seg.end_time, seg.start_time
         filtered_segments.sort(key=lambda x: x.start_time)
         self.segments = filtered_segments
 
@@ -242,6 +246,8 @@ class ASRData:
                 json.dump(self.to_json(), f, ensure_ascii=False, indent=2)
         elif save_path.endswith(".ass"):
             self.to_ass(save_path=save_path, style_str=ass_style, layout=layout)
+        elif save_path.endswith(".vtt"):
+            self.to_vtt(save_path=save_path, layout=layout)
         else:
             raise ValueError(f"Unsupported file extension: {save_path}")
 
@@ -324,6 +330,7 @@ class ASRData:
         save_path: Optional[str] = None,
         video_width: int = 1280,
         video_height: int = 720,
+        line_gap: int = 0,
     ) -> str:
         """Convert to ASS subtitle format
 
@@ -361,7 +368,16 @@ class ASRData:
             "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
         )
 
-        dialogue_template = "Dialogue: 0,{},{},{},,0,0,0,,{}\n"
+        # 双语时给上行（Default）一个绝对 MarginV，制造可控的主副间距。
+        # line_gap<=0 时 top_mv 为 None，沿用 libass 默认紧贴堆叠（存量零回归）。
+        from videocaptioner.core.subtitle.ass_renderer import top_line_margin_v
+
+        top_mv = top_line_margin_v(style_str, line_gap)
+        top_mv = top_mv if top_mv is not None else 0
+
+        def _dlg(start, end, style, text, marginv=0):
+            return f"Dialogue: 0,{start},{end},{style},,0,0,{marginv},,{text}\n"
+
         for seg in self.segments:
             start_time, end_time = seg.to_ass_ts()
             # ASS uses \N for line breaks within dialogue
@@ -372,38 +388,22 @@ class ASRData:
             if layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
                 if has_translation:
                     # Secondary(原文)先写(渲染在下)，Default(译文)后写(渲染在上)
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Secondary", original
-                    )
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Default", translated
-                    )
+                    ass_content += _dlg(start_time, end_time, "Secondary", original)
+                    ass_content += _dlg(start_time, end_time, "Default", translated, top_mv)
                 else:
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Default", original
-                    )
+                    ass_content += _dlg(start_time, end_time, "Default", original)
             elif layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
                 if has_translation:
                     # Secondary(译文)先写(渲染在下)，Default(原文)后写(渲染在上)
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Secondary", translated
-                    )
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Default", original
-                    )
+                    ass_content += _dlg(start_time, end_time, "Secondary", translated)
+                    ass_content += _dlg(start_time, end_time, "Default", original, top_mv)
                 else:
-                    ass_content += dialogue_template.format(
-                        start_time, end_time, "Default", original
-                    )
+                    ass_content += _dlg(start_time, end_time, "Default", original)
             elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
-                ass_content += dialogue_template.format(
-                    start_time, end_time, "Default", original
-                )
+                ass_content += _dlg(start_time, end_time, "Default", original)
             else:  # ONLY_TRANSLATE
                 text = translated if has_translation else original
-                ass_content += dialogue_template.format(
-                    start_time, end_time, "Default", text
-                )
+                ass_content += _dlg(start_time, end_time, "Default", text)
 
         if save_path:
             save_path = handle_long_path(save_path)
@@ -411,34 +411,55 @@ class ASRData:
                 f.write(ass_content)
         return ass_content
 
-    def to_vtt(self, save_path=None) -> str:
-        """Convert to WebVTT subtitle format
+    def to_vtt(
+        self,
+        layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP,
+        save_path=None,
+    ) -> str:
+        """Convert to WebVTT subtitle format"""
+        vtt_lines = ["WEBVTT\n"]
+        for n, seg in enumerate(self.segments, 1):
+            original = seg.text
+            translated = seg.translated_text
 
-        Args:
-            save_path: Optional save path
+            if layout == SubtitleLayoutEnum.ORIGINAL_ON_TOP:
+                text = f"{original}\n{translated}" if translated else original
+            elif layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
+                text = f"{translated}\n{original}" if translated else original
+            elif layout == SubtitleLayoutEnum.ONLY_ORIGINAL:
+                text = original
+            else:  # ONLY_TRANSLATE
+                text = translated if translated else original
 
-        Returns:
-            WebVTT format subtitle content
+            # WebVTT 与 SRT 的时间戳仅毫秒分隔符不同（. 与 ,）
+            timestamp = seg.to_srt_ts().replace(",", ".")
+            vtt_lines.append(f"{n}\n{timestamp}\n{text}\n")
+
+        vtt_text = "\n".join(vtt_lines)
+        if save_path:
+            save_path = handle_long_path(save_path)
+            with open(save_path, "w", encoding="utf-8") as f:
+                f.write(vtt_text)
+        return vtt_text
+
+    def resolve_layout_from_file(
+        self, layout: SubtitleLayoutEnum
+    ) -> SubtitleLayoutEnum:
+        """把"来自文件的双语数据"的渲染布局归一到文件行序。
+
+        字幕文件的行序本身已经编码了上下布局（第 1 行在上），由 subtitle 步骤按
+        用户 layout 落盘决定一次。文件读回后 `text`/`translated_text` 退化为"行1/
+        行2"的位置语义（split_srt_tracks / from_ass 按位置赋值）。此时若再套用
+        `译文在上`(TRANSLATE_ON_TOP) 会把已排好版的双语行二次翻转，导致往返错乱。
+
+        因此渲染文件来源的双语数据时，`译文在上` 归一到"文件行序"
+        (`原文在上` = 第 1 行在上)；单语与 仅原文/仅译文 原样返回。想改上下顺序应在
+        subtitle 步骤用对应 `--layout` 重新导出，而非在合成时翻转。
         """
-        raise NotImplementedError("WebVTT format is not supported")
-        # # WebVTT头部
-        # vtt_lines = ["WEBVTT\n"]
-
-        # for n, seg in enumerate(self.segments, 1):
-        #     # 转换时间戳格式从毫秒到 HH:MM:SS.mmm
-        #     start_time = seg._ms_to_srt_time(seg.start_time).replace(",", ".")
-        #     end_time = seg._ms_to_srt_time(seg.end_time).replace(",", ".")
-
-        #     # 添加序号（可选）和时间戳
-        #     vtt_lines.append(f"{n}\n{start_time} --> {end_time}\n{seg.transcript}\n")
-
-        # vtt_text = "\n".join(vtt_lines)
-
-        # if save_path:
-        #     with open(save_path, "w", encoding="utf-8") as f:
-        #         f.write(vtt_text)
-
-        # return vtt_text
+        has_translation = any(seg.translated_text for seg in self.segments)
+        if has_translation and layout == SubtitleLayoutEnum.TRANSLATE_ON_TOP:
+            return SubtitleLayoutEnum.ORIGINAL_ON_TOP
+        return layout
 
     def merge_segments(
         self, start_index: int, end_index: int, merged_text: Optional[str] = None
@@ -566,77 +587,13 @@ class ASRData:
 
     @staticmethod
     def from_srt(srt_str: str) -> "ASRData":
-        """Create ASRData from SRT format string.
-
-        Uses language detection to distinguish between bilingual subtitles
-        (original + translation) and multiline single-language subtitles.
-
-        Args:
-            srt_str: SRT format subtitle string
-
-        Returns:
-            Parsed ASRData instance
-        """
-        segments = []
-        srt_time_pattern = re.compile(
-            r"(\d{2}):(\d{2}):(\d{1,2})[.,](\d{3})\s-->\s(\d{2}):(\d{2}):(\d{1,2})[.,](\d{3})"
+        """Create ASRData from SRT, including file-level parallel-track inference."""
+        return ASRData(
+            [
+                ASRDataSeg(source, start, end, translation)
+                for start, end, source, translation in split_srt_tracks(srt_str)
+            ]
         )
-        blocks = re.split(r"\n\s*\n", srt_str.strip())
-
-        # Detect bilingual mode: all 4-line + 70% different languages
-        def is_different_lang(block: str) -> bool:
-            lines = block.splitlines()
-            if len(lines) != 4:
-                return False
-            try:
-                return detect(lines[2]) != detect(lines[3])
-            except LangDetectException:
-                return False
-
-        all_four_lines = all(len(b.splitlines()) == 4 for b in blocks)
-        is_bilingual = (
-            all_four_lines and sum(map(is_different_lang, blocks[:50])) / min(len(blocks), 50) >= 0.7
-        )
-
-        # Process all blocks based on detected mode
-        for block in blocks:
-            lines = block.splitlines()
-            if len(lines) < 3:
-                continue
-
-            match = srt_time_pattern.match(lines[1])
-            if not match:
-                continue
-
-            time_parts = list(map(int, match.groups()))
-            start_time = sum(
-                [
-                    time_parts[0] * 3600000,
-                    time_parts[1] * 60000,
-                    time_parts[2] * 1000,
-                    time_parts[3],
-                ]
-            )
-            end_time = sum(
-                [
-                    time_parts[4] * 3600000,
-                    time_parts[5] * 60000,
-                    time_parts[6] * 1000,
-                    time_parts[7],
-                ]
-            )
-
-            text_lines = lines[2:]
-            if is_bilingual and len(text_lines) >= 2:
-                # First line = original, second line = translation
-                segments.append(ASRDataSeg(text_lines[0], start_time, end_time, text_lines[1]))
-            elif len(text_lines) == 1:
-                segments.append(ASRDataSeg(text_lines[0], start_time, end_time))
-            else:
-                # Multi-line subtitle: preserve line breaks with \n
-                segments.append(ASRDataSeg("\n".join(text_lines), start_time, end_time))
-
-        return ASRData(segments)
 
     @staticmethod
     def from_vtt(vtt_str: str) -> "ASRData":

@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>桌面浮窗 · 形态 2 灵动悬浮卡</title>
+  <style>
+    :root {
+      --brand: #28f08b;
+      --brand-soft: rgba(40, 240, 139, .14);
+      --brand-line: rgba(40, 240, 139, .5);
+      --text: #f5f7f6;
+      --muted: #b9c0bd;
+      --subtle: #8e9692;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: #151616; font-family: var(--font); }
+    button { font: inherit; cursor: default; }
+
+    .stage { padding: 28px; }
+    .intro { max-width: 1320px; margin: 0 auto 16px; display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+    .intro h1 { margin: 0 0 8px; font-size: 27px; }
+    .intro p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 720px; }
+    .switcher { padding: 4px; display: flex; gap: 4px; border: 1px solid #353938; border-radius: 9px; background: #202222; flex-wrap: wrap; }
+    .switcher button { height: 32px; padding: 0 12px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; font-size: 12.5px; font-weight: 750; white-space: nowrap; }
+    .switcher button.active { color: #061810; background: var(--brand); }
+
+    /* 假桌面：Zoom 会议网格 */
+    .desktop {
+      max-width: 1320px; margin: 0 auto; height: 760px; position: relative; overflow: hidden;
+      border-radius: 16px; border: 1px solid #2a2f33; background: #0c0f12;
+    }
+    .meet-grid { position: absolute; inset: 18px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
+    .tile { border-radius: 12px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.05); }
+    .tile.t1 { background: radial-gradient(circle at 40% 35%, rgba(80,110,150,.6), #1a2330); }
+    .tile.t2 { background: radial-gradient(circle at 60% 40%, rgba(120,90,140,.55), #241a2a); }
+    .tile.t3 { background: radial-gradient(circle at 50% 45%, rgba(90,130,110,.5), #18241d); }
+    .tile.t4 { background: radial-gradient(circle at 45% 50%, rgba(150,120,80,.45), #2a2418); }
+    .tile .av { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); width: 76px; height: 76px; border-radius: 50%; background: rgba(255,255,255,.12); display: grid; place-items: center; color: rgba(255,255,255,.55); font-size: 26px; font-weight: 800; }
+    .tile .nm { position: absolute; left: 12px; bottom: 10px; padding: 3px 9px; border-radius: 6px; background: rgba(0,0,0,.45); color: rgba(255,255,255,.75); font-size: 12px; font-weight: 600; }
+    .meet-bar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 10px; padding: 8px 14px; border-radius: 12px; background: rgba(0,0,0,.5); }
+    .meet-bar span { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,.1); }
+    .meet-bar span.red { background: #d0454a; }
+
+    /* ===== 浮窗：灵动卡 ===== */
+    .card {
+      position: absolute; left: 64px; bottom: 96px; width: 460px;
+      border-radius: 20px; background: rgba(20,22,23,.9);
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 22px 58px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+      backdrop-filter: blur(18px); overflow: hidden;
+    }
+    .grip { height: 22px; display: grid; place-items: center; cursor: grab; }
+    .grip::before { content: ""; width: 36px; height: 4px; border-radius: 999px; background: rgba(255,255,255,.16); }
+    .body { padding: 2px 22px 8px; }
+    .status { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: var(--brand-soft); border: 1px solid var(--brand-line); color: var(--brand); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand); animation: blink 1.4s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity: .25; } }
+    .lang { color: var(--subtle); font-size: 11.5px; font-weight: 700; }
+    .time { margin-left: auto; color: var(--subtle); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+    .src { font-size: 14.5px; line-height: 1.55; font-weight: 500; color: rgba(220,226,224,.6); margin-bottom: 6px; }
+    .tgt { font-size: 22px; line-height: 1.45; font-weight: 800; }
+    .stable { color: var(--text); }
+    .floaty { color: rgba(245,247,246,.4); }
+    .src .stable { color: rgba(220,226,224,.85); }
+
+    .toolbar { margin-top: 13px; padding-top: 11px; display: flex; gap: 4px; align-items: center; border-top: 1px solid rgba(255,255,255,.07); }
+    .tool { width: 33px; height: 33px; border: 0; border-radius: 9px; display: grid; place-items: center; color: var(--muted); background: transparent; }
+    .tool:hover { color: var(--text); background: rgba(255,255,255,.08); }
+    .tool.active { color: var(--brand); background: var(--brand-soft); }
+    .tool.close:hover { color: #ff7a7f; background: rgba(255,122,127,.13); }
+    .spacer { flex: 1; }
+    .icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* 历史抽屉 */
+    .history { border-bottom: 1px solid rgba(255,255,255,.08); max-height: 250px; overflow-y: auto; padding: 4px 22px; }
+    .h-head { display: flex; align-items: center; padding: 11px 0 8px; position: sticky; top: 0; background: rgba(20,22,23,.97); }
+    .h-head b { font-size: 11.5px; font-weight: 800; color: var(--subtle); letter-spacing: .05em; text-transform: uppercase; }
+    .h-head .acts { margin-left: auto; display: flex; gap: 5px; }
+    .mb { height: 27px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #353938; border-radius: 7px; background: #1f2121; color: var(--muted); font-size: 11.5px; font-weight: 700; }
+    .mb .icon { width: 12px; height: 12px; }
+    .h-item { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .h-item:last-child { border-bottom: 0; }
+    .h-t { font-size: 10.5px; color: var(--subtle); font-variant-numeric: tabular-nums; margin-bottom: 2px; }
+    .h-s { font-size: 12px; color: rgba(220,226,224,.5); line-height: 1.5; }
+    .h-g { font-size: 14px; color: var(--text); font-weight: 600; line-height: 1.5; }
+
+    /* 设置弹层 */
+    .settings { position: absolute; right: 14px; bottom: 56px; width: 270px; padding: 15px; border-radius: 13px; background: rgba(26,28,29,.99); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 16px 44px rgba(0,0,0,.55); }
+    .settings h4 { margin: 0 0 13px; font-size: 12.5px; font-weight: 800; }
+    .sr { margin-bottom: 13px; } .sr:last-child { margin-bottom: 0; }
+    .sr .l { font-size: 11.5px; color: var(--subtle); font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .seg { display: flex; padding: 3px; gap: 3px; border: 1px solid #353938; border-radius: 8px; background: #1f2121; }
+    .seg button { flex: 1; height: 28px; border: 0; border-radius: 5px; color: var(--muted); background: transparent; font-size: 11.5px; font-weight: 700; }
+    .seg button.active { color: #061810; background: var(--brand); }
+    .slider { height: 6px; border-radius: 999px; background: #3a3e3d; position: relative; }
+    .slider::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--brand); }
+    .slider.s1::after { width: 55%; } .slider.s2::after { width: 80%; }
+    .slider .knob { position: absolute; top: 50%; width: 15px; height: 15px; border-radius: 50%; background: #fff; transform: translate(-50%,-50%); box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+    .slider.s1 .knob { left: 55%; } .slider.s2 .knob { left: 80%; }
+
+    /* 收起胶囊 */
+    .pill {
+      position: absolute; left: 64px; bottom: 96px; height: 46px; padding: 0 8px 0 16px;
+      display: inline-flex; align-items: center; gap: 12px;
+      border-radius: 999px; background: rgba(20,22,23,.92); border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 16px 40px rgba(0,0,0,.55); backdrop-filter: blur(16px);
+    }
+    .pill .wv { display: flex; gap: 2.5px; align-items: center; height: 18px; }
+    .pill .wv i { width: 3px; border-radius: 2px; background: var(--brand); }
+    .pill .ptext { font-size: 14px; font-weight: 700; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pill .pbtn { width: 32px; height: 32px; border: 0; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: rgba(255,255,255,.06); }
+
+    .demo { display: none; }
+    .demo.active { display: block; }
+    .note { max-width: 1320px; margin: 14px auto 0; color: var(--subtle); font-size: 12.5px; }
+    .note b { color: var(--muted); }
+    @media (max-width: 860px) { .stage { padding: 14px; } .intro { flex-direction: column; align-items: start; } .desktop { height: 600px; } .card, .pill { left: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="intro">
+      <div>
+        <h1>桌面浮窗 · 形态 2「灵动悬浮卡」</h1>
+        <p>开会 / 桌面办公首选：一张可拖到任意位置的圆角卡，能展开历史、收成小胶囊。下面把它放在「Zoom 会议」上看真实效果。</p>
+      </div>
+      <div class="switcher">
+        <button class="active" data-t="c-live">① 监听中</button>
+        <button data-t="c-hover">② hover 工具条</button>
+        <button data-t="c-history">③ 展开历史</button>
+        <button data-t="c-set">④ 设置弹层</button>
+        <button data-t="c-pill">⑤ 收起胶囊</button>
+      </div>
+    </div>
+
+    <div class="desktop">
+      <div class="meet-grid">
+        <div class="tile t1"><div class="av">A</div><div class="nm">Alex Chen（主讲）</div></div>
+        <div class="tile t2"><div class="av">M</div><div class="nm">Maria</div></div>
+        <div class="tile t3"><div class="av">你</div><div class="nm">You</div></div>
+        <div class="tile t4"><div class="av">K</div><div class="nm">Kenji</div></div>
+      </div>
+      <div class="meet-bar"><span></span><span></span><span></span><span></span><span class="red"></span></div>
+
+      <!-- ① 监听中 -->
+      <div class="card demo active" data-state="c-live">
+        <div class="grip"></div>
+        <div class="body">
+          <div class="status"><span class="chip"><span class="dot"></span>监听中</span><span class="lang">英语 → 简体中文</span><span class="time">12:38</span></div>
+          <div class="src"><span class="stable">so the main goal for this sprint is to ship the</span> <span class="floaty">onboarding flow</span></div>
+          <div class="tgt"><span class="stable">所以这个迭代的主要目标是交付</span><span class="floaty">新手引导流程</span></div>
+        </div>
+      </div>
+
+      <!-- ② hover 工具条 -->
+      <div class="card demo" data-state="c-hover">
+        <div class="grip"></div>
+        <div class="body">
+          <div class="status"><span class="chip"><span class="dot"></span>监听中</span><span class="lang">英语 → 简体中文</span><span class="time">12:38</span></div>
+          <div class="src"><span class="stable">so the main goal for this sprint is to ship the</span> <span class="floaty">onboarding flow</span></div>
+          <div class="tgt"><span class="stable">所以这个迭代的主要目标是交付</span><span class="floaty">新手引导流程</span></div>
+          <div class="toolbar">
+            <button class="tool" title="暂停"><svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+            <button class="tool" title="历史"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/></svg></button>
+            <button class="tool" title="仅译文/双语"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg></button>
+            <span class="spacer"></span>
+            <button class="tool" title="收起"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <button class="tool" title="钉住"><svg class="icon" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/></svg></button>
+            <button class="tool" title="设置"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.7a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5z"/></svg></button>
+            <button class="tool close" title="关闭"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 展开历史 -->
+      <div class="card demo" data-state="c-history" style="bottom:64px">
+        <div class="grip"></div>
+        <div class="history">
+          <div class="h-head"><b>本次记录 · 14 句</b><div class="acts"><button class="mb"><svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5h10"/></svg>复制</button><button class="mb"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>导出</button></div></div>
+          <div class="h-item"><div class="h-t">12:36:02</div><div class="h-s">let's start with a quick recap of last week.</div><div class="h-g">先快速回顾一下上周。</div></div>
+          <div class="h-item"><div class="h-t">12:37:21</div><div class="h-s">the prototype got really positive feedback.</div><div class="h-g">原型得到了非常正面的反馈。</div></div>
+        </div>
+        <div class="body">
+          <div class="status"><span class="chip"><span class="dot"></span>监听中</span><span class="lang">英语 → 简体中文</span><span class="time">12:38</span></div>
+          <div class="src"><span class="stable">so the main goal for this sprint is to ship the</span> <span class="floaty">onboarding flow</span></div>
+          <div class="tgt"><span class="stable">所以这个迭代的主要目标是交付</span><span class="floaty">新手引导流程</span></div>
+          <div class="toolbar">
+            <button class="tool" title="暂停"><svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+            <button class="tool active" title="历史"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/></svg></button>
+            <button class="tool" title="仅译文/双语"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg></button>
+            <span class="spacer"></span>
+            <button class="tool" title="收起"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <button class="tool" title="钉住"><svg class="icon" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/></svg></button>
+            <button class="tool close" title="关闭"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ 设置弹层 -->
+      <div class="card demo" data-state="c-set">
+        <div class="grip"></div>
+        <div class="body">
+          <div class="status"><span class="chip"><span class="dot"></span>监听中</span><span class="lang">英语 → 简体中文</span><span class="time">12:38</span></div>
+          <div class="src"><span class="stable">so the main goal for this sprint is to ship the</span> <span class="floaty">onboarding flow</span></div>
+          <div class="tgt"><span class="stable">所以这个迭代的主要目标是交付</span><span class="floaty">新手引导流程</span></div>
+          <div class="toolbar">
+            <button class="tool" title="暂停"><svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+            <button class="tool" title="历史"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/></svg></button>
+            <button class="tool" title="仅译文/双语"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg></button>
+            <span class="spacer"></span>
+            <button class="tool" title="收起"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <button class="tool" title="钉住"><svg class="icon" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/></svg></button>
+            <button class="tool active" title="设置"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.7a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5z"/></svg></button>
+            <button class="tool close" title="关闭"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+        </div>
+        <div class="settings">
+          <h4>字幕外观</h4>
+          <div class="sr"><div class="l"><span>显示</span></div><div class="seg"><button class="active">双语</button><button>仅译文</button><button>仅原文</button></div></div>
+          <div class="sr"><div class="l"><span>字号</span><span style="color:var(--muted)">中</span></div><div class="slider s1"><div class="knob"></div></div></div>
+          <div class="sr"><div class="l"><span>窗口不透明度</span><span style="color:var(--muted)">90%</span></div><div class="slider s2"><div class="knob"></div></div></div>
+        </div>
+      </div>
+
+      <!-- ⑤ 收起胶囊 -->
+      <div class="demo" data-state="c-pill">
+        <div class="pill">
+          <div class="wv"><i style="height:7px"></i><i style="height:13px"></i><i style="height:18px"></i><i style="height:10px"></i><i style="height:15px"></i></div>
+          <span class="ptext">所以这个迭代的主要目标是交付新手引导流程</span>
+          <button class="pbtn"><svg class="icon" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">收起成<b>胶囊</b>时只占一行、最不打扰，点向上箭头重新展开。会议场景里多人发言可在历史里区分说话人（后续扩展）。</div>
+  </div>
+
+  <script>
+    const btns = document.querySelectorAll(".switcher button");
+    const demos = document.querySelectorAll(".demo");
+    function activate(t) {
+      btns.forEach(b => b.classList.toggle("active", b.dataset.t === t));
+      demos.forEach(d => d.classList.toggle("active", d.dataset.state === t));
+    }
+    btns.forEach(b => b.addEventListener("click", () => { activate(b.dataset.t); history.replaceState(null,"",`#${b.dataset.t}`); }));
+    activate(location.hash ? location.hash.slice(1) : "c-live");
+    setInterval(() => document.querySelectorAll(".pill .wv i").forEach(i => i.style.height = (5 + Math.round(Math.random()*15)) + "px"), 260);
+  </script>
+</body>
+</html>

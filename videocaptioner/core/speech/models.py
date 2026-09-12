@@ -23,6 +23,14 @@ class SpeechProviderConfig:
     timeout: int = 90
     style_prompt: str = ""
 
+    def __post_init__(self):
+        self.api_key = self.api_key.strip()
+        self.base_url = self.base_url.strip()
+        self.model = self.model.strip()
+        self.default_voice = self.default_voice.strip()
+        self.response_format = self.response_format.strip()  # type: ignore[attr-defined]
+        self.style_prompt = self.style_prompt.strip()
+
 
 @dataclass
 class SynthesisRequest:

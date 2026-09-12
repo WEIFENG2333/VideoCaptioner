@@ -1,9 +1,20 @@
+# -*- coding: utf-8 -*-
+"""字幕处理线程：断句 -> 校正 -> 翻译 -> 导出。
+
+SubtitleThread 跑完整流水线，RetranslateThread 只翻译选中的行。
+两者都基于 WorkerThread：协作取消（stop() 会停掉正在执行的
+splitter / optimizer / translator），取消的运行静默退出。
+"""
+
+from __future__ import annotations
+
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
+from videocaptioner.core.application import output_paths
 from videocaptioner.core.asr.asr_data import ASRData
 from videocaptioner.core.entities import (
     SubtitleConfig,
@@ -12,6 +23,7 @@ from videocaptioner.core.entities import (
     SubtitleTask,
     TranslatorServiceEnum,
 )
+from videocaptioner.core.llm import free_model
 from videocaptioner.core.llm.check_llm import check_llm_connection
 from videocaptioner.core.llm.context import (
     clear_task_context,
@@ -24,15 +36,24 @@ from videocaptioner.core.split.split import SubtitleSplitter
 from videocaptioner.core.translate.factory import TranslatorFactory
 from videocaptioner.core.translate.types import TranslatorType
 from videocaptioner.core.utils.logger import setup_logger
+from videocaptioner.ui.i18n import tr
+from videocaptioner.ui.thread.worker import WorkerThread
 
-SERVICE_TO_TYPE = {
+logger = setup_logger("subtitle_thread")
+
+_SERVICE_TO_TYPE = {
     TranslatorServiceEnum.OPENAI: TranslatorType.OPENAI,
     TranslatorServiceEnum.GOOGLE: TranslatorType.GOOGLE,
     TranslatorServiceEnum.BING: TranslatorType.BING,
     TranslatorServiceEnum.DEEPLX: TranslatorType.DEEPLX,
 }
 
-logger = setup_logger("subtitle_optimization_thread")
+# 不依赖 LLM 的翻译服务
+_NON_LLM_TRANSLATORS = (
+    TranslatorServiceEnum.DEEPLX,
+    TranslatorServiceEnum.BING,
+    TranslatorServiceEnum.GOOGLE,
+)
 
 
 def create_translator_from_config(
@@ -40,16 +61,14 @@ def create_translator_from_config(
     custom_prompt: str = "",
     callback=None,
 ):
-    """根据 SubtitleConfig 创建翻译器"""
-    translator_service = config.translator_service
-    if translator_service not in SERVICE_TO_TYPE:
-        raise ValueError(f"不支持的翻译服务: {translator_service}")
-
-    if translator_service == TranslatorServiceEnum.DEEPLX:
+    """根据 SubtitleConfig 创建翻译器。"""
+    service = config.translator_service
+    if service not in _SERVICE_TO_TYPE:
+        raise ValueError(tr("t_subtitle.error.unsupported_service", service=service))
+    if service == TranslatorServiceEnum.DEEPLX:
         os.environ["DEEPLX_ENDPOINT"] = config.deeplx_endpoint or ""
-
     return TranslatorFactory.create_translator(
-        translator_type=SERVICE_TO_TYPE[translator_service],
+        translator_type=_SERVICE_TO_TYPE[service],
         thread_num=config.thread_num,
         batch_num=config.batch_size,
         target_language=config.target_language,
@@ -60,296 +79,299 @@ def create_translator_from_config(
     )
 
 
-class SubtitleThread(QThread):
+def _setup_llm_environment(config: SubtitleConfig) -> None:
+    """验证 LLM 连通性并写入环境变量；失败抛异常。"""
+    if not (config.base_url and config.api_key and config.llm_model):
+        raise Exception(tr("t_subtitle.error.llm_not_configured"))
+    # 公益大模型令牌由 LLM client 实时获取，占位 key 无法预检，跳过
+    if not free_model.is_free_base(config.base_url):
+        success, message = check_llm_connection(
+            config.base_url, config.api_key, config.llm_model
+        )
+        if not success:
+            raise Exception(tr("t_subtitle.error.llm_test_failed", message=message or ""))
+    os.environ["OPENAI_BASE_URL"] = config.base_url
+    os.environ["OPENAI_API_KEY"] = config.api_key
+
+
+class SubtitleThread(WorkerThread):
+    """字幕处理流水线线程。
+
+    信号：
+        finished(video_path, output_path)  处理成功
+        update(dict)                       增量结果（{行号: 文本}）
+        update_all(dict)                   全量刷新（断句等结构性变化后）
+    """
+
     finished = pyqtSignal(str, str)
-    progress = pyqtSignal(int, str)
     update = pyqtSignal(dict)
     update_all = pyqtSignal(dict)
-    error = pyqtSignal(str)
 
     def __init__(self, task: SubtitleTask):
         super().__init__()
-        self.task: SubtitleTask = task
-        self.subtitle_length = 0
-        self.finished_subtitle_length = 0
+        self.task = task
         self.custom_prompt_text = ""
-        self.optimizer = None
+        self._total_segments = 0
+        self._done_segments = 0
+        # 当前正在执行的 core 执行器（splitter/optimizer/translator），
+        # 取消时调用它的 stop()。
+        self._active_worker = None
 
     def set_custom_prompt_text(self, text: str):
         self.custom_prompt_text = text
 
-    def _setup_llm_config(self) -> SubtitleConfig:
-        """验证 LLM 配置并设置环境变量，返回 SubtitleConfig"""
-        config = self.task.subtitle_config
-        if not config:
-            raise Exception(self.tr("LLM API 未配置, 请检查LLM配置"))
-        if config.base_url and config.api_key and config.llm_model:
-            success, message = check_llm_connection(
-                config.base_url,
-                config.api_key,
-                config.llm_model,
-            )
-            if not success:
-                raise Exception(f"{self.tr('LLM API 测试失败: ')}{message or ''}")
-            os.environ["OPENAI_BASE_URL"] = config.base_url
-            os.environ["OPENAI_API_KEY"] = config.api_key
-            return config
-        else:
-            raise Exception(self.tr("LLM API 未配置, 请检查LLM配置"))
+    # ----- WorkerThread 接口 -----
 
-    def run(self):
-        # 设置任务上下文
-        task_file = (
-            Path(self.task.video_path) if self.task.video_path else Path(self.task.subtitle_path)
-        )
+    def _on_cancel(self):
+        worker = self._active_worker
+        if worker is not None and hasattr(worker, "stop"):
+            worker.stop()
+
+    def _work(self):
+        task_file = Path(self.task.video_path or self.task.subtitle_path)
         set_task_context(
-            task_id=self.task.task_id,
-            file_name=task_file.name,
-            stage="subtitle",
+            task_id=self.task.task_id, file_name=task_file.name, stage="subtitle"
         )
-
         try:
-            logger.info(f"\n{self.task.subtitle_config.print_config()}")
+            config = self.task.subtitle_config
+            if self.task.subtitle_path is None:
+                raise Exception(tr("t_subtitle.error.no_subtitle_path"))
+            if config is None:
+                raise Exception(tr("t_subtitle.error.no_config"))
+            logger.info("\n%s", config.print_config())
 
-            # 字幕文件路径检查、对断句字幕路径进行定义
-            subtitle_path = self.task.subtitle_path
-            assert subtitle_path is not None, self.tr("字幕文件路径为空")
+            asr_data = ASRData.from_subtitle_file(self.task.subtitle_path)
 
-            subtitle_config = self.task.subtitle_config
-            assert subtitle_config is not None, self.tr("字幕配置为空")
-
-            asr_data = ASRData.from_subtitle_file(subtitle_path)
-
-            # 1. 分割成字词级时间戳（对于非断句字幕且开启分割选项）
-            if subtitle_config.need_split and not asr_data.is_word_timestamp():
+            # 1. 需要断句时先拆成字词级时间戳
+            if config.need_split and not asr_data.is_word_timestamp():
                 asr_data.split_to_word_segments()
                 self.update_all.emit(asr_data.to_json())
+            self.checkpoint()
 
-            # 验证 LLM 配置
-            if self.need_llm(subtitle_config, asr_data):
-                self.progress.emit(2, self.tr("开始验证 LLM 配置..."))
-                subtitle_config = self._setup_llm_config()
+            # 2. 验证 LLM（断句/校正/LLM 翻译任一需要）
+            if self._need_llm(config, asr_data):
+                self.progress.emit(2, tr("t_subtitle.status.verifying_llm"))
+                _setup_llm_environment(config)
+            self.checkpoint()
 
-            # 2. 重新断句（对于字词级字幕）
+            # 3. 字词级字幕重新断句
             if asr_data.is_word_timestamp():
-                update_stage("split")
-                self.progress.emit(5, self.tr("字幕断句..."))
-                logger.info("正在字幕断句...")
-                splitter = SubtitleSplitter(
-                    thread_num=subtitle_config.thread_num,
-                    model=subtitle_config.llm_model,
-                    max_word_count_cjk=subtitle_config.max_word_count_cjk,
-                    max_word_count_english=subtitle_config.max_word_count_english,
-                )
-                asr_data = splitter.split_subtitle(asr_data)
-                self.update_all.emit(asr_data.to_json())
+                asr_data = self._split_stage(asr_data, config)
+            self.checkpoint()
 
-            # 3. 优化字幕
-            context_info = f'The subtitles below are from a file named "{task_file}". Use this context to improve accuracy if needed.\n'
-            custom_prompt = context_info + (subtitle_config.custom_prompt_text or "") + "\n"
-            self.subtitle_length = len(asr_data.segments)
-
-            if subtitle_config.need_optimize:
-                update_stage("optimize")
-                self.progress.emit(0, self.tr("优化字幕..."))
-                logger.info("正在优化字幕...")
-                self.finished_subtitle_length = 0
-                if not subtitle_config.llm_model:
-                    raise Exception(self.tr("LLM 模型未配置"))
-                optimizer = SubtitleOptimizer(
-                    thread_num=subtitle_config.thread_num,
-                    batch_num=subtitle_config.batch_size,
-                    model=subtitle_config.llm_model,
-                    custom_prompt=custom_prompt or "",
-                    update_callback=self.callback,
-                )
-                asr_data = optimizer.optimize_subtitle(asr_data)
-                asr_data.remove_punctuation()
-                self.update_all.emit(asr_data.to_json())
-
-            # 4. 翻译字幕
-            if subtitle_config.need_translate:
-                update_stage("translate")
-                self.progress.emit(0, self.tr("翻译字幕..."))
-                logger.info("正在翻译字幕...")
-                self.finished_subtitle_length = 0
-
-                if not subtitle_config.target_language:
-                    raise Exception(self.tr("目标语言未配置"))
-
-                translator = create_translator_from_config(
-                    subtitle_config, custom_prompt, self.callback
-                )
-
-                asr_data = translator.translate_subtitle(asr_data)
-
-                # 移除末尾标点符号
-                asr_data.remove_punctuation()
-                self.update_all.emit(asr_data.to_json())
-
-                # 保存翻译结果(单语、双语)
-                if self.task.need_next_task and self.task.video_path:
-                    for layout in SubtitleLayoutEnum:
-                        save_path = str(
-                            Path(self.task.subtitle_path).parent
-                            / f"{Path(self.task.video_path).stem}-{layout.value}.srt"
-                        )
-                        asr_data.save(
-                            save_path=save_path,
-                            ass_style=subtitle_config.subtitle_style or "",
-                            layout=layout,
-                        )
-                        logger.info(f"翻译字幕保存到：{save_path}")
-
-            # 5. 保存字幕
-            asr_data.save(
-                save_path=self.task.output_path or "",
-                ass_style=subtitle_config.subtitle_style or "",
-                layout=subtitle_config.subtitle_layout or SubtitleLayoutEnum.ONLY_TRANSLATE,
+            context_prompt = (
+                f'The subtitles below are from a file named "{task_file}". '
+                "Use this context to improve accuracy if needed.\n"
+                f"{config.custom_prompt_text or ''}\n"
             )
-            logger.info(f"字幕保存到 {self.task.output_path}")
+            self._total_segments = len(asr_data.segments)
 
-            # 6. 文件移动与清理
-            if self.task.need_next_task and self.task.video_path:
-                # 保存srt/ass文件到视频目录（对于全流程任务）
-                save_srt_path = (
-                    Path(self.task.video_path).parent / f"{Path(self.task.video_path).stem}.srt"
-                )
-                asr_data.to_srt(
-                    save_path=str(save_srt_path),
-                    layout=subtitle_config.subtitle_layout,
-                )
-                save_ass_path = (
-                    Path(self.task.video_path).parent / f"{Path(self.task.video_path).stem}.ass"
-                )
-                asr_data.to_ass(
-                    save_path=str(save_ass_path),
-                    layout=subtitle_config.subtitle_layout,
-                    style_str=subtitle_config.subtitle_style,
-                )
+            # 4. 校正
+            if config.need_optimize:
+                asr_data = self._optimize_stage(asr_data, config, context_prompt)
+            self.checkpoint()
 
-            self.progress.emit(100, self.tr("优化完成"))
-            logger.info("优化完成")
-            self.finished.emit(self.task.video_path, self.task.output_path)
+            # 5. 翻译
+            if config.need_translate:
+                asr_data = self._translate_stage(asr_data, config, context_prompt)
+            self.checkpoint()
 
-        except Exception as e:
-            logger.exception(f"字幕处理失败: {str(e)}")
-            self.error.emit(str(e))
-            self.progress.emit(100, self.tr("字幕处理失败"))
+            # 6. 导出
+            self._export_stage(asr_data, config)
+            self.progress.emit(100, tr("t_subtitle.status.done"))
+            logger.info("字幕处理完成")
+            self.finished.emit(
+                self.task.video_path or "", self.task.output_path or ""
+            )
         finally:
             clear_task_context()
 
-    def need_llm(self, subtitle_config: SubtitleConfig, asr_data: ASRData):
+    # ----- 流水线阶段 -----
+
+    def _split_stage(self, asr_data: ASRData, config: SubtitleConfig) -> ASRData:
+        update_stage("split")
+        self.progress.emit(5, tr("t_subtitle.status.splitting"))
+        logger.info("正在字幕断句...")
+        splitter = SubtitleSplitter(
+            thread_num=config.thread_num,
+            model=config.llm_model,
+            max_word_count_cjk=config.max_word_count_cjk,
+            max_word_count_english=config.max_word_count_english,
+        )
+        self._active_worker = splitter
+        try:
+            asr_data = splitter.split_subtitle(asr_data)
+        finally:
+            self._active_worker = None
+        self.update_all.emit(asr_data.to_json())
+        return asr_data
+
+    def _optimize_stage(
+        self, asr_data: ASRData, config: SubtitleConfig, prompt: str
+    ) -> ASRData:
+        update_stage("optimize")
+        self.progress.emit(0, tr("t_subtitle.status.optimizing"))
+        logger.info("正在优化字幕...")
+        if not config.llm_model:
+            raise Exception(tr("t_subtitle.error.llm_model_not_configured"))
+        self._done_segments = 0
+        optimizer = SubtitleOptimizer(
+            thread_num=config.thread_num,
+            batch_num=config.batch_size,
+            model=config.llm_model,
+            custom_prompt=prompt,
+            update_callback=self._batch_callback,
+        )
+        self._active_worker = optimizer
+        try:
+            asr_data = optimizer.optimize_subtitle(asr_data)
+        finally:
+            self._active_worker = None
+        asr_data.remove_punctuation()
+        self.update_all.emit(asr_data.to_json())
+        return asr_data
+
+    def _translate_stage(
+        self, asr_data: ASRData, config: SubtitleConfig, prompt: str
+    ) -> ASRData:
+        update_stage("translate")
+        self.progress.emit(0, tr("t_subtitle.status.translating"))
+        logger.info("正在翻译字幕...")
+        if not config.target_language:
+            raise Exception(tr("t_subtitle.error.no_target_language"))
+        self._done_segments = 0
+        translator = create_translator_from_config(config, prompt, self._batch_callback)
+        self._active_worker = translator
+        try:
+            asr_data = translator.translate_subtitle(asr_data)
+        finally:
+            self._active_worker = None
+        asr_data.remove_punctuation()
+        self.update_all.emit(asr_data.to_json())
+
+        # 全流程任务把其余布局副本留在任务目录（保留中间文件时可取用）
+        if self.task.need_next_task and self.task.task_dir:
+            for layout in SubtitleLayoutEnum:
+                save_path = str(
+                    Path(self.task.task_dir) / output_paths.layout_copy_name(layout)
+                )
+                asr_data.save(
+                    save_path=save_path,
+                    ass_style=config.subtitle_style or "",
+                    layout=layout,
+                )
+                logger.info("布局副本保存到：%s", save_path)
+        return asr_data
+
+    def _export_stage(self, asr_data: ASRData, config: SubtitleConfig) -> None:
+        asr_data.save(
+            save_path=self.task.output_path or "",
+            ass_style=config.subtitle_style or "",
+            layout=config.subtitle_layout or SubtitleLayoutEnum.ONLY_TRANSLATE,
+        )
+        logger.info("字幕保存到 %s", self.task.output_path)
+
+        # 全流程任务的主输出在任务目录（subtitle.ass，供合成消费）；
+        # 字幕成品本身也交付到视频旁，遵循播放器 sidecar 约定。
+        if self.task.need_next_task and self.task.video_path:
+            tag = (
+                output_paths.language_tag(config.target_language)
+                if config.need_translate
+                else output_paths.TAG_OPTIMIZED
+            )
+            sidecar = output_paths.unique_path(
+                output_paths.product_path(self.task.video_path, tag, ext=".srt")
+            )
+            asr_data.to_srt(save_path=str(sidecar), layout=config.subtitle_layout)
+            logger.info("字幕成品保存到 %s", sidecar)
+
+    # ----- 工具 -----
+
+    @staticmethod
+    def _need_llm(config: SubtitleConfig, asr_data: ASRData) -> bool:
         return (
-            subtitle_config.need_optimize
+            config.need_optimize
             or asr_data.is_word_timestamp()
             or (
-                subtitle_config.need_translate
-                and subtitle_config.translator_service
-                not in [
-                    TranslatorServiceEnum.DEEPLX,
-                    TranslatorServiceEnum.BING,
-                    TranslatorServiceEnum.GOOGLE,
-                ]
+                config.need_translate
+                and config.translator_service not in _NON_LLM_TRANSLATORS
             )
         )
 
-    def callback(self, result: List[SubtitleProcessData]):
-        self.finished_subtitle_length += len(result)
-        # 简单计算当前进度（0-100%）
-        progress = min(int((self.finished_subtitle_length / max(self.subtitle_length, 1)) * 100), 100)
-        self.progress.emit(progress, self.tr("{0}% 处理字幕").format(progress))
-        # 转换为字典格式供UI使用
-        result_dict = {
-            str(data.index): data.translated_text or data.optimized_text or data.original_text
-            for data in result
-        }
-        self.update.emit(result_dict)
-
-    def stop(self):
-        """停止所有处理"""
-        try:
-            # 先停止优化器
-            if hasattr(self, "optimizer") and self.optimizer:
-                try:
-                    self.optimizer.stop()  # type: ignore
-                except Exception as e:
-                    logger.error(f"停止优化器时出错：{str(e)}")
-
-            # 终止线程
-            self.terminate()
-            # 等待最多3秒
-            if not self.wait(3000):
-                logger.warning("线程未能在3秒内正常停止")
-
-            # 发送进度信号
-            self.progress.emit(100, self.tr("已终止"))
-
-        except Exception as e:
-            logger.error(f"停止线程时出错：{str(e)}")
-            self.progress.emit(100, self.tr("终止时发生错误"))
+    def _batch_callback(self, result: List[SubtitleProcessData]):
+        """core 执行器的批量回调：上报进度 + 推送增量结果。"""
+        self.checkpoint()
+        self._done_segments += len(result)
+        percent = min(
+            int(self._done_segments / max(self._total_segments, 1) * 100), 100
+        )
+        self.progress.emit(percent, tr("t_subtitle.status.processing_percent", percent=percent))
+        self.update.emit(
+            {
+                str(data.index): data.translated_text
+                or data.optimized_text
+                or data.original_text
+                for data in result
+            }
+        )
 
 
-class RetranslateThread(QThread):
-    """重新翻译选中行的轻量线程"""
+class RetranslateThread(WorkerThread):
+    """重新翻译选中行的轻量线程。finished(dict) -> {行号: 译文}。"""
 
-    finished = pyqtSignal(dict)  # {key: translated_text}
-    progress = pyqtSignal(int, str)  # (百分比, 状态描述)
-    error = pyqtSignal(str)
+    finished = pyqtSignal(dict)
 
-    def __init__(self, selected_data: dict, subtitle_config: SubtitleConfig, file_name: str = ""):
-        """
-        selected_data: model._data 中选中的条目，键为行号字符串
-        subtitle_config: 当前任务配置
-        file_name: 用于日志上下文的文件名
-        """
+    def __init__(
+        self,
+        selected_data: dict,
+        subtitle_config: SubtitleConfig,
+        file_name: str = "",
+    ):
         super().__init__()
         self.selected_data = selected_data
-        self.subtitle_config = subtitle_config
+        self.config = subtitle_config
         self.file_name = file_name
-        self.total = len(selected_data)
-        self.done = 0
+        self._done = 0
+        self._translator: Optional[object] = None
+
+    def _on_cancel(self):
+        translator = self._translator
+        if translator is not None and hasattr(translator, "stop"):
+            translator.stop()
 
     def _callback(self, result: List[SubtitleProcessData]):
-        self.done += len(result)
-        pct = min(int(self.done / self.total * 100), 100)
-        self.progress.emit(pct, self.tr("{0}% 翻译中").format(pct))
+        self.checkpoint()
+        self._done += len(result)
+        percent = min(int(self._done / max(len(self.selected_data), 1) * 100), 100)
+        self.progress.emit(percent, tr("t_subtitle.status.translating_percent", percent=percent))
 
-    def run(self):
+    def _work(self):
         set_task_context(
-            task_id=generate_task_id(),
-            file_name=self.file_name,
-            stage="translate",
+            task_id=generate_task_id(), file_name=self.file_name, stage="translate"
         )
         try:
-            config = self.subtitle_config
-            if not config.target_language:
-                raise Exception("目标语言未配置")
+            if not self.config.target_language:
+                raise Exception(tr("t_subtitle.error.no_target_language"))
+            if self.config.translator_service == TranslatorServiceEnum.OPENAI:
+                _setup_llm_environment(self.config)
 
-            # 设置 LLM 环境变量（LLM 翻译需要）
-            if config.translator_service == TranslatorServiceEnum.OPENAI:
-                if not (config.base_url and config.api_key and config.llm_model):
-                    raise Exception("LLM API 未配置，请检查 LLM 配置")
-                os.environ["OPENAI_BASE_URL"] = config.base_url
-                os.environ["OPENAI_API_KEY"] = config.api_key
-
-            # 构建仅含选中行的 ASRData
             asr_data = ASRData.from_json(self.selected_data)
+            translator = create_translator_from_config(
+                self.config, callback=self._callback
+            )
+            self._translator = translator
+            try:
+                asr_data = translator.translate_subtitle(asr_data)
+            finally:
+                self._translator = None
+            self.checkpoint()
 
-            # 创建翻译器并翻译
-            translator = create_translator_from_config(config, callback=self._callback)
-            asr_data = translator.translate_subtitle(asr_data)
-
-            # 构建 {原始行号: translated_text} 映射
             keys = list(self.selected_data.keys())
-            result = {
-                keys[i]: seg.translated_text
-                for i, seg in enumerate(asr_data.segments)
-            }
-            self.finished.emit(result)
-
-        except Exception as e:
-            logger.exception(f"重新翻译失败: {e}")
-            self.error.emit(str(e))
+            self.finished.emit(
+                {
+                    keys[index]: segment.translated_text
+                    for index, segment in enumerate(asr_data.segments)
+                }
+            )
         finally:
             clear_task_context()

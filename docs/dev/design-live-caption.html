@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>实时语音翻译浮窗 · 终稿</title>
+  <style>
+    :root {
+      --brand: #28f08b;
+      --brand-soft: rgba(40, 240, 139, .14);
+      --brand-line: rgba(40, 240, 139, .5);
+      --warn: #f5c451;
+      --text: #f5f7f6;
+      --muted: #b9c0bd;
+      --subtle: #8e9692;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: #151616; font-family: var(--font); }
+    button { font: inherit; cursor: default; }
+
+    .stage { padding: 26px; }
+    .intro { max-width: 1340px; margin: 0 auto 14px; display: flex; align-items: end; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .intro h1 { margin: 0 0 7px; font-size: 26px; }
+    .intro p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.6; max-width: 700px; }
+    .switcher { padding: 4px; display: flex; gap: 4px; border: 1px solid #353938; border-radius: 9px; background: #202222; flex-wrap: wrap; }
+    .switcher button { height: 31px; padding: 0 11px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; font-size: 12px; font-weight: 750; white-space: nowrap; }
+    .switcher button.active { color: #061810; background: var(--brand); }
+
+    /* 假桌面：正在看电影 */
+    .desktop {
+      max-width: 1340px; margin: 0 auto; height: 780px; position: relative; overflow: hidden;
+      border-radius: 16px; border: 1px solid #2a2f33;
+      background:
+        radial-gradient(ellipse at 28% 30%, rgba(210, 120, 70, .45), transparent 46%),
+        radial-gradient(ellipse at 76% 68%, rgba(70, 80, 150, .5), transparent 52%),
+        linear-gradient(165deg, #241c20, #0b0e13 74%);
+    }
+    .v-top { position: absolute; left: 24px; top: 18px; color: rgba(255,255,255,.46); font-size: 13px; font-weight: 600; }
+    .v-center { position: absolute; inset: 0; display: grid; place-items: center; }
+    .v-center .silh { width: 220px; height: 280px; border-radius: 50% 50% 46% 46%/60% 60% 40% 40%; background: rgba(0,0,0,.32); filter: blur(2px); }
+    .v-ctrl { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; padding: 0 24px; display: flex; align-items: center; gap: 14px; background: linear-gradient(transparent, rgba(0,0,0,.55)); color: rgba(255,255,255,.55); }
+    .v-ctrl svg { width: 18px; height: 18px; fill: currentColor; }
+    .v-ctrl .pb { flex: 1; height: 4px; border-radius: 999px; background: rgba(255,255,255,.22); position: relative; }
+    .v-ctrl .pb::after { content: ""; position: absolute; inset: 0 62% 0 0; border-radius: 999px; background: rgba(255,255,255,.85); }
+    .v-ctrl .t { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    .snap { position: absolute; left: 50%; bottom: 72px; width: min(560px,80%); height: 1px; transform: translateX(-50%); background: repeating-linear-gradient(90deg, var(--brand-line) 0 8px, transparent 8px 16px); opacity: 0; }
+    .dragging-state .snap { opacity: .8; }
+
+    /* ============ 浮窗本体 ============ */
+    .cap {
+      position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); width: 500px;
+      display: flex; flex-direction: column;
+      border-radius: 18px; background: rgba(18,20,21,.86);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 22px 56px rgba(0,0,0,.55);
+      backdrop-filter: blur(18px);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    /* hover 时只让边框极轻微提亮，暗示"可拖可缩"，不加任何线条/控件 */
+    .show .cap, .cap.show { border-color: rgba(255,255,255,.14); }
+    .dragging-state .cap { box-shadow: 0 34px 80px rgba(0,0,0,.7); border-color: var(--brand-line); transform: translateX(-50%) scale(1.012) rotate(-.3deg); }
+
+    /* 顶行：静默时完全空（只作上内边距 + 拖动区，无任何元素）；hover 才在右侧
+       淡出语言/时间。字幕在滚动本身就证明"在听"，不需要常亮的指示灯。 */
+    .topbar { height: 18px; flex-shrink: 0; display: flex; align-items: center; padding: 6px 16px 0; cursor: grab; }
+    .meta { margin-left: auto; display: flex; align-items: center; gap: 9px; opacity: 0; transition: .15s; }
+    .show .meta, .cap.paused .meta { opacity: 1; }
+    .lang { font-size: 11.5px; font-weight: 700; color: var(--subtle); padding: 2px 6px; border-radius: 6px; }
+    .lang:hover { color: var(--muted); background: rgba(255,255,255,.06); }
+    .time { font-size: 11px; font-weight: 700; color: var(--subtle); font-variant-numeric: tabular-nums; }
+
+    /* 历史区（拉高 / 侧停时出现）：当前句钉底，历史在上滚动 */
+    .history { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 0 18px; }
+    .cap.tall .history, .cap.dock .history { display: block; }
+    .h-item { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); position: relative; }
+    .h-t { font-size: 10.5px; color: var(--subtle); font-variant-numeric: tabular-nums; margin-bottom: 2px; }
+    .h-s { font-size: 12px; color: rgba(220,226,224,.46); line-height: 1.5; }
+    .h-g { font-size: 14px; color: rgba(245,247,246,.82); font-weight: 600; line-height: 1.5; }
+    .h-item.star { padding-left: 16px; }
+    .h-item.star::before { content: "★"; position: absolute; left: 2px; top: 9px; color: var(--warn); font-size: 10px; }
+
+    /* 当前句区 */
+    .text { position: relative; padding: 4px 22px 6px; flex-shrink: 0; }
+    .cap.tall .text, .cap.dock .text { border-top: 1px solid rgba(255,255,255,.07); padding-top: 11px; }
+    .src { font-size: 14.5px; line-height: 1.55; font-weight: 500; color: rgba(220,226,224,.58); margin-bottom: 6px; }
+    .tgt { font-size: 22px; line-height: 1.45; font-weight: 800; }
+    .stable { color: var(--text); }
+    .floaty { color: rgba(245,247,246,.4); }
+    .src .stable { color: rgba(220,226,224,.85); }
+    .cap.only .src { display: none; }
+    .cap.wide .tgt { font-size: 24px; }
+    .cap.dock .tgt { font-size: 19px; }
+    .cap.dock .src { font-size: 13px; }
+
+    .line-acts { position: absolute; right: 16px; top: 0; display: flex; gap: 2px; opacity: 0; transition: .15s; }
+    .show .line-acts { opacity: 1; }
+    .line-acts button { width: 26px; height: 26px; border: 0; border-radius: 7px; display: grid; place-items: center; color: var(--subtle); background: transparent; }
+    .line-acts button:hover { color: var(--text); background: rgba(255,255,255,.1); }
+
+    /* 底部工具条：hover 才出，干净等距图标，无边框线、无盒子 */
+    .toolbar { flex-shrink: 0; padding: 0 14px; max-height: 0; opacity: 0; overflow: hidden; transition: .18s; display: flex; align-items: center; gap: 2px; }
+    .show .toolbar { max-height: 52px; opacity: 1; padding: 6px 14px 8px; }
+    .tool { width: 34px; height: 34px; border: 0; border-radius: 9px; display: grid; place-items: center; color: var(--muted); background: transparent; }
+    .tool:hover { color: var(--text); background: rgba(255,255,255,.08); }
+    .tool.active { color: var(--brand); background: var(--brand-soft); }
+    .tool.close:hover { color: #ff7a7f; background: rgba(255,122,127,.12); }
+    .icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .spacer { flex: 1; }
+
+    /* 缩放：不画边线。仅右下角一个极淡斜角，hover 才隐约可见（拖任意边缘即可缩放，光标变形） */
+    .rz-br { position: absolute; right: 6px; bottom: 6px; width: 11px; height: 11px; color: rgba(255,255,255,.3); opacity: 0; transition: .15s; cursor: nwse-resize; }
+    .show .rz-br, .dragging-state .rz-br { opacity: 1; }
+    .rz-br svg { width: 11px; height: 11px; }
+
+    /* 形态变体 */
+    .cap.wide { width: 760px; }
+    .cap.tall { height: 460px; bottom: 60px; }
+    .cap.dock { width: 318px; height: 600px; left: auto; right: 18px; bottom: 84px; transform: none; }
+    .dragging-state .cap.dock { transform: scale(1.012); }
+
+    /* 精简胶囊 */
+    .cap.compact { width: 430px; border-radius: 999px; }
+    .cap.compact .topbar, .cap.compact .history, .cap.compact .toolbar, .cap.compact .src, .cap.compact .rz-br, .cap.compact .line-acts { display: none; }
+    .cap.compact .text { padding: 9px 14px; display: flex; align-items: center; gap: 12px; border: 0; }
+    .cap.compact .wv { display: flex; gap: 2.5px; align-items: center; height: 18px; flex-shrink: 0; }
+    .cap.compact .wv i { width: 3px; border-radius: 2px; background: var(--brand); }
+    .cap.compact .tgt { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .cap.compact .mini-exp { width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(255,255,255,.07); color: var(--muted); display: grid; place-items: center; flex-shrink: 0; }
+    .wv, .mini-exp { display: none; }
+    .cap.compact .mini-exp { display: grid; }
+
+    /* 设置浮层：独立，不被裁剪 */
+    .settings { position: absolute; left: 50%; bottom: 270px; transform: translateX(60px); width: 286px; padding: 15px; border-radius: 14px; background: rgba(26,28,29,.99); border: 1px solid rgba(255,255,255,.13); box-shadow: 0 18px 48px rgba(0,0,0,.6); z-index: 6; }
+    .settings::after { content: ""; position: absolute; right: 40px; bottom: -7px; width: 14px; height: 14px; background: rgba(26,28,29,.99); border-right: 1px solid rgba(255,255,255,.13); border-bottom: 1px solid rgba(255,255,255,.13); transform: rotate(45deg); }
+    .settings h4 { margin: 0 0 13px; font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 7px; }
+    .sr { margin-bottom: 13px; } .sr:last-child { margin-bottom: 0; }
+    .sr .l { font-size: 11.5px; color: var(--subtle); font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .seg { display: flex; padding: 3px; gap: 3px; border: 1px solid #353938; border-radius: 8px; background: #1f2121; }
+    .seg button { flex: 1; height: 28px; border: 0; border-radius: 5px; color: var(--muted); background: transparent; font-size: 11.5px; font-weight: 700; }
+    .seg button.active { color: #061810; background: var(--brand); }
+    .slider { height: 6px; border-radius: 999px; background: #3a3e3d; position: relative; }
+    .slider::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--brand); }
+    .slider .knob { position: absolute; top: 50%; width: 15px; height: 15px; border-radius: 50%; background: #fff; transform: translate(-50%,-50%); box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+    .slider.s1::after { width: 60%; } .slider.s1 .knob { left: 60%; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+    .toggle { width: 38px; height: 22px; border-radius: 999px; background: #3a3e3d; position: relative; }
+    .toggle.on { background: var(--brand); }
+    .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: .15s; }
+    .toggle.on::after { left: 19px; }
+
+    .note { max-width: 1340px; margin: 13px auto 0; color: var(--subtle); font-size: 12.5px; line-height: 1.6; }
+    .note b { color: var(--muted); }
+    @media (max-width: 880px) { .stage { padding: 14px; } .intro { flex-direction: column; align-items: start; } .desktop { height: 600px; } .cap { width: 92%; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="intro">
+      <div>
+        <h1>实时语音翻译浮窗 · 终稿（精简版）</h1>
+        <p>静默时<b>只有字幕本身</b>——连指示灯都没有（字幕在滚动就说明在听）；鼠标移上去才淡淡浮出语言/时间与工具条，<b>不画任何边线、不弹盒子</b>。拖任意边缘即可缩放（光标变形），拉高长出历史，拉成侧条当实录栏。</p>
+      </div>
+      <div class="switcher">
+        <button class="active" data-t="rest">① 静默（极简）</button>
+        <button data-t="hover">② 悬浮</button>
+        <button data-t="wide">③ 拉宽</button>
+        <button data-t="tall">④ 拉高·看历史</button>
+        <button data-t="dock">⑤ 侧边竖条</button>
+        <button data-t="settings">⑥ 窗内设置</button>
+        <button data-t="compact">⑦ 精简胶囊</button>
+        <button data-t="pause">⑧ 暂停</button>
+      </div>
+    </div>
+
+    <div class="desktop" id="desk">
+      <div class="v-top">▶ 教父 The Godfather (1972) · 本地播放</div>
+      <div class="v-center"><div class="silh"></div></div>
+      <div class="v-ctrl"><svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg><span class="t">1:12:38</span><div class="pb"></div><span class="t">2:55:04</span></div>
+      <div class="snap"></div>
+
+      <div class="cap" id="cap">
+        <div class="topbar">
+          <span class="meta">
+            <span class="lang" title="点击切换语言">英 → 中</span>
+            <span class="time">12:38</span>
+          </span>
+        </div>
+
+        <div class="history" id="history">
+          <div class="h-item"><div class="h-t">1:10:22</div><div class="h-s">don't ever take sides against the family again.</div><div class="h-g">永远别再站到家族的对立面。</div></div>
+          <div class="h-item star"><div class="h-t">1:11:02</div><div class="h-s">i'm gonna make him an offer he can't refuse.</div><div class="h-g">我会给他一个无法拒绝的条件。</div></div>
+          <div class="h-item star"><div class="h-t">1:11:40</div><div class="h-s">a man who doesn't spend time with his family can never be a real man.</div><div class="h-g">不顾家的男人，永远算不上真正的男人。</div></div>
+          <div class="h-item"><div class="h-t">1:12:20</div><div class="h-s">great men are not born great, they grow great.</div><div class="h-g">伟人并非生而伟大，而是逐渐成就伟大。</div></div>
+        </div>
+
+        <div class="text">
+          <div class="line-acts">
+            <button title="复制本句"><svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5h10"/></svg></button>
+            <button title="收藏本句"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13l-7-3-7 3z"/></svg></button>
+          </div>
+          <span class="wv"><i style="height:7px"></i><i style="height:14px"></i><i style="height:18px"></i><i style="height:10px"></i><i style="height:13px"></i></span>
+          <div class="src" id="srcLine"><span class="stable">i believe in america. america has made my</span> <span class="floaty">fortune</span></div>
+          <div class="tgt" id="tgtLine"><span class="stable">我相信美国，美国成就了我的</span><span class="floaty">财富</span></div>
+          <button class="mini-exp"><svg class="icon" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5"/></svg></button>
+        </div>
+
+        <div class="toolbar">
+          <button class="tool" title="暂停"><svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+          <button class="tool" title="仅译文 / 双语"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg></button>
+          <button class="tool" title="历史 / 拉高"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4M12 8v4l3 2"/></svg></button>
+          <div class="spacer"></div>
+          <button class="tool" title="收起为精简"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          <button class="tool" title="钉住·鼠标穿透"><svg class="icon" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/></svg></button>
+          <button class="tool" title="设置"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.7a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5z"/></svg></button>
+          <button class="tool close" title="关闭·停止"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+
+        <span class="rz-br"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 11v9h-9M20 18l-2 2M14 20l6-6"/></svg></span>
+      </div>
+
+      <div class="settings" id="settings" style="display:none">
+        <h4><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;color:var(--brand)"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.4-2.7a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5z"/></svg>字幕设置</h4>
+        <div class="sr"><div class="l"><span>显示内容</span></div><div class="seg"><button class="active">双语</button><button>仅译文</button><button>仅原文</button></div></div>
+        <div class="sr"><div class="l"><span>语言</span><span style="color:var(--brand)">点击切换 ⇅</span></div><div class="seg"><button class="active">英 → 中</button><button>日 → 中</button><button>自定义</button></div></div>
+        <div class="sr"><div class="l"><span>翻译引擎</span></div><div class="seg"><button class="active">微软</button><button>谷歌</button><button>大模型</button></div></div>
+        <div class="sr"><div class="l"><span>底色样式</span></div><div class="seg"><button class="active">半透明</button><button>纯描边</button><button>纯黑</button></div></div>
+        <div class="sr"><div class="l"><span>字号</span><span style="color:var(--muted)">中</span></div><div class="slider s1"><div class="knob"></div></div></div>
+        <div class="sr toggle-row"><span style="font-size:12px;font-weight:650">无人说话时自动淡隐</span><div class="toggle on"></div></div>
+        <div class="sr toggle-row"><span style="font-size:12px;font-weight:650">贴边自动吸附</span><div class="toggle on"></div></div>
+      </div>
+    </div>
+
+    <div class="note" id="note"></div>
+  </div>
+
+  <script>
+    const cap = document.getElementById("cap");
+    const settings = document.getElementById("settings");
+    const desk = document.getElementById("desk");
+    const note = document.getElementById("note");
+
+    const NOTES = {
+      rest: "看片默认态——<b>只有字幕本身</b>，连指示灯都没有（字幕在滚动就证明在听）。<b>没有状态行、没有边线、没有任何控件</b>，最干净。白=已听准，灰=还在修正的尾巴。",
+      hover: "鼠标移上去：边框极轻微提亮（暗示可拖可缩）；右上角淡淡浮出 <b>英→中 · 时间</b>（可点切换语言）；当前句右侧出复制/收藏；底部一排等距图标。<b>不画手柄线、不弹盒子。</b>",
+      wide: "拖右边缘（光标变 ↔）→ 变宽，一行容纳更多字、译文更大。右下角的小斜角是缩放提示。",
+      tall: "<b>拖底边往下（光标变 ↕）→ 长高，长出历史</b>：当前句钉在底部，上方是可滚动双语历史（★=收藏），回看刚错过的几句。",
+      dock: "拉窄拉高 → <b>侧边竖条</b>，靠右停靠当实时实录栏，全屏看片不挡中间画面。",
+      settings: "点设置——窗内改完所有参数：显示内容、<b>直接换语言 / 翻译引擎</b>、底色样式、字号、自动淡隐 / 贴边吸附。<b>字号从工具条挪到这里</b>，工具条更干净。",
+      compact: "收起为精简胶囊——只剩一行译文 + 跳动波形，药丸形，最不打扰；点箭头展开回标准档。",
+      pause: "暂停——右上角显示「已暂停」，最后一句完整定稿不吊半句。关闭=真停止，收起=缩胶囊（不会误关）。",
+    };
+
+    function reset() {
+      cap.className = "cap show";
+      settings.style.display = "none";
+      desk.classList.remove("dragging-state");
+      cap.querySelector(".meta").innerHTML = '<span class="lang" title="点击切换语言">英 → 中</span><span class="time">12:38</span>';
+      document.getElementById("srcLine").innerHTML = '<span class="stable">i believe in america. america has made my</span> <span class="floaty">fortune</span>';
+      document.getElementById("tgtLine").innerHTML = '<span class="stable">我相信美国，美国成就了我的</span><span class="floaty">财富</span>';
+    }
+
+    function activate(t) {
+      reset();
+      document.querySelectorAll(".switcher button").forEach(b => b.classList.toggle("active", b.dataset.t === t));
+      note.innerHTML = NOTES[t] || "";
+      if (t === "rest") cap.classList.remove("show");
+      if (t === "wide") cap.classList.add("wide");
+      if (t === "tall") cap.classList.add("tall");
+      if (t === "dock") cap.classList.add("dock");
+      if (t === "compact") cap.className = "cap compact";
+      if (t === "settings") settings.style.display = "";
+      if (t === "pause") {
+        cap.classList.add("paused");
+        cap.querySelector(".meta").innerHTML = '<span class="lang" style="color:var(--warn)">⏸ 已暂停</span><span class="time">12:38</span>';
+        document.getElementById("srcLine").innerHTML = '<span class="stable">i believe in america.</span>';
+        document.getElementById("tgtLine").innerHTML = '<span class="stable">我相信美国。</span>';
+      }
+    }
+
+    document.querySelectorAll(".switcher button").forEach(b => b.addEventListener("click", () => {
+      activate(b.dataset.t); history.replaceState(null, "", `#${b.dataset.t}`);
+    }));
+    activate(location.hash ? location.hash.slice(1) : "rest");
+
+    setInterval(() => document.querySelectorAll(".wv i").forEach(i => i.style.height = (5 + Math.round(Math.random()*15)) + "px"), 250);
+  </script>
+</body>
+</html>

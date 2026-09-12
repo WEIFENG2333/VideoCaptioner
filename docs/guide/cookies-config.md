@@ -67,20 +67,20 @@
 VideoCaptioner 的 AppData 目录通常位于：
 
 ```
-VideoCaptioner/
-├─ app/
-├─ resource/
-├─ AppData/          # Cookie 文件放这里
-│  ├─ cache/
-│  ├─ logs/
-│  ├─ models/
-│  ├─ cookies.txt    # ← 将文件放在这里
-│  └─ settings.json
-└─ work-dir/
+AppData/
+├─ config.toml
+├─ cache/
+├─ logs/
+├─ models/
+├─ bin/
+└─ cookies.txt    # ← 将文件放在这里
 ```
+
+应用设置保存在同一个 AppData 目录下的 `config.toml`，不再写入旧 JSON 设置文件。
 
 :::tip 快速定位
 在 VideoCaptioner 中点击 **设置 → 打开日志文件夹**，然后返回上一级目录即可看到 `AppData` 文件夹。
+也可以运行 `videocaptioner config path` 查看 `config.toml` 所在目录。
 :::
 
 ### 4. 验证配置

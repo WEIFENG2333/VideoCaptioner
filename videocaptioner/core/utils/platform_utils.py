@@ -79,23 +79,6 @@ def open_file(path):
             logger.warning(f"Cannot open file on current system: {path}")
 
 
-def get_subprocess_kwargs():
-    """
-    获取跨平台的subprocess参数
-
-    Returns:
-        dict: subprocess参数字典
-    """
-    kwargs = {}
-
-    # 仅在Windows上添加CREATE_NO_WINDOW标志
-    if platform.system() == "Windows":
-        if hasattr(subprocess, "CREATE_NO_WINDOW"):
-            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-
-    return kwargs
-
-
 def is_macos() -> bool:
     """
     检测是否为 macOS 系统
@@ -104,26 +87,6 @@ def is_macos() -> bool:
         bool: 如果是 macOS 返回 True，否则返回 False
     """
     return platform.system() == "Darwin"
-
-
-def is_windows() -> bool:
-    """
-    检测是否为 Windows 系统
-
-    Returns:
-        bool: 如果是 Windows 返回 True，否则返回 False
-    """
-    return platform.system() == "Windows"
-
-
-def is_linux() -> bool:
-    """
-    检测是否为 Linux 系统
-
-    Returns:
-        bool: 如果是 Linux 返回 True，否则返回 False
-    """
-    return platform.system() == "Linux"
 
 
 def get_available_transcribe_models() -> list[TranscribeModelEnum]:
@@ -144,20 +107,3 @@ def get_available_transcribe_models() -> list[TranscribeModelEnum]:
         ]
 
     return all_models
-
-
-def is_model_available(model: TranscribeModelEnum) -> bool:
-    """
-    检查指定模型是否在当前平台可用
-
-    Args:
-        model: 要检查的转录模型
-
-    Returns:
-        bool: 如果模型可用返回 True，否则返回 False
-    """
-    # FasterWhisper 在 macOS 上不可用
-    if is_macos() and model == TranscribeModelEnum.FASTER_WHISPER:
-        return False
-
-    return True

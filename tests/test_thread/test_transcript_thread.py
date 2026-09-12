@@ -109,3 +109,34 @@ class TestTranscriptThread:
         results = run_thread_with_timeout(thread, timeout_ms=5000)
 
         assert results["error"] is not None, "Expected error for empty path"
+
+
+class TestDownloadedSubtitleValidation:
+    """下载字幕直通的校验（在首页流程里做）：只认可解析且非空的真字幕。
+
+    字幕路径由下载线程显式传递，转录线程不再按文件名扫描。
+    """
+
+    @staticmethod
+    def _usable(path) -> bool:
+        from videocaptioner.ui.view.home_interface import HomeInterface
+
+        return HomeInterface._subtitle_usable(str(path))
+
+    def test_missing_file_rejected(self, tmp_path, qapp):
+        assert self._usable(tmp_path / "gone.srt") is False
+
+    def test_danmaku_and_empty_rejected(self, tmp_path, qapp):
+        danmaku = tmp_path / "video.danmaku.xml"
+        danmaku.write_text("<xml/>")
+        empty = tmp_path / "video.zh.srt"
+        empty.write_text("")
+        assert self._usable(danmaku) is False
+        assert self._usable(empty) is False
+
+    def test_valid_srt_accepted(self, tmp_path, qapp):
+        srt = tmp_path / "video.zh.srt"
+        srt.write_text(
+            "1\n00:00:00,000 --> 00:00:01,000\nhello\n", encoding="utf-8"
+        )
+        assert self._usable(srt) is True

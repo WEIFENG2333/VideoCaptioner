@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 字幕处理设计 B</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --bar: #111715;
+      --panel: #1d2522;
+      --panel2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line2: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --text2: #cbd4d0;
+      --subtle: #7f8c88;
+      --accent: #07f08a;
+      --soft: rgba(7, 240, 138, .13);
+      --accent-soft: rgba(7, 240, 138, .13);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .16);
+      --warn: #e8c75c;
+      --warn-soft: rgba(232, 199, 92, .14);
+      --shadow: 0 28px 80px rgba(0, 0, 0, .28);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 1520px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 60% -10%, rgba(7, 240, 138, .13), transparent 34%),
+        var(--bg);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .board {
+      width: 1520px;
+      margin: 0 auto;
+      padding: 34px 0 70px;
+    }
+
+    .board-head,
+    .version-title {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .version-title {
+      align-items: center;
+      margin: 30px 0 12px;
+    }
+
+    .board-head h1 { font-size: 32px; font-weight: 860; }
+
+    .board-head p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip,
+    .status {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+      font-size: 13px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .status.ok {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .75);
+      background: var(--soft);
+    }
+
+    .status.warn {
+      color: var(--warn);
+      border-color: rgba(232, 199, 92, .72);
+      background: var(--warn-soft);
+    }
+
+    .status.fail {
+      color: #ffc6bf;
+      border-color: rgba(255, 128, 111, .75);
+      background: var(--danger-soft);
+    }
+
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      overflow: hidden;
+      border: 1px solid rgba(210, 230, 220, .14);
+      border-radius: 14px;
+      background: var(--app);
+      box-shadow: var(--shadow);
+    }
+
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line2);
+      color: var(--muted);
+      background: var(--bar);
+      font-weight: 800;
+    }
+
+    .dots {
+      position: absolute;
+      left: 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      display: block;
+      border-radius: 50%;
+    }
+
+    .red { background: #ff5f57; }
+    .yellow { background: #febc2e; }
+    .green { background: #28c840; }
+
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      bottom: 0;
+      left: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line2);
+      background: #101614;
+    }
+
+    .spacer { flex: 1; }
+
+    .nav {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 12px;
+      color: #bdc8c2;
+    }
+
+    .nav.active { color: var(--accent); background: rgba(7, 240, 138, .16); }
+
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      width: 4px;
+      height: 24px;
+      border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .ico {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      vertical-align: top;
+      filter: invert(83%) sepia(13%) saturate(206%) hue-rotate(107deg) brightness(88%) contrast(88%);
+    }
+
+    .nav.active .ico img,
+    .btn.active .ico img,
+    .icon-btn.active .ico img,
+    .header-link .ico img,
+    .file-pick-action .ico img {
+      filter: invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    .btn.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(4%) sepia(22%) saturate(1011%) hue-rotate(109deg) brightness(91%) contrast(98%);
+    }
+
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 42px 34px;
+      background: var(--app);
+    }
+
+    .tabs {
+      height: 72px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      flex: 0 0 auto;
+      align-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .tab {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    .tab.active { color: var(--text); }
+
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 70px;
+      right: 70px;
+      bottom: 0;
+      height: 3px;
+      border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .work {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 18px;
+      padding-top: 24px;
+    }
+
+    .panel {
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(29, 37, 34, .92);
+    }
+
+    .table-panel {
+      display: grid;
+      grid-template-rows: 50px minmax(0, 1fr) 38px;
+    }
+
+    .side-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      padding: 22px;
+      gap: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 14px 0 16px;
+      border-bottom: 1px solid var(--line2);
+    }
+
+    .panel-head h3 {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 20px;
+      font-weight: 860;
+    }
+
+    .head-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .file-line {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .file-line b {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+    }
+
+    .btn,
+    .icon-btn {
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .btn { padding: 0 12px; }
+    .btn.compact { height: 32px; padding: 0 11px; font-size: 13px; }
+    .icon-btn { width: 36px; padding: 0; }
+    .icon-btn.compact { width: 32px; height: 32px; }
+
+    .nav .ico { width: 20px; height: 20px; }
+    .file-line .ico { width: 18px; height: 18px; }
+    .btn .ico { width: 17px; height: 17px; }
+    .btn.compact .ico { width: 16px; height: 16px; }
+    .btn.primary .ico { width: 18px; height: 18px; }
+
+    .btn.active,
+    .icon-btn.active {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .78);
+      background: var(--accent-soft);
+    }
+
+    .btn.disabled,
+    .icon-btn.disabled,
+    .btn.primary.disabled {
+      color: var(--subtle);
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .btn.primary {
+      width: 100%;
+      height: 48px;
+      color: #06100c;
+      border-color: transparent;
+      background: var(--accent);
+      font-size: 16px;
+      font-weight: 920;
+    }
+
+    .btn.primary.disabled .ico img {
+      filter: invert(61%) sepia(9%) saturate(323%) hue-rotate(107deg) brightness(88%) contrast(82%);
+    }
+
+    .table {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 46px repeat(8, 54px) 1fr;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 108px 108px minmax(0, 1fr) minmax(0, 1fr);
+      border-bottom: 1px solid var(--line2);
+    }
+
+    .row.header {
+      color: var(--muted);
+      background: #19201e;
+      font-weight: 850;
+    }
+
+    .row.active {
+      background: rgba(7, 240, 138, .10);
+      box-shadow: inset 4px 0 0 var(--accent);
+    }
+
+    .row.dim .cell { color: var(--subtle); }
+
+    .cell {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding: 0 14px;
+      border-right: 1px solid var(--line2);
+      font-size: 15px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell:last-child { border-right: 0; }
+
+    .empty {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty h2 {
+      margin: 16px 0 8px;
+      color: var(--text);
+      font-size: 28px;
+      font-weight: 880;
+    }
+
+    .drop-icon {
+      width: 76px;
+      height: 76px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+      border: 1px solid var(--line2);
+      border-radius: 22px;
+      color: var(--accent);
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .drop-icon .ico {
+      width: 42px;
+      height: 42px;
+    }
+
+    .file-pick-action {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-left: 4px;
+      padding: 0 2px 4px;
+      color: var(--accent);
+      font-weight: 850;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    .file-pick-action::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: .9;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+
+    .file-pick-action:hover { color: #34f8a2; }
+    .file-pick-action:hover::after { transform: scaleX(1.08); opacity: 1; }
+    .file-pick-action:hover .ico { transform: translateY(-1px); }
+
+    .bottom {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 730;
+      border-top: 1px solid var(--line2);
+    }
+
+    .bottom .grow { flex: 1; }
+
+    .progress {
+      min-width: 320px;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .progress i {
+      display: block;
+      width: var(--value);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .side-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line2);
+    }
+
+    .side-head h3 {
+      font-size: 20px;
+      font-weight: 860;
+      white-space: nowrap;
+    }
+
+    .header-link {
+      min-height: 31px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(7, 240, 138, .46);
+      color: var(--accent);
+      background: rgba(7, 240, 138, .08);
+      font-size: 14px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+
+    .header-link:hover {
+      border-color: rgba(7, 240, 138, .82);
+      background: rgba(7, 240, 138, .14);
+    }
+
+    .side-stack {
+      min-height: 0;
+      overflow: hidden;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+
+    .option-card,
+    .error {
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .option-card {
+      min-height: 48px;
+      padding: 10px 13px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .option-card span:first-child {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .switch {
+      width: 46px;
+      height: 27px;
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 3px;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: var(--subtle);
+    }
+
+    .switch.on {
+      border-color: transparent;
+      background: var(--accent);
+    }
+
+    .switch.on::after {
+      left: 21px;
+      background: #062016;
+    }
+
+    .error {
+      padding: 14px;
+      color: #ffd2cd;
+      background: var(--danger-soft);
+      border-color: rgba(255, 128, 111, .7);
+      font-weight: 830;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>字幕处理设计 B：两栏审校版</h1>
+        <p>把三栏收成两栏：左侧保留宽表格，右侧固定处理项、当前行和配置入口，适合用户边看字幕边决定处理方式。</p>
+      </div>
+      <div class="chips"><span class="chip">1440 × 900</span><span class="chip">版本 B</span><span class="chip">5 个状态</span></div>
+    </header>
+    <div id="root"></div>
+  </main>
+
+  <script>
+    const icon = (name) => `<span class="ico"><img src="../../resource/assets/icons/${name}.svg" alt=""></span>`;
+
+    const nav = () => `
+      <aside class="sidebar">
+        <div class="nav">${icon("home")}</div>
+        <div class="nav">${icon("video")}</div>
+        <div class="nav active">${icon("subtitle")}</div>
+        <div class="nav">${icon("volume")}</div>
+        <div class="nav">${icon("history")}</div>
+        <div class="nav">${icon("search")}</div>
+        <div class="spacer"></div>
+        <div class="nav">${icon("github")}</div>
+        <div class="nav">${icon("setting")}</div>
+      </aside>`;
+
+    const tabs = () => `
+      <nav class="tabs">
+        <div class="tab">任务创建</div>
+        <div class="tab">语音转录</div>
+        <div class="tab active">字幕优化与翻译</div>
+        <div class="tab">字幕视频合成</div>
+      </nav>`;
+
+    const shell = (body) => `
+      <article class="client">
+        <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>字幕优化与翻译</div>
+        ${nav()}
+        <section class="app">${tabs()}${body}</section>
+      </article>`;
+
+    const rows = (mode = "ready") => {
+      const data = [
+        ["00:01.12", "00:03.40", "大家好，欢迎来到这一节课。", mode === "ready" ? "" : "Hello, welcome to this lesson."],
+        ["00:03.52", "00:06.20", "我们今天讲矩阵和向量空间。", mode === "done" ? "Today we will talk about matrices and vector spaces." : mode === "running" ? "正在翻译..." : ""],
+        ["00:06.36", "00:08.90", "先从最基本的概念开始。", mode === "done" ? "Let's start with the most basic concepts." : ""],
+        ["00:09.10", "00:12.00", "后面会用几个例子来说明。", mode === "done" ? "We will explain it with examples later." : ""],
+        ["00:12.24", "00:15.64", "我们先看一下矩阵的形式。", ""],
+        ["00:15.90", "00:18.20", "它由若干行和若干列组成。", ""]
+      ];
+      return `
+        <div class="table">
+          <div class="row header"><div class="cell">开始</div><div class="cell">结束</div><div class="cell">原文</div><div class="cell">译文</div></div>
+          ${data.map((item, index) => `<div class="row ${index === 1 ? "active" : ""} ${mode === "running" && index > 1 ? "dim" : ""}">${item.map((cell) => `<div class="cell">${cell}</div>`).join("")}</div>`).join("")}
+        </div>`;
+    };
+
+    const emptyTable = () => `
+      <div class="empty">
+        <div>
+          <div class="drop-icon">${icon("subtitle")}</div>
+          <h2>拖入一个字幕文件</h2>
+          <p>或 <span class="file-pick-action">${icon("folder_add")}点击选择字幕</span></p>
+        </div>
+      </div>`;
+
+    const headActions = (state) => {
+      const empty = state === "empty";
+      const running = state === "running";
+      const done = state === "done";
+      const failed = state === "failed";
+      const disabled = running ? " disabled" : "";
+      if (empty) {
+        return `
+          <div class="head-actions">
+            <span class="status">SRT / ASS / VTT / LRC</span>
+            <div class="btn compact active">${icon("folder_add")}选择字幕</div>
+          </div>`;
+      }
+      return `
+        <div class="head-actions">
+          <div class="btn compact${disabled}">${icon("save")}保存</div>
+          <div class="btn compact${disabled}">${icon("folder")}目录</div>
+          <div class="btn compact${disabled}">${icon("folder_add")}更换</div>
+          <span class="status ${running ? "warn" : failed ? "fail" : done ? "ok" : "ok"}">${running ? "处理中" : failed ? "未开始" : done ? "完成" : "124 条"}</span>
+        </div>`;
+    };
+
+    const tablePanel = (state) => {
+      const empty = state === "empty";
+      const running = state === "running";
+      const done = state === "done";
+      const failed = state === "failed";
+      return `
+        <main class="panel table-panel">
+          <div class="panel-head">
+            <div class="file-line">${icon(empty ? "file" : "subtitle")}<b>${empty ? "未选择字幕文件" : done ? "线性代数基础 p01-译文在上.srt" : "线性代数基础 p01.srt"}</b></div>
+            ${headActions(state)}
+          </div>
+          ${empty ? emptyTable() : rows(done ? "done" : running ? "running" : "ready")}
+          ${bottom(state)}
+        </main>`;
+    };
+
+    const bottom = (state) => {
+      if (state === "running") {
+        return `<div class="bottom"><span>字幕翻译</span><div class="progress"><i style="--value:46%"></i></div><span>46%</span><span class="grow"></span><span class="status warn">第 57 / 124 条</span></div>`;
+      }
+      if (state === "failed") {
+        return `<div class="bottom"><span class="status fail">配置缺失</span><span>需要先设置 LLM API Key 和模型</span><span class="grow"></span></div>`;
+      }
+      if (state === "done") {
+        return `<div class="bottom"><span>输出：线性代数基础 p01-译文在上.srt</span><span class="grow"></span><span class="status ok">可进入合成</span></div>`;
+      }
+      if (state === "empty") {
+        return `<div class="bottom"><span>支持拖入或选择一个字幕文件</span><span class="grow"></span><span>双击表格单元格可编辑</span></div>`;
+      }
+      return `<div class="bottom"><span>共 124 条</span><span>右键可合并、删除、重新翻译</span><span class="grow"></span><span class="status ok">已加载</span></div>`;
+    };
+
+    const option = (label, on = true) => `<div class="option-card"><span>${label}</span><span class="switch ${on ? "on" : ""}"></span></div>`;
+    const valueOption = (label, value) => `<div class="option-card"><span>${label}</span><span class="status">${value}</span></div>`;
+    const processingOptions = () => `
+      ${option("字幕校正", true)}
+      ${option("字幕翻译", true)}
+      ${option("断句", false)}
+      ${valueOption("译文排布", "译文在上")}
+    `;
+
+    const sidePanel = (state) => {
+      const empty = state === "empty";
+      const running = state === "running";
+      const done = state === "done";
+      const failed = state === "failed";
+      const buttonText = empty ? "等待字幕" : running ? "处理中" : done ? "进入合成" : failed ? "打开处理配置" : "开始处理";
+      const buttonIcon = empty ? "file" : running ? "sync" : done ? "right_arrow" : failed ? "setting" : "play";
+      const buttonClass = empty || running ? "btn primary disabled" : "btn primary";
+      return `
+        <aside class="panel side-panel">
+          <div class="side-head">
+            <h3>处理设置</h3>
+            <div class="head-actions">
+              <span class="header-link">${icon("setting")}处理配置</span>
+            </div>
+          </div>
+          <div class="side-stack">
+            ${empty ? `
+              ${processingOptions()}
+            ` : failed ? `
+              <div class="error">需要先配置可用的大模型 API Key、接口地址和模型。</div>
+              ${processingOptions()}
+            ` : running ? `
+              ${processingOptions()}
+            ` : `
+              ${processingOptions()}
+            `}
+          </div>
+          <div>
+            ${running ? `<div class="btn" style="width:100%;margin-bottom:10px">${icon("cancel")}取消</div>` : ""}
+            <div class="${buttonClass}">${icon(buttonIcon)}${buttonText}</div>
+          </div>
+        </aside>`;
+    };
+
+    const page = (state) => `
+      <div class="work">
+        ${tablePanel(state)}
+        ${sidePanel(state)}
+      </div>`;
+
+    const states = [
+      ["A", "未加载字幕", "等待字幕", "empty"],
+      ["B", "准备处理", "124 条", "ready"],
+      ["C", "处理中", "字幕翻译 46%", "running"],
+      ["D", "完成检查", "可合成", "done"],
+      ["E", "配置未就绪", "无法开始", "failed"]
+    ];
+
+    document.getElementById("root").innerHTML = states.map(([key, title, badge, state]) => `
+      <div class="version-title"><h2>状态 ${key}：${title}</h2><span class="status ${state === "done" || state === "ready" ? "ok" : state === "running" ? "warn" : state === "failed" ? "fail" : ""}">${badge}</span></div>
+      ${shell(page(state))}
+    `).join("");
+  </script>
+</body>
+</html>

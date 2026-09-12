@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 实时字幕页面设计</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --chrome: #101614;
+      --panel: #1d2522;
+      --panel-2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line-soft: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --subtle: #7f8d88;
+      --accent: #07f08a;
+      --accent-soft: rgba(7, 240, 138, .13);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .14);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 960px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+    button, input { font: inherit; }
+    button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: default;
+    }
+
+    .board {
+      width: min(1520px, 100vw);
+      margin: 0 auto;
+      padding: 18px 0 42px;
+    }
+
+    .board-head {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 18px;
+      padding: 0 40px;
+      margin-bottom: 8px;
+    }
+
+    .board-head h1 {
+      font-size: 18px;
+      line-height: 1.15;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .board-head p {
+      margin-top: 8px;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      font-weight: 680;
+    }
+
+    .state-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line-soft);
+      border-radius: 11px;
+      background: #202826;
+    }
+
+    .state-tabs button {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+
+    .state-tabs button.active {
+      color: #061810;
+      background: var(--accent);
+    }
+
+    .client {
+      position: relative;
+      width: calc(100% - 80px);
+      height: min(900px, calc(100vh - 86px));
+      min-height: 740px;
+      margin: 0 40px;
+      overflow: hidden;
+      border: 1px solid rgba(210, 230, 220, .14);
+      border-radius: 14px;
+      background: var(--app);
+    }
+
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line-soft);
+      background: #141917;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 820;
+    }
+
+    .dots {
+      position: absolute;
+      left: 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .red { background: #ff5f57; }
+    .yellow { background: #febc2e; }
+    .green { background: #28c840; }
+
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line-soft);
+      background: var(--chrome);
+    }
+
+    .spacer { flex: 1; }
+
+    .nav {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+    }
+
+    .nav.active { background: rgba(7, 240, 138, .16); }
+
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      width: 4px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .ico {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: brightness(0) saturate(100%) invert(78%) sepia(11%) saturate(248%) hue-rotate(107deg) brightness(88%) contrast(85%);
+    }
+
+    .nav.active .ico img,
+    .icon-accent img,
+    .button.link .ico img,
+    .mode-card.active .ico img,
+    .tiny-link .ico img {
+      filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    .button.primary .ico img,
+    .round.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(6%) sepia(20%) saturate(1052%) hue-rotate(106deg) brightness(95%) contrast(96%);
+    }
+
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      background: var(--app);
+    }
+
+    .page {
+      position: absolute;
+      inset: 0;
+      min-width: 0;
+      min-height: 0;
+      padding: 22px 34px 26px;
+      display: none;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .app[data-mode="ready"] .session-page,
+    .app[data-mode="live"] .session-page,
+    .app[data-mode="paused"] .session-page,
+    .app[data-mode="ended"] .session-page,
+    .app[data-mode="history"] .history-page,
+    .app[data-mode="detail"] .detail-page {
+      display: grid;
+    }
+
+    .page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 42px;
+    }
+
+    .page-head h2 {
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 900;
+    }
+
+    .page-head p {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      font-weight: 680;
+    }
+
+    .head-actions,
+    .row,
+    .chip-row,
+    .record-actions,
+    .detail-actions,
+    .timeline-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      height: 40px;
+      min-width: 108px;
+      padding: 0 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .button.primary {
+      min-width: 148px;
+      border-color: transparent;
+      background: var(--accent);
+      color: #061810;
+    }
+
+    .button.ghost {
+      min-width: 0;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .button.link {
+      min-width: 0;
+      height: 34px;
+      padding: 0 4px;
+      border-color: transparent;
+      border-radius: 0;
+      color: var(--accent);
+      background: transparent;
+    }
+
+    .button.warn {
+      color: var(--text);
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .button.danger {
+      color: #ffd2cd;
+      border-color: rgba(255, 128, 111, .48);
+      background: var(--danger-soft);
+    }
+
+    .round {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .round.primary {
+      border-color: transparent;
+      background: var(--accent);
+      color: #061810;
+    }
+
+    .pill,
+    .status {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .03);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .status.ok,
+    .pill.ok {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .58);
+      background: var(--accent-soft);
+    }
+
+    .status.warn,
+    .pill.warn {
+      color: var(--danger);
+      border-color: rgba(255, 128, 111, .48);
+      background: var(--danger-soft);
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(29, 37, 34, .92);
+    }
+
+    .main-panel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .record-head {
+      min-height: 66px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(255, 255, 255, .018);
+    }
+
+    .record-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .record-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(7, 240, 138, .42);
+      border-radius: 11px;
+      background: var(--accent-soft);
+    }
+
+    .record-title h3 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 19px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .record-title p {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .record-head .button {
+      height: 36px;
+      min-width: 80px;
+      padding: 0 12px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .stream {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 20px 24px 20px;
+      scrollbar-color: rgba(170, 183, 178, .26) transparent;
+    }
+
+    .ready-state {
+      min-height: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+      align-content: start;
+      gap: 0;
+    }
+
+    .recent-box {
+      min-height: 0;
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border: 1px solid var(--line-soft);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .02);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .section-head h4 {
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .recent-list {
+      min-height: 0;
+      overflow-y: auto;
+      display: grid;
+      gap: 10px;
+      padding-right: 2px;
+      scrollbar-color: rgba(170, 183, 178, .22) transparent;
+    }
+
+    .recent-item {
+      min-height: 58px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .recent-item b {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+      font-weight: 880;
+    }
+
+    .recent-item span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 730;
+    }
+
+    .entry {
+      position: relative;
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 10px;
+      padding: 0 0 10px;
+    }
+
+    .entry + .entry { margin-top: 0; }
+
+    .entry::before {
+      content: "";
+      position: absolute;
+      left: 26px;
+      top: 42px;
+      bottom: -10px;
+      width: 1px;
+      background: rgba(170, 183, 178, .14);
+    }
+
+    .entry:last-child::before { display: none; }
+
+    .speaker {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      margin-left: 9px;
+      border: 1px solid rgba(7, 240, 138, .32);
+      border-radius: 50%;
+      color: var(--accent);
+      background: rgba(7, 240, 138, .10);
+    }
+
+    .speaker.live-speaker {
+      border-color: rgba(7, 240, 138, .5);
+      background: rgba(7, 240, 138, .14);
+    }
+
+    .voice-glyph {
+      width: 20px;
+      height: 18px;
+      display: inline-grid;
+      grid-template-columns: repeat(4, 3px);
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .voice-glyph i {
+      display: block;
+      width: 3px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .voice-glyph i:nth-child(1) { height: 8px; opacity: .76; }
+    .voice-glyph i:nth-child(2) { height: 14px; }
+    .voice-glyph i:nth-child(3) { height: 18px; }
+    .voice-glyph i:nth-child(4) { height: 11px; opacity: .82; }
+
+    .bubble-head {
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 5px;
+    }
+
+    .bubble-head b {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .bubble-head span {
+      color: var(--subtle);
+      font-size: 13px;
+      font-weight: 760;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bubble {
+      position: relative;
+      margin-bottom: 24px;
+      padding: 15px 18px 13px;
+      border: 1px solid var(--line-soft);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .bubble.current,
+    .entry.playing .bubble {
+      padding: 16px 20px 14px;
+      border-color: rgba(7, 240, 138, .48);
+      background: rgba(7, 240, 138, .032);
+    }
+
+    .entry.playing .bubble {
+      border-color: rgba(7, 240, 138, .42);
+      background: rgba(7, 240, 138, .035);
+    }
+
+    .entry.playing .speaker {
+      border-color: rgba(7, 240, 138, .44);
+      background: rgba(7, 240, 138, .11);
+    }
+
+    .app[data-mode="ended"] .active-entry .speaker {
+      border-color: rgba(7, 240, 138, .32);
+      background: rgba(7, 240, 138, .10);
+    }
+
+    .app[data-mode="ended"] .active-entry .bubble.current {
+      padding: 15px 18px 13px;
+      border-color: var(--line-soft);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .app[data-mode="ended"] .active-entry .unstable { color: inherit; }
+
+    .source-line {
+      color: rgba(220, 226, 224, .64);
+      font-size: 14px;
+      line-height: 1.52;
+      font-weight: 650;
+    }
+
+    .target-line {
+      margin-top: 6px;
+      color: var(--text);
+      font-size: 19px;
+      line-height: 1.42;
+      font-weight: 850;
+    }
+
+    .unstable { color: rgba(245, 247, 246, .43); }
+
+    .message-tools {
+      position: absolute;
+      left: 0;
+      bottom: -26px;
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity .16s ease, transform .16s ease;
+    }
+
+    .entry:hover .message-tools {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .active-entry .bubble {
+      margin-bottom: 0;
+    }
+
+    .active-entry .message-tools {
+      display: none;
+    }
+
+    .mini-action {
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 4px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .mini-action .ico {
+      width: 14px;
+      height: 14px;
+    }
+
+    .side-rail {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .control-card,
+    .settings-card {
+      flex: 0 0 auto;
+      padding: 15px;
+    }
+
+    .control-card {
+      min-height: 260px;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 16px;
+    }
+
+    .timer-box {
+      width: 100%;
+      min-height: 154px;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .timer {
+      font-size: 56px;
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-label {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .control-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: end;
+      align-content: end;
+      min-height: 52px;
+    }
+
+    .control-buttons .button {
+      min-width: 0;
+      height: 46px;
+      border-radius: 13px;
+      padding: 0 12px;
+    }
+
+    .control-buttons .button.wide { grid-column: 1 / -1; }
+
+    .rail-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .rail-title h3 {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .setting-row {
+      min-height: 50px;
+      padding: 0 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .setting-row + .setting-row { margin-top: 9px; }
+
+    .app[data-mode="live"] .lock-while-running,
+    .app[data-mode="paused"] .lock-while-running {
+      opacity: .58;
+    }
+
+    .app[data-mode="live"] .lock-while-running .select-pill,
+    .app[data-mode="paused"] .lock-while-running .select-pill {
+      border-color: var(--line-soft);
+      background: rgba(255, 255, 255, .012);
+      color: var(--subtle);
+    }
+
+    .setting-row b {
+      display: block;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .setting-row div span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .select-pill {
+      min-width: 82px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .018);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+
+    .select-pill.on {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .28);
+      background: rgba(7, 240, 138, .045);
+    }
+
+    .select-pill.off {
+      color: var(--muted);
+      background: rgba(255, 255, 255, .018);
+    }
+
+    .history-body {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .error-state {
+      min-height: 100%;
+      display: grid;
+      align-items: center;
+      justify-items: center;
+      padding: 24px;
+    }
+
+    .app[data-mode="error"] .workspace {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app[data-mode="error"] .side-rail {
+      display: none;
+    }
+
+    .empty-records {
+      min-height: 100%;
+      display: grid;
+      align-items: center;
+      justify-items: center;
+      padding: 24px;
+    }
+
+    .error-card {
+      width: min(460px, 100%);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .empty-card {
+      width: min(420px, 100%);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      justify-self: center;
+      text-align: center;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .empty-card h3 {
+      font-size: 21px;
+      font-weight: 900;
+    }
+
+    .error-card h3 {
+      font-size: 24px;
+      line-height: 1.25;
+      font-weight: 900;
+    }
+
+    .empty-card p {
+      max-width: 420px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+
+    .error-card p {
+      max-width: 420px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+
+    .inline-link {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1px 2px;
+      border: 0;
+      border-bottom: 2px solid rgba(7, 240, 138, .55);
+      color: var(--accent);
+      background: transparent;
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 850;
+    }
+
+    .toolbar-panel {
+      min-height: 68px;
+      padding: 13px 15px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .search-field {
+      min-width: 0;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .record-table {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .table-head,
+    .record-row {
+      display: grid;
+      grid-template-columns: minmax(300px, 1.5fr) minmax(160px, .8fr) 110px 132px 112px;
+      gap: 14px;
+      align-items: center;
+      padding: 0 18px;
+    }
+
+    .table-head {
+      min-height: 48px;
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--subtle);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .table-scroll {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 10px 0;
+      scrollbar-color: rgba(170, 183, 178, .24) transparent;
+    }
+
+    .record-row {
+      min-height: 78px;
+      margin: 0 10px 10px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .record-row.active {
+      border-color: rgba(7, 240, 138, .54);
+      background: rgba(7, 240, 138, .055);
+    }
+
+    .record-name {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .record-cell {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .025);
+      flex: 0 0 auto;
+    }
+
+    .record-cell.active {
+      border-color: rgba(7, 240, 138, .52);
+      background: var(--accent-soft);
+    }
+
+    .record-name strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+      line-height: 1.25;
+      font-weight: 900;
+    }
+
+    .record-name span,
+    .table-muted {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 720;
+    }
+
+    .table-strong {
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .detail-body {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 14px;
+    }
+
+    .detail-top {
+      min-height: 72px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .detail-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .detail-title h3 {
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .detail-title p {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .detail-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 14px;
+    }
+
+    .transcript-panel {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 24px 28px 16px;
+      scrollbar-color: rgba(170, 183, 178, .24) transparent;
+    }
+
+    .detail-side {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .mini-panel {
+      padding: 15px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mode-card {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 11px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .025);
+      font-size: 13px;
+      font-weight: 840;
+    }
+
+    .mode-card.active {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .54);
+      background: var(--accent-soft);
+    }
+
+    .info-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .info-row {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .025);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 780;
+    }
+
+    .info-row b {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .player {
+      min-height: 82px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 58px;
+      gap: 13px;
+      align-items: center;
+    }
+
+    .player-main {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .player-line {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .player-title {
+      min-width: 44px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 820;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .progress {
+      position: relative;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(170, 183, 178, .16);
+      overflow: hidden;
+    }
+
+    .progress::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 33%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .progress::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 33%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      transform: translate(-50%, -50%);
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 2px;
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 760;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-actions .button {
+      min-width: 54px;
+      height: 38px;
+      border-radius: 12px;
+      padding: 0 10px;
+    }
+
+    .mode-only { display: none !important; }
+    .app[data-mode="ready"] .ready-only { display: block !important; }
+    .app[data-mode="ready"] .ready-inline { display: inline-flex !important; }
+    .app[data-mode="ready"] .ready-flex { display: flex !important; }
+    .app[data-mode="ready"] .ready-grid { display: grid !important; }
+    .app[data-mode="live"] .live-only { display: block !important; }
+    .app[data-mode="live"] .live-inline { display: inline-flex !important; }
+    .app[data-mode="live"] .live-flex { display: flex !important; }
+    .app[data-mode="live"] .live-grid { display: grid !important; }
+    .app[data-mode="paused"] .paused-only { display: block !important; }
+    .app[data-mode="paused"] .paused-inline { display: inline-flex !important; }
+    .app[data-mode="paused"] .paused-flex { display: flex !important; }
+    .app[data-mode="paused"] .paused-grid { display: grid !important; }
+    .app[data-mode="ended"] .ended-only { display: block !important; }
+    .app[data-mode="ended"] .ended-inline { display: inline-flex !important; }
+    .app[data-mode="ended"] .ended-flex { display: flex !important; }
+    .app[data-mode="ended"] .ended-grid { display: grid !important; }
+    .app[data-mode="error"] .error-only { display: block !important; }
+    .app[data-mode="error"] .error-inline { display: inline-flex !important; }
+    .app[data-mode="error"] .error-grid { display: grid !important; }
+    .app[data-mode="empty"] .empty-only { display: block !important; }
+    .app[data-mode="empty"] .empty-inline { display: inline-flex !important; }
+    .app[data-mode="empty"] .empty-flex { display: flex !important; }
+    .app[data-mode="empty"] .empty-grid { display: grid !important; }
+    .app[data-mode="ready"] .session-stream,
+    .app[data-mode="ready"] .record-head,
+    .app[data-mode="live"] .ready-state,
+    .app[data-mode="paused"] .ready-state,
+    .app[data-mode="ended"] .ready-state,
+    .app[data-mode="error"] .ready-state,
+    .app[data-mode="error"] .session-stream { display: none !important; }
+
+    .app[data-mode="error"] .session-page,
+    .app[data-mode="empty"] .history-page { display: grid; }
+
+    .app[data-mode="history"] .empty-records,
+    .app[data-mode="empty"] .history-records { display: none !important; }
+
+    @media (max-width: 1240px) {
+      .client { margin: 0 28px; width: calc(100% - 56px); }
+      .page { padding: 24px 26px; }
+      .workspace { grid-template-columns: minmax(0, 1fr) 318px; }
+      .detail-layout { grid-template-columns: minmax(0, 1fr) 282px; }
+      .target-line { font-size: 19px; }
+      .stream { padding: 20px 22px; }
+      .table-head,
+      .record-row {
+        grid-template-columns: minmax(270px, 1.5fr) minmax(140px, .8fr) 96px 118px 100px;
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .board-head { padding: 0 18px; }
+      .client { margin: 0 18px; width: calc(100% - 36px); }
+      .page { padding: 20px; }
+      .workspace { grid-template-columns: minmax(0, 1fr) 292px; gap: 12px; }
+      .control-card { min-height: 266px; }
+      .timer-box { width: 100%; min-height: 136px; }
+      .setting-row { padding: 0 10px; }
+      .select-pill { min-width: 72px; padding: 0 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="board">
+    <div class="board-head">
+      <div class="state-tabs" aria-label="状态切换">
+        <button class="active" data-mode="ready">启动前</button>
+        <button data-mode="live">录制中</button>
+        <button data-mode="paused">暂停中</button>
+        <button data-mode="error">错误</button>
+        <button data-mode="ended">已保存</button>
+        <button data-mode="history">历史</button>
+        <button data-mode="empty">空历史</button>
+        <button data-mode="detail">详情</button>
+      </div>
+    </div>
+
+    <section class="client">
+      <div class="titlebar">
+        <div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>
+        卡卡字幕助手 -- VideoCaptioner
+      </div>
+
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></div>
+        <div class="nav" data-jump="history"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+
+      <main class="app" id="liveApp" data-mode="ready">
+        <section class="page session-page">
+          <header class="page-head">
+            <div>
+              <h2>实时字幕</h2>
+            </div>
+          </header>
+
+          <section class="workspace">
+            <section class="panel main-panel">
+              <div class="record-head">
+                <div class="record-title">
+                  <div class="record-mark icon-accent"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></div>
+                  <div>
+                    <h3 class="mode-only ready-only">开始新的实时字幕</h3>
+                    <h3 class="mode-only live-only paused-only ended-only">2026-06-17 16:49 记录</h3>
+                    <h3 class="mode-only error-only">启动失败</h3>
+                    <p class="mode-only ready-only">选择声音来源后即可开始</p>
+                    <p class="mode-only live-only">00:52 · 已生成 8 句</p>
+                    <p class="mode-only paused-only">00:52 · 记录已保留</p>
+                    <p class="mode-only ended-only">06:18 · 记录已保存</p>
+                    <p class="mode-only error-only">未能捕获系统声音</p>
+                  </div>
+                </div>
+                <div class="record-actions">
+                  <button class="button ghost mode-only ready-flex" data-mode="history"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span>历史</button>
+                  <button class="button ghost mode-only ended-flex"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>导出</button>
+                </div>
+              </div>
+
+              <div class="stream">
+                <div class="ready-state mode-only ready-grid">
+                  <div class="recent-box">
+                    <div class="section-head">
+                      <h4>最近记录</h4>
+                      <button class="button link" data-mode="history"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span>查看全部</button>
+                    </div>
+                    <div class="recent-list">
+                      <div class="recent-item" data-mode="detail">
+                        <div><b>2026-06-17 16:49 记录</b><span>06:18 · 系统声音 · 微软翻译</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                      <div class="recent-item">
+                      <div><b>2026-06-15 12:04 记录</b><span>18:42 · 麦克风 · 原文记录</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                      <div class="recent-item">
+                        <div><b>2026-06-14 20:03 记录</b><span>02:46 · 系统声音 · 微软翻译</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                      <div class="recent-item">
+                        <div><b>2026-06-13 09:18 记录</b><span>08:31 · 麦克风 · 原文记录</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                      <div class="recent-item">
+                        <div><b>2026-06-11 18:40 记录</b><span>12:06 · 系统声音 · 微软翻译</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                      <div class="recent-item">
+                        <div><b>2026-06-10 21:22 记录</b><span>04:37 · 麦克风 · 原文记录</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                      <div class="recent-item">
+                        <div><b>2026-06-09 15:08 记录</b><span>09:12 · 系统声音 · 微软翻译</span></div>
+                        <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="error-state mode-only error-grid">
+                  <div class="error-card">
+                    <h3>没有检测到系统声音</h3>
+                    <p>切换音频来源后再开始实时字幕。</p>
+                    <button class="inline-link">打开配置</button>
+                  </div>
+                </div>
+
+                <div class="session-stream">
+                  <article class="entry">
+                    <div class="speaker"><span class="voice-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+                    <div>
+                      <div class="bubble-head"><b>发言人</b><span>00:03</span></div>
+                      <div class="bubble">
+                        <p class="source-line">Hello everyone, before we start the main topic, I want to quickly align on what we expect from today's live caption review and how people will actually use it during a meeting.</p>
+                        <p class="target-line">大家好，在进入主题前，我想先对齐一下今天实时字幕评审的目标，以及用户在会议里真正会怎么使用它。</p>
+                        <div class="message-tools">
+                          <button class="mini-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制本句</button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="entry">
+                    <div class="speaker"><span class="voice-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+                    <div>
+                      <div class="bubble-head"><b>发言人</b><span>00:24</span></div>
+                      <div class="bubble">
+                        <p class="source-line">Last week we spent most of our time on the floating window, but the record page itself also needs to feel reliable enough for users to pause, continue, search, and save without guessing where anything went.</p>
+                        <p class="target-line">上周我们主要在看浮窗，但记录页本身也必须足够可靠，让用户能暂停、继续、搜索和保存，不需要猜每个东西去了哪里。</p>
+                        <div class="message-tools">
+                          <button class="mini-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制本句</button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="entry active-entry">
+                    <div class="speaker live-speaker"><span class="voice-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+                    <div>
+                      <div class="bubble-head">
+                        <b class="mode-only live-only paused-only">当前句</b>
+                        <b class="mode-only ended-only">发言人</b>
+                        <span>00:52</span>
+                      </div>
+                      <div class="bubble current">
+                        <p class="source-line">So the next step is to keep the main controls stable on the right side and let the transcript area focus on the sentence stream, <span class="unstable">especially when the current sentence is still being corrected by the backend.</span></p>
+                        <p class="target-line">所以接下来要让右侧的主要控制保持稳定，把中间区域留给句子流，<span class="unstable">尤其是在当前句还会被后端继续修正的时候。</span></p>
+                        <div class="message-tools">
+                          <button class="mini-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制本句</button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+
+            <aside class="side-rail">
+              <section class="panel control-card">
+                <div class="timer-box">
+                  <div>
+                    <div class="timer mode-only ready-only">00:00</div>
+                    <div class="timer mode-only live-only paused-only">00:52</div>
+                    <div class="timer mode-only error-only">--:--</div>
+                    <div class="timer mode-only ended-only">06:18</div>
+                    <div class="timer-label mode-only ready-only">等待开始</div>
+                    <div class="timer-label mode-only live-only">录制中</div>
+                    <div class="timer-label mode-only paused-only">已暂停</div>
+                    <div class="timer-label mode-only error-only">启动失败</div>
+                    <div class="timer-label mode-only ended-only">已保存</div>
+                  </div>
+                </div>
+                <div class="control-buttons">
+                  <button class="button primary wide mode-only ready-flex" data-mode="live"><span class="ico"><img src="../../resource/assets/icons/play.svg" alt=""></span>开始实时字幕</button>
+                  <button class="button warn mode-only live-flex" data-mode="paused">暂停</button>
+                  <button class="button danger mode-only live-flex" data-mode="ended">结束保存</button>
+                  <button class="button primary mode-only paused-flex" data-mode="live"><span class="ico"><img src="../../resource/assets/icons/play.svg" alt=""></span>继续</button>
+                  <button class="button danger mode-only paused-flex" data-mode="ended">结束保存</button>
+                  <button class="button primary wide mode-only ended-flex" data-mode="detail"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span>查看记录</button>
+                </div>
+              </section>
+
+              <section class="panel settings-card">
+                <div class="rail-title">
+                  <h3>本次设置</h3>
+                  <button class="button link"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span>配置</button>
+                </div>
+                <div class="setting-row lock-while-running">
+                  <div><b>音频来源</b><span>系统声音</span></div>
+                  <span class="select-pill">BlackHole</span>
+                </div>
+                <div class="setting-row lock-while-running">
+                  <div><b>实时翻译</b><span>译入简体中文</span></div>
+                  <span class="select-pill on">开启</span>
+                </div>
+                <div class="setting-row">
+                  <div><b>桌面浮窗</b><span>可拖动显示</span></div>
+                  <span class="select-pill on mode-only ready-inline live-inline paused-inline">开启</span>
+                  <span class="select-pill off mode-only ended-inline">关闭</span>
+                </div>
+              </section>
+
+            </aside>
+          </section>
+        </section>
+
+        <section class="page history-page">
+          <header class="page-head">
+            <div>
+              <h2>实时字幕历史</h2>
+            </div>
+            <div class="head-actions">
+              <button class="button ghost" data-mode="ready"><span class="ico"><img src="../../resource/assets/icons/arrow-left.svg" alt=""></span>返回</button>
+            </div>
+          </header>
+
+          <section class="history-body">
+            <div class="panel toolbar-panel">
+              <div class="search-field"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span>搜索记录名称或正文</div>
+              <div class="head-actions">
+                <button class="button ghost"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+                <button class="button ghost"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span>目录</button>
+              </div>
+            </div>
+
+            <div class="panel record-table">
+              <div class="table-head">
+                <span>记录</span>
+                <span>来源</span>
+                <span>时长</span>
+                <span>创建时间</span>
+                <span>操作</span>
+              </div>
+              <div class="table-scroll history-records">
+                <div class="record-row active" data-mode="detail">
+                  <div class="record-name">
+                    <span class="record-cell active"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></span>
+                    <div>
+                      <strong>2026-06-17 16:49 记录</strong>
+                    </div>
+                  </div>
+                  <div class="table-strong">系统声音</div>
+                  <div class="table-strong">06:18</div>
+                  <div class="table-muted">今天 16:49</div>
+                  <div class="row-actions">
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span></button>
+                  </div>
+                </div>
+
+                <div class="record-row">
+                  <div class="record-name">
+                    <span class="record-cell"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></span>
+                    <div>
+                      <strong>2026-06-15 12:04 记录</strong>
+                    </div>
+                  </div>
+                  <div class="table-strong">麦克风</div>
+                  <div class="table-strong">18:42</div>
+                  <div class="table-muted">06-15 12:04</div>
+                  <div class="row-actions">
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span></button>
+                  </div>
+                </div>
+
+                <div class="record-row">
+                  <div class="record-name">
+                    <span class="record-cell"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></span>
+                    <div>
+                      <strong>2026-06-14 20:03 记录</strong>
+                    </div>
+                  </div>
+                  <div class="table-strong">系统声音</div>
+                  <div class="table-strong">02:46</div>
+                  <div class="table-muted">06-14 20:03</div>
+                  <div class="row-actions">
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></button>
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span></button>
+                  </div>
+                </div>
+
+                <div class="record-row">
+                  <div class="record-name">
+                    <span class="record-cell"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></span>
+                    <div>
+                      <strong>2026-06-13 09:18 记录</strong>
+                    </div>
+                  </div>
+                  <div class="table-strong">麦克风</div>
+                  <div class="table-strong">00:00</div>
+                  <div class="table-muted">06-13 09:18</div>
+                  <div class="row-actions">
+                    <button class="round"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span></button>
+                  </div>
+                </div>
+              </div>
+              <div class="empty-records mode-only empty-grid">
+                <div class="empty-card">
+                  <h3>暂无记录</h3>
+                  <p>保存后的实时字幕会显示在这里。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="page detail-page">
+          <header class="page-head">
+            <div>
+              <h2>记录详情</h2>
+            </div>
+            <div class="head-actions">
+              <button class="button ghost" data-mode="history"><span class="ico"><img src="../../resource/assets/icons/arrow-left.svg" alt=""></span>返回</button>
+              <button class="button ghost"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>导出</button>
+            </div>
+          </header>
+
+          <section class="detail-body">
+            <div class="panel detail-top">
+              <div class="detail-title">
+                <span class="record-cell active"><span class="ico"><img src="../../resource/assets/icons/microphone.svg" alt=""></span></span>
+                <div>
+                  <h3>2026-06-17 16:49 记录</h3>
+                  <p>系统声音 · 微软翻译 · 06:18</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-layout">
+              <section class="panel transcript-panel">
+                <article class="entry">
+                  <div class="speaker"><span class="voice-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+                  <div>
+                    <div class="bubble-head"><b>发言人</b><span>00:03</span></div>
+                    <div class="bubble">
+                      <p class="source-line">Hello everyone, before we start the main topic, I want to quickly align on what we expect from today's live caption review and how people will actually use it during a meeting.</p>
+                      <p class="target-line">大家好，在进入主题前，我想先对齐一下今天实时字幕评审的目标，以及用户在会议里真正会怎么使用它。</p>
+                      <div class="message-tools">
+                        <button class="mini-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制本句</button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="entry playing">
+                  <div class="speaker"><span class="voice-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+                  <div>
+                    <div class="bubble-head"><b>发言人</b><span>00:24</span></div>
+                    <div class="bubble">
+                      <p class="source-line">Last week we spent most of our time on the floating window, but the record page itself also needs to feel reliable enough for users to pause, continue, search, and save without guessing where anything went.</p>
+                      <p class="target-line">上周我们主要在看浮窗，但记录页本身也必须足够可靠，让用户能暂停、继续、搜索和保存，不需要猜每个东西去了哪里。</p>
+                      <div class="message-tools">
+                        <button class="mini-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制本句</button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="entry">
+                  <div class="speaker"><span class="voice-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+                  <div>
+                    <div class="bubble-head"><b>发言人</b><span>00:52</span></div>
+                    <div class="bubble">
+                      <p class="source-line">So the next step is to keep the main controls stable on the right side and let the transcript area focus on the sentence stream, especially when the current sentence is still being corrected by the backend.</p>
+                      <p class="target-line">所以接下来要让右侧的主要控制保持稳定，把中间区域留给句子流，尤其是在当前句还会被后端继续修正的时候。</p>
+                      <div class="message-tools">
+                        <button class="mini-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制本句</button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </section>
+
+              <aside class="detail-side">
+                <section class="panel mini-panel">
+                  <div class="rail-title"><h3>显示</h3></div>
+                  <div class="mode-grid">
+                    <div class="mode-card active"><span class="ico"><img src="../../resource/assets/icons/language.svg" alt=""></span>双语</div>
+                    <div class="mode-card"><span class="ico"><img src="../../resource/assets/icons/font.svg" alt=""></span>原文</div>
+                    <div class="mode-card"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span>译文</div>
+                  </div>
+                </section>
+
+                <section class="panel mini-panel">
+                  <div class="rail-title"><h3>导出</h3></div>
+                  <div class="info-list">
+                    <button class="button ghost"><span class="ico"><img src="../../resource/assets/icons/download.svg" alt=""></span>SRT 字幕</button>
+                    <button class="button ghost"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span>TXT 文本</button>
+                  </div>
+                </section>
+              </aside>
+            </div>
+
+            <div class="panel player">
+              <button class="round primary"><span class="ico"><img src="../../resource/assets/icons/play.svg" alt=""></span></button>
+              <div class="player-main">
+                <div class="player-line">
+                  <span class="player-title">00:56</span>
+                  <div class="progress" aria-hidden="true"></div>
+                  <span class="player-title">06:18</span>
+                </div>
+                <div class="time-row"><span>正在播放 00:24 的句子</span><span>42 句</span></div>
+              </div>
+              <div class="timeline-actions">
+                <button class="button ghost">1.0x</button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <script>
+    const app = document.getElementById("liveApp");
+    const tabs = document.querySelectorAll(".state-tabs button");
+
+    function setMode(mode) {
+      app.dataset.mode = mode;
+      tabs.forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+      syncStream(mode);
+    }
+
+    function syncStream(mode) {
+      const stream = app.querySelector(".stream");
+      if (!stream) return;
+      window.requestAnimationFrame(() => {
+        if (mode === "detail") {
+          const panel = app.querySelector(".detail-main .transcript-panel");
+          const playing = panel?.querySelector(".entry.playing");
+          if (panel && playing) {
+            panel.scrollTop = Math.max(0, playing.offsetTop - panel.offsetTop - 32);
+          }
+          return;
+        }
+        if (mode === "live" || mode === "paused") {
+          stream.scrollTop = stream.scrollHeight;
+        } else {
+          stream.scrollTop = 0;
+        }
+      });
+    }
+
+    document.querySelectorAll("[data-mode]").forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    document.querySelectorAll("[data-jump='history']").forEach((button) => {
+      button.addEventListener("click", () => setMode("history"));
+    });
+
+    setMode(app.dataset.mode);
+  </script>
+</body>
+</html>

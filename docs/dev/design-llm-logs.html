@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner LLM 请求日志设计</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --chrome: #101614;
+      --panel: #1d2522;
+      --panel2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line2: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --subtle: #7f8d88;
+      --accent: #07f08a;
+      --soft: rgba(7, 240, 138, .13);
+      --warn: #e8c75c;
+      --warn-soft: rgba(232, 199, 92, .14);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .14);
+      --shadow: 0 28px 80px rgba(0, 0, 0, .28);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 1520px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+    h1, h2, h3, p { margin: 0; }
+    button { border: 0; color: inherit; background: transparent; font: inherit; }
+    .board { width: 1520px; margin: 0 auto; padding: 34px 0 72px; }
+    .board-head, .state-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      padding: 0 40px;
+      margin-bottom: 22px;
+    }
+    .board-head h1 { font-size: 32px; line-height: 1.15; }
+    .board-head p { margin-top: 10px; color: var(--muted); font-size: 15px; font-weight: 680; }
+    .state-title { align-items: center; margin: 34px 0 12px; }
+    .state-title h2 { font-size: 22px; }
+    .state-title span { color: var(--subtle); font-weight: 760; }
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      margin: 0 40px;
+      overflow: hidden;
+      border: 1px solid rgba(210,230,220,.14);
+      border-radius: 14px;
+      background: var(--app);
+      box-shadow: var(--shadow);
+    }
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line2);
+      background: #141917;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 820;
+    }
+    .dots { position: absolute; left: 24px; display: flex; gap: 12px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .red { background: #ff5f57; } .yellow { background: #febc2e; } .green { background: #28c840; }
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line2);
+      background: var(--chrome);
+    }
+    .spacer { flex: 1; }
+    .nav {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+    }
+    .nav.active { background: rgba(7,240,138,.16); }
+    .nav.active::before {
+      display: none;
+    }
+    .ico { width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: brightness(0) saturate(100%) invert(78%) sepia(11%) saturate(248%) hue-rotate(107deg) brightness(88%) contrast(85%);
+    }
+    .active .ico img, .primary .ico img {
+      filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 16px;
+      padding: 28px 42px 30px;
+      background: var(--app);
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(360px, 560px) 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .search {
+      height: 44px;
+      padding: 0 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--field);
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 780;
+    }
+    .button {
+      height: 44px;
+      min-width: 116px;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--field);
+      font-size: 15px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .button.primary { color: #061810; border-color: transparent; background: var(--accent); }
+    .button.danger { color: var(--muted); border-color: var(--line); background: rgba(255,255,255,.026); }
+    .pill {
+      min-height: 30px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .pill.ok { color: var(--accent); border-color: rgba(7,240,138,.55); background: var(--soft); }
+    .logs-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .table {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr);
+    }
+    .thead, .log-row {
+      display: grid;
+      grid-template-columns: 138px 96px minmax(360px, 1.35fr) 86px minmax(300px, 1fr) 82px 88px;
+      align-items: center;
+      border-bottom: 1px solid var(--line2);
+    }
+    .thead {
+      color: var(--subtle);
+      font-size: 13px;
+      font-weight: 860;
+      background: rgba(255,255,255,.018);
+    }
+    .thead div, .log-row div { padding: 0 12px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .tbody { overflow: auto; }
+    .tbody::-webkit-scrollbar { width: 8px; }
+    .tbody::-webkit-scrollbar-thumb { border-radius: 8px; background: #3f4b46; }
+    .log-row {
+      min-height: 58px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 720;
+    }
+    .log-row.active {
+      color: var(--text);
+      background: rgba(7,240,138,.08);
+    }
+    .detail {
+      display: none !important;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 14px;
+    }
+    .detail h2 { font-size: 24px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .code-box {
+      min-height: 0;
+      padding: 14px;
+      border: 1px solid var(--line2);
+      border-radius: 15px;
+      background: #111815;
+      color: #d7e3dc;
+      font: 13px/1.6 "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .footer {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 780;
+    }
+    .pager { display: flex; align-items: center; gap: 12px; }
+    .round {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--field);
+    }
+    .round .ico { width: 18px; height: 18px; }
+    .empty {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 40px;
+    }
+    .empty-mark {
+      width: 82px;
+      height: 82px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255,255,255,.03);
+    }
+    .empty h3 { font-size: 26px; }
+    .empty p { margin-top: 10px; color: var(--muted); font-size: 15px; font-weight: 680; }
+    .modal-backdrop {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      background: rgba(0, 0, 0, .46);
+      backdrop-filter: blur(3px);
+      display: grid;
+      place-items: center;
+      padding: 26px;
+    }
+    .detail-modal {
+      width: 1080px;
+      height: 760px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid rgba(210,230,220,.20);
+      border-radius: 22px;
+      background: #1c2521;
+      box-shadow: 0 28px 90px rgba(0,0,0,.42);
+    }
+    .modal-head {
+      min-height: 82px;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--line2);
+    }
+    .modal-title {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .modal-title h3 {
+      font-size: 24px;
+      line-height: 1.15;
+    }
+    .modal-title p {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 780;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .modal-close {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(7,240,138,.45);
+      border-radius: 15px;
+      background: rgba(7,240,138,.08);
+    }
+    .modal-close .ico img { filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%); }
+    .modal-body {
+      min-height: 0;
+      padding: 18px 24px 20px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 16px;
+      overflow: hidden;
+    }
+    .meta-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .meta-item {
+      min-width: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      background: rgba(255,255,255,.025);
+    }
+    .meta-item span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 840;
+    }
+    .meta-item strong {
+      display: block;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.2;
+    }
+    .detail-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 16px;
+    }
+    .summary-panel,
+    .payload-panel {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid var(--line2);
+      border-radius: 17px;
+      background: #17201d;
+      overflow: hidden;
+    }
+    .summary-panel {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .summary-block {
+      padding: 14px;
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      background: rgba(255,255,255,.022);
+    }
+    .summary-block h4,
+    .payload-head h4 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.2;
+    }
+    .summary-block p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 680;
+    }
+    .mini-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .mini-stat {
+      padding: 11px 12px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(7,240,138,.055);
+    }
+    .mini-stat strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .mini-stat span {
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 820;
+    }
+    .payload-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .payload-head {
+      min-height: 58px;
+      padding: 13px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line2);
+    }
+    .tabs {
+      height: 36px;
+      padding: 3px;
+      display: inline-flex;
+      gap: 3px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.026);
+    }
+    .tabs button {
+      min-width: 78px;
+      padding: 0 12px;
+      border-radius: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+    .tabs button.active {
+      color: #071912;
+      background: var(--accent);
+    }
+    .payload-content {
+      min-height: 0;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      overflow: hidden;
+    }
+    .payload-card {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      background: #101815;
+    }
+    .payload-card-head {
+      min-height: 44px;
+      padding: 0 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(210,230,220,.09);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+    .json-preview {
+      min-height: 0;
+      margin: 0;
+      padding: 13px;
+      overflow: auto;
+      color: #d9e6df;
+      font: 12px/1.55 "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .json-preview::-webkit-scrollbar { width: 7px; height: 7px; }
+    .json-preview::-webkit-scrollbar-thumb { border-radius: 8px; background: #3f4b46; }
+    .copy-line {
+      min-height: 44px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      border-top: 1px solid rgba(210,230,220,.09);
+    }
+    .mini-button {
+      height: 30px;
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--muted);
+      background: rgba(255,255,255,.025);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .mini-button .ico { width: 15px; height: 15px; }
+    .modal-foot {
+      min-height: 62px;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid var(--line2);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 760;
+    }
+    .detail-error .modal-close,
+    .detail-error .pill.ok {
+      border-color: rgba(255,128,111,.55);
+      background: var(--danger-soft);
+      color: #ffb4aa;
+    }
+    .detail-error .pill.ok { color: #ffb4aa; }
+    .detail-error .summary-block.alert {
+      border-color: rgba(255,128,111,.48);
+      background: rgba(255,128,111,.10);
+    }
+    .detail-error .summary-block.alert h4 { color: #ffb4aa; }
+    .detail-layout.raw-first {
+      grid-template-columns: minmax(0, 1.42fr) minmax(360px, .82fr);
+      gap: 14px;
+    }
+    .raw-stack {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid var(--line2);
+      border-radius: 17px;
+      background: #101815;
+    }
+    .raw-stack.primary {
+      border-color: rgba(7,240,138,.38);
+      background: #111c18;
+    }
+    .raw-head {
+      min-height: 58px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(210,230,220,.10);
+      background: rgba(255,255,255,.018);
+    }
+    .raw-title {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .raw-title strong {
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .raw-title span {
+      color: var(--subtle);
+      font-size: 12px;
+      font-weight: 820;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .raw-actions {
+      display: flex;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .raw-stack.primary .json-preview {
+      font-size: 13px;
+      line-height: 1.58;
+    }
+    .raw-stack.error {
+      border-color: rgba(255,128,111,.42);
+      background: #141816;
+    }
+    .raw-stack.error .raw-head {
+      background: rgba(255,128,111,.055);
+    }
+    .raw-stack.error .raw-title strong { color: #ffb4aa; }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>LLM 请求日志设计</h1>
+        <p>日志页是排查工具，不需要大面积空表格。搜索、表格、详情和分页保持在同一屏内完成。</p>
+      </div>
+      <span class="pill ok">功能已对齐真实日志页</span>
+    </header>
+
+    <div class="state-title">
+      <h2>状态 A：有日志，表格优先</h2>
+      <span>双击行打开详情，主页面先保证日志内容完整可扫</span>
+    </div>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>LLM 请求日志</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="toolbar">
+          <div class="search"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span>搜索任务 ID、文件名、模型或阶段</div>
+          <span></span>
+          <button class="button"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+          <button class="button danger">清空日志</button>
+        </div>
+        <div class="logs-grid">
+          <section class="panel table">
+            <div class="thead"><div>时间</div><div>任务 ID</div><div>文件</div><div>阶段</div><div>模型</div><div>耗时</div><div>Tokens</div></div>
+            <div class="tbody">
+              <div class="log-row active"><div>06-15 11:42</div><div>8F2A</div><div>linear-algebra-demo.mp4</div><div>断句</div><div>gpt-4o-mini</div><div>1.8s</div><div>2,418</div></div>
+              <div class="log-row"><div>06-15 11:41</div><div>8F2A</div><div>linear-algebra-demo.mp4</div><div>翻译</div><div>gpt-4o-mini</div><div>2.6s</div><div>3,102</div></div>
+              <div class="log-row"><div>06-15 11:39</div><div>7C19</div><div>matrix-space-p02.mp4</div><div>校正</div><div>claude-3-5-sonnet</div><div>3.1s</div><div>4,880</div></div>
+              <div class="log-row"><div>06-15 11:20</div><div>6E08</div><div>vector-intro.mp4</div><div>翻译</div><div>gpt-4o-mini</div><div>1.2s</div><div>1,984</div></div>
+            </div>
+          </section>
+        </div>
+        <footer class="footer">
+          <div>共 128 条 · 筛选后 42 条 · 双击任意行查看完整 JSON</div>
+          <div class="pager"><button class="round"><span class="ico"><img src="../../resource/assets/icons/left_arrow.svg" alt=""></span></button><span>1 / 3</span><button class="round"><span class="ico"><img src="../../resource/assets/icons/right_arrow.svg" alt=""></span></button></div>
+        </footer>
+      </section>
+    </article>
+
+    <div class="state-title">
+      <h2>状态 B：空日志</h2>
+      <span>减少空表格压迫感，仍保留搜索和操作位置</span>
+    </div>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>LLM 请求日志</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="toolbar">
+          <div class="search"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span>搜索任务 ID、文件名、模型或阶段</div>
+          <span class="pill">暂无记录</span>
+          <button class="button"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+          <button class="button danger">清空日志</button>
+        </div>
+        <section class="panel empty">
+          <div>
+            <div class="empty-mark"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+            <h3>暂无 LLM 请求日志</h3>
+            <p>启用字幕校正、智能断句或 LLM 翻译后，页面会自动记录请求与响应。</p>
+          </div>
+        </section>
+        <footer class="footer">
+          <div>共 0 条</div>
+          <div class="pager"><button class="round"><span class="ico"><img src="../../resource/assets/icons/left_arrow.svg" alt=""></span></button><span>1 / 1</span><button class="round"><span class="ico"><img src="../../resource/assets/icons/right_arrow.svg" alt=""></span></button></div>
+        </footer>
+      </section>
+    </article>
+
+    <div class="state-title">
+      <h2>状态 C：详情弹窗，请求体优先</h2>
+      <span>用户打开详情就是为了看原始 Request / Response，不再插入解释性侧栏</span>
+    </div>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>LLM 请求日志</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="toolbar">
+          <div class="search"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span>搜索任务 ID、文件名、模型或阶段</div>
+          <span></span>
+          <button class="button"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+          <button class="button danger">清空日志</button>
+        </div>
+        <div class="logs-grid">
+          <section class="panel table">
+            <div class="thead"><div>时间</div><div>任务 ID</div><div>文件</div><div>阶段</div><div>模型</div><div>耗时</div><div>Tokens</div></div>
+            <div class="tbody">
+              <div class="log-row active"><div>06-15 17:28</div><div>A91C</div><div>linear-algebra-demo.mp4</div><div>翻译</div><div>deepseek-ai/DeepSeek-V4-Flash</div><div>16.0s</div><div>471</div></div>
+              <div class="log-row"><div>06-15 17:27</div><div>A91C</div><div>linear-algebra-demo.mp4</div><div>校正</div><div>deepseek-ai/DeepSeek-V4-Flash</div><div>9.4s</div><div>529</div></div>
+            </div>
+          </section>
+        </div>
+        <footer class="footer">
+          <div>共 2 条 · 双击查看完整请求</div>
+          <div class="pager"><button class="round"><span class="ico"><img src="../../resource/assets/icons/left_arrow.svg" alt=""></span></button><span>1 / 1</span><button class="round"><span class="ico"><img src="../../resource/assets/icons/right_arrow.svg" alt=""></span></button></div>
+        </footer>
+      </section>
+      <div class="modal-backdrop">
+        <section class="detail-modal">
+          <header class="modal-head">
+            <div class="empty-mark" style="width:48px;height:48px;margin:0;border-radius:15px;"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></div>
+            <div class="modal-title">
+              <h3>请求详情</h3>
+              <p>linear-algebra-demo.mp4 · 翻译 · deepseek-ai/DeepSeek-V4-Flash</p>
+            </div>
+            <button class="modal-close"><span class="ico"><img src="../../resource/assets/icons/close.svg" alt=""></span></button>
+          </header>
+          <div class="modal-body">
+            <div class="meta-strip">
+              <div class="meta-item"><span>时间</span><strong>2026-06-15 17:28:00</strong></div>
+              <div class="meta-item"><span>阶段</span><strong>字幕翻译</strong></div>
+              <div class="meta-item"><span>耗时</span><strong>16.0s</strong></div>
+              <div class="meta-item"><span>Tokens</span><strong>367 / 104</strong></div>
+              <div class="meta-item"><span>结果</span><strong>完成</strong></div>
+            </div>
+            <div class="detail-layout raw-first">
+              <section class="raw-stack primary">
+                <div class="raw-head">
+                  <div class="raw-title">
+                    <strong>请求体</strong>
+                    <span>发送给模型的完整 Request JSON</span>
+                  </div>
+                  <div class="raw-actions">
+                    <button class="mini-button"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制请求</button>
+                  </div>
+                </div>
+                <pre class="json-preview">{
+  "model": "deepseek-ai/DeepSeek-V4-Flash",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a professional subtitle translator..."
+    },
+    {
+      "role": "user",
+      "content": "21: 有衣秀才蘸墨书写\n22: 宫殿与莲花之间\n23: 几案上各有笔墨杂陈"
+    }
+  ],
+  "temperature": 0.2
+}</pre>
+              </section>
+              <section class="raw-stack">
+                <div class="raw-head">
+                  <div class="raw-title">
+                    <strong>响应体</strong>
+                    <span>模型返回的原始 Response JSON</span>
+                  </div>
+                  <div class="raw-actions">
+                    <button class="mini-button"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制响应</button>
+                  </div>
+                </div>
+                <pre class="json-preview">{
+  "id": "019eca9bbe98974637939f66d9f1efd3",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "message": {
+        "content": "{\n  \"21\": \"有衣秀才蘸墨书写\",\n  \"22\": \"宫殿与莲花之间\",\n  \"23\": \"几案上各有笔墨杂陈\"\n}"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 367,
+    "completion_tokens": 104
+  }
+}</pre>
+              </section>
+            </div>
+          </div>
+          <footer class="modal-foot">
+            <span>复制按钮只复制对应 JSON；Esc 或右上角关闭。</span>
+            <button class="button primary" style="min-width:110px;height:38px;">关闭</button>
+          </footer>
+        </section>
+      </div>
+    </article>
+
+    <div class="state-title">
+      <h2>状态 D：失败详情，请求仍是主体</h2>
+      <span>失败时右侧显示错误响应，左侧 Request 不让位</span>
+    </div>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>LLM 请求日志</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <div class="toolbar">
+          <div class="search"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span>搜索任务 ID、文件名、模型或阶段</div>
+          <span></span>
+          <button class="button"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+          <button class="button danger">清空日志</button>
+        </div>
+        <div class="logs-grid">
+          <section class="panel table">
+            <div class="thead"><div>时间</div><div>任务 ID</div><div>文件</div><div>阶段</div><div>模型</div><div>耗时</div><div>Tokens</div></div>
+            <div class="tbody">
+              <div class="log-row active"><div>06-15 17:31</div><div>B04D</div><div>matrix-space-p02.mp4</div><div>校正</div><div>gpt-4o-mini</div><div>0.8s</div><div>-</div></div>
+            </div>
+          </section>
+        </div>
+        <footer class="footer">
+          <div>共 1 条 · 请求失败</div>
+          <div class="pager"><button class="round"><span class="ico"><img src="../../resource/assets/icons/left_arrow.svg" alt=""></span></button><span>1 / 1</span><button class="round"><span class="ico"><img src="../../resource/assets/icons/right_arrow.svg" alt=""></span></button></div>
+        </footer>
+      </section>
+      <div class="modal-backdrop">
+        <section class="detail-modal detail-error">
+          <header class="modal-head">
+            <div class="empty-mark" style="width:48px;height:48px;margin:0;border-radius:15px;"><span class="ico"><img src="../../resource/assets/icons/document.svg" alt=""></span></div>
+            <div class="modal-title">
+              <h3>请求详情</h3>
+              <p>matrix-space-p02.mp4 · 字幕校正 · gpt-4o-mini</p>
+            </div>
+            <button class="modal-close"><span class="ico"><img src="../../resource/assets/icons/close.svg" alt=""></span></button>
+          </header>
+          <div class="modal-body">
+            <div class="meta-strip">
+              <div class="meta-item"><span>时间</span><strong>2026-06-15 17:31:12</strong></div>
+              <div class="meta-item"><span>阶段</span><strong>字幕校正</strong></div>
+              <div class="meta-item"><span>耗时</span><strong>0.8s</strong></div>
+              <div class="meta-item"><span>Tokens</span><strong>-</strong></div>
+              <div class="meta-item"><span>结果</span><strong>失败</strong></div>
+            </div>
+            <div class="detail-layout raw-first">
+              <section class="raw-stack primary">
+                <div class="raw-head">
+                  <div class="raw-title">
+                    <strong>请求体</strong>
+                    <span>失败请求的完整 Request JSON</span>
+                  </div>
+                  <div class="raw-actions">
+                    <button class="mini-button"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制请求</button>
+                  </div>
+                </div>
+                <pre class="json-preview">{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Polish subtitles and preserve timing."
+    },
+    {
+      "role": "user",
+      "content": "1\n00:00:01,000 --> 00:00:03,000\n欢迎来到这一节课"
+    }
+  ]
+}</pre>
+              </section>
+              <section class="raw-stack error">
+                <div class="raw-head">
+                  <div class="raw-title">
+                    <strong>错误响应</strong>
+                    <span>模型或接口返回的 Error JSON</span>
+                  </div>
+                  <div class="raw-actions">
+                    <button class="mini-button"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制错误</button>
+                  </div>
+                </div>
+                <pre class="json-preview">{
+  "error": {
+    "type": "authentication_error",
+    "message": "API key is missing or invalid."
+  },
+  "stage": "subtitle_polish",
+  "provider": "OpenAI"
+}</pre>
+              </section>
+            </div>
+          </div>
+          <footer class="modal-foot">
+            <span>复制按钮只复制对应 JSON；Esc 或右上角关闭。</span>
+            <button class="button primary" style="min-width:110px;height:38px;">关闭</button>
+          </footer>
+        </section>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

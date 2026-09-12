@@ -26,8 +26,9 @@ class TranslatorFactory:
         custom_prompt: str = "",
         is_reflect: bool = False,
         update_callback: Optional[Callable] = None,
+        disable_thinking: bool = False,
     ) -> BaseTranslator:
-        """创建翻译器实例"""
+        """创建翻译器实例。disable_thinking：LLM 翻译关思考求快（仅 OPENAI/LLM 类生效）。"""
         try:
             # 如果没有指定目标语言，使用默认值
             if target_language is None:
@@ -42,6 +43,7 @@ class TranslatorFactory:
                     custom_prompt=custom_prompt,
                     is_reflect=is_reflect,
                     update_callback=update_callback,
+                    disable_thinking=disable_thinking,
                 )
             elif translator_type == TranslatorType.GOOGLE:
                 batch_num = 5

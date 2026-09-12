@@ -1,25 +1,21 @@
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import FluentStyleSheet, PushButton, TextEdit, isDarkTheme
+from qfluentwidgets import TextEdit
 
-from videocaptioner.config import LOG_PATH, RESOURCE_PATH
+from videocaptioner.config import LOG_PATH
 from videocaptioner.core.utils.platform_utils import reveal_in_explorer
+from videocaptioner.ui.common.app_icons import AppIcon
+from videocaptioner.ui.common.theme_tokens import app_palette
+from videocaptioner.ui.components.workbench import WorkbenchButton, apply_font
+from videocaptioner.ui.i18n import tr
 
 
 class LogWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("日志查看器")
+        self.setWindowTitle(tr("logwin.title"))
         self.resize(800, 600)
-
-        FluentStyleSheet.FLUENT_WINDOW.apply(self)
-
-        theme = "dark" if isDarkTheme() else "light"
-        with open(
-            RESOURCE_PATH / "assets" / "qss" / theme / "demo.qss", encoding="utf-8"
-        ) as f:
-            self.setStyleSheet(f.read())
 
         # 设置为非模态对话框
         self.setWindowModality(Qt.NonModal)  # type: ignore
@@ -34,7 +30,9 @@ class LogWindow(QWidget):
 
         # 创建顶部按钮布局
         top_layout = QHBoxLayout()
-        self.open_folder_btn = PushButton("打开日志文件夹", self)
+        self.open_folder_btn = WorkbenchButton(
+            tr("logwin.btn.open_folder"), AppIcon.FOLDER, parent=self
+        )
         self.open_folder_btn.clicked.connect(self.open_log_folder)
         top_layout.addWidget(self.open_folder_btn)
         top_layout.addStretch()
@@ -44,6 +42,7 @@ class LogWindow(QWidget):
         self.log_text = TextEdit(self)
         self.log_text.setReadOnly(True)
         layout.addWidget(self.log_text)
+        self._sync_style()
 
         # 设置定时器用于更新日志
         self.timer = QTimer(self)
@@ -53,25 +52,22 @@ class LogWindow(QWidget):
         # 获取日志文件路径并打开文件
         self.log_path = LOG_PATH / "app.log"
         try:
-            self.log_file = open(self.log_path, "r", encoding="utf-8")
+            self.log_file = open(self.log_path, "rb")
             self.load_last_lines(20480)
             self.log_text.moveCursor(QTextCursor.End)
-            self.log_text.insertPlainText(f"\n{'=' * 25}以上是历史日志{'=' * 25}\n\n")
+            self.log_text.insertPlainText(
+                f"\n{'=' * 25}{tr('logwin.history_divider')}{'=' * 25}\n\n"
+            )
         except Exception as e:
             self.log_file = None
-            self.log_text.setPlainText(f"打开日志文件失败: {str(e)}")
+            self.log_text.setPlainText(tr("logwin.error.open_failed", error=str(e)))
 
-        # 添加文件大小跟踪
-        self.last_position = self.log_file.tell()
-        self.max_lines = 100  # 最多显示100行
-
-        self.auto_scroll = True  # 添加自动滚动标志
+        self.last_position = self.log_file.tell() if self.log_file else 0
+        self.auto_scroll = True
 
         # 监听滚动条变化
         self.log_text.verticalScrollBar().valueChanged.connect(self.on_scroll_changed)
 
-        # # 初始加载日志
-        # self.update_log()
 
     def load_last_lines(self, read_size):
         """加载文件最后的内容
@@ -79,21 +75,13 @@ class LogWindow(QWidget):
             read_size: 要读取的字节数，比如102400表示读取最后100KB
         """
         try:
-            # 移动到文件末尾
+            # 只读末尾一段：全量读取在无轮转的大日志上会卡住打开
             self.log_file.seek(0, 2)
             file_size = self.log_file.tell()
-
-            # 向前读取指定大小或整个文件
-            read_size = min(read_size, file_size)
-
-            # 从文件开头读取以确保不会破坏UTF-8编码
-            self.log_file.seek(0)
-            content = self.log_file.read()
-
-            # 只保留最后一部分内容
-            if len(content) > read_size:
-                content = content[-read_size:]
-                # 找到第一个完整的行
+            start = max(0, file_size - read_size)
+            self.log_file.seek(start)
+            content = self.log_file.read().decode("utf-8", errors="replace")
+            if start > 0:
                 newline_pos = content.find("\n")
                 if newline_pos != -1:
                     content = content[newline_pos + 1 :]
@@ -108,14 +96,31 @@ class LogWindow(QWidget):
             )
 
         except Exception as e:
-            self.log_text.setPlainText(f"读取日志文件失败: {str(e)}")
+            self.log_text.setPlainText(tr("logwin.error.read_failed", error=str(e)))
 
-    # def closeEvent(self, event):
-    #     # 关闭窗口时同时关闭文件和定时器
-    #     self.timer.stop()
-    #     if self.log_file:
-    #         self.log_file.close()
-    #     event.accept()
+    def _sync_style(self):
+        palette = app_palette()
+        self.setStyleSheet(f"QWidget {{ background: {palette.bg}; }}")
+        apply_font(self.log_text, 13, 500)
+        self.log_text.setStyleSheet(
+            f"""
+            TextEdit {{
+                background: {palette.field};
+                color: {palette.text};
+                border: 1px solid {palette.line};
+                border-radius: 10px;
+                padding: 10px;
+            }}
+            """
+        )
+
+    def closeEvent(self, event):
+        # 关闭时停定时器并关文件，避免后台 timer 持续触发 + 文件句柄泄漏。
+        self.timer.stop()
+        if self.log_file:
+            self.log_file.close()
+            self.log_file = None
+        super().closeEvent(event)
 
     def on_scroll_changed(self, value):
         """监听滚动条变化"""
@@ -131,17 +136,11 @@ class LogWindow(QWidget):
         try:
             # 移动到上次读取的位置
             self.log_file.seek(self.last_position)
-            new_content = self.log_file.read()
+            new_content = self.log_file.read().decode("utf-8", errors="replace")
 
             if new_content:
-                # 按行分割内容
-                lines = new_content.splitlines(True)  # keepends=True 保留换行符
-                for line in lines:
-                    self.log_text.moveCursor(QTextCursor.End)
-                    self.log_text.insertPlainText(line)
-                    # time.sleep(0.02)
-                    self.log_text.repaint()
-
+                self.log_text.moveCursor(QTextCursor.End)
+                self.log_text.insertPlainText(new_content)
                 self.last_position = self.log_file.tell()
 
                 if self.auto_scroll:
@@ -150,7 +149,7 @@ class LogWindow(QWidget):
                     )
 
         except Exception as e:
-            self.log_text.setPlainText(f"读取日志文件出错: {str(e)}")
+            self.log_text.setPlainText(tr("logwin.error.update_failed", error=str(e)))
 
     def open_log_folder(self):
         """打开日志文件所在文件夹"""

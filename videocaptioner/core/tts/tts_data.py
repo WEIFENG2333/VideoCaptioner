@@ -27,6 +27,14 @@ class TTSConfig:
     timeout: int = 60  # 超时时间（秒）
     use_cache: bool = True  # 是否Using cache
 
+    def __post_init__(self):
+        self.model = self.model.strip()
+        self.api_key = self.api_key.strip()
+        self.base_url = self.base_url.strip().rstrip("/")
+        self.voice = self.voice.strip() if self.voice else self.voice
+        self.custom_prompt = self.custom_prompt.strip() if self.custom_prompt else self.custom_prompt
+        self.response_format = self.response_format.strip()  # type: ignore[attr-defined]
+
 
 @dataclass
 class TTSDataSeg:

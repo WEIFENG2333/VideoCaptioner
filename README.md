@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./docs/images/logo.png" alt="VideoCaptioner Logo" width="100">
   <h1>VideoCaptioner</h1>
-  <p>基于大语言模型的视频字幕处理工具 — 语音识别、字幕优化、翻译、视频合成一站式处理</p>
+  <p>基于大语言模型的视频字幕处理工具 — 语音识别、字幕优化、翻译、配音、视频合成一站式处理</p>
 
   [在线文档](https://weifeng2333.github.io/VideoCaptioner/) · [CLI 使用](#cli-命令行) · [GUI 桌面版](#gui-桌面版) · [Claude Code Skill](#claude-code-skill)
 </div>
@@ -12,7 +12,7 @@
 pip install videocaptioner          # 安装 CLI + GUI 桌面版
 ```
 
-免费功能（必剪语音识别、必应/谷歌翻译）**无需任何配置，安装即用**。
+免费功能（必剪语音识别、必应/谷歌翻译、Edge 配音）**无需任何配置，安装即用**。
 
 ## CLI 命令行
 
@@ -29,8 +29,15 @@ videocaptioner process video.mp4 --target-language ja
 # 字幕烧录到视频
 videocaptioner synthesize video.mp4 -s subtitle.srt
 
-# 下载在线视频
+# 根据字幕生成配音视频（Edge 免费，免 API Key）
+videocaptioner dub subtitle.srt --video video.mp4 --preset edge-cn-female
+
+# 下载在线视频（同语言字幕一并保存）
 videocaptioner download "https://youtube.com/watch?v=xxx"
+
+# 本地转录模型管理（HuggingFace / 国内镜像自动兜底，断点续传）
+videocaptioner models list
+videocaptioner models download whisper-cpp tiny
 ```
 
 需要 LLM 功能（字幕优化、大模型翻译）时，配置 API Key：
@@ -49,12 +56,15 @@ videocaptioner config set llm.model gpt-4o-mini
 | 命令 | 说明 |
 |------|------|
 | `gui` | 打开桌面版。也可以直接运行 `videocaptioner-gui` |
-| `transcribe` | 语音转字幕。引擎：`faster-whisper`、`whisper-api`、`bijian`（免费）、`jianying`（免费）、`whisper-cpp` |
+| `transcribe` | 语音转字幕。引擎：`bijian`（免费）、`jianying`（免费）、`fun-asr`、`whisper-api`、`whisper-cpp`、`faster-whisper` |
 | `subtitle` | 字幕优化/翻译。翻译服务：`llm`、`bing`（免费）、`google`（免费） |
-| `dub` | 根据字幕生成配音音轨或配音视频 |
+| `dub` | 根据字幕生成配音音轨或配音视频。提供商：Edge（免费）、Gemini、SiliconFlow CosyVoice（支持音色克隆） |
 | `synthesize` | 字幕烧录到视频（软字幕/硬字幕） |
 | `process` | 全流程处理 |
-| `download` | 下载 YouTube、B站等平台视频 |
+| `download` | 下载 YouTube、B站等平台视频，同语言字幕一并保存；登录态失败时自动尝试浏览器 cookies |
+| `models` | 本地转录模型管理（`list`、`download`），多镜像兜底、断点续传 |
+| `doctor` | 环境诊断：依赖、API Key、本地程序与模型；`--check-api` 用真实请求验证转录、配音与视频下载源 |
+| `style` | 查看字幕样式预设 |
 | `config` | 配置管理（`show`、`set`、`get`、`path`、`init`） |
 
 运行 `videocaptioner <命令> --help` 查看完整参数。完整 CLI 文档见 [docs/cli.md](docs/cli.md)。
@@ -83,12 +93,17 @@ curl -fsSL https://raw.githubusercontent.com/WEIFENG2333/VideoCaptioner/master/s
 </details>
 
 
-<!-- <div align="center">
-  <img src="https://h1.appinn.me/file/1731487405884_main.png" alt="界面预览" width="90%" style="border-radius: 5px;">
-</div> -->
+<div align="center">
+  <img src="./docs/images/preview-home.png" alt="主页" width="90%" style="border-radius: 5px;">
+</div>
 
-![页面预览](https://h1.appinn.me/file/1731487410170_preview1.png)
-![页面预览](https://h1.appinn.me/file/1731487410832_preview2.png)
+| 语音转录 | 字幕优化与翻译 |
+|---|---|
+| ![语音转录](./docs/images/preview-transcription.png) | ![字幕优化](./docs/images/preview-subtitle.png) |
+
+| 批量处理 | 配音 |
+|---|---|
+| ![批量处理](./docs/images/preview-batch.png) | ![配音](./docs/images/preview-dubbing.png) |
 
 ## LLM API 配置
 
@@ -120,13 +135,19 @@ cp skills/SKILL.md ~/.claude/skills/videocaptioner/SKILL.md
 ## 工作原理
 
 ```
-音视频输入 → 语音识别 → 字幕断句 → LLM 优化 → 翻译 → 视频合成
+音视频输入 → 语音识别 → 字幕断句 → LLM 优化 → 翻译 → 配音（可选）→ 视频合成
 ```
 
 - 词级时间戳 + VAD 语音活动检测，识别准确率高
 - LLM 语义理解断句，字幕阅读体验自然流畅
 - 上下文感知翻译，支持反思优化机制
+- 配音支持时长自适应变速、多角色声线与音色克隆（SiliconFlow CosyVoice）
 - 批量并发处理，效率高
+
+成品始终落在源文件旁，按阶段命名：`video.srt`（转录）、`video.zh-Hans.srt`
+（翻译，播放器可自动加载）、`video.subtitled.mp4`（字幕视频）、
+`video.dubbed.mp4` / `video.dubbed.wav`（配音）。中间文件集中在工作目录的
+任务文件夹内，任务成功后自动清理（可在设置中保留）。
 
 ## 开发
 
@@ -135,6 +156,7 @@ git clone https://github.com/WEIFENG2333/VideoCaptioner.git
 cd VideoCaptioner
 uv sync && uv run videocaptioner     # 运行 GUI
 uv run videocaptioner --help          # 运行 CLI
+uv run ruff check videocaptioner tests scripts   # 代码检查
 uv run pyright                        # 类型检查
 uv run pytest tests/test_cli/ -q      # 运行测试
 ```

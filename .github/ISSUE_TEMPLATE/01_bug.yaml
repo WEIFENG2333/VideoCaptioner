@@ -25,9 +25,9 @@ body:
     attributes:
       label: 日志信息（可选）| Logs (Optional)
       description: |
-        （可选）如果你在生成字幕视频过程遇到了错误，请打开根目录下的 AppData/logs/app.log 文件，根据日志的时间复制最近一次运行错误的日志信息并填写。这样可以更好帮助我排查。
+        （可选）如果你在生成字幕视频过程遇到了错误，请打开 VideoCaptioner AppData 目录下的 logs/app.log 文件，根据日志的时间复制最近一次运行错误的日志信息并填写。这样可以更好帮助我排查。可运行 `videocaptioner config path` 查看 AppData 目录位置。
         
-        (Optional) Please open the AppData/logs/app.log file in the root directory and copy the log information from the most recent run error.
+        (Optional) Please open logs/app.log under the VideoCaptioner AppData directory and copy the most recent error logs. Run `videocaptioner config path` to locate the AppData directory.
       render: shell
     validations:
       required: false

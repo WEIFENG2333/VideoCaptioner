@@ -5,6 +5,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+artifacts/
 
 # Virtual environments
 .venv/
@@ -35,8 +36,11 @@ docs/.vitepress/cache/
 docs/.vitepress/dist/
 
 # Project-specific
-/resource/bin/
-!/resource/bin/bin_environment.txt
+/resource/bin/*
+# macsysaudio：macOS 系统声音 helper（arm64 + x86_64 universal），源码在 native/，体积小、
+# 连同产物入库（clone 即用）。voxgate / ffmpeg 体积大且多平台，走
+# core/download/dependencies.py 下载，不入库。
+!/resource/bin/macsysaudio
 /AppData/
 /work-dir/
 /*.srt
@@ -45,5 +49,9 @@ docs/.vitepress/dist/
 
 # Claude Code
 .claude/
-CLAUDE.md
+# CLAUDE.md is a tracked symlink to AGENTS.md.
+!CLAUDE.md
 videocaptioner/_version.py
+
+# Local-only archive of superseded design mocks and internal review docs
+/design-archive/

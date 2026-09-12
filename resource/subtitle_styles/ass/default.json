@@ -1,0 +1,21 @@
+{
+  "name": "默认描边",
+  "description": "通用白字黑边，适合多数横屏视频",
+  "mode": "ass",
+  "font_name": "LXGW WenKai",
+  "font_size": 40,
+  "primary_color": "#ffffff",
+  "outline_color": "#000000",
+  "outline_width": 2.0,
+  "bold": true,
+  "spacing": 0.2,
+  "margin_bottom": 28,
+  "secondary": {
+    "font_name": "Noto Sans SC",
+    "font_size": 30,
+    "color": "#ffffff",
+    "outline_color": "#000000",
+    "outline_width": 2.0,
+    "spacing": 0.8
+  }
+}

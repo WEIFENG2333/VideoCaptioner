@@ -23,11 +23,18 @@ def check_llm_connection(
         (是否成功, Error output或AI助手的回复)
     """
     try:
+        from videocaptioner.core.llm import free_model
+
         # 创建OpenAI客户端并发送请求到API
         base_url = normalize_base_url(base_url)
         api_key = api_key.strip()
+        client_kwargs = {}
+        if free_model.is_free_base(base_url):
+            # 公益网关：占位 key 换实时令牌；默认 httpx 指纹会被 Cloudflare 403
+            api_key = free_model.token()
+            client_kwargs["http_client"] = free_model.make_http_client()
         response = openai.OpenAI(
-            base_url=base_url, api_key=api_key, timeout=60
+            base_url=base_url, api_key=api_key, timeout=60, **client_kwargs
         ).chat.completions.create(
             model=model,
             messages=[

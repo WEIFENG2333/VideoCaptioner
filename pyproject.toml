@@ -21,28 +21,46 @@ classifiers = [
 ]
 
 dependencies = [
-    "requests>=2.32.4",
-    "openai>=1.97.1",
+    "requests>=2.34.2",
+    "openai>=2.41.1",
     "diskcache>=5.6.3",
-    "yt-dlp>=2025.7.21",
-    "json-repair>=0.49.0",
+    "yt-dlp>=2026.6.9",
+    "json-repair>=0.60.1",
     "langdetect>=1.0.9",
     "pydub>=0.25.1",
-    "tenacity>=8.2.0",
-    "pillow>=12.0.0",
-    "fonttools>=4.61.1",
-    "platformdirs>=4.0.0",
+    "tenacity>=9.1.4",
+    "pillow>=12.2.0",
+    "fonttools>=4.63.0",
+    "platformdirs>=4.10.0",
+    # Faster-Whisper-XXL 完整包为 .7z，应用内一键安装需要解压支持
+    "py7zr>=0.22.0",
     "tomli>=2.0.0; python_version < '3.11'",
     "PyQt5==5.15.11",
     "PyQt-Fluent-Widgets==1.8.4",
-    "modelscope>=1.32.0",
-    "psutil>=7.0.0",
+    "psutil>=7.2.2",
     "GPUtil>=1.4.0",
     "edge-tts>=7.2.8",
+    # request_logger 直接 import httpx；不能依赖 openai 的传递依赖兜底
+    "httpx>=0.27.0",
+    # 公益大模型网关在 Cloudflare 后，需浏览器 TLS 指纹（impersonate）过 managed challenge
+    "curl-cffi>=0.7.0",
+    # 实时字幕：本地麦克风/系统音频采集（PortAudio）、流式 ASR WebSocket、电平计算
+    "sounddevice>=0.4.6",
+    "websocket-client>=1.7.0",
+    "numpy>=1.26.0",
 ]
 
 [project.optional-dependencies]
 gui = []
+# 硬字幕提取（OCR）。RapidOCR = PaddleOCR 的 PP-OCR 模型转 ONNX：中英文质量好、torch-free、
+# 纯 CPU、多平台一致；rapidocr 3.x 自带 PP-OCR mobile 模型（随包/离线可用，约 46M）。opencv 是
+# rapidocr 的传递依赖(opencv_python full)；体积/Qt 冲突敏感时可改 opencv-python-headless（需 uv override）。
+# rapidfuzz 缺失时代码回退 difflib。桌面打包须 uv sync --extra ocr，否则包内硬字幕不可用。
+ocr = [
+    "rapidocr>=3.0",
+    "onnxruntime>=1.19",
+    "rapidfuzz>=3.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/WEIFENG2333/VideoCaptioner"
@@ -62,6 +80,7 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 fallback-version = "0.0.0-dev"
+raw-options = { version_scheme = "no-guess-dev" }
 
 [tool.hatch.build.hooks.vcs]
 version-file = "videocaptioner/_version.py"
@@ -82,9 +101,13 @@ exclude = [
 packages = ["videocaptioner"]
 
 [tool.hatch.build.targets.wheel.force-include]
+# repo 的 resource/ 是唯一来源；安装后落到 videocaptioner/resources/，
+# 与 config.py 的 _PACKAGE_RESOURCE_PATH 解析一致。fonts 必须包含：
+# 默认字幕样式主字体是 LXGW WenKai，缺了它 pip 用户默认渲染就回退错字体。
 "resource/assets" = "videocaptioner/resources/assets"
-"resource/subtitle_style" = "videocaptioner/resources/subtitle_style"
-"resource/translations" = "videocaptioner/resources/translations"
+"resource/subtitle_styles" = "videocaptioner/resources/subtitle_styles"
+"resource/i18n" = "videocaptioner/resources/i18n"
+"resource/fonts" = "videocaptioner/resources/fonts"
 
 [tool.uv]
 environments = [
@@ -102,11 +125,12 @@ dev = [
     "pyright>=1.1.0",
     "ruff>=0.4.0",
     "pytest>=8.0.0",
+    # i18n 开发期工具：抽取 .pot / 维护 .po / 编译 .mo（运行时只用标准库 gettext，不需 Babel）
+    "babel>=2.14.0",
     # GUI deps for development
     "PyQt5==5.15.11",
     "PyQt-Fluent-Widgets==1.8.4",
-    "modelscope>=1.32.0",
-    "psutil>=7.0.0",
+    "psutil>=7.2.2",
     "GPUtil>=1.4.0",
 ]
 

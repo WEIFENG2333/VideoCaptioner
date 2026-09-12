@@ -4,7 +4,12 @@ from argparse import Namespace
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.core.subtitle.style_manager import StyleMode, list_styles
+from videocaptioner.core.subtitle.style_manager import (
+    AssSubtitleStyle,
+    RoundedSubtitleStyle,
+    StyleMode,
+    list_styles,
+)
 
 
 def _get_styles_dir():
@@ -42,16 +47,18 @@ def _list(args: Namespace) -> int:
 
     for style in styles:
         mode_str = style.mode.value
+        payload = style.style
         if style.description:
             desc = style.description
-        elif style.mode == StyleMode.ROUNDED:
-            desc = f"font={style.font_name}, size={style.font_size}, bg={style.bg_color}"
+        elif isinstance(payload, RoundedSubtitleStyle):
+            desc = f"font={payload.font_name}, size={payload.font_size}, bg={payload.bg_color}"
         else:
-            desc = f"font={style.font_name}, size={style.font_size}, color={style.primary_color}"
-            if style.bold:
+            assert isinstance(payload, AssSubtitleStyle)
+            desc = f"font={payload.font_name}, size={payload.font_size}, color={payload.primary_color}"
+            if payload.bold:
                 desc += ", bold"
 
-        print(f"  {style.name:<14} {mode_str:<10} {desc}")
+        print(f"  {style.id:<14} {mode_str:<10} {desc}")
 
         # Show detailed parameters for all styles
         if style.mode == StyleMode.ROUNDED:
@@ -63,8 +70,12 @@ def _list(args: Namespace) -> int:
                        "outline_width", "bold", "spacing", "margin_bottom"]:
                 if k in details:
                     print(f"    {k}: {details[k]}")
-            if style.secondary:
-                print(f"    secondary: font={style.secondary.font_name}, size={style.secondary.font_size}, color={style.secondary.color}")
+            if isinstance(payload, AssSubtitleStyle) and payload.secondary:
+                secondary = payload.secondary
+                print(
+                    f"    secondary: font={secondary.font_name}, "
+                    f"size={secondary.font_size}, color={secondary.color}"
+                )
         print()
 
     print("\nUsage:")

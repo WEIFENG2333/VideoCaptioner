@@ -288,6 +288,7 @@ export default defineConfig({
               items: [
                 { text: '架构设计', link: '/dev/architecture' },
                 { text: 'API 文档', link: '/dev/api' },
+                { text: 'Agent 反馈循环', link: '/dev/agent-feedback-loop' },
                 { text: '贡献指南', link: '/dev/contributing' }
               ]
             }

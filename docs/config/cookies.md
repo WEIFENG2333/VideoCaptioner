@@ -17,7 +17,7 @@
 ## 配置方法
 
 1. 获取 `cookies.txt` 文件
-2. 放置到 `AppData/` 目录
+2. 放置到 VideoCaptioner AppData 目录
 3. 重启软件
 
 ---

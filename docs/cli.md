@@ -48,7 +48,7 @@ videocaptioner transcribe <文件> [选项]
 
 | 选项 | 说明 |
 |------|------|
-| `--asr` | ASR 引擎：`bijian`(默认,免费) `jianying`(免费) `whisper-api` `whisper-cpp`。bijian/jianying 仅支持中英文，其他语言用 whisper-api 或 whisper-cpp |
+| `--asr` | ASR 引擎：`bijian`(默认,免费) `jianying`(免费) `fun-asr` `whisper-api` `whisper-cpp` `faster-whisper`。bijian/jianying 仅支持中英文，其他语言用 fun-asr / whisper-api / whisper-cpp / faster-whisper |
 | `--language CODE` | 源语言 ISO 639-1 代码，如 `zh` `en` `ja`，或 `auto`（默认） |
 | `--word-timestamps` | 输出词级时间戳（配合字幕断句使用） |
 | `--whisper-api-key` | Whisper API 密钥（仅 `--asr whisper-api`） |
@@ -163,11 +163,10 @@ videocaptioner dub input.srt \
   --tts-api-key "$VIDEOCAPTIONER_TTS_API_KEY" \
   -o output.wav
 
-# 多说话人音色映射，并输出视频
+# 多说话人音色映射，并输出视频（默认输出 video.dubbed.mp4 + video.dubbed.wav）
 videocaptioner dub input.srt --video video.mp4 \
   --speaker-voice Alice=anna \
-  --speaker-voice Bob=benjamin \
-  -o video_dubbed.mp4
+  --speaker-voice Bob=benjamin
 ```
 
 | 选项 | 说明 |
@@ -183,7 +182,7 @@ videocaptioner dub input.srt --video video.mp4 \
 | `--adapt-length` | 使用 LLM 缩短明显过长的台词 |
 | `--audio-mode replace/mix/duck` | 输出视频时替换原声、混合原声，或压低原声作为背景 |
 
-命令会额外生成 `*.dubbing.json` 报告，记录每句使用的说话人、音色、生成时长、变速倍数和时间轴 warning。
+分段超时等 warning 会直接打印在命令行；TTS 原始分段按内容寻址缓存在应用缓存目录，重复运行同样的字幕和音色配置会直接复用。
 
 ---
 
@@ -231,7 +230,10 @@ videocaptioner process input.mp4 \
 videocaptioner download <URL> [-o 目录]
 ```
 
-支持 YouTube、B站等 yt-dlp 支持的平台。
+支持 YouTube、B站等 yt-dlp 支持的平台，与桌面端共用同一下载引擎：
+按站点分流代理（B 站直连）、自动注入 B 站匿名 buvid、可用的同语言
+字幕会以 `{标题}.{语言}.vtt` sidecar 一并保存。遇到登录态错误
+（如 B 站 412 风控）时自动尝试本机浏览器登录态重试。
 
 ---
 
@@ -259,14 +261,38 @@ videocaptioner config init --print-template
 
 ---
 
+### `models` — 本地转录模型管理
+
+```bash
+videocaptioner models list                          # 列出模型与安装状态
+videocaptioner models download whisper-cpp tiny     # 下载模型
+videocaptioner models download faster-whisper base --models-dir /path/to/models
+```
+
+支持 whisper-cpp（单文件 ggml）与 faster-whisper（目录式）两类模型。下载按
+HuggingFace → hf-mirror → ModelScope 镜像链自动兜底，国内外网络都可用；
+中断后重新执行会自动断点续传，whisper-cpp 模型带 SHA1 校验。
+
+GUI 中对应入口：设置 → 转录配置 → 本地模型 → 管理模型。
+
+---
+
 ### `doctor` — 环境诊断
 
 ```bash
-videocaptioner doctor          # 检查依赖和配置
-videocaptioner doctor --json   # Agent/CI 友好的 JSON 输出
+videocaptioner doctor              # 检查依赖和配置
+videocaptioner doctor --json       # Agent/CI 友好的 JSON 输出
+videocaptioner doctor --check-api  # 额外用真实请求验证转录与配音服务
 ```
 
-会检查 Python、FFmpeg/FFprobe、yt-dlp、配置文件、ASR、LLM、翻译和配音关键配置。缺失项会给出对应修复命令。
+会检查 Python、FFmpeg/FFprobe、yt-dlp、配置文件、ASR（含本地运行程序与模型文件）、LLM、翻译和配音关键配置。缺失项会给出对应修复命令。
+
+`--check-api` 会用内置短音频真实跑一次当前转录服务（`api.transcribe`，与
+设置页「测试转录」按钮共用同一入口），发起一次真实 TTS 请求
+（`api.dubbing`），并用 yt-dlp 真实解析 YouTube 与哔哩哔哩的稳定公开视频
+（`api.download.youtube` / `api.download.bilibili`，与桌面端诊断页共用）。
+需要 Key 的服务在 Key 缺失时跳过并给出 warn；下载源失败时给出代理 /
+cookies / 风控等待等修复建议。
 
 ---
 
@@ -294,7 +320,7 @@ videocaptioner doctor --json   # Agent/CI 友好的 JSON 输出
 
 ### 配置文件
 
-位置：`~/.config/videocaptioner/config.toml`（macOS/Linux）
+位置：VideoCaptioner AppData 目录下的 `config.toml`。可运行 `videocaptioner config path` 查看当前路径。
 
 推荐先运行：
 

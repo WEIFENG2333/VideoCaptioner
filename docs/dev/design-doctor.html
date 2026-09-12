@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 诊断设计</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --chrome: #101614;
+      --panel: #1d2522;
+      --panel2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line2: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --subtle: #7f8d88;
+      --accent: #07f08a;
+      --soft: rgba(7, 240, 138, .13);
+      --warn: #e8c75c;
+      --warn-soft: rgba(232, 199, 92, .14);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .14);
+      --shadow: 0 28px 80px rgba(0, 0, 0, .28);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 1520px;
+      background:
+        radial-gradient(circle at 70% -10%, rgba(7, 240, 138, .10), transparent 32%),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+    h1, h2, h3, p { margin: 0; }
+    button { border: 0; color: inherit; background: transparent; font: inherit; }
+    .board { width: 1520px; margin: 0 auto; padding: 34px 0 72px; }
+    .board-head, .state-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      padding: 0 40px;
+      margin-bottom: 22px;
+    }
+    .board-head h1 { font-size: 32px; line-height: 1.15; }
+    .board-head p { margin-top: 10px; color: var(--muted); font-size: 15px; font-weight: 680; }
+    .state-title { align-items: center; margin: 34px 0 12px; }
+    .state-title h2 { font-size: 22px; }
+    .state-title span { color: var(--subtle); font-weight: 760; }
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      margin: 0 40px;
+      overflow: hidden;
+      border: 1px solid rgba(210,230,220,.14);
+      border-radius: 14px;
+      background: var(--app);
+      box-shadow: var(--shadow);
+    }
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line2);
+      background: #141917;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 820;
+    }
+    .dots { position: absolute; left: 24px; display: flex; gap: 12px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .red { background: #ff5f57; } .yellow { background: #febc2e; } .green { background: #28c840; }
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line2);
+      background: var(--chrome);
+    }
+    .spacer { flex: 1; }
+    .nav {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+    }
+    .nav.active { background: rgba(7,240,138,.16); }
+    .nav.active::before {
+      display: none;
+    }
+    .ico { width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: brightness(0) saturate(100%) invert(78%) sepia(11%) saturate(248%) hue-rotate(107deg) brightness(88%) contrast(85%);
+    }
+    .active .ico img, .primary .ico img, .status-dot.ok .ico img {
+      filter: brightness(0) saturate(100%) invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 16px;
+      padding: 28px 42px 30px;
+      background: var(--app);
+    }
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .head h2 { font-size: 34px; line-height: 1.12; }
+    .head p { margin-top: 8px; color: var(--muted); font-size: 15px; font-weight: 680; }
+    .button {
+      height: 38px;
+      min-width: 104px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: rgba(255,255,255,.026);
+      font-size: 14px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .button.primary {
+      color: #061810;
+      border-color: transparent;
+      background: var(--accent);
+      box-shadow: 0 16px 36px rgba(7,240,138,.18);
+    }
+    .button.warn { color: var(--warn); border-color: rgba(232,199,92,.5); background: var(--warn-soft); }
+    .pill {
+      min-height: 30px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .pill.ok { color: var(--accent); border-color: rgba(7,240,138,.55); background: var(--soft); }
+    .pill.warn { color: var(--warn); border-color: rgba(232,199,92,.55); background: var(--warn-soft); }
+    .pill.fail { color: #ffd2cd; border-color: rgba(255,128,111,.55); background: var(--danger-soft); }
+    .task-strip {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: var(--panel);
+    }
+    .task-chip {
+      min-height: 62px;
+      padding: 12px 14px;
+      border: 1px solid var(--line2);
+      border-radius: 13px;
+      background: rgba(255,255,255,.025);
+    }
+    .task-chip span { color: var(--subtle); font-size: 12px; font-weight: 830; }
+    .task-chip strong { display: block; margin-top: 6px; font-size: 15px; line-height: 1.2; }
+    .doctor-grid {
+      min-height: 0;
+      display: block;
+    }
+    .panel {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .panel-head {
+      min-height: 70px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line2);
+    }
+    .panel-head h3 { font-size: 24px; }
+    .check-list { padding: 0 18px 18px; }
+    .group-label {
+      margin: 18px 0 8px;
+      color: var(--subtle);
+      font-size: 13px;
+      font-weight: 860;
+    }
+    .check-row {
+      min-height: 86px;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) 96px 104px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line2);
+    }
+    .check-row:last-child { border-bottom: 0; }
+    .status-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      background: var(--field);
+      color: var(--muted);
+      font-weight: 900;
+    }
+    .status-dot.ok { color: #061810; border-color: transparent; background: var(--accent); }
+    .status-dot.ok::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #061810;
+    }
+    .status-dot.warn { color: var(--warn); border-color: rgba(232,199,92,.6); background: var(--warn-soft); }
+    .status-dot.fail { color: #ffd2cd; border-color: rgba(255,128,111,.6); background: var(--danger-soft); }
+    .row-title { font-size: 18px; font-weight: 880; }
+    .row-desc { margin-top: 7px; color: var(--muted); font-size: 13px; line-height: 1.45; font-weight: 680; }
+    .summary {
+      display: none;
+    }
+    .score-card {
+      min-height: 92px;
+      padding: 16px;
+      border: 1px solid var(--line2);
+      border-radius: 15px;
+      background: rgba(255,255,255,.025);
+    }
+    .score-card strong { display: block; font-size: 30px; line-height: 1; }
+    .score-card span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; font-weight: 760; }
+    .timeline {
+      margin-top: 4px;
+      padding: 14px;
+      border: 1px solid var(--line2);
+      border-radius: 15px;
+      color: var(--muted);
+      background: rgba(255,255,255,.02);
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 720;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>诊断页重设计</h1>
+        <p>诊断只显示用户需要判断和处理的事情：能不能跑通、哪里要改、下一步点哪里。</p>
+      </div>
+      <span class="pill ok">功能已对齐真实诊断页</span>
+    </header>
+
+    <div class="state-title">
+      <h2>状态 A：未检查</h2>
+      <span>任务上下文清楚，检查项待运行</span>
+    </div>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>卡卡字幕助手 -- VideoCaptioner</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <header class="head">
+          <div>
+            <h2>诊断</h2>
+            <p>按当前任务配置检查工具、转录、下载、翻译和配音。</p>
+          </div>
+          <button class="button primary">运行诊断</button>
+        </header>
+        <div class="task-strip">
+          <div class="task-chip"><span>转录</span><strong>B 接口</strong></div>
+          <div class="task-chip"><span>字幕处理</span><strong>校正 + 智能断句</strong></div>
+          <div class="task-chip"><span>翻译</span><strong>微软翻译</strong></div>
+          <div class="task-chip"><span>配音</span><strong>Gemini TTS</strong></div>
+          <div class="task-chip"><span>导出</span><strong>字幕 + 配音</strong></div>
+        </div>
+        <div class="doctor-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>检查清单</h3>
+            </div>
+            <div class="check-list">
+              <div class="group-label">核心工具</div>
+              <div class="check-row">
+                <div class="status-dot">-</div>
+                <div><div class="row-title">FFmpeg / FFprobe</div><div class="row-desc">生成视频、压入字幕、合入配音都需要它。</div></div>
+                <span class="pill">待检查</span>
+                <button class="button">安装工具</button>
+              </div>
+              <div class="group-label">在线能力</div>
+              <div class="check-row">
+                <div class="status-dot">-</div>
+                <div><div class="row-title">转录服务</div><div class="row-desc">把视频或音频转成原文字幕，免费接口需要网络。</div></div>
+                <span class="pill">待检查</span>
+                <button class="button">转录配置</button>
+              </div>
+              <div class="check-row">
+                <div class="status-dot">-</div>
+                <div><div class="row-title">视频下载</div><div class="row-desc">验证 YouTube 与哔哩哔哩链接是否能解析下载。</div></div>
+                <span class="pill">待检查</span>
+                <button class="button">使用说明</button>
+              </div>
+              <div class="group-label">后续处理</div>
+              <div class="check-row">
+                <div class="status-dot">-</div>
+                <div><div class="row-title">翻译服务</div><div class="row-desc">生成目标语言字幕，失败只影响译文。</div></div>
+                <span class="pill">待检查</span>
+                <button class="button">翻译配置</button>
+              </div>
+              <div class="check-row">
+                <div class="status-dot">-</div>
+                <div><div class="row-title">配音服务</div><div class="row-desc">按当前提供商和音色生成配音，部分服务需要 Key。</div></div>
+                <span class="pill">待检查</span>
+                <button class="button">配音配置</button>
+              </div>
+              <div class="check-row">
+                <div class="status-dot">-</div>
+                <div><div class="row-title">实时字幕</div><div class="row-desc">实时转录需要本机 voxgate 转录程序，或一个外部实时服务。</div></div>
+                <span class="pill">待检查</span>
+                <button class="button">实时字幕配置</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </article>
+
+    <div class="state-title">
+      <h2>状态 B：诊断完成，有两项需要处理</h2>
+      <span>错误行置顶，但行高和按钮列保持稳定</span>
+    </div>
+    <article class="client">
+      <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>卡卡字幕助手 -- VideoCaptioner</div>
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+      <section class="app">
+        <header class="head">
+          <div>
+            <h2>诊断</h2>
+            <p>当前配置可以继续处理，但硬字幕和配音需要先修正。</p>
+          </div>
+          <button class="button primary">重新诊断</button>
+        </header>
+        <div class="task-strip">
+          <div class="task-chip"><span>转录</span><strong>Faster Whisper</strong></div>
+          <div class="task-chip"><span>字幕处理</span><strong>校正 + 翻译</strong></div>
+          <div class="task-chip"><span>翻译</span><strong>LLM 大模型翻译</strong></div>
+          <div class="task-chip"><span>配音</span><strong>Gemini TTS</strong></div>
+          <div class="task-chip"><span>导出</span><strong>视频 + 字幕 + 配音</strong></div>
+        </div>
+        <div class="doctor-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>检查清单</h3>
+            </div>
+            <div class="check-list">
+              <div class="group-label">需要处理</div>
+              <div class="check-row">
+                <div class="status-dot fail">!</div>
+                <div><div class="row-title">FFmpeg 不支持 ASS 硬字幕</div><div class="row-desc">当前 FFmpeg 缺少 ASS 字幕滤镜。安装完整版本，或切换为圆角背景。</div></div>
+                <span class="pill fail">未通过</span>
+                <button class="button warn">处理方式</button>
+              </div>
+              <div class="check-row">
+                <div class="status-dot fail">!</div>
+                <div><div class="row-title">配音服务</div><div class="row-desc">Gemini / SiliconFlow 需要配音 Key；Edge 可免 Key。</div></div>
+                <span class="pill fail">未通过</span>
+                <button class="button">配音配置</button>
+              </div>
+              <div class="group-label">已通过</div>
+              <div class="check-row">
+                <div class="status-dot ok"></div>
+                <div><div class="row-title">转录服务</div><div class="row-desc">当前转录方式可用，可生成原文字幕。</div></div>
+                <span class="pill ok">正常</span>
+                <button class="button">转录配置</button>
+              </div>
+              <div class="check-row">
+                <div class="status-dot ok"></div>
+                <div><div class="row-title">视频下载</div><div class="row-desc">YouTube 与哔哩哔哩解析正常，可直接粘贴链接下载。</div></div>
+                <span class="pill ok">正常</span>
+                <button class="button">使用说明</button>
+              </div>
+              <div class="check-row">
+                <div class="status-dot ok"></div>
+                <div><div class="row-title">翻译服务</div><div class="row-desc">翻译服务可用，可生成目标语言字幕。</div></div>
+                <span class="pill ok">正常</span>
+                <button class="button">翻译配置</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

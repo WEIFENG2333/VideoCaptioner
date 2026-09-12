@@ -100,18 +100,17 @@ class BaseTTS(ABC):
 
         # 检查缓存
         if self.config.use_cache and is_cache_enabled():
-            cached_audio_data = cast(Optional[bytes], self.cache.get(cache_key))
+            cached_entry = self.cache.get(cache_key)
 
-            if cached_audio_data:
+            if cached_entry:
                 logger.debug(f"Using cache: {segment.text[:50]}...")
-                # 将缓存的二进制数据写入文件
+                audio_data, metadata = self._unpack_cached_audio(cached_entry)
                 Path(output_path).parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, "wb") as f:
-                    f.write(cached_audio_data)
+                    f.write(audio_data)
 
-                # 更新 segment
                 segment.audio_path = output_path
-                # TODO: 从缓存元数据中获取 audio_duration
+                self._restore_segment_metadata(segment, metadata)
                 return
 
         # 调用子类实现的核心方法
@@ -122,7 +121,11 @@ class BaseTTS(ABC):
             try:
                 with open(output_path, "rb") as f:
                     audio_data = f.read()
-                self.cache.set(cache_key, audio_data, expire=self.config.cache_ttl)
+                self.cache.set(
+                    cache_key,
+                    self._pack_cached_audio(segment, audio_data),
+                    expire=self.config.cache_ttl,
+                )
             except Exception as e:
                 logger.warning(f"Cache save failed: {str(e)}")
 
@@ -139,8 +142,11 @@ class BaseTTS(ABC):
     def _generate_cache_key_for_segment(self, segment: TTSDataSeg) -> str:
         """为 segment 生成缓存键（考虑声音克隆）"""
         content_parts = [
+            self.__class__.__name__,
             segment.text,
             self.config.model,
+            self.config.base_url,
+            self.config.response_format,
             str(self.config.speed),
             str(self.config.gain),
         ]
@@ -163,6 +169,37 @@ class BaseTTS(ABC):
 
         content = "_".join(content_parts)
         return hashlib.md5(content.encode()).hexdigest()
+
+    def _pack_cached_audio(self, segment: TTSDataSeg, audio_data: bytes) -> dict[str, object]:
+        return {
+            "audio": audio_data,
+            "metadata": {
+                "audio_duration": segment.audio_duration,
+                "voice": segment.voice,
+                "clone_voice_uri": segment.clone_voice_uri,
+            },
+        }
+
+    def _unpack_cached_audio(self, cached_entry: object) -> tuple[bytes, dict[str, object]]:
+        if isinstance(cached_entry, dict):
+            audio_data = cached_entry.get("audio")
+            if isinstance(audio_data, bytes):
+                metadata = cached_entry.get("metadata")
+                return audio_data, metadata if isinstance(metadata, dict) else {}
+        return cast(bytes, cached_entry), {}
+
+    def _restore_segment_metadata(
+        self, segment: TTSDataSeg, metadata: dict[str, object]
+    ) -> None:
+        audio_duration = metadata.get("audio_duration")
+        if isinstance(audio_duration, (int, float)):
+            segment.audio_duration = float(audio_duration)
+        voice = metadata.get("voice")
+        if isinstance(voice, str):
+            segment.voice = voice
+        clone_voice_uri = metadata.get("clone_voice_uri")
+        if isinstance(clone_voice_uri, str):
+            segment.clone_voice_uri = clone_voice_uri
 
     def _generate_filename(self, text: str, index: int) -> str:
         """生成音频文件名

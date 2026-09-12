@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 字幕视频合成设计 A</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #151b19;
+      --bar: #111715;
+      --panel: #1d2522;
+      --panel2: #202a26;
+      --field: #25302c;
+      --line: #34413d;
+      --line2: #2b3632;
+      --text: #f4f7f5;
+      --muted: #aab7b2;
+      --subtle: #7f8c88;
+      --accent: #07f08a;
+      --accent-soft: rgba(7, 240, 138, .13);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .16);
+      --warn: #e8c75c;
+      --warn-soft: rgba(232, 199, 92, .14);
+      --shadow: 0 28px 80px rgba(0, 0, 0, .28);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 1520px;
+      color: var(--text);
+      background: var(--bg);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+    h1, h2, h3, p { margin: 0; }
+
+    .board {
+      width: 1520px;
+      margin: 0 auto;
+      padding: 34px 0 70px;
+    }
+    .board-head,
+    .version-title {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .version-title {
+      align-items: center;
+      margin: 30px 0 12px;
+    }
+    .board-head h1 { font-size: 32px; font-weight: 860; }
+    .board-head p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .chip,
+    .status {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+      font-size: 13px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+    .status.ok {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .75);
+      background: var(--accent-soft);
+    }
+    .status.warn {
+      color: var(--warn);
+      border-color: rgba(232, 199, 92, .72);
+      background: var(--warn-soft);
+    }
+    .status.fail {
+      color: #ffc6bf;
+      border-color: rgba(255, 128, 111, .75);
+      background: var(--danger-soft);
+    }
+
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      overflow: hidden;
+      border: 1px solid rgba(210, 230, 220, .14);
+      border-radius: 14px;
+      background: var(--app);
+      box-shadow: var(--shadow);
+    }
+    .titlebar {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line2);
+      color: var(--muted);
+      background: var(--bar);
+      font-weight: 800;
+    }
+    .dots {
+      position: absolute;
+      left: 24px;
+      display: flex;
+      gap: 12px;
+    }
+    .dot { width: 14px; height: 14px; display: block; border-radius: 50%; }
+    .red { background: #ff5f57; }
+    .yellow { background: #febc2e; }
+    .green { background: #28c840; }
+
+    .sidebar {
+      position: absolute;
+      top: 48px;
+      bottom: 0;
+      left: 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 26px 0 20px;
+      border-right: 1px solid var(--line2);
+      background: #101614;
+    }
+    .spacer { flex: 1; }
+    .nav {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 12px;
+    }
+    .nav.active { background: rgba(7, 240, 138, .16); }
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      width: 4px;
+      height: 24px;
+      border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .ico {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      filter: invert(83%) sepia(13%) saturate(206%) hue-rotate(107deg) brightness(88%) contrast(88%);
+    }
+    .nav.active .ico img,
+    .btn.active .ico img,
+    .header-link .ico img,
+    .file-pick-action .ico img,
+    .plan-icon .ico img {
+      filter: invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+    .btn.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(4%) sepia(22%) saturate(1011%) hue-rotate(109deg) brightness(91%) contrast(98%);
+    }
+
+    .app {
+      position: absolute;
+      inset: 48px 0 0 76px;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 42px 34px;
+      background: var(--app);
+    }
+    .tabs {
+      height: 72px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      flex: 0 0 auto;
+      align-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+    .tab {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 850;
+    }
+    .tab.active { color: var(--text); }
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 70px;
+      right: 70px;
+      bottom: 0;
+      height: 3px;
+      border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .work {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 18px;
+      padding-top: 24px;
+    }
+    .panel {
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(29, 37, 34, .92);
+    }
+    .workspace {
+      display: grid;
+      grid-template-rows: 56px minmax(0, 1fr) 40px;
+    }
+    .panel-head,
+    .side-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line2);
+    }
+    .panel-head { padding: 0 14px 0 18px; }
+    .side-head { padding-bottom: 14px; }
+    .panel-head h3,
+    .side-head h3 {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 20px;
+      font-weight: 860;
+    }
+    .head-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .btn {
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .btn.compact { height: 32px; padding: 0 11px; font-size: 13px; }
+    .btn .ico { width: 17px; height: 17px; }
+    .btn.primary .ico { width: 18px; height: 18px; }
+    .btn.active {
+      color: var(--accent);
+      border-color: rgba(7, 240, 138, .78);
+      background: var(--accent-soft);
+    }
+    .btn.disabled,
+    .btn.primary.disabled {
+      color: var(--subtle);
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .04);
+    }
+    .btn.disabled .ico img {
+      filter: invert(61%) sepia(9%) saturate(323%) hue-rotate(107deg) brightness(88%) contrast(82%);
+    }
+    .btn.primary {
+      width: 100%;
+      height: 48px;
+      color: #06100c;
+      border-color: transparent;
+      background: var(--accent);
+      font-size: 16px;
+      font-weight: 920;
+    }
+    .btn.primary.disabled .ico img {
+      filter: invert(61%) sepia(9%) saturate(323%) hue-rotate(107deg) brightness(88%) contrast(82%);
+    }
+
+    .header-link {
+      min-height: 31px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(7, 240, 138, .46);
+      color: var(--accent);
+      background: rgba(7, 240, 138, .08);
+      font-size: 14px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+    .row-action {
+      min-height: 30px;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+    .row-action .ico {
+      width: 15px;
+      height: 15px;
+    }
+
+    .dropzone,
+    .preview,
+    .progress-view,
+    .done-view {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+    }
+    .dropbox {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      border: 1px dashed rgba(170, 194, 184, .42);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .018);
+    }
+    .drop-content { text-align: center; }
+    .drop-icon,
+    .result-icon {
+      width: 76px;
+      height: 76px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 16px;
+      border: 1px solid var(--line2);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, .04);
+    }
+    .drop-icon .ico,
+    .result-icon .ico { width: 42px; height: 42px; }
+    .drop-content h2 {
+      font-size: 30px;
+      font-weight: 880;
+      margin-bottom: 12px;
+    }
+    .file-pick-action {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--accent);
+      font-weight: 850;
+      padding: 0 2px 4px;
+    }
+    .file-pick-action::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    .format-line {
+      margin-top: 24px;
+      color: var(--subtle);
+      font-size: 15px;
+      font-weight: 820;
+    }
+
+    .preview-card {
+      width: min(760px, 88%);
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      background: #121918;
+      overflow: hidden;
+    }
+    .screen {
+      height: 330px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(145deg, rgba(7, 240, 138, .10), transparent 46%),
+        #17201d;
+    }
+    .screen .ico { width: 58px; height: 58px; }
+    .subtitle-sample {
+      position: absolute;
+      left: 80px;
+      right: 80px;
+      bottom: 34px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 860;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, .55);
+    }
+    .preview-meta {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 14px 16px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+    }
+    .ready-view {
+      align-content: center;
+      justify-items: center;
+      gap: 16px;
+    }
+    .ready-view .file-list,
+    .ready-view .plan-list {
+      width: min(760px, 88%);
+    }
+    .file-list {
+      display: grid;
+      gap: 10px;
+      width: min(760px, 88%);
+    }
+    .file-row {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+    }
+    .file-row b { font-size: 15px; }
+    .file-row span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+    }
+    .file-row.missing span { color: var(--warn); }
+
+    .bottom {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 730;
+      border-top: 1px solid var(--line2);
+    }
+    .bottom .grow { flex: 1; }
+    .progress {
+      min-width: 320px;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+    }
+    .progress i {
+      display: block;
+      width: var(--value);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .side-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      padding: 22px;
+      gap: 18px;
+    }
+    .side-stack {
+      min-height: 0;
+      overflow: hidden;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+    .group {
+      display: grid;
+      gap: 10px;
+    }
+    .section-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 820;
+    }
+    .option-row,
+    .target-row,
+    .error-card {
+      min-height: 48px;
+      padding: 10px 13px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+      font-size: 14px;
+      font-weight: 850;
+    }
+    .option-row.action-row {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    .target-row {
+      min-height: 58px;
+    }
+    .row-text {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+    .row-text span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .target-row.active {
+      border-color: rgba(7, 240, 138, .62);
+      background: rgba(7, 240, 138, .08);
+    }
+    .target-row.locked {
+      opacity: .72;
+    }
+    .switch {
+      width: 46px;
+      height: 27px;
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+    }
+    .switch::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 3px;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: var(--subtle);
+    }
+    .switch.on {
+      border-color: transparent;
+      background: var(--accent);
+    }
+    .switch.on::after {
+      left: 21px;
+      background: #062016;
+    }
+    .error-card {
+      display: block;
+      color: #ffd2cd;
+      border-color: rgba(255, 128, 111, .7);
+      background: var(--danger-soft);
+      line-height: 1.55;
+    }
+    .plan-list {
+      display: grid;
+      gap: 10px;
+      width: min(760px, 88%);
+    }
+    .plan-step {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+    }
+    .plan-icon {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(7, 240, 138, .08);
+    }
+    .plan-step b { font-size: 15px; }
+    .result-card {
+      width: min(760px, 88%);
+      display: grid;
+      gap: 12px;
+    }
+    .result-card .preview-card {
+      width: 100%;
+    }
+    .result-screen {
+      height: 276px;
+    }
+    .play-overlay {
+      width: 62px;
+      height: 62px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      border: 1px solid rgba(7, 240, 138, .52);
+      background: rgba(7, 240, 138, .12);
+      box-shadow: 0 18px 46px rgba(7, 240, 138, .10);
+    }
+    .play-overlay .ico {
+      width: 30px;
+      height: 30px;
+    }
+    .play-overlay .ico img {
+      filter: invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+    .result-file {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .025);
+    }
+    .result-file b { display: block; margin-bottom: 6px; font-size: 16px; }
+    .result-file span { color: var(--muted); font-size: 14px; font-weight: 760; }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>字幕视频合成设计 A：组合开关版</h1>
+        <p>保留当前代码的“字幕视频 / 配音音轨”两个输出开关，但把输入要求、按钮文案、参数显隐收敛成同一套状态。</p>
+      </div>
+      <div class="head-actions"><span class="chip">1440 × 900</span><span class="chip">方案 A</span><span class="chip">7 个状态</span></div>
+    </header>
+    <div id="root"></div>
+  </main>
+
+  <script>
+    const icon = (name) => `<span class="ico"><img src="../../resource/assets/icons/${name}.svg" alt=""></span>`;
+
+    const nav = () => `
+      <aside class="sidebar">
+        <div class="nav">${icon("home")}</div>
+        <div class="nav">${icon("video")}</div>
+        <div class="nav">${icon("subtitle")}</div>
+        <div class="nav active">${icon("volume")}</div>
+        <div class="nav">${icon("history")}</div>
+        <div class="nav">${icon("search")}</div>
+        <div class="spacer"></div>
+        <div class="nav">${icon("github")}</div>
+        <div class="nav">${icon("setting")}</div>
+      </aside>`;
+
+    const tabs = () => `
+      <nav class="tabs">
+        <div class="tab">任务创建</div>
+        <div class="tab">语音转录</div>
+        <div class="tab">字幕优化与翻译</div>
+        <div class="tab active">字幕视频合成</div>
+      </nav>`;
+
+    const shell = (body) => `
+      <article class="client">
+        <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>字幕视频合成</div>
+        ${nav()}
+        <section class="app">${tabs()}${body}</section>
+      </article>`;
+
+    const stateMap = {
+      empty: {
+        title: "输入文件",
+        status: "等待文件",
+        subtitle: false,
+        video: false,
+        addSubtitle: true,
+        addDubbing: false,
+        primary: "等待文件",
+        primaryIcon: "file",
+        disabled: true,
+        bottom: "需要字幕文件和视频文件"
+      },
+      subtitleOnly: {
+        title: "输入文件",
+        status: "缺少视频",
+        subtitle: true,
+        video: false,
+        addSubtitle: true,
+        addDubbing: false,
+        primary: "等待视频",
+        primaryIcon: "video",
+        disabled: true,
+        bottom: "还需要视频文件"
+      },
+      dubbingAudio: {
+        title: "配音音频",
+        status: "可以生成",
+        subtitle: true,
+        video: false,
+        addSubtitle: false,
+        addDubbing: true,
+        primary: "生成配音音频",
+        primaryIcon: "play",
+        bottom: "仅生成配音音频，视频文件可不选"
+      },
+      fullReady: {
+        title: "生成前确认",
+        status: "可以生成",
+        subtitle: true,
+        video: true,
+        addSubtitle: true,
+        addDubbing: true,
+        primary: "生成成片",
+        primaryIcon: "play",
+        bottom: "将先生成配音，再合成字幕视频"
+      },
+      running: {
+        title: "生成中",
+        status: "生成配音 · 38%",
+        subtitle: true,
+        video: true,
+        addSubtitle: true,
+        addDubbing: true,
+        primary: "生成中",
+        primaryIcon: "sync",
+        disabled: true,
+        running: true,
+        bottom: "正在生成结果文件"
+      },
+      done: {
+        title: "结果文件",
+        status: "已完成",
+        subtitle: true,
+        video: true,
+        addSubtitle: true,
+        addDubbing: true,
+        primary: "重新生成",
+        primaryIcon: "sync",
+        done: true,
+        bottom: "生成完成"
+      },
+      failed: {
+        title: "配置检查",
+        status: "缺少 Key",
+        subtitle: true,
+        video: true,
+        addSubtitle: true,
+        addDubbing: true,
+        primary: "生成成片",
+        primaryIcon: "play",
+        disabled: true,
+        failed: true,
+        bottom: "当前音色需要 API Key"
+      }
+    };
+
+    const fileRows = (s) => `
+      <div class="file-list">
+        <div class="file-row ${s.subtitle ? "" : "missing"}">
+          <b>字幕文件</b>
+          <span>${s.subtitle ? "线性代数基础 p01-译文在上.srt" : "必填：选择 SRT / ASS / VTT 字幕"}</span>
+          <span class="status ${s.subtitle ? "ok" : "warn"}">${s.subtitle ? "已就绪" : "缺少"}</span>
+        </div>
+        <div class="file-row ${s.video ? "" : "missing"}">
+          <b>${s.addSubtitle || s.video ? "视频文件" : "参考视频"}</b>
+          <span>${s.video ? "linear-algebra-demo.mp4" : s.addSubtitle ? "必填：选择 MP4 / MOV / MKV 视频" : "可选：选择后生成配音视频"}</span>
+          <span class="status ${s.video ? "ok" : s.addSubtitle ? "warn" : ""}">${s.video ? "已就绪" : s.addSubtitle ? "缺少" : "可选"}</span>
+        </div>
+      </div>`;
+
+    const pendingPlan = (s) => `
+      <div class="plan-list">
+        ${s.addDubbing ? `<div class="plan-step"><span class="plan-icon">${icon("volume")}</span><b>生成配音音轨</b><span class="status">待生成</span></div>` : ""}
+        ${s.addSubtitle ? `<div class="plan-step"><span class="plan-icon">${icon("subtitle")}</span><b>合成字幕视频</b><span class="status">待生成</span></div>` : ""}
+        <div class="plan-step"><span class="plan-icon">${icon("folder")}</span><b>保存结果文件</b><span class="status">待生成</span></div>
+      </div>`;
+    const blockerPlan = () => `
+      <div class="plan-list">
+        <div class="plan-step"><span class="plan-icon">${icon("music")}</span><b>配音音色</b><span class="status fail">缺少 Key</span></div>
+        <div class="plan-step"><span class="plan-icon">${icon("setting")}</span><b>合成配置</b><span class="status">待检查</span></div>
+      </div>`;
+
+    const workspaceBody = (s) => {
+      if (s.running) {
+        return `
+          <div class="progress-view">
+            <div class="plan-list">
+              <div class="plan-step"><span class="plan-icon">${icon("volume")}</span><b>生成配音音轨</b><span class="status warn">38%</span></div>
+              <div class="plan-step"><span class="plan-icon">${icon("subtitle")}</span><b>合成字幕视频</b><span class="status">等待</span></div>
+              <div class="plan-step"><span class="plan-icon">${icon("folder")}</span><b>整理结果文件</b><span class="status">等待</span></div>
+            </div>
+          </div>`;
+      }
+      if (s.failed) {
+        return `
+          <div class="preview ready-view">
+            ${fileRows(s)}
+            ${blockerPlan()}
+          </div>`;
+      }
+      if (s.done) {
+        return `
+          <div class="done-view">
+            <div class="result-card">
+              <div class="preview-card">
+                <div class="screen result-screen">
+                  <div class="play-overlay">${icon("play")}</div>
+                  <div class="subtitle-sample">Today we will talk about matrices and vector spaces.</div>
+                </div>
+                <div class="preview-meta"><b>【卡卡】linear-algebra-demo.mp4</b><span>可预览</span></div>
+              </div>
+              <div class="result-file">
+                <div><b>【卡卡】linear-algebra-demo.mp4</b><span>MP4 · 1280 × 720</span></div>
+                <span class="status ok">完成</span>
+              </div>
+              <div class="result-file">
+                <div><b>【配音音频】线性代数基础 p01-译文在上.wav</b><span>WAV · 02:18</span></div>
+                <span class="status ok">完成</span>
+              </div>
+            </div>
+          </div>`;
+      }
+      if (s.subtitle && s.video) {
+        return `
+          <div class="preview ready-view">
+            ${fileRows(s)}
+            ${pendingPlan(s)}
+          </div>`;
+      }
+      if (s.subtitle) {
+        return `<div class="preview">${fileRows(s)}</div>`;
+      }
+      return `
+        <div class="dropzone">
+          <div class="dropbox">
+            <div class="drop-content">
+              <div class="drop-icon">${icon("video")}</div>
+              <h2>拖入字幕和视频文件</h2>
+              <p>或 <span class="file-pick-action">${icon("folder_add")}选择文件</span></p>
+              <div class="format-line">字幕：srt / ass / vtt　视频：mp4 / mov / mkv</div>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    const workspace = (state) => {
+      const s = stateMap[state];
+      const statusClass = s.failed ? "fail" : s.running || s.disabled ? "warn" : s.status === "可以生成" || s.done ? "ok" : "";
+      const videoButtonText = !s.addSubtitle && s.addDubbing ? "可选视频" : "选择视频";
+      const fileActions = s.running || s.done ? "" : `
+              <div class="btn compact">${icon("folder_add")}选择字幕</div>
+              <div class="btn compact">${icon("video")}${videoButtonText}</div>`;
+      return `
+        <main class="panel workspace">
+          <div class="panel-head">
+            <h3>${s.title}</h3>
+            <div class="head-actions">
+              ${fileActions}
+            </div>
+          </div>
+          ${workspaceBody(s)}
+          <div class="bottom">
+            ${s.running ? `<span>${s.bottom}</span><div class="progress"><i style="--value:38%"></i></div><span class="grow"></span><span class="status ${statusClass}">${s.status}</span>` : `<span>${s.bottom}</span><span class="grow"></span><span class="status ${statusClass}">${s.status}</span>`}
+          </div>
+        </main>`;
+    };
+
+    const targetRow = (active, title, detail, locked = false) => `
+      <div class="target-row ${active ? "active" : ""} ${locked ? "locked" : ""}">
+        <div class="row-text"><b>${title}</b><span>${detail}</span></div>
+        <span class="switch ${active ? "on" : ""}"></span>
+      </div>`;
+    const optionRow = (label, value) => `<div class="option-row"><span>${label}</span><span class="status">${value}</span></div>`;
+    const voiceOptionRow = () => `
+      <div class="option-row action-row">
+        <span>音色</span>
+        <span class="status">晓晓</span>
+        <span class="header-link row-action">${icon("music")}音色库</span>
+      </div>`;
+    const subtitleOptionRows = (s) => {
+      if (s.running || s.failed || s.done || !s.video) return "";
+      return s.addDubbing
+        ? `${optionRow("字幕方式", "硬字幕")}${optionRow("渲染模式", "圆角背景")}`
+        : `${optionRow("字幕方式", "硬字幕")}${optionRow("字幕样式", "使用样式")}${optionRow("渲染模式", "圆角背景")}${optionRow("视频质量", "中等质量")}`;
+    };
+    const dubbingOptionRows = (s) => {
+      if (s.running || s.done) return "";
+      if (s.failed) return voiceOptionRow();
+      return s.addSubtitle
+        ? `${voiceOptionRow()}${optionRow("文本轨道", "自动选择")}`
+        : `${voiceOptionRow()}${optionRow("文本轨道", "自动选择")}${optionRow("时间贴合", "平衡")}${optionRow("音频处理", "仅导出音频")}`;
+    };
+
+    const sidePanel = (state) => {
+      const s = stateMap[state];
+      const primaryClass = s.disabled ? "btn primary disabled" : "btn primary";
+      const subtitleRows = subtitleOptionRows(s);
+      const dubbingRows = dubbingOptionRows(s);
+      const sideActions = s.running
+        ? ""
+        : `<div class="head-actions"><span class="header-link">${icon("setting")}合成配置</span></div>`;
+      const locked = s.running;
+      return `
+        <aside class="panel side-panel">
+          <div class="side-head">
+            <h3>本次生成</h3>
+            ${sideActions}
+          </div>
+          <div class="side-stack">
+            <div class="group">
+              <div class="section-label">输出内容</div>
+              ${targetRow(s.addSubtitle, "字幕视频", "把字幕合成到视频里", locked)}
+              ${targetRow(s.addDubbing, "配音音轨", "按字幕生成配音", locked)}
+            </div>
+            ${s.failed ? `<div class="error-card">当前音色缺少 API Key，请检查配音配置。</div>` : ""}
+            ${s.addSubtitle && subtitleRows ? `
+              <div class="group">
+                <div class="section-label">字幕视频参数</div>
+                ${subtitleRows}
+              </div>` : ""}
+            ${s.addDubbing && dubbingRows ? `
+              <div class="group">
+                <div class="section-label">配音参数</div>
+                ${dubbingRows}
+              </div>` : ""}
+          </div>
+          <div>
+            ${s.running ? `<div class="btn" style="width:100%;margin-bottom:10px">${icon("cancel")}取消</div>` : ""}
+            ${s.done ? `<div class="btn" style="width:100%;margin-bottom:10px">${icon("folder")}打开文件夹</div>` : ""}
+            <div class="${primaryClass}">${icon(s.primaryIcon)}${s.primary}</div>
+          </div>
+        </aside>`;
+    };
+
+    const page = (state) => `<div class="work">${workspace(state)}${sidePanel(state)}</div>`;
+
+    const states = [
+      ["A", "空态：默认生成字幕视频，等待字幕", "empty"],
+      ["B", "单流程：字幕视频缺视频", "subtitleOnly"],
+      ["C", "单流程：只生成配音音频", "dubbingAudio"],
+      ["D", "全流程：字幕 + 配音成片就绪", "fullReady"],
+      ["E", "运行中：只有一处总进度", "running"],
+      ["F", "完成：结果文件和后续动作", "done"],
+      ["G", "配置缺失：生成动作禁用", "failed"]
+    ];
+
+    document.getElementById("root").innerHTML = states.map(([key, title, state]) => `
+      <div class="version-title"><h2>状态 ${key}：${title}</h2><span class="status ${stateMap[state].failed ? "fail" : stateMap[state].running ? "warn" : stateMap[state].done ? "ok" : ""}">${stateMap[state].status}</span></div>
+      ${shell(page(state))}
+    `).join("");
+  </script>
+</body>
+</html>

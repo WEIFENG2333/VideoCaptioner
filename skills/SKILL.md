@@ -1,7 +1,7 @@
 ---
 name: videocaptioner
 description: Process video subtitles — transcribe speech, optimize/translate text, burn styled subtitles into video. Use when you need to add subtitles to a video, transcribe audio, translate subtitles, or customize subtitle styles.
-allowed-tools: Bash(videocaptioner *, ffprobe *, ffmpeg -ss *)
+allowed-tools: Bash(videocaptioner *, ffmpeg -i *, ffmpeg -ss *)
 ---
 
 # VideoCaptioner CLI

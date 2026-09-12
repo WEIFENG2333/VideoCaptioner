@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from videocaptioner.cli import exit_codes as EXIT
+from videocaptioner.core.application.app_config import CLI_ASR_CHOICES
 
 
 def _configure_stdio() -> None:
@@ -112,10 +113,11 @@ def _build_transcribe_parser(subparsers) -> None:
     asr = p.add_argument_group("ASR options")
     asr.add_argument(
         "--asr",
-        choices=["bijian", "jianying", "whisper-api", "whisper-cpp"],
-        help="ASR engine (default: bijian). "
+        choices=CLI_ASR_CHOICES,
+        help="ASR engine (default: your configured engine, else bijian). "
              "bijian/jianying: free, no setup, Chinese & English only. "
-             "For other languages use whisper-api or whisper-cpp",
+             "fun-asr: Bailian recorded-file ASR. "
+             "For other languages use fun-asr, whisper-api, whisper-cpp or faster-whisper",
     )
     asr.add_argument("--language", metavar="CODE",
                      help="Source language as ISO 639-1 code, or 'auto' (default: auto)")
@@ -129,6 +131,12 @@ def _build_transcribe_parser(subparsers) -> None:
     asr.add_argument("--whisper-model", metavar="NAME",
                      help="Model name for whisper-api (default: whisper-1) "
                           "or whisper-cpp (default: large-v2)")
+    asr.add_argument("--fun-asr-api-key", metavar="KEY",
+                     help="Bailian/DashScope API key (for --asr fun-asr)")
+    asr.add_argument("--fun-asr-api-base", metavar="URL",
+                     help="Bailian/DashScope API base URL")
+    asr.add_argument("--fun-asr-model", metavar="NAME",
+                     help="Bailian Fun-ASR model name (default: fun-asr)")
 
     # Advanced options (configurable via 'config set', hidden from --help)
     for arg in ["--fw-model", "--fw-device", "--fw-vad-method", "--fw-prompt", "--whisper-prompt"]:
@@ -255,6 +263,46 @@ def _build_synthesize_parser(subparsers) -> None:
     p.set_defaults(func=_run_synthesize)
 
 
+def _build_extract_hardsub_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "extract-hardsub",
+        help="Extract burned-in (hard) subtitles from video via OCR",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "OCR the burned-in subtitles in a video into an editable subtitle file.\n"
+            "Auto-detects the subtitle region (override with --roi), only OCRs at\n"
+            "subtitle change points, and writes SRT/ASS. Engine: RapidOCR (CPU)."
+        ),
+    )
+    p.add_argument("video", help="Input video file path")
+    _add_common_options(p)
+
+    opt = p.add_argument_group("Extraction options")
+    opt.add_argument(
+        "--lang",
+        choices=["ch", "en", "japan", "korean", "chinese_cht"],
+        help="Subtitle language (default: ch = Chinese+English)",
+    )
+    opt.add_argument(
+        "--mode",
+        choices=["fast", "standard", "accurate"],
+        help="Recognition mode — speed/accuracy tradeoff (default: standard)",
+    )
+    opt.add_argument(
+        "--roi",
+        metavar="X,Y,W,H",
+        help="Subtitle region in original-resolution pixels (skip auto-detect)",
+    )
+    opt.add_argument(
+        "--no-auto-region",
+        action="store_true",
+        help="Skip auto region detection; use --roi or the default bottom band",
+    )
+    p.add_argument("-o", "--output", metavar="PATH", help="Output subtitle path (.srt/.ass/.txt)")
+
+    p.set_defaults(func=_run_extract_hardsub)
+
+
 def _build_dub_parser(subparsers) -> None:
     from videocaptioner.core.dubbing.presets import available_dubbing_presets
 
@@ -353,11 +401,14 @@ def _build_process_parser(subparsers) -> None:
     pipe.add_argument("--dub", action="store_true", help="Generate dubbed audio/video after subtitle processing")
     pipe.add_argument("--dub-only", action="store_true", help="Output only the dubbed result, skipping subtitle burn/embedding")
 
-    pipe.add_argument("--asr", choices=["bijian", "jianying", "whisper-api", "whisper-cpp"],
-                      help="ASR engine (default: bijian)")
+    pipe.add_argument("--asr", choices=CLI_ASR_CHOICES,
+                      help="ASR engine (default: your configured engine, else bijian)")
     pipe.add_argument("--language", metavar="CODE",
                       help="Source language as ISO 639-1 code, or 'auto' (default: auto)")
     pipe.add_argument("--whisper-api-key", metavar="KEY", help="Whisper API key (for --asr whisper-api)")
+    pipe.add_argument("--fun-asr-api-key", metavar="KEY", help="Bailian/DashScope API key (for --asr fun-asr)")
+    pipe.add_argument("--fun-asr-api-base", metavar="URL", help="Bailian/DashScope API base URL")
+    pipe.add_argument("--fun-asr-model", metavar="NAME", help="Bailian Fun-ASR model name")
     pipe.add_argument("--translator", choices=["llm", "bing", "google"],
                       help="Translation service (default: bing). bing and google are free")
     pipe.add_argument("--to", dest="target_language", metavar="CODE", help="Target language BCP 47 code")
@@ -455,7 +506,7 @@ def _build_config_parser(subparsers) -> None:
     init_p.add_argument("--llm-api-key", metavar="KEY", help="LLM API key")
     init_p.add_argument("--llm-api-base", metavar="URL", help="LLM API base URL")
     init_p.add_argument("--llm-model", metavar="NAME", help="LLM model")
-    init_p.add_argument("--asr", choices=["bijian", "jianying", "whisper-api", "whisper-cpp"], help="Default ASR engine")
+    init_p.add_argument("--asr", choices=CLI_ASR_CHOICES, help="Default ASR engine")
     init_p.add_argument("--translator", choices=["llm", "bing", "google"], help="Default translation service")
     init_p.add_argument("--target-language", "--to", dest="target_language", metavar="CODE", help=argparse.SUPPRESS)
     init_p.add_argument("--no-optimize", action="store_true", help="Disable AI subtitle polish by default")
@@ -475,6 +526,34 @@ def _build_config_parser(subparsers) -> None:
     get_p.add_argument("key", help="Config key in dotted notation")
 
     p.set_defaults(func=_run_config)
+
+
+def _build_models_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "models",
+        help="Manage local ASR models (whisper-cpp / faster-whisper)",
+        description="List and download local speech-recognition models. "
+                    "Downloads fall back across mirrors (HuggingFace → hf-mirror → ModelScope) "
+                    "so they work both inside and outside mainland China.",
+    )
+    models_sub = p.add_subparsers(dest="models_action", metavar="action")
+
+    list_p = models_sub.add_parser("list", help="List models and install status")
+    list_p.add_argument(
+        "--kind", choices=["whisper-cpp", "faster-whisper"], help="Filter by engine"
+    )
+    list_p.add_argument("--models-dir", metavar="DIR", help="Override models directory")
+
+    dl_p = models_sub.add_parser(
+        "download",
+        help="Download a model with mirror fallback and resume",
+    )
+    dl_p.add_argument("kind", choices=["whisper-cpp", "faster-whisper"], help="Engine")
+    dl_p.add_argument("name", help="Model name, e.g. tiny / base / large-v2")
+    dl_p.add_argument("--models-dir", metavar="DIR", help="Override models directory")
+    dl_p.add_argument("-q", "--quiet", action="store_true", help="No progress output")
+
+    p.set_defaults(func=_run_models)
 
 
 def _build_doctor_parser(subparsers) -> None:
@@ -505,8 +584,10 @@ def build_parser() -> argparse.ArgumentParser:
     _build_subtitle_parser(subparsers)
     _build_dub_parser(subparsers)
     _build_synthesize_parser(subparsers)
+    _build_extract_hardsub_parser(subparsers)
     _build_process_parser(subparsers)
     _build_download_parser(subparsers)
+    _build_models_parser(subparsers)
     _build_config_parser(subparsers)
     _build_doctor_parser(subparsers)
     _build_style_parser(subparsers)
@@ -532,8 +613,8 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
 
     def _set(key: str, value) -> None:
         if value is not None:
-            from videocaptioner.cli.config import _set_nested
-            _set_nested(overrides, key, value)
+            from videocaptioner.core.application.config_store import set_nested
+            set_nested(overrides, key, value)
 
     # LLM
     _set("llm.api_key", getattr(args, "api_key", None))
@@ -544,6 +625,11 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
     _set("whisper_api.api_key", getattr(args, "whisper_api_key", None))
     _set("whisper_api.api_base", getattr(args, "whisper_api_base", None))
     _set("whisper_api.model", getattr(args, "whisper_model", None))
+
+    # Bailian Fun-ASR
+    _set("fun_asr.api_key", getattr(args, "fun_asr_api_key", None))
+    _set("fun_asr.api_base", getattr(args, "fun_asr_api_base", None))
+    _set("fun_asr.model", getattr(args, "fun_asr_model", None))
 
     # Transcribe
     _set("transcribe.asr", getattr(args, "asr", None))
@@ -630,7 +716,7 @@ def _build_cli_overrides(args: argparse.Namespace) -> dict:
 
 def _load_config(args: argparse.Namespace) -> dict:
     """Load config with all layers merged."""
-    from videocaptioner.cli.config import build_config
+    from videocaptioner.core.application.config_store import build_config
     config_path = None
     if getattr(args, "config", None):
         config_path = Path(args.config)
@@ -677,6 +763,12 @@ def _run_dub(args: argparse.Namespace) -> int:
     return run(args, config)
 
 
+def _run_extract_hardsub(args: argparse.Namespace) -> int:
+    from videocaptioner.cli.commands.extract_hardsub import run
+    config = _load_config(args)
+    return run(args, config)
+
+
 def _run_process(args: argparse.Namespace) -> int:
     from videocaptioner.cli.commands.process import run
     config = _load_config(args)
@@ -693,6 +785,11 @@ def _run_config(args: argparse.Namespace) -> int:
     from videocaptioner.cli.commands.config_cmd import run
     config = _load_config(args)
     return run(args, config)
+
+
+def _run_models(args: argparse.Namespace) -> int:
+    from videocaptioner.cli.commands.models_cmd import run
+    return run(args, {})
 
 
 def _run_doctor(args: argparse.Namespace) -> int:

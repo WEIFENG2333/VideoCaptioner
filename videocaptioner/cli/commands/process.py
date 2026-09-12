@@ -5,7 +5,19 @@ from pathlib import Path
 
 from videocaptioner.cli import exit_codes as EXIT
 from videocaptioner.cli import output
-from videocaptioner.cli.config import get
+from videocaptioner.core.application import output_paths
+from videocaptioner.core.application.app_config import target_language_from_code
+from videocaptioner.core.application.config_store import get
+
+
+def _subtitle_product_tag(config: dict, args: Namespace, no_translate: bool) -> str:
+    """字幕产物 tag：翻译输出语言码，否则 optimized（与 GUI 同一套语法）。"""
+    if no_translate:
+        return output_paths.TAG_OPTIMIZED
+    code = getattr(args, "target_language", None) or get(
+        config, "translate.target_language", "zh-Hans"
+    )
+    return output_paths.language_tag(target_language_from_code(code))
 
 
 def run(args: Namespace, config: dict) -> int:
@@ -68,8 +80,11 @@ def run(args: Namespace, config: dict) -> int:
 
     total_steps = 2 + (0 if no_synthesize else 1) + (1 if do_dub else 0)
     current_step = 1
-    final_output_path = _resolve_final_output_path(out_arg, out_dir, path, do_dub, no_synthesize, is_audio_input)
+    final_output_path = _resolve_final_output_path(
+        out_arg, out_dir, path, do_dub, no_synthesize, is_audio_input
+    )
     dubbed_video_path: str | None = None
+    subtitle_tag = _subtitle_product_tag(config, args, no_translate)
 
     # Step 1: Transcribe
     if not quiet:
@@ -88,6 +103,9 @@ def run(args: Namespace, config: dict) -> int:
         whisper_api_key=getattr(args, "whisper_api_key", None),
         whisper_api_base=getattr(args, "whisper_api_base", None),
         whisper_model=None, whisper_prompt=None,
+        fun_asr_api_key=getattr(args, "fun_asr_api_key", None),
+        fun_asr_api_base=getattr(args, "fun_asr_api_base", None),
+        fun_asr_model=getattr(args, "fun_asr_model", None),
     )
     from videocaptioner.cli.commands.transcribe import run as transcribe_run
     ret = transcribe_run(tr_args, config)
@@ -100,7 +118,9 @@ def run(args: Namespace, config: dict) -> int:
         if not quiet:
             output.info(f"Step {current_step}/{total_steps}: Processing subtitles...")
 
-        processed_path = str(out_dir / f"{path.stem}_processed.srt")
+        processed_path = str(
+            output_paths.product_path(path, subtitle_tag, ext=".srt", directory=out_dir)
+        )
         sub_args = Namespace(
             input=subtitle_path, output=processed_path,
             format=get(config, "output.format", "srt"),
@@ -140,13 +160,17 @@ def run(args: Namespace, config: dict) -> int:
             text_track = "second" if layout_for_dub == "source-above" else "first"
         else:
             text_track = "first"
-        dub_audio_path = str(out_dir / f"{path.stem}_dubbed.wav")
+        dub_audio_path = str(
+            output_paths.product_path(path, output_paths.TAG_DUBBED, ext=".wav", directory=out_dir)
+        )
         if is_audio:
             dub_video_path = None
         elif no_synthesize:
             dub_video_path = final_output_path
         else:
-            dub_video_path = str(out_dir / f"{path.stem}_dubbed{path.suffix}")
+            dub_video_path = str(
+                output_paths.product_path(path, output_paths.TAG_DUBBED, directory=out_dir)
+            )
         dub_args = Namespace(
             subtitle=subtitle_path,
             video=None if is_audio else str(path),
@@ -233,9 +257,11 @@ def _resolve_final_output_path(
         out_path = Path(output_arg)
         if out_path.suffix:
             return str(out_path)
-    suffix = ".wav" if is_audio and do_dub else input_path.suffix
+    ext = ".wav" if is_audio and do_dub else input_path.suffix
     if do_dub and no_synthesize:
-        return str(out_dir / f"{input_path.stem}_dubbed{suffix}")
-    if do_dub:
-        return str(out_dir / f"{input_path.stem}_dubbed_captioned{suffix}")
-    return str(out_dir / f"{input_path.stem}_captioned{suffix}")
+        tags = (output_paths.TAG_DUBBED,)
+    elif do_dub:
+        tags = (output_paths.TAG_DUBBED, output_paths.TAG_SUBTITLED)
+    else:
+        tags = (output_paths.TAG_SUBTITLED,)
+    return str(output_paths.product_path(input_path, *tags, ext=ext, directory=out_dir))

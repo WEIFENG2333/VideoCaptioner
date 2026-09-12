@@ -176,7 +176,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_input=audio_path,
+                audio_path=audio_path,
                 asr_kwargs={},
                 chunk_length=10,  # 10秒
                 chunk_overlap=2,  # 2秒重叠
@@ -210,7 +210,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_input=audio_path,
+                audio_path=audio_path,
                 asr_kwargs={},
                 chunk_length=10,
                 chunk_overlap=2,
@@ -234,7 +234,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_input=audio_path,
+                audio_path=audio_path,
                 asr_kwargs={},
                 chunk_length=10,
                 chunk_overlap=2,
@@ -255,7 +255,7 @@ class TestAudioSplitting:
         try:
             chunked_asr = ChunkedASR(
                 asr_class=MockASR,
-                audio_input=audio_path,
+                audio_path=audio_path,
                 asr_kwargs={},
                 chunk_length=10,
                 chunk_overlap=0,

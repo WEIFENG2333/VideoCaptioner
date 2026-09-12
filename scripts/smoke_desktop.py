@@ -4,13 +4,22 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import platform
+import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
+
+# Windows 控制台默认 cp1252，打印中文标签（如依赖校验的中文名）会 UnicodeEncodeError 崩掉
+# 冒烟测试 → 拦住产物上传。强制 UTF-8 输出，跨平台一致。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, ValueError):
+        pass
 
 
 def _run(cmd: list[str], *, env: dict[str, str] | None = None, cwd: Path | None = None) -> subprocess.CompletedProcess:
@@ -62,6 +71,18 @@ def _write_sample_srt(path: Path) -> None:
     )
 
 
+def _write_smoke_config(path: Path) -> None:
+    path.write_text(
+        "[transcribe]\n"
+        'asr = "bijian"\n\n'
+        "[dubbing]\n"
+        'provider = "edge"\n'
+        'preset = "edge-cn-female"\n'
+        'voice = "zh-CN-XiaoxiaoNeural"\n',
+        encoding="utf-8",
+    )
+
+
 def _create_sample_video(ffmpeg: Path, output: Path) -> None:
     _run([
         str(ffmpeg),
@@ -90,19 +111,36 @@ def _create_sample_video(ffmpeg: Path, output: Path) -> None:
     ])
 
 
-def _duration(ffprobe: Path, media: Path) -> float:
-    result = subprocess.run([
-        str(ffprobe),
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-of",
-        "json",
-        str(media),
-    ], check=True, capture_output=True, text=True)
-    data = json.loads(result.stdout)
-    return float(data["format"]["duration"])
+def _duration(ffmpeg: Path, media: Path) -> float:
+    # 包里只带 ffmpeg（媒体探测统一走 ffmpeg -i，见 core/utils/media_info.py），
+    # 时长从其 stderr 的 Duration 行解析
+    result = subprocess.run(
+        [str(ffmpeg), "-hide_banner", "-i", str(media)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    match = re.search(r"Duration: (\d+):(\d+):(\d+\.?\d*)", result.stderr or "")
+    if not match:
+        raise RuntimeError(f"Cannot parse duration from ffmpeg output: {media}")
+    h, m, s = match.groups()
+    return int(h) * 3600 + int(m) * 60 + float(s)
+
+
+def _check_bundled_payload(bundle: Path) -> None:
+    """新功能的原生依赖必须真打进包；缺了让 smoke 失败，堵住『OCR/实时字幕没进包也 CI 绿』。
+
+    voxgate 不在此列（按设计运行时下载）。仅对 onedir 目录校验（传单可执行文件时跳过）。
+    """
+    if bundle.is_file():
+        return
+    required = {
+        "onnxruntime 原生库（硬字幕 OCR）": ["libonnxruntime*", "onnxruntime_pybind11_state*", "onnxruntime*.dll"],
+        "rapidocr 模型（硬字幕 OCR）": ["*PP-OCR*.onnx", "*ppocr*.onnx"],
+        "PortAudio（实时字幕采集）": ["libportaudio*", "portaudio*.dll"],
+    }
+    for label, globs in required.items():
+        if not any(any(bundle.rglob(g)) for g in globs):
+            raise RuntimeError(f"打包缺少新功能依赖：{label}（未在包内找到 {globs}）")
+        print(f"Bundled payload OK: {label}")
 
 
 def main() -> int:
@@ -112,15 +150,17 @@ def main() -> int:
 
     bundle = Path(args.bundle).resolve()
     exe = _find_executable(bundle)
+    _check_bundled_payload(bundle)
     ffmpeg = _find_bundled_tool(bundle, "ffmpeg")
-    ffprobe = _find_bundled_tool(bundle, "ffprobe")
 
     with tempfile.TemporaryDirectory(prefix="videocaptioner-smoke-") as tmp:
         tmp_path = Path(tmp)
         env = os.environ.copy()
-        env["PATH"] = os.defpath
+        env["PATH"] = str(ffmpeg.parent) + os.pathsep + os.defpath
+        env["VIDEOCAPTIONER_CONFIG_FILE"] = str(tmp_path / "config.toml")
         env["VIDEOCAPTIONER_LLM_API_KEY"] = ""
         env["VIDEOCAPTIONER_TTS_API_KEY"] = ""
+        _write_smoke_config(Path(env["VIDEOCAPTIONER_CONFIG_FILE"]))
 
         video = tmp_path / "sample.mp4"
         subtitle = tmp_path / "sample.srt"
@@ -162,7 +202,7 @@ def main() -> int:
         for output in [soft_out, hard_out]:
             if not output.exists() or output.stat().st_size <= 0:
                 raise RuntimeError(f"Expected output was not created: {output}")
-            seconds = _duration(ffprobe, output)
+            seconds = _duration(ffmpeg, output)
             if seconds < 2.5:
                 raise RuntimeError(f"Output duration is unexpectedly short: {output} ({seconds:.2f}s)")
             print(f"Verified {output.name}: {output.stat().st_size} bytes, {seconds:.2f}s")

@@ -1,0 +1,2067 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCaptioner 字幕样式设计</title>
+  <style>
+    :root {
+      --bg: #0b1110;
+      --app: #141b18;
+      --side: #101614;
+      --panel: #1c2521;
+      --panel2: #202b26;
+      --field: #25302c;
+      --field2: #1a221f;
+      --line: #34423d;
+      --line2: #2a3631;
+      --text: #f3f7f4;
+      --text2: #cbd6d0;
+      --muted: #9daba5;
+      --subtle: #76847e;
+      --accent: #08ec88;
+      --accent-soft: rgba(8, 236, 136, .12);
+      --danger: #ff806f;
+      --danger-soft: rgba(255, 128, 111, .12);
+      --warn: #e4c65f;
+      --shadow: 0 30px 90px rgba(0, 0, 0, .32);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-width: 1500px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% -220px, rgba(8, 236, 136, .13), transparent 42%),
+        var(--bg);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    button { font: inherit; cursor: default; }
+
+    .board {
+      width: 1500px;
+      margin: 0 auto;
+      padding: 28px 0 72px;
+      display: grid;
+      gap: 28px;
+    }
+
+    .state-label {
+      width: 1440px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 auto -10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 780;
+    }
+
+    .state-label b {
+      color: var(--text2);
+      font-size: 15px;
+      font-weight: 880;
+    }
+
+    .client {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid rgba(210, 230, 220, .14);
+      border-radius: 16px;
+      background: var(--app);
+      box-shadow: var(--shadow);
+    }
+
+    .client.short { height: 760px; }
+
+    .sidebar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 76px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      padding: 22px 0 20px;
+      border-right: 1px solid var(--line2);
+      background: var(--side);
+    }
+
+    .spacer { flex: 1; }
+
+    .nav {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 12px;
+      color: #bdc8c2;
+    }
+
+    .nav.active {
+      color: var(--accent);
+      background: rgba(8, 236, 136, .15);
+    }
+
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      width: 4px;
+      height: 24px;
+      border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .ico {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      filter: invert(82%) sepia(10%) saturate(230%) hue-rotate(107deg) brightness(88%) contrast(88%);
+    }
+
+    .nav.active .ico img,
+    .tab.active .ico img,
+    .style-card.active .ico img,
+    .ghost-action.good .ico img,
+    .tool-btn.active .ico img {
+      filter: invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    .btn.primary .ico img {
+      filter: brightness(0) saturate(100%) invert(5%) sepia(29%) saturate(905%) hue-rotate(102deg) brightness(91%) contrast(96%);
+    }
+
+    .app {
+      position: absolute;
+      inset: 0 0 0 76px;
+      min-width: 0;
+      padding: 22px;
+      background:
+        radial-gradient(circle at 45% -160px, rgba(8, 236, 136, .08), transparent 38%),
+        var(--app);
+    }
+
+    .style-work {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 318px minmax(0, 1fr) 370px;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel {
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(28, 37, 33, .94);
+    }
+
+    .library-panel,
+    .preview-panel,
+    .inspector-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line2);
+      flex: 0 0 auto;
+    }
+
+    .tab {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .018);
+      font-size: 14px;
+      font-weight: 870;
+      white-space: nowrap;
+    }
+
+    .tab .ico { width: 17px; height: 17px; }
+
+    .tab.active {
+      color: var(--text);
+      border-color: rgba(8, 236, 136, .50);
+      background: rgba(8, 236, 136, .10);
+    }
+
+    .library-head {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line2);
+      flex: 0 0 auto;
+    }
+
+    .library-head strong,
+    .panel-head strong {
+      color: var(--text2);
+      font-size: 14px;
+      font-weight: 840;
+    }
+
+    .mini-chip,
+    .status {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .026);
+      font-size: 12px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .mini-chip.ok,
+    .status.ok {
+      color: var(--accent);
+      border-color: rgba(8, 236, 136, .58);
+      background: var(--accent-soft);
+    }
+
+    .mini-chip.warn {
+      color: var(--warn);
+      border-color: rgba(228, 198, 95, .48);
+      background: rgba(228, 198, 95, .08);
+    }
+
+    .library-scroll,
+    .inspector-scroll {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .library-scroll { padding: 14px; }
+    .inspector-scroll { padding: 14px; }
+
+    .library-scroll::-webkit-scrollbar,
+    .inspector-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .library-scroll::-webkit-scrollbar-thumb,
+    .inspector-scroll::-webkit-scrollbar-thumb {
+      border-radius: 99px;
+      background: rgba(170, 183, 178, .18);
+    }
+
+    .style-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .style-section + .style-section { margin-top: 18px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 840;
+    }
+
+    .style-card {
+      display: grid;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid var(--line2);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .style-card.active {
+      border-color: rgba(8, 236, 136, .72);
+      background: rgba(8, 236, 136, .085);
+    }
+
+    .style-card.readonly {
+      background: rgba(255, 255, 255, .016);
+    }
+
+    .style-main {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .style-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line2);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .style-icon .ico { width: 18px; height: 18px; }
+
+    .style-meta {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .style-meta strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 880;
+    }
+
+    .style-meta span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .swatches {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 6px;
+      background: var(--c);
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(210, 230, 220, .10);
+    }
+
+    .ghost-action {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--text2);
+      background: rgba(255, 255, 255, .028);
+      font-size: 12px;
+      font-weight: 830;
+      white-space: nowrap;
+    }
+
+    .ghost-action .ico { width: 15px; height: 15px; }
+
+    .ghost-action.good {
+      color: var(--accent);
+      border-color: rgba(8, 236, 136, .48);
+      background: rgba(8, 236, 136, .08);
+    }
+
+    .ghost-action.danger {
+      color: var(--text2);
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .028);
+    }
+
+    .library-foot {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 12px;
+      border-top: 1px solid var(--line2);
+      flex: 0 0 auto;
+    }
+
+    .btn,
+    .tool-btn {
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      background: var(--field);
+      font-size: 14px;
+      font-weight: 860;
+      white-space: nowrap;
+    }
+
+    .btn .ico,
+    .tool-btn .ico {
+      width: 17px;
+      height: 17px;
+    }
+
+    .btn.primary {
+      color: #06100c;
+      border-color: transparent;
+      background: var(--accent);
+      font-weight: 900;
+    }
+
+    .preview-panel {
+      min-width: 0;
+    }
+
+    .preview-toolbar,
+    .panel-head {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line2);
+      flex: 0 0 auto;
+    }
+
+    .preview-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .preview-title strong,
+    .panel-head h3 {
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .preview-title span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 720;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .tool-btn {
+      height: 32px;
+      padding: 0 11px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .025);
+      font-size: 13px;
+    }
+
+    .tool-btn.active {
+      color: var(--accent);
+      border-color: rgba(8, 236, 136, .50);
+      background: rgba(8, 236, 136, .08);
+    }
+
+    .preview-body {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 56px;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .stage {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      background:
+        linear-gradient(145deg, rgba(8, 236, 136, .06), transparent 42%),
+        rgba(0, 0, 0, .12);
+    }
+
+    .video-frame {
+      width: min(100%, 790px);
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      border-radius: 13px;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .50)),
+        url("../../resource/assets/default_bg_landscape.png") center / cover;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .38);
+    }
+
+    .short .video-frame {
+      width: min(100%, 690px);
+    }
+
+    .video-frame.portrait {
+      width: min(44%, 330px);
+      aspect-ratio: 9 / 16;
+      background-position: center;
+    }
+
+    .frame-grid {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px);
+      background-size: 88px 88px;
+      opacity: .16;
+    }
+
+    .safe-area {
+      position: absolute;
+      inset: 7% 8%;
+      border: 1px dashed rgba(255, 255, 255, .18);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    .caption-wrap {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 42px;
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      text-align: center;
+    }
+
+    .caption-ass-main,
+    .caption-ass-sub {
+      max-width: 100%;
+      color: #fff;
+      font-weight: 900;
+      line-height: 1.18;
+      text-align: center;
+      text-shadow:
+        -2px -2px 0 rgba(0, 0, 0, .92),
+        2px -2px 0 rgba(0, 0, 0, .92),
+        -2px 2px 0 rgba(0, 0, 0, .92),
+        2px 2px 0 rgba(0, 0, 0, .92),
+        0 5px 18px rgba(0, 0, 0, .52);
+    }
+
+    .caption-ass-main { font-size: clamp(20px, 2.25vw, 31px); }
+
+    .caption-ass-sub {
+      color: #ffe36b;
+      font-size: clamp(14px, 1.55vw, 20px);
+      font-weight: 860;
+    }
+
+    .caption-pill {
+      max-width: 100%;
+      padding: 8px 18px;
+      border-radius: 14px;
+      color: #06100c;
+      background: rgba(13, 227, 255, .90);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .26);
+      font-size: clamp(18px, 2.05vw, 28px);
+      font-weight: 900;
+      line-height: 1.24;
+    }
+
+    .caption-pill.sub {
+      padding: 7px 15px;
+      color: #10201b;
+      background: rgba(13, 227, 255, .76);
+      font-size: clamp(13px, 1.35vw, 18px);
+      font-weight: 830;
+    }
+
+    .preview-bottom {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 0 2px;
+    }
+
+    .preview-note {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 730;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .preview-note b {
+      color: var(--text2);
+      font-weight: 880;
+    }
+
+    .save-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(8, 236, 136, .10);
+      flex: 0 0 auto;
+    }
+
+    .notice {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid rgba(228, 198, 95, .34);
+      border-radius: 12px;
+      color: #eadfb1;
+      background: rgba(228, 198, 95, .08);
+      font-size: 13px;
+      font-weight: 730;
+      line-height: 1.45;
+    }
+
+    .notice b { color: var(--warn); font-weight: 880; }
+
+    .setting-group {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .setting-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 880;
+    }
+
+    .setting-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 730;
+      white-space: nowrap;
+    }
+
+    .setting-row {
+      min-height: 50px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .024);
+    }
+
+    .row-label {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 830;
+    }
+
+    .row-label small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .row-label .ico { width: 16px; height: 16px; }
+
+    .control,
+    .num-control,
+    .seg-control {
+      width: 176px;
+      min-width: 176px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--text2);
+      background: var(--field);
+      font-size: 13px;
+      font-weight: 830;
+      white-space: nowrap;
+    }
+
+    .setting-row > .control,
+    .setting-row > .num-control,
+    .setting-row > .seg-control {
+      justify-self: end;
+    }
+
+    .control.small,
+    .control.wide { min-width: 176px; }
+
+    .color-control {
+      min-width: 176px;
+      justify-content: flex-start;
+    }
+
+    .color-dot {
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 6px;
+      background: var(--c);
+    }
+
+    .num-control {
+      justify-content: space-between;
+      padding: 0 8px;
+    }
+
+    .step {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line2);
+      border-radius: 7px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+      font-size: 15px;
+      font-weight: 760;
+    }
+
+    .num-value {
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+      color: var(--text);
+      font-weight: 880;
+    }
+
+    .num-value em {
+      color: var(--muted);
+      font-style: normal;
+      font-size: 11px;
+      font-weight: 760;
+    }
+
+    .seg-control {
+      padding: 3px;
+      gap: 3px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .seg-control span {
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 52px;
+      padding: 0 9px;
+      border-radius: 7px;
+      color: var(--muted);
+    }
+
+    .seg-control span.active {
+      color: #06100c;
+      background: var(--accent);
+    }
+
+    .two-column .app {
+      padding: 22px;
+    }
+
+    .two-col-work {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 430px;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .two-column .preview-body {
+      grid-template-rows: minmax(0, 1fr) 56px;
+      padding: 18px;
+    }
+
+    .two-column .video-frame {
+      width: min(100%, 940px);
+    }
+
+    .compose-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .compose-head {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line2);
+      flex: 0 0 auto;
+    }
+
+    .compose-head h3 {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .compose-scroll {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .compose-scroll::-webkit-scrollbar { width: 8px; }
+
+    .compose-scroll::-webkit-scrollbar-thumb {
+      border-radius: 99px;
+      background: rgba(170, 183, 178, .18);
+    }
+
+    .style-rail {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line2);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .018);
+    }
+
+    .rail-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .style-row {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .024);
+    }
+
+    .style-row.active {
+      border-color: rgba(8, 236, 136, .68);
+      background: rgba(8, 236, 136, .08);
+    }
+
+    .style-row .style-icon {
+      width: 34px;
+      height: 34px;
+    }
+
+    .style-row strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 880;
+    }
+
+    .style-row span {
+      display: block;
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .mode-explain {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .mode-card {
+      min-height: 74px;
+      padding: 12px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .mode-card.active {
+      border-color: rgba(8, 236, 136, .62);
+      background: rgba(8, 236, 136, .08);
+    }
+
+    .mode-card b {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 880;
+    }
+
+    .mode-card span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+      line-height: 1.45;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .two-column .setting-group {
+      margin-top: 14px;
+    }
+
+    .bottom-layout .app {
+      padding: 22px;
+    }
+
+    .dock-work {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      grid-template-rows: minmax(0, 1fr) 248px;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .bottom-layout .preview-panel {
+      min-height: 0;
+    }
+
+    .bottom-layout .preview-body {
+      grid-template-rows: minmax(0, 1fr) 52px;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .bottom-layout .video-frame {
+      width: min(100%, 900px);
+    }
+
+    .bottom-layout .inspector-panel {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      min-height: 0;
+    }
+
+    .bottom-layout .inspector-scroll {
+      padding: 14px;
+    }
+
+    .style-dock {
+      grid-column: 1;
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .dock-head {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line2);
+      flex: 0 0 auto;
+    }
+
+    .dock-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .dock-tab {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 860;
+      white-space: nowrap;
+    }
+
+    .dock-tab.active {
+      color: var(--text);
+      border: 1px solid rgba(8, 236, 136, .48);
+      background: rgba(8, 236, 136, .10);
+    }
+
+    .dock-title {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 780;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dock-title b {
+      color: var(--text2);
+      font-weight: 900;
+    }
+
+    .dock-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dock-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      padding: 14px;
+    }
+
+    .dock-card-row {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 302px minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .dock-track {
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 8px;
+    }
+
+    .dock-track::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .dock-track::-webkit-scrollbar-thumb {
+      border-radius: 99px;
+      background: rgba(170, 183, 178, .22);
+    }
+
+    .track-row {
+      width: max-content;
+      height: 100%;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 230px;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .dock-style-card {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line2);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .022);
+    }
+
+    .dock-style-card.active {
+      border-color: rgba(8, 236, 136, .68);
+      background: rgba(8, 236, 136, .08);
+    }
+
+    .dock-style-main {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .dock-style-card .style-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    .dock-style-card strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .dock-style-card p {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+      line-height: 1.45;
+    }
+
+    .dock-style-foot {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .dock-style-card .quick-actions {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 0;
+    }
+
+    .dock-tab.active .ico img,
+    .dock-style-card.active .ico img {
+      filter: invert(72%) sepia(88%) saturate(1944%) hue-rotate(96deg) brightness(104%) contrast(100%);
+    }
+
+    @media (max-width: 1500px) {
+      body { min-width: 1180px; }
+      .board { width: 1180px; }
+      .client,
+      .state-label { width: 1120px; }
+      .style-work { grid-template-columns: 274px minmax(0, 1fr) 332px; }
+      .two-col-work { grid-template-columns: minmax(0, 1fr) 370px; }
+      .dock-work {
+        grid-template-columns: minmax(0, 1fr) 350px;
+        grid-template-rows: minmax(0, 1fr) 238px;
+      }
+      .dock-head {
+        grid-template-columns: 290px minmax(0, 1fr) auto;
+      }
+      .dock-card-row {
+        grid-template-columns: 286px minmax(0, 1fr);
+      }
+      .track-row {
+        grid-auto-columns: 214px;
+      }
+      .library-foot { grid-template-columns: 1fr; }
+      .video-frame { width: min(100%, 610px); }
+      .two-column .video-frame { width: min(100%, 690px); }
+      .bottom-layout .video-frame { width: min(100%, 650px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <div class="state-label">
+      <b>状态 A · ASS 描边默认编辑</b>
+      <span>样式管理动作在左侧；主字幕和副字幕可分开调整</span>
+    </div>
+
+    <article class="client">
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+
+      <section class="app">
+        <div class="style-work">
+          <aside class="panel library-panel">
+            <div class="tabs">
+              <div class="tab active"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>ASS 描边</div>
+              <div class="tab"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>圆角背景</div>
+            </div>
+            <div class="library-head">
+              <strong>样式库</strong>
+              <span class="mini-chip ok">当前</span>
+            </div>
+            <div class="library-scroll">
+              <section class="style-section">
+                <div class="section-title"><span>我的样式</span><span>4 套</span></div>
+                <div class="style-card active">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>课程白字描边</strong>
+                      <span>双语 · 原文在上 · 黄字译文</span>
+                      <div class="card-foot">
+                        <div class="swatches">
+                          <span class="swatch" style="--c:#ffffff"></span>
+                          <span class="swatch" style="--c:#050505"></span>
+                          <span class="swatch" style="--c:#ffe36b"></span>
+                        </div>
+                        <span class="mini-chip ok">已保存</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/edit.svg" alt=""></span>重命名</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span>删除</button>
+                  </div>
+                </div>
+                <div class="style-card">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>短视频强描边</strong>
+                      <span>大字号 · 居中 · 单语优先</span>
+                      <div class="card-foot">
+                        <div class="swatches">
+                          <span class="swatch" style="--c:#fff7d1"></span>
+                          <span class="swatch" style="--c:#000000"></span>
+                        </div>
+                        <span class="mini-chip">我的</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="style-section">
+                <div class="section-title"><span>内置样式</span><span>只读</span></div>
+                <div class="style-card readonly">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>默认描边</strong>
+                      <span>清晰、通用、适合多数视频</span>
+                      <div class="card-foot">
+                        <div class="swatches">
+                          <span class="swatch" style="--c:#ffffff"></span>
+                          <span class="swatch" style="--c:#000000"></span>
+                        </div>
+                        <span class="mini-chip">内置</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <div class="library-foot">
+              <button class="btn primary"><span class="ico"><img src="../../resource/assets/icons/add.svg" alt=""></span>新建</button>
+              <button class="btn"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span>目录</button>
+            </div>
+          </aside>
+
+          <main class="panel preview-panel">
+            <div class="preview-toolbar">
+              <div class="preview-title">
+                <strong>预览</strong>
+                <span>linear-algebra-demo.mp4</span>
+              </div>
+              <div class="tool-group">
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>画面</button>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/message.svg" alt=""></span>双语</button>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/photo.svg" alt=""></span>背景</button>
+              </div>
+            </div>
+            <div class="preview-body">
+              <div class="stage">
+                <div class="video-frame">
+                  <div class="frame-grid"></div>
+                  <div class="safe-area"></div>
+                  <div class="caption-wrap">
+                    <div class="caption-ass-main">我们今天讲矩阵和向量空间。</div>
+                    <div class="caption-ass-sub">Today we will talk about matrices and vector spaces.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-bottom">
+                <div class="preview-note"><span class="save-dot"></span><b>课程白字描边</b><span>硬字幕合成会使用当前样式</span></div>
+                <div class="tool-group">
+                  <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/view.svg" alt=""></span>适配</button>
+                  <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <aside class="panel inspector-panel">
+            <div class="panel-head">
+              <h3>参数</h3>
+              <span class="status ok">自动保存</span>
+            </div>
+            <div class="inspector-scroll">
+              <section class="setting-group">
+                <div class="setting-title">字幕排布 <span>双语</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/language.svg" alt=""></span>显示内容</div>
+                  <div class="seg-control"><span class="active">双语</span><span>原文</span><span>译文</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>双语顺序</div>
+                  <div class="control wide">原文在上</div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>主副间距</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">10<em>px</em></span><span class="step">+</span></div>
+                </div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">主字幕 <span>原文</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font.svg" alt=""></span>字体</div>
+                  <div class="control wide">默认黑体</div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">42<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div>
+                  <div class="control color-control"><span class="color-dot" style="--c:#ffffff"></span>#ffffff</div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">3<em>px</em></span><span class="step">+</span></div>
+                </div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">副字幕 <span>译文</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">27<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div>
+                  <div class="control color-control"><span class="color-dot" style="--c:#ffe36b"></span>#ffe36b</div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">2<em>px</em></span><span class="step">+</span></div>
+                </div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">位置 <span>无滑条</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>底部边距</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">42<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>最大宽度</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">84<em>%</em></span><span class="step">+</span></div>
+                </div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </article>
+
+    <div class="state-label">
+      <b>状态 B · 圆角背景编辑</b>
+      <span>背景参数和双语排布同页处理，位置仍使用数值步进</span>
+    </div>
+
+    <article class="client">
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/github.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+
+      <section class="app">
+        <div class="style-work">
+          <aside class="panel library-panel">
+            <div class="tabs">
+              <div class="tab"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>ASS 描边</div>
+              <div class="tab active"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>圆角背景</div>
+            </div>
+            <div class="library-head">
+              <strong>样式库</strong>
+              <span class="mini-chip ok">当前</span>
+            </div>
+            <div class="library-scroll">
+              <section class="style-section">
+                <div class="section-title"><span>我的样式</span><span>3 套</span></div>
+                <div class="style-card active">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>青色双行胶囊</strong>
+                      <span>逐行背景 · 适合课程视频</span>
+                      <div class="card-foot">
+                        <div class="swatches">
+                          <span class="swatch" style="--c:#06100c"></span>
+                          <span class="swatch" style="--c:#0de3ff"></span>
+                          <span class="swatch" style="--c:#ffffff"></span>
+                        </div>
+                        <span class="mini-chip ok">已保存</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/edit.svg" alt=""></span>重命名</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span>删除</button>
+                  </div>
+                </div>
+                <div class="style-card">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>黑底半透明</strong>
+                      <span>整组背景 · 夜间课程</span>
+                      <div class="card-foot">
+                        <div class="swatches">
+                          <span class="swatch" style="--c:#ffffff"></span>
+                          <span class="swatch" style="--c:#151515"></span>
+                        </div>
+                        <span class="mini-chip">我的</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section class="style-section">
+                <div class="section-title"><span>内置样式</span><span>只读</span></div>
+                <div class="style-card readonly">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>圆角胶囊</strong>
+                      <span>默认圆角背景</span>
+                      <div class="card-foot">
+                        <div class="swatches">
+                          <span class="swatch" style="--c:#ffffff"></span>
+                          <span class="swatch" style="--c:#0de3ff"></span>
+                        </div>
+                        <span class="mini-chip">内置</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <div class="library-foot">
+              <button class="btn primary"><span class="ico"><img src="../../resource/assets/icons/add.svg" alt=""></span>新建</button>
+              <button class="btn"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span>目录</button>
+            </div>
+          </aside>
+
+          <main class="panel preview-panel">
+            <div class="preview-toolbar">
+              <div class="preview-title">
+                <strong>预览</strong>
+                <span>lecture-clip.mp4</span>
+              </div>
+              <div class="tool-group">
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>画面</button>
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/message.svg" alt=""></span>双语</button>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/photo.svg" alt=""></span>背景</button>
+              </div>
+            </div>
+            <div class="preview-body">
+              <div class="stage">
+                <div class="video-frame">
+                  <div class="frame-grid"></div>
+                  <div class="safe-area"></div>
+                  <div class="caption-wrap">
+                    <div class="caption-pill">欢迎报考百年名校华南师范大学</div>
+                    <div class="caption-pill sub">Welcome to apply for South China Normal University.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-bottom">
+                <div class="preview-note"><span class="save-dot"></span><b>青色双行胶囊</b><span>当前样式已更新</span></div>
+                <div class="tool-group">
+                  <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/view.svg" alt=""></span>适配</button>
+                  <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <aside class="panel inspector-panel">
+            <div class="panel-head">
+              <h3>参数</h3>
+              <span class="status ok">自动保存</span>
+            </div>
+            <div class="inspector-scroll">
+              <section class="setting-group">
+                <div class="setting-title">背景 <span>圆角</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>背景颜色</div>
+                  <div class="control color-control"><span class="color-dot" style="--c:#0de3ff"></span>90%</div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/zoom.svg" alt=""></span>圆角半径</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">14<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>背景方式</div>
+                  <div class="control wide">逐行背景</div>
+                </div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">文字 <span>主副字幕</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font.svg" alt=""></span>字体</div>
+                  <div class="control wide">LXGW WenKai</div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>主字幕字号</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">34<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>副字幕字号</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">22<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div>
+                  <div class="control color-control"><span class="color-dot" style="--c:#06100c"></span>#06100c</div>
+                </div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">边距 <span>数值输入</span></div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>水平内边距</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">24<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>垂直内边距</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">12<em>px</em></span><span class="step">+</span></div>
+                </div>
+                <div class="setting-row">
+                  <div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>底部边距</div>
+                  <div class="num-control"><span class="step">-</span><span class="num-value">46<em>px</em></span><span class="step">+</span></div>
+                </div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </article>
+
+    <div class="state-label">
+      <b>状态 C · 样式很多时</b>
+      <span>左侧样式库独立滚动；右侧参数也独立滚动，预览区域不被挤压</span>
+    </div>
+
+    <article class="client short">
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+
+      <section class="app">
+        <div class="style-work">
+          <aside class="panel library-panel">
+            <div class="tabs">
+              <div class="tab active"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>ASS 描边</div>
+              <div class="tab"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>圆角背景</div>
+            </div>
+            <div class="library-head">
+              <strong>样式库</strong>
+              <span class="mini-chip">12 套</span>
+            </div>
+            <div class="library-scroll">
+              <section class="style-section">
+                <div class="section-title"><span>我的样式</span><span>滚动列表</span></div>
+                <div class="style-card active">
+                  <div class="style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                    <div class="style-meta">
+                      <strong>直播课大字描边</strong>
+                      <span>竖屏 · 双语 · 底部 68px</span>
+                      <div class="card-foot"><div class="swatches"><span class="swatch" style="--c:#ffffff"></span><span class="swatch" style="--c:#000000"></span><span class="swatch" style="--c:#08ec88"></span></div><span class="mini-chip ok">当前</span></div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/edit.svg" alt=""></span>重命名</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span>删除</button>
+                  </div>
+                </div>
+                <div class="style-card"><div class="style-main"><div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div><div class="style-meta"><strong>横屏课堂标准</strong><span>白字黑边 · 原文在上</span><div class="card-foot"><div class="swatches"><span class="swatch" style="--c:#ffffff"></span><span class="swatch" style="--c:#000000"></span></div><span class="mini-chip">我的</span></div></div></div></div>
+                <div class="style-card"><div class="style-main"><div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div><div class="style-meta"><strong>访谈轻描边</strong><span>小字号 · 宽度 72%</span><div class="card-foot"><div class="swatches"><span class="swatch" style="--c:#f6f6f6"></span><span class="swatch" style="--c:#222222"></span></div><span class="mini-chip">我的</span></div></div></div></div>
+                <div class="style-card"><div class="style-main"><div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div><div class="style-meta"><strong>青色胶囊</strong><span>圆角背景 · 双行</span><div class="card-foot"><div class="swatches"><span class="swatch" style="--c:#0de3ff"></span><span class="swatch" style="--c:#06100c"></span></div><span class="mini-chip">我的</span></div></div></div></div>
+                <div class="style-card"><div class="style-main"><div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div><div class="style-meta"><strong>英文练习</strong><span>译文在上 · 黄色副字幕</span><div class="card-foot"><div class="swatches"><span class="swatch" style="--c:#ffe36b"></span><span class="swatch" style="--c:#000000"></span></div><span class="mini-chip">我的</span></div></div></div></div>
+                <div class="style-card"><div class="style-main"><div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div><div class="style-meta"><strong>黑底圆角</strong><span>整组背景 · 60% 透明度</span><div class="card-foot"><div class="swatches"><span class="swatch" style="--c:#ffffff"></span><span class="swatch" style="--c:#121212"></span></div><span class="mini-chip">我的</span></div></div></div></div>
+              </section>
+            </div>
+            <div class="library-foot">
+              <button class="btn primary"><span class="ico"><img src="../../resource/assets/icons/add.svg" alt=""></span>新建</button>
+              <button class="btn"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span>目录</button>
+            </div>
+          </aside>
+
+          <main class="panel preview-panel">
+            <div class="preview-toolbar">
+              <div class="preview-title">
+                <strong>预览</strong>
+                <span>portrait-demo.mp4</span>
+              </div>
+              <div class="tool-group">
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>画面</button>
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/message.svg" alt=""></span>双语</button>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/photo.svg" alt=""></span>背景</button>
+              </div>
+            </div>
+            <div class="preview-body">
+              <div class="stage">
+                <div class="video-frame portrait">
+                  <div class="frame-grid"></div>
+                  <div class="safe-area"></div>
+                  <div class="caption-wrap">
+                    <div class="caption-ass-main">先看矩阵的形式。</div>
+                    <div class="caption-ass-sub">Let's look at the matrix form first.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-bottom">
+                <div class="preview-note"><span class="save-dot"></span><b>直播课大字描边</b><span>竖屏预览保持居中</span></div>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+              </div>
+            </div>
+          </main>
+
+          <aside class="panel inspector-panel">
+            <div class="panel-head">
+              <h3>参数</h3>
+              <span class="status ok">自动保存</span>
+            </div>
+            <div class="inspector-scroll">
+              <div class="notice"><b>样式较多时</b><span>只让列表和参数各自滚动，预览始终保留完整画面。</span></div>
+              <section class="setting-group">
+                <div class="setting-title">字幕排布 <span>双语</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/language.svg" alt=""></span>显示内容</div><div class="seg-control"><span class="active">双语</span><span>原文</span><span>译文</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>双语顺序</div><div class="control wide">原文在上</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>主副间距</div><div class="num-control"><span class="step">-</span><span class="num-value">9<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+              <section class="setting-group">
+                <div class="setting-title">主字幕 <span>原文</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font.svg" alt=""></span>字体</div><div class="control wide">默认黑体</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div><div class="num-control"><span class="step">-</span><span class="num-value">34<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div><div class="control color-control"><span class="color-dot" style="--c:#ffffff"></span>#ffffff</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div><div class="num-control"><span class="step">-</span><span class="num-value">3<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+              <section class="setting-group">
+                <div class="setting-title">副字幕 <span>译文</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div><div class="num-control"><span class="step">-</span><span class="num-value">22<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>颜色</div><div class="control color-control"><span class="color-dot" style="--c:#08ec88"></span>#08ec88</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div><div class="num-control"><span class="step">-</span><span class="num-value">2<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+              <section class="setting-group">
+                <div class="setting-title">位置 <span>竖屏</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>底部边距</div><div class="num-control"><span class="step">-</span><span class="num-value">68<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>最大宽度</div><div class="num-control"><span class="step">-</span><span class="num-value">88<em>%</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>对齐</div><div class="control small">居中</div></div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </article>
+
+    <div class="state-label"><b>状态 D · 两栏方案</b><span>预览优先，样式和参数合并到右侧工作区</span></div>
+    <article class="client two-column">
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+
+      <section class="app">
+        <div class="two-col-work">
+          <main class="panel preview-panel">
+            <div class="preview-toolbar">
+              <div class="preview-title">
+                <strong>预览</strong>
+                <span>linear-algebra-demo.mp4</span>
+              </div>
+              <div class="tool-group">
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>画面</button>
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/message.svg" alt=""></span>双语</button>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/photo.svg" alt=""></span>背景</button>
+              </div>
+            </div>
+            <div class="preview-body">
+              <div class="stage">
+                <div class="video-frame">
+                  <div class="frame-grid"></div>
+                  <div class="safe-area"></div>
+                  <div class="caption-wrap">
+                    <div class="caption-ass-main">我们今天讲矩阵和向量空间。</div>
+                    <div class="caption-ass-sub">Today we will talk about matrices and vector spaces.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-bottom">
+                <div class="preview-note"><span class="save-dot"></span><b>课程白字描边</b><span>预览区域保持优先</span></div>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/zoom.svg" alt=""></span>适配</button>
+              </div>
+            </div>
+          </main>
+
+          <aside class="panel compose-panel">
+            <div class="compose-head">
+              <h3>样式与参数</h3>
+              <span class="status ok">自动保存</span>
+            </div>
+            <div class="tabs">
+              <div class="tab active"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>ASS 描边</div>
+              <div class="tab"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>圆角背景</div>
+            </div>
+            <div class="compose-scroll">
+              <div class="mode-explain">
+                <div class="mode-card active"><b>ASS 描边</b><span>文字、描边、阴影；适合大多数视频</span></div>
+                <div class="mode-card"><b>圆角背景</b><span>背景、圆角、内边距成组调整</span></div>
+              </div>
+
+              <section class="style-rail">
+                <div class="rail-head"><strong>当前样式</strong><span>样式较多时仅右侧滚动</span></div>
+                <div class="style-row active">
+                  <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                  <div><strong>课程白字描边</strong><span>双语 · 原文在上 · 底部 72px</span></div>
+                </div>
+                <div class="quick-actions">
+                  <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制</button>
+                  <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/edit.svg" alt=""></span>重命名</button>
+                  <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span>删除</button>
+                </div>
+                <div class="style-row">
+                  <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div>
+                  <div><strong>青色双行胶囊</strong><span>圆角背景 · 主副字幕一起包裹</span></div>
+                </div>
+                <div class="style-row">
+                  <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                  <div><strong>访谈轻描边</strong><span>字号更小 · 留出画面主体</span></div>
+                </div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">字幕排布 <span>双语</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/language.svg" alt=""></span>显示内容</div><div class="seg-control"><span class="active">双语</span><span>原文</span><span>译文</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>双语顺序</div><div class="control wide">原文在上</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>主副间距</div><div class="num-control"><span class="step">-</span><span class="num-value">8<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">主字幕 <span>原文</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font.svg" alt=""></span>字体</div><div class="control wide">默认黑体</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div><div class="num-control"><span class="step">-</span><span class="num-value">32<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div><div class="control color-control"><span class="color-dot" style="--c:#ffffff"></span>#ffffff</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div><div class="num-control"><span class="step">-</span><span class="num-value">3<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">副字幕 <span>译文</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div><div class="num-control"><span class="step">-</span><span class="num-value">21<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>颜色</div><div class="control color-control"><span class="color-dot" style="--c:#08ec88"></span>#08ec88</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div><div class="num-control"><span class="step">-</span><span class="num-value">2<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+
+              <section class="setting-group">
+                <div class="setting-title">位置 <span>画面底部</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>底部边距</div><div class="num-control"><span class="step">-</span><span class="num-value">72<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>最大宽度</div><div class="num-control"><span class="step">-</span><span class="num-value">86<em>%</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>对齐</div><div class="control small">居中</div></div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </article>
+
+    <div class="state-label"><b>状态 E · 底部样式管理</b><span>右侧参数常驻；当前样式固定，其他样式同层横向浏览</span></div>
+    <article class="client bottom-layout">
+      <aside class="sidebar">
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/menu.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/home.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/video.svg" alt=""></span></div>
+        <div class="nav active"><span class="ico"><img src="../../resource/assets/icons/subtitle.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/volume.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/history.svg" alt=""></span></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/search.svg" alt=""></span></div>
+        <div class="spacer"></div>
+        <div class="nav"><span class="ico"><img src="../../resource/assets/icons/setting.svg" alt=""></span></div>
+      </aside>
+
+      <section class="app">
+        <div class="dock-work">
+          <main class="panel preview-panel">
+            <div class="preview-toolbar">
+              <div class="preview-title">
+                <strong>预览</strong>
+                <span>linear-algebra-demo.mp4</span>
+              </div>
+              <div class="tool-group">
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>画面</button>
+                <button class="tool-btn active"><span class="ico"><img src="../../resource/assets/icons/message.svg" alt=""></span>双语</button>
+                <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/photo.svg" alt=""></span>背景</button>
+              </div>
+            </div>
+            <div class="preview-body">
+              <div class="stage">
+                <div class="video-frame">
+                  <div class="frame-grid"></div>
+                  <div class="safe-area"></div>
+                  <div class="caption-wrap">
+                    <div class="caption-ass-main">我们今天讲矩阵和向量空间。</div>
+                    <div class="caption-ass-sub yellow">Today we will talk about matrices and vector spaces.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-bottom">
+                <div class="preview-note"><span class="save-dot"></span><b>课程白字描边</b><span>硬字幕合成会使用当前样式</span></div>
+                <div class="tool-group">
+                  <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/zoom.svg" alt=""></span>适配</button>
+                  <button class="tool-btn"><span class="ico"><img src="../../resource/assets/icons/sync.svg" alt=""></span>刷新</button>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <aside class="panel inspector-panel">
+            <div class="panel-head">
+              <h3>参数</h3>
+              <span class="status ok">自动保存</span>
+            </div>
+            <div class="inspector-scroll">
+              <section class="setting-group">
+                <div class="setting-title">字幕排布 <span>双语</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/language.svg" alt=""></span>显示内容</div><div class="seg-control"><span class="active">双语</span><span>原文</span><span>译文</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>双语顺序</div><div class="control wide">原文在上</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>主副间距</div><div class="num-control"><span class="step">-</span><span class="num-value">10<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+              <section class="setting-group">
+                <div class="setting-title">主字幕 <span>原文</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font.svg" alt=""></span>字体</div><div class="control wide">默认黑体</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div><div class="num-control"><span class="step">-</span><span class="num-value">42<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div><div class="control color-control"><span class="color-dot" style="--c:#ffffff"></span>#ffffff</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div><div class="num-control"><span class="step">-</span><span class="num-value">3<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+              <section class="setting-group">
+                <div class="setting-title">副字幕 <span>译文</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/font_size.svg" alt=""></span>字号</div><div class="num-control"><span class="step">-</span><span class="num-value">27<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>文字颜色</div><div class="control color-control"><span class="color-dot" style="--c:#ffe36b"></span>#ffe36b</div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>描边</div><div class="num-control"><span class="step">-</span><span class="num-value">2<em>px</em></span><span class="step">+</span></div></div>
+              </section>
+              <section class="setting-group">
+                <div class="setting-title">位置 <span>底部</span></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>底部边距</div><div class="num-control"><span class="step">-</span><span class="num-value">66<em>px</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/layout.svg" alt=""></span>最大宽度</div><div class="num-control"><span class="step">-</span><span class="num-value">88<em>%</em></span><span class="step">+</span></div></div>
+                <div class="setting-row"><div class="row-label"><span class="ico"><img src="../../resource/assets/icons/alignment.svg" alt=""></span>对齐</div><div class="control small">居中</div></div>
+              </section>
+            </div>
+          </aside>
+
+          <section class="panel style-dock">
+            <div class="dock-head">
+              <div class="dock-tabs">
+                <div class="dock-tab active"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span>ASS 描边</div>
+                <div class="dock-tab"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span>圆角背景</div>
+              </div>
+              <div class="dock-title"><b>样式管理</b> · 当前样式固定，右侧浏览其他样式</div>
+              <div class="dock-actions">
+                <button class="btn primary"><span class="ico"><img src="../../resource/assets/icons/add.svg" alt=""></span>新建</button>
+                <button class="btn"><span class="ico"><img src="../../resource/assets/icons/folder.svg" alt=""></span>目录</button>
+              </div>
+            </div>
+            <div class="dock-scroll">
+              <div class="dock-card-row">
+                <div class="dock-style-card active">
+                  <div class="dock-style-main">
+                    <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                    <div>
+                      <strong>课程白字描边</strong>
+                      <p>双语 · 原文在上 · 黄字译文</p>
+                      <div class="swatches"><span class="swatch" style="--c:#ffffff"></span><span class="swatch" style="--c:#000000"></span><span class="swatch" style="--c:#ffe36b"></span></div>
+                    </div>
+                  </div>
+                  <div class="quick-actions">
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/copy.svg" alt=""></span>复制</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/edit.svg" alt=""></span>重命名</button>
+                    <button class="ghost-action"><span class="ico"><img src="../../resource/assets/icons/delete.svg" alt=""></span>删除</button>
+                  </div>
+                </div>
+                <div class="dock-track">
+                  <div class="track-row">
+                    <div class="dock-style-card">
+                      <div class="dock-style-main">
+                        <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                        <div><strong>短视频强描边</strong><p>大字号 · 居中 · 单语优先</p><div class="swatches"><span class="swatch" style="--c:#ffffff"></span><span class="swatch" style="--c:#000000"></span></div></div>
+                      </div>
+                      <div class="dock-style-foot"><span class="mini-chip">我的</span><span class="status">可选</span></div>
+                    </div>
+                    <div class="dock-style-card">
+                      <div class="dock-style-main">
+                        <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div>
+                        <div><strong>青色双行胶囊</strong><p>圆角背景 · 主副字幕一起包裹</p><div class="swatches"><span class="swatch" style="--c:#0de3ff"></span><span class="swatch" style="--c:#06100c"></span></div></div>
+                      </div>
+                      <div class="dock-style-foot"><span class="mini-chip">圆角</span><span class="status">可选</span></div>
+                    </div>
+                    <div class="dock-style-card">
+                      <div class="dock-style-main">
+                        <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                        <div><strong>访谈轻描边</strong><p>小字号 · 留出人物和画面信息</p><div class="swatches"><span class="swatch" style="--c:#f6f6f6"></span><span class="swatch" style="--c:#202020"></span></div></div>
+                      </div>
+                      <div class="dock-style-foot"><span class="mini-chip">我的</span><span class="status">可选</span></div>
+                    </div>
+                    <div class="dock-style-card">
+                      <div class="dock-style-main">
+                        <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/palette.svg" alt=""></span></div>
+                        <div><strong>黑底圆角</strong><p>整组背景 · 适合复杂画面</p><div class="swatches"><span class="swatch" style="--c:#ffffff"></span><span class="swatch" style="--c:#111111"></span></div></div>
+                      </div>
+                      <div class="dock-style-foot"><span class="mini-chip">圆角</span><span class="status">可选</span></div>
+                    </div>
+                    <div class="dock-style-card">
+                      <div class="dock-style-main">
+                        <div class="style-icon"><span class="ico"><img src="../../resource/assets/icons/brush.svg" alt=""></span></div>
+                        <div><strong>英文练习黄字</strong><p>译文更突出 · 课堂复习用</p><div class="swatches"><span class="swatch" style="--c:#ffe36b"></span><span class="swatch" style="--c:#000000"></span></div></div>
+                      </div>
+                      <div class="dock-style-foot"><span class="mini-chip">我的</span><span class="status">可选</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

@@ -1,5 +1,6 @@
 """BcutASR integration tests."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,11 @@ from videocaptioner.core.asr.asr_data import ASRData
 
 @pytest.mark.integration
 @pytest.mark.slow
+@pytest.mark.skipif(
+    os.getenv("RUN_LIVE_ASR_TESTS") != "1"
+    and os.getenv("RUN_BCUT_ASR_TESTS") != "1",
+    reason="BcutASR uses the public Bilibili ASR service; set RUN_BCUT_ASR_TESTS=1 to run.",
+)
 class TestBcutASR:
     """Test suite for BcutASR using public Bilibili API.
 

@@ -105,12 +105,21 @@ class LLMServiceEnum(Enum):
     """LLM服务"""
 
     OPENAI = "OpenAI 兼容"
+    OFFICIAL = "官方中转"
     SILICON_CLOUD = "SiliconCloud"
     DEEPSEEK = "DeepSeek"
     OLLAMA = "Ollama"
     LM_STUDIO = "LM Studio"
     GEMINI = "Gemini"
-    CHATGLM = "ChatGLM"
+    ZHIPU = "Zhipu"
+    IMMERSIVE = "公益大模型"
+
+    @classmethod
+    def _missing_(cls, value):
+        # 既有配置里序列化的是历史值 "ChatGLM"，反序列化时映射到现名
+        if value == "ChatGLM":
+            return cls.ZHIPU
+        return None
 
 
 class TranscribeModelEnum(Enum):
@@ -118,6 +127,7 @@ class TranscribeModelEnum(Enum):
 
     BIJIAN = "B 接口"
     JIANYING = "J 接口"
+    BAILIAN_FUN_ASR = "百炼 Fun-ASR"
     WHISPER_API = "Whisper [API] ✨"
     FASTER_WHISPER = "FasterWhisper ✨"
     WHISPER_CPP = "WhisperCpp"
@@ -465,58 +475,32 @@ LANGUAGES = {
 }
 
 
-@dataclass
-class ASRLanguageCapability:
-    """ASR语言支持能力"""
-
-    supported_languages: list[TranscribeLanguageEnum]
-    supports_auto: bool
-
-
-def _get_all_languages_except_auto() -> list[TranscribeLanguageEnum]:
-    """获取除 AUTO 外的All语言"""
-    return [lang for lang in TranscribeLanguageEnum if lang != TranscribeLanguageEnum.AUTO]
-
-
-ASR_LANGUAGE_CAPABILITIES: dict[TranscribeModelEnum, ASRLanguageCapability] = {
-    TranscribeModelEnum.BIJIAN: ASRLanguageCapability(
-        supported_languages=[
-            TranscribeLanguageEnum.CHINESE,
-            TranscribeLanguageEnum.ENGLISH,
-        ],
-        supports_auto=True,
+# 各转录接口支持的源语言（唯一真源，CLI 与 GUI 共用）。
+# B 接口（必剪）/ J 接口（剪映）是国内剪辑工具的云端 ASR，只识别中文与英文，
+# 且实际由服务端自动判别、忽略显式语言；其余接口（Whisper / Fun-ASR）支持多语种。
+# 不在表内的接口视为「不限制」，可选全部 TranscribeLanguageEnum。
+TRANSCRIBE_MODEL_LANGUAGES: dict[
+    TranscribeModelEnum, tuple[TranscribeLanguageEnum, ...]
+] = {
+    TranscribeModelEnum.BIJIAN: (
+        TranscribeLanguageEnum.AUTO,
+        TranscribeLanguageEnum.CHINESE,
+        TranscribeLanguageEnum.ENGLISH,
     ),
-    TranscribeModelEnum.JIANYING: ASRLanguageCapability(
-        supported_languages=[
-            TranscribeLanguageEnum.CHINESE,
-            TranscribeLanguageEnum.ENGLISH,
-        ],
-        supports_auto=True,
-    ),
-    TranscribeModelEnum.FASTER_WHISPER: ASRLanguageCapability(
-        supported_languages=_get_all_languages_except_auto(),
-        supports_auto=False,
-    ),
-    TranscribeModelEnum.WHISPER_CPP: ASRLanguageCapability(
-        supported_languages=_get_all_languages_except_auto(),
-        supports_auto=True,
-    ),
-    TranscribeModelEnum.WHISPER_API: ASRLanguageCapability(
-        supported_languages=_get_all_languages_except_auto(),
-        supports_auto=True,
+    TranscribeModelEnum.JIANYING: (
+        TranscribeLanguageEnum.AUTO,
+        TranscribeLanguageEnum.CHINESE,
+        TranscribeLanguageEnum.ENGLISH,
     ),
 }
 
 
-def get_asr_language_capability(model: TranscribeModelEnum) -> ASRLanguageCapability:
-    """获取指定模型的语言能力"""
-    return ASR_LANGUAGE_CAPABILITIES.get(
-        model,
-        ASRLanguageCapability(
-            supported_languages=_get_all_languages_except_auto(),
-            supports_auto=True,
-        ),
-    )
+def transcribe_languages_for(
+    model: TranscribeModelEnum,
+) -> list[TranscribeLanguageEnum]:
+    """该转录接口可选的源语言；未在限制表中的接口返回全部语言。"""
+    restricted = TRANSCRIBE_MODEL_LANGUAGES.get(model)
+    return list(restricted) if restricted is not None else list(TranscribeLanguageEnum)
 
 
 @dataclass
@@ -562,6 +546,10 @@ class TranscribeConfig:
     whisper_api_base: Optional[str] = None
     whisper_api_model: Optional[str] = None
     whisper_api_prompt: Optional[str] = None
+    # 百炼 Fun-ASR 配置
+    fun_asr_api_key: Optional[str] = None
+    fun_asr_api_base: Optional[str] = None
+    fun_asr_model: Optional[str] = None
     # Faster Whisper 配置
     faster_whisper_program: Optional[str] = None
     faster_whisper_model: Optional[FasterWhisperModelEnum] = None
@@ -598,6 +586,11 @@ class TranscribeConfig:
             lines.append(f"API Model: {self.whisper_api_model}")
             if self.whisper_api_prompt:
                 lines.append(f"Prompt: {self.whisper_api_prompt[:30]}...")
+
+        elif self.transcribe_model == TranscribeModelEnum.BAILIAN_FUN_ASR:
+            lines.append(f"API Base: {self.fun_asr_api_base}")
+            lines.append(f"API Key: {self._mask_key(self.fun_asr_api_key)}")
+            lines.append(f"API Model: {self.fun_asr_model}")
 
         elif self.transcribe_model == TranscribeModelEnum.FASTER_WHISPER:
             lines.append(
@@ -701,6 +694,7 @@ class SynthesisConfig:
     subtitle_layout: SubtitleLayoutEnum = SubtitleLayoutEnum.ORIGINAL_ON_TOP
     # 字幕样式配置
     ass_style: str = ""  # ASS 样式字符串
+    ass_line_gap: int = 0  # ASS 主副字幕间距（双语时作用于上行的对话 MarginV）
     rounded_style: Optional[dict] = None  # 圆角背景样式配置
 
     def print_config(self) -> str:
@@ -715,6 +709,58 @@ class SynthesisConfig:
             lines.append(f"  CRF: {self.video_quality.get_crf()}")
             lines.append(f"  Preset: {self.video_quality.get_preset()}")
         lines.append("=" * 44)
+        return "\n".join(lines)
+
+
+@dataclass
+class DubbingUIConfig:
+    """桌面端配音配置。
+
+    这里保留用户意图，不暴露 provider 的低层参数；线程层再转换为
+    core.dubbing.DubbingConfig。
+    """
+
+    enabled: bool = False
+    preset: str = "edge-cn-female"
+    provider: str = "edge"
+    api_key: str = ""
+    api_base: str = ""
+    model: str = "edge-tts"
+    voice: str = "zh-CN-XiaoxiaoNeural"
+    text_track: str = "auto"
+    timing: str = "balanced"
+    audio_mode: str = "replace"
+    tts_workers: int = 5
+    use_cache: bool = True
+    speaker_voices: dict[str, str] = field(default_factory=dict)
+    clone_audio_path: str = ""
+    clone_audio_text: str = ""
+
+    def __post_init__(self):
+        self.preset = self.preset.strip()
+        self.provider = self.provider.strip()
+        self.api_key = self.api_key.strip()
+        self.api_base = self.api_base.strip()
+        self.model = self.model.strip()
+        self.voice = self.voice.strip()
+        self.text_track = self.text_track.strip()
+        self.timing = self.timing.strip()
+        self.audio_mode = self.audio_mode.strip()
+        self.clone_audio_path = self.clone_audio_path.strip()
+        self.clone_audio_text = self.clone_audio_text.strip()
+
+    def print_config(self) -> str:
+        lines = ["=========== Dubbing Task ==========="]
+        lines.append(f"Enabled: {self.enabled}")
+        if self.enabled:
+            lines.append(f"Preset: {self.preset}")
+            lines.append(f"Provider: {self.provider}")
+            lines.append(f"Voice: {self.voice}")
+            lines.append(f"Text Track: {self.text_track}")
+            lines.append(f"Timing: {self.timing}")
+            lines.append(f"Audio Mode: {self.audio_mode}")
+            lines.append(f"Speakers: {len(self.speaker_voices)}")
+        lines.append("=" * 38)
         return "\n".join(lines)
 
 
@@ -741,6 +787,9 @@ class TranscribeTask:
     # 选中的音轨索引
     selected_audio_track_index: int = 0
 
+    # 流水线共享的任务工作目录（中间产物落盘处，成功后由流程所有者清理）
+    task_dir: Optional[str] = None
+
     transcribe_config: Optional[TranscribeConfig] = None
 
 
@@ -766,6 +815,9 @@ class SubtitleTask:
     # 是否需要执行下一个任务（视频合成）
     need_next_task: bool = True
 
+    # 流水线共享的任务工作目录（布局副本等中间产物落盘处）
+    task_dir: Optional[str] = None
+
     subtitle_config: Optional[SubtitleConfig] = None
 
 
@@ -790,70 +842,28 @@ class SynthesisTask:
     # 是否需要执行下一个任务（预留）
     need_next_task: bool = False
 
+    # 流水线共享的任务工作目录（链尾阶段负责按 keep_intermediates 清理）
+    task_dir: Optional[str] = None
+
     synthesis_config: Optional[SynthesisConfig] = None
 
 
 @dataclass
-class TranscriptAndSubtitleTask:
-    """转录和字幕任务类"""
+class DubbingTask:
+    """视频/音频配音任务类"""
 
-    # 任务标识
     task_id: str = field(default_factory=_generate_task_id)
 
     queued_at: Optional[datetime.datetime] = None
     started_at: Optional[datetime.datetime] = None
     completed_at: Optional[datetime.datetime] = None
 
-    # 输入
-    file_path: Optional[str] = None
+    video_path: Optional[str] = None
+    subtitle_path: Optional[str] = None
+    output_audio_path: Optional[str] = None
+    output_video_path: Optional[str] = None
 
-    # 输出
-    output_path: Optional[str] = None
+    # 配音中间产物（分段/报告）所在的任务工作目录
+    task_dir: Optional[str] = None
 
-    transcribe_config: Optional[TranscribeConfig] = None
-    subtitle_config: Optional[SubtitleConfig] = None
-
-
-@dataclass
-class FullProcessTask:
-    """完整处理任务类(转录+字幕+合成)"""
-
-    # 任务标识
-    task_id: str = field(default_factory=_generate_task_id)
-
-    queued_at: Optional[datetime.datetime] = None
-    started_at: Optional[datetime.datetime] = None
-    completed_at: Optional[datetime.datetime] = None
-
-    # 输入
-    file_path: Optional[str] = None
-    # 输出
-    output_path: Optional[str] = None
-
-    transcribe_config: Optional[TranscribeConfig] = None
-    subtitle_config: Optional[SubtitleConfig] = None
-    synthesis_config: Optional[SynthesisConfig] = None
-
-
-class BatchTaskType(Enum):
-    """批量处理任务类型"""
-
-    TRANSCRIBE = "批量转录"
-    SUBTITLE = "批量字幕"
-    TRANS_SUB = "转录+字幕"
-    FULL_PROCESS = "全流程处理"
-
-    def __str__(self):
-        return self.value
-
-
-class BatchTaskStatus(Enum):
-    """批量处理任务状态"""
-
-    WAITING = "等待中"
-    RUNNING = "处理中"
-    COMPLETED = "已完成"
-    FAILED = "失败"
-
-    def __str__(self):
-        return self.value
+    dubbing_config: Optional[DubbingUIConfig] = None

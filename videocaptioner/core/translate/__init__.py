@@ -7,6 +7,7 @@
 from videocaptioner.core.entities import SubtitleProcessData
 from videocaptioner.core.translate.base import BaseTranslator
 from videocaptioner.core.translate.bing_translator import BingTranslator
+from videocaptioner.core.translate.check import TranslationCheckResult, check_translation
 from videocaptioner.core.translate.deeplx_translator import DeepLXTranslator
 from videocaptioner.core.translate.factory import TranslatorFactory
 from videocaptioner.core.translate.google_translator import GoogleTranslator
@@ -17,6 +18,8 @@ __all__ = [
     "BaseTranslator",
     "SubtitleProcessData",
     "TranslatorFactory",
+    "TranslationCheckResult",
+    "check_translation",
     "TranslatorType",
     "TargetLanguage",
     "BingTranslator",

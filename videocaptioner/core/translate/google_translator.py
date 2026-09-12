@@ -63,8 +63,10 @@ class GoogleTranslator(BaseTranslator):
                 if re_result:
                     data.translated_text = html.unescape(re_result[0])
                 else:
+                    self.last_error = "无法从 Google 响应中提取翻译结果"
                     logger.warning(f"Cannot extract translation from Google response: {data.index}")
             except Exception as e:
+                self.last_error = str(e)
                 logger.error(f"Google translation failed {data.index}: {str(e)}")
 
         return subtitle_chunk

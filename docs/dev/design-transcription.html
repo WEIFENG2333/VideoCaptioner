@@ -1,0 +1,1417 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VideoCaptioner 语音转录页设计稿</title>
+  <style>
+    :root {
+      --canvas-w: 1440px;
+      --canvas-h: 900px;
+      --bg: #111514;
+      --chrome: #171b1a;
+      --sidebar: #0f1312;
+      --panel: #202624;
+      --panel2: #252c2a;
+      --panel3: #1a201f;
+      --field: #242b29;
+      --line: #3a4440;
+      --line2: #2c3531;
+      --text: #f4f7f5;
+      --text2: #cbd4d0;
+      --muted: #9ba7a2;
+      --faint: #71807a;
+      --accent: #00e889;
+      --accent2: #12ca7d;
+      --accent-soft: rgba(0, 232, 137, .14);
+      --accent-softer: rgba(0, 232, 137, .075);
+      --danger: #ff7f6d;
+      --danger-soft: rgba(255, 127, 109, .15);
+      --warn: #e8c96a;
+      --warn-soft: rgba(232, 201, 106, .14);
+      --shadow: 0 18px 56px rgba(0, 0, 0, .38);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 1520px;
+      background:
+        radial-gradient(circle at 16% 0%, rgba(0, 232, 137, .11), transparent 32%),
+        radial-gradient(circle at 100% 18%, rgba(0, 232, 137, .05), transparent 28%),
+        #0b0f0e;
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    .board {
+      width: 1520px;
+      margin: 0 auto;
+      padding: 34px 0 88px;
+    }
+
+    .board-head {
+      margin: 0 20px 28px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .board-head h1 {
+      margin: 0;
+      font-size: 36px;
+      font-weight: 860;
+      line-height: 1.12;
+    }
+
+    .board-head p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .board-pills {
+      display: flex;
+      gap: 10px;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 720;
+      white-space: nowrap;
+    }
+
+    .board-pills span {
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .version {
+      margin-top: 40px;
+    }
+
+    .version-head {
+      margin: 0 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .version-head h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 840;
+    }
+
+    .version-head h2 b {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 24px;
+      margin-right: 10px;
+      border-radius: 999px;
+      color: var(--accent);
+      border: 1px solid rgba(0, 232, 137, .72);
+      background: var(--accent-soft);
+      font-size: 13px;
+    }
+
+    .version-head span {
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .version-summary {
+      width: var(--canvas-w);
+      margin: 0 auto 18px;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(32, 38, 36, .72);
+    }
+
+    .version-summary h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 840;
+    }
+
+    .version-summary p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .state-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .state-item {
+      min-height: 74px;
+      padding: 12px;
+      border-radius: 11px;
+      border: 1px solid var(--line2);
+      background: rgba(255, 255, 255, .024);
+    }
+
+    .state-item b {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 840;
+    }
+
+    .state-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .state-label {
+      margin: 24px 20px 10px;
+      color: var(--text2);
+      font-size: 15px;
+      font-weight: 760;
+    }
+
+    .state-label em {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 22px;
+      margin-right: 8px;
+      border-radius: 999px;
+      color: var(--accent);
+      border: 1px solid rgba(0, 232, 137, .68);
+      background: var(--accent-soft);
+      font-style: normal;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .client {
+      width: var(--canvas-w);
+      height: var(--canvas-h);
+      margin: 0 auto 36px;
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      grid-template-rows: 44px 1fr;
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid #2b302e;
+      background: var(--bg);
+      box-shadow: var(--shadow);
+    }
+
+    .titlebar {
+      grid-column: 1 / 3;
+      position: relative;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid #2a302e;
+      background: var(--chrome);
+      color: #c9d2cd;
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .dots {
+      position: absolute;
+      left: 16px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+
+    .red { background: #ff5f57; }
+    .yellow { background: #ffbd2e; }
+    .green { background: #28c840; }
+
+    .sidebar {
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 13px;
+      padding: 18px 10px;
+      background: var(--sidebar);
+      border-right: 1px solid #242b29;
+    }
+
+    .spacer { flex: 1; }
+
+    .nav {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 11px;
+      color: #bac5c0;
+    }
+
+    .nav.active {
+      color: var(--accent);
+      background: rgba(0, 232, 137, .16);
+    }
+
+    .nav.active::before {
+      content: "";
+      position: absolute;
+      left: -10px;
+      top: 13px;
+      width: 4px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .nav.hover {
+      color: #fff;
+      background: rgba(255, 255, 255, .055);
+    }
+
+    .ico {
+      width: 21px;
+      height: 21px;
+      display: inline-block;
+      flex: 0 0 21px;
+    }
+
+    .ico.sm {
+      width: 17px;
+      height: 17px;
+      flex-basis: 17px;
+    }
+
+    .ico img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      filter: invert(87%) sepia(10%) saturate(282%) hue-rotate(109deg) brightness(90%) contrast(90%);
+    }
+
+    .nav.active .ico img,
+    .active .ico img,
+    .ok .ico img {
+      filter: invert(72%) sepia(80%) saturate(946%) hue-rotate(95deg) brightness(103%) contrast(102%);
+    }
+
+    .primary .ico img {
+      filter: brightness(0) saturate(100%) invert(4%) sepia(22%) saturate(1011%) hue-rotate(109deg) brightness(91%) contrast(98%);
+    }
+
+    .app {
+      grid-column: 2;
+      grid-row: 2;
+      position: relative;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      padding: 28px 48px 32px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .tabs {
+      height: 68px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: stretch;
+      overflow: hidden;
+      margin-bottom: 26px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .tab {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 790;
+    }
+
+    .tab.active { color: var(--text); }
+    .tab.hover { color: var(--text2); background: rgba(255, 255, 255, .035); }
+
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 18%;
+      right: 18%;
+      bottom: 0;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .toolbar {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .toolbar.center { justify-content: center; }
+    .grow { flex: 1; }
+
+    .btn,
+    .select,
+    .icon-btn,
+    .input,
+    .pill,
+    .status {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      color: var(--text);
+    }
+
+    .btn,
+    .select,
+    .input {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 18px;
+      border-radius: 9px;
+      font-size: 16px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      min-width: 126px;
+      color: #06110d;
+      border-color: var(--accent);
+      background: var(--accent);
+      font-weight: 860;
+    }
+
+    .btn.primary.hover {
+      background: #18f69d;
+      border-color: #18f69d;
+      box-shadow: 0 0 0 3px rgba(0, 232, 137, .14);
+    }
+
+    .btn.hover,
+    .select.hover {
+      border-color: #74807b;
+      background: #303735;
+    }
+
+    .btn.disabled,
+    .select.disabled {
+      opacity: .45;
+    }
+
+    .btn.active,
+    .select.active {
+      color: var(--accent);
+      border-color: rgba(0, 232, 137, .72);
+      background: var(--accent-soft);
+    }
+
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+    }
+
+    .select {
+      min-width: 154px;
+      justify-content: space-between;
+    }
+
+    .select.wide { min-width: 210px; }
+    .select.small { min-width: 116px; }
+    .select.compact {
+      min-width: 108px;
+      min-height: 31px;
+      height: 31px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 780;
+    }
+
+    .input {
+      justify-content: flex-start;
+      color: var(--muted);
+      font-weight: 650;
+      background: var(--field);
+    }
+
+    .input.filled { color: var(--text); }
+
+    .text-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--accent);
+      border-bottom: 1px solid rgba(0, 232, 137, .75);
+      font-weight: 820;
+      line-height: 1.35;
+    }
+
+    .head-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .header-link {
+      min-height: 31px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 232, 137, .46);
+      color: var(--accent);
+      background: rgba(0, 232, 137, .08);
+      font-size: 13px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+
+    .header-link .ico img {
+      filter: invert(72%) sepia(80%) saturate(946%) hue-rotate(95deg) brightness(103%) contrast(102%);
+    }
+
+    .header-link:hover {
+      border-color: rgba(0, 232, 137, .82);
+      background: rgba(0, 232, 137, .14);
+    }
+
+    .file-pick-action {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-left: 4px;
+      padding: 0 2px 4px;
+      color: var(--accent);
+      font-weight: 850;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    .file-pick-action::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      transform-origin: left center;
+      transition: transform .18s ease, opacity .18s ease;
+      opacity: .9;
+    }
+
+    .file-pick-action .ico img {
+      filter: invert(72%) sepia(80%) saturate(946%) hue-rotate(95deg) brightness(103%) contrast(102%);
+    }
+
+    .file-pick-action:hover {
+      color: #34f8a2;
+    }
+
+    .file-pick-action:hover::after {
+      transform: scaleX(1.08);
+      opacity: 1;
+    }
+
+    .file-pick-action:hover .ico {
+      transform: translateY(-1px);
+    }
+
+    .pill,
+    .status {
+      height: 31px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 0 12px;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .status.ok {
+      color: var(--accent);
+      border-color: rgba(0, 232, 137, .72);
+      background: var(--accent-soft);
+    }
+
+    .status.warn {
+      color: #f2d77b;
+      border-color: rgba(232, 201, 106, .7);
+      background: var(--warn-soft);
+    }
+
+    .status.fail {
+      color: #ffb5aa;
+      border-color: rgba(255, 127, 109, .75);
+      background: var(--danger-soft);
+    }
+
+    .switch {
+      width: 48px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #222927;
+      justify-self: end;
+    }
+
+    .switch i {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #b8c6c0;
+    }
+
+    .switch.on {
+      justify-content: flex-end;
+      border-color: rgba(0, 232, 137, .78);
+      background: var(--accent-soft);
+    }
+
+    .switch.on i { background: var(--accent); }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .pad { padding: 22px; }
+    .settings-card {
+      position: relative;
+      align-self: start;
+      overflow: visible;
+    }
+
+    .params-card {
+      position: relative;
+      overflow: visible;
+    }
+
+    .panel-head {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border-bottom: 1px solid var(--line2);
+    }
+
+    .panel-head h3,
+    .card-title {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 840;
+    }
+
+    .muted { color: var(--muted); }
+
+    .grid { display: grid; gap: 20px; }
+    .two { grid-template-columns: minmax(0, 1fr) 360px; }
+    .two-wide { grid-template-columns: 360px minmax(0, 1fr); }
+    .three { grid-template-columns: repeat(3, 1fr); }
+
+    .drop-screen {
+      height: 610px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 22px;
+    }
+
+    .drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 34px;
+      text-align: center;
+      border: 1px dashed #53615c;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(0, 232, 137, .13), transparent 34%),
+        rgba(255, 255, 255, .018);
+    }
+
+    .drop-icon {
+      width: 92px;
+      height: 92px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 24px;
+      border-radius: 22px;
+      background: #252b29;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+    }
+
+    .drop-icon .ico {
+      width: 48px;
+      height: 48px;
+    }
+
+    .drop-zone h3 {
+      margin: 0;
+      font-size: 34px;
+      font-weight: 880;
+      line-height: 1.12;
+    }
+
+    .drop-zone p {
+      margin: 14px 0 22px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .empty-queue {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line2);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .018);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-queue b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text2);
+      font-size: 18px;
+      font-weight: 840;
+    }
+
+    .format-line {
+      color: var(--faint);
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .option-row {
+      display: grid;
+      grid-template-columns: 98px 1fr;
+      align-items: center;
+      gap: 14px;
+      min-height: 62px;
+      padding: 12px 0;
+      border-top: 1px solid var(--line2);
+    }
+
+    .option-row:first-child { border-top: 0; }
+
+    .option-row b {
+      color: var(--text2);
+      font-size: 15px;
+      font-weight: 820;
+    }
+
+    .media-card {
+      min-height: 210px;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr) 174px;
+      align-items: center;
+      gap: 24px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+
+    .media-card > * {
+      min-width: 0;
+    }
+
+    .thumb {
+      width: 250px;
+      height: 141px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 10px;
+      border: 1px solid var(--line2);
+      background:
+        radial-gradient(circle at 76% 18%, rgba(246, 196, 48, .45), transparent 12%),
+        radial-gradient(circle at 52% 52%, rgba(48, 169, 255, .38), transparent 26%),
+        linear-gradient(135deg, #293532 0%, #1a211f 100%);
+    }
+
+    .thumb.video,
+    .thumb.audio {
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(0, 232, 137, .18), transparent 31%),
+        radial-gradient(circle at 76% 20%, rgba(255, 255, 255, .055), transparent 16%),
+        linear-gradient(135deg, #23302c 0%, #18201d 100%);
+    }
+
+    .media-symbol {
+      width: 68px;
+      height: 68px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      border: 1px solid rgba(203, 212, 208, .18);
+      background: rgba(8, 17, 14, .42);
+      box-shadow: 0 14px 38px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .05);
+    }
+
+    .media-symbol .ico {
+      width: 34px;
+      height: 34px;
+      flex-basis: 34px;
+    }
+
+    .media-symbol .ico img {
+      filter: invert(72%) sepia(80%) saturate(946%) hue-rotate(95deg) brightness(103%) contrast(102%);
+    }
+
+    .audio-line {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      height: 28px;
+      opacity: .92;
+    }
+
+    .audio-line path {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .pending-result {
+      flex: 1;
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      margin-top: 18px;
+      border: 1px dashed rgba(203, 212, 208, .22);
+      border-radius: 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .018);
+      text-align: center;
+    }
+
+    .pending-result b {
+      display: block;
+      margin-top: 12px;
+      color: var(--text2);
+      font-size: 18px;
+      font-weight: 820;
+    }
+
+    .media-title {
+      max-width: 620px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 24px;
+      font-weight: 860;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .media-actions {
+      display: grid;
+      gap: 12px;
+    }
+
+    .progress {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #2a312f;
+    }
+
+    .progress i {
+      display: block;
+      width: var(--value, 50%);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .progress-card {
+      display: grid;
+      gap: 18px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .018);
+    }
+
+    .progress-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 820;
+    }
+
+    .stage-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 42px;
+      color: var(--text2);
+      font-size: 14px;
+      font-weight: 740;
+    }
+
+    .stage-row span:nth-child(2) {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wave {
+      height: 176px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 28px;
+      border-radius: 15px;
+      border: 1px solid var(--line);
+      background: #17201d;
+    }
+
+    .bar {
+      width: 8px;
+      height: var(--h);
+      border-radius: 999px;
+      background: linear-gradient(180deg, #00f49b, #0a9f68);
+      opacity: .88;
+    }
+
+    .step-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 52px;
+      padding: 10px 12px;
+      border: 1px solid var(--line2);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .024);
+    }
+
+    .step-dot {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .table {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .thead,
+    .trow {
+      display: grid;
+      grid-template-columns: 150px 150px minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .thead {
+      min-height: 46px;
+      color: var(--text2);
+      font-weight: 800;
+      background: #1b211f;
+    }
+
+    .trow {
+      min-height: 56px;
+      border-top: 1px solid var(--line2);
+      color: var(--text2);
+    }
+
+    .trow.active {
+      color: var(--text);
+      background: var(--accent-softer);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .cell {
+      min-width: 0;
+      padding: 11px 16px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border-right: 1px solid var(--line2);
+    }
+
+    .cell:last-child { border-right: 0; }
+
+    .dropdown {
+      position: absolute;
+      z-index: 5;
+      width: 220px;
+      padding: 7px;
+      border-radius: 12px;
+      border: 1px solid #53605b;
+      background: #252b29;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, .45);
+    }
+
+    .menu-item {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 750;
+    }
+
+    .menu-item.active {
+      color: var(--accent);
+      background: rgba(0, 232, 137, .16);
+    }
+
+    .error-panel {
+      display: grid;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 127, 109, .62);
+      border-radius: 12px;
+      background: var(--danger-soft);
+      color: #ffcfc8;
+    }
+
+    .error-panel b {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 840;
+    }
+
+    .error-panel span {
+      color: #ffcfc8;
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .split {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 20px;
+    }
+
+    .fill-panel {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .fill-body {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .file-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .file-list.scroll {
+      align-content: start;
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .file-list.scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .file-list.scroll::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: #44504c;
+    }
+
+    .file-item {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 11px;
+      border: 1px solid var(--line2);
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .file-item b,
+    .file-item span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-item b {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 840;
+    }
+
+    .file-item.active {
+      border-color: rgba(0, 232, 137, .75);
+      background: var(--accent-soft);
+    }
+
+    .queue-footer {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 730;
+    }
+
+    .result-path {
+      min-width: 0;
+      margin: 8px 0 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .action-grid {
+      display: grid;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>语音转录页设计稿</h1>
+        <p>最终方向：单文件转录工作台。当前文件、预览结果、转录参数始终固定在同一套结构里。</p>
+      </div>
+      <div class="board-pills">
+        <span>1440 × 900</span>
+        <span>1 组最终方案</span>
+        <span>6 个真实状态</span>
+      </div>
+    </header>
+
+    <div id="root"></div>
+  </main>
+
+  <script>
+    const icon = (name, cls = "sm") => `<span class="ico ${cls}"><img src="../../resource/assets/icons/${name}.svg" alt=""></span>`;
+
+    const mediaThumb = (kind = "video", style = "") => `
+      <div class="thumb ${kind}" style="${style}">
+        <div class="media-symbol">${icon(kind === "audio" ? "music" : "video", "")}</div>
+        ${kind === "audio" ? `<svg class="audio-line" viewBox="0 0 180 28" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M2 15 C14 15 14 6 24 6 S34 22 44 22 S54 9 64 9 S74 18 84 18 S94 4 104 4 S114 23 124 23 S134 10 144 10 S154 16 178 16" />
+        </svg>` : ""}
+      </div>`;
+
+    const nav = () => `
+      <aside class="sidebar">
+        <div class="nav">${icon("home", "")}</div>
+        <div class="nav active">${icon("video", "")}</div>
+        <div class="nav">${icon("subtitle", "")}</div>
+        <div class="nav">${icon("volume", "")}</div>
+        <div class="nav">${icon("history", "")}</div>
+        <div class="nav">${icon("search", "")}</div>
+        <div class="spacer"></div>
+        <div class="nav">${icon("github", "")}</div>
+        <div class="nav">${icon("setting", "")}</div>
+      </aside>`;
+
+    const tabs = () => `
+      <nav class="tabs">
+        <div class="tab">任务创建</div>
+        <div class="tab active">语音转录</div>
+        <div class="tab">字幕优化与翻译</div>
+        <div class="tab">字幕视频合成</div>
+      </nav>`;
+
+    const shell = (body, title = "语音转录") => `
+      <article class="client">
+        <div class="titlebar"><div class="dots"><i class="dot red"></i><i class="dot yellow"></i><i class="dot green"></i></div>${title}</div>
+        ${nav()}
+        <section class="app">${tabs()}${body}</section>
+      </article>`;
+
+    const previewTable = (mode = "done") => `
+      <div class="table">
+        <div class="thead"><div class="cell">开始时间</div><div class="cell">结束时间</div><div class="cell">${mode === "partial" ? "已生成片段" : "字幕内容"}</div></div>
+        <div class="trow"><div class="cell">00:00:01.120</div><div class="cell">00:00:03.400</div><div class="cell">大家好，欢迎来到这一节课。</div></div>
+        <div class="trow active"><div class="cell">00:00:03.520</div><div class="cell">00:00:06.200</div><div class="cell">我们今天讲矩阵和向量空间。</div></div>
+        <div class="trow"><div class="cell">00:00:06.360</div><div class="cell">00:00:08.900</div><div class="cell">${mode === "partial" ? "正在生成..." : "先从最基本的概念开始。"}</div></div>
+        <div class="trow"><div class="cell">00:00:09.100</div><div class="cell">00:00:12.000</div><div class="cell">${mode === "partial" ? "待生成" : "后面会用几个例子来说明。"}</div></div>
+        ${mode === "done" ? `
+        <div class="trow"><div class="cell">00:00:12.240</div><div class="cell">00:00:15.640</div><div class="cell">我们先看一下这个矩阵的形式。</div></div>
+        <div class="trow"><div class="cell">00:00:15.900</div><div class="cell">00:00:18.200</div><div class="cell">它由若干行和若干列组成。</div></div>` : ""}
+      </div>`;
+
+    const workbenchCenter = (state = "empty") => {
+      if (state === "empty") {
+        return `
+          <main class="panel pad fill-panel">
+            <div class="panel-head" style="padding:0 0 18px;border:0;min-height:auto"><h3>预览与结果</h3><span class="status">等待文件</span></div>
+            <div class="drop-zone fill-body">
+              <div class="drop-icon">${icon("video", "")}</div>
+              <h3>拖入一个音频或视频文件</h3>
+              <p>或 <span class="file-pick-action">${icon("folder")}点击选择文件</span></p>
+              <div class="format-line">mp4 / mov / mkv / mp3 / wav / m4a</div>
+            </div>
+          </main>`;
+      }
+      if (state === "running") {
+        return `
+          <main class="panel pad fill-panel">
+            <div class="panel-head" style="padding:0 0 18px;border:0;min-height:auto"><h3>当前文件</h3><span class="status warn">转录中</span></div>
+            <div class="media-card" style="grid-template-columns:210px 1fr;margin-bottom:18px;min-height:150px">
+              ${mediaThumb("audio", "width:210px;height:118px")}
+              <div>
+                <div class="media-title">lecture-audio.wav</div>
+                <div class="chips"><span class="pill">06:12</span><span class="pill">48 MB</span><span class="pill">Fun-ASR</span></div>
+              </div>
+            </div>
+            <div class="progress-card">
+              <div class="progress-head"><span>语音识别</span><span>62%</span></div>
+              <div class="progress"><i style="--value:62%"></i></div>
+              <div class="stage-row"><span class="step-dot">1</span><span>读取音频</span><span class="status ok">完成</span></div>
+              <div class="stage-row"><span class="step-dot">2</span><span>识别语音</span><span class="status warn">进行中</span></div>
+              <div class="stage-row"><span class="step-dot">3</span><span>生成字幕文件</span><span class="status">等待</span></div>
+            </div>
+          </main>`;
+      }
+      if (state === "failed") {
+        return `
+          <main class="panel pad fill-panel">
+            <div class="panel-head" style="padding:0 0 18px;border:0;min-height:auto">
+              <h3>当前文件</h3>
+              <div class="head-actions"><span class="status fail">转录失败</span><span class="header-link">${icon("folder")}更换文件</span></div>
+            </div>
+            <div class="media-card" style="grid-template-columns:210px 1fr;min-height:150px">
+              ${mediaThumb("video", "width:210px;height:118px")}
+              <div>
+                <div class="media-title">线性代数基础 p01.mp4</div>
+                <div class="chips"><span class="pill">10:24</span><span class="pill">Whisper API</span><span class="pill">SRT</span></div>
+              </div>
+            </div>
+            <div class="error-panel">
+              <b>失败原因</b>
+              <span>Whisper API Key 不可用，或网络连接失败。</span>
+            </div>
+          </main>`;
+      }
+      if (state === "text") {
+        return `
+          <main class="panel">
+            <div class="panel-head"><h3>纯文本预览</h3><span class="status ok">转录完成</span></div>
+            <div style="padding:24px;color:var(--text2);line-height:1.75;font-size:18px">
+              大家好，欢迎来到这一节课。<br>我们今天讲矩阵和向量空间。<br>先从最基本的概念开始。<br>后面会用几个例子来说明。
+            </div>
+          </main>`;
+      }
+      if (state === "srt") {
+        return `
+          <main class="panel">
+            <div class="panel-head"><h3>原始字幕预览</h3><span class="status ok">220 条</span></div>
+            ${previewTable("done")}
+          </main>`;
+      }
+      return `
+        <main class="panel fill-panel">
+          <div class="panel-head">
+            <h3>当前文件</h3>
+            <div class="head-actions"><span class="status">待开始</span><span class="header-link">${icon("folder")}更换文件</span></div>
+          </div>
+          <div style="padding:22px" class="fill-body">
+            <div class="media-card" style="grid-template-columns:190px 1fr;min-height:132px;margin-bottom:18px">
+              ${mediaThumb("video", "width:190px;height:106px")}
+              <div>
+                <div class="media-title">线性代数基础与解法全集｜从零开始 p01.mp4</div>
+                <div class="chips"><span class="pill">1920 × 1080</span><span class="pill">10:24</span><span class="pill">音轨 1 (zh)</span></div>
+              </div>
+            </div>
+            <div class="pending-result">
+              <div>
+                <div class="drop-icon" style="width:54px;height:54px;margin:0 auto">${icon("document", "")}</div>
+                <b>尚未开始转录</b>
+              </div>
+            </div>
+          </div>
+        </main>`;
+    };
+
+    const workbenchParams = (state = "ready") => {
+      const empty = state === "empty";
+      const running = state === "running";
+      const failed = state === "failed";
+      const done = state === "srt" || state === "text";
+      const showTrack = state === "ready";
+      return `
+        <aside class="panel pad params-card fill-panel">
+          <div class="panel-head" style="padding:0 0 18px;border:0;min-height:auto">
+            <h3>${done ? "结果操作" : "参数"}</h3>
+            <div class="head-actions"><span class="status ${failed ? "fail" : done ? "ok" : "ok"}">${failed ? "未连通" : done ? "完成" : "Fun-ASR"}</span><span class="header-link">${icon("setting")}转录配置</span></div>
+          </div>
+          ${done ? `
+            ${mediaThumb("video", "width:100%;height:132px;margin-bottom:16px")}
+            <div class="media-title" style="font-size:18px">线性代数基础 p01</div>
+            <div class="chips"><span class="pill">B 接口</span><span class="pill">10:24</span><span class="pill">${state === "text" ? "TXT" : "SRT"}</span></div>
+            <div class="panel pad" style="margin-top:16px;background:var(--panel3)"><div class="card-title">结果文件</div><p class="result-path">${state === "text" ? "linear-algebra-demo.txt" : "【原始字幕】线性代数基础-B接口.srt"}</p></div>
+            <div class="action-grid" style="margin-top:16px"><div class="btn primary">${icon("right_arrow")}进入字幕优化</div><div class="btn">${icon("folder")}打开文件夹</div><div class="text-link" style="justify-content:center;width:max-content;margin:4px auto 0">${icon("sync")}重新转录</div></div>
+          ` : `
+            <div class="option-row"><b>模型</b><div class="select">${failed ? "Whisper API" : "paraformer-v2"} <span>⌄</span></div></div>
+            <div class="option-row"><b>语言</b><div class="select">自动检测 <span>⌄</span></div></div>
+            ${showTrack ? `<div class="option-row"><b>音轨</b><div class="select">音轨 1 · 中文 <span>⌄</span></div></div>` : ""}
+            <div class="option-row"><b>输出</b><div class="select">SRT <span>⌄</span></div></div>
+            <div class="option-row"><b>词时间戳</b><span class="switch on"><i></i></span></div>
+            <div class="spacer"></div>
+            <div class="btn ${running || empty ? "disabled" : "primary"}" style="width:100%;margin-top:18px">${icon(running ? "sync" : "play")}${running ? "转录中" : empty ? "等待文件" : failed ? "重新转录" : "开始转录"}</div>
+          `}
+        </aside>`;
+    };
+
+    const workbenchState = (state = "ready") => {
+      return `
+      <div class="split">
+        ${workbenchCenter(state)}
+        ${workbenchParams(state)}
+      </div>`;
+    };
+
+    const versions = [
+      {
+        n: "01",
+        title: "单文件工作台版",
+        note: "最终采用这一版：左侧大区域显示当前文件、转录进度和结果，右侧集中确认模型、语言、音轨和输出。用户一次只处理一个文件，但可以随时更换文件或重新转录。",
+        states: [
+          ["A", "未选择文件", "左侧大区域就是导入入口，右侧参数先保持可见但不可开始", workbenchState("empty")],
+          ["B", "文件就绪", "当前文件可预览，右侧参数可直接开始", workbenchState("ready")],
+          ["C", "转录中", "按钮禁用，进度留在当前文件区", workbenchState("running")],
+          ["D", "失败恢复", "不换页，只提供重试和定位输出目录", workbenchState("failed")],
+          ["E", "SRT 结果", "完成后直接检查时间轴字幕", workbenchState("srt")],
+          ["F", "纯文本结果", "同一结果区切换为文稿", workbenchState("text")],
+        ],
+      },
+    ];
+
+    const root = document.getElementById("root");
+    root.innerHTML = versions.map((version, idx) => `
+      <section class="version" id="v${idx + 1}">
+        <div class="version-head">
+          <h2><b>${version.n}</b>${version.title}</h2>
+          <span>完整方案 · ${version.states.length} 个状态</span>
+        </div>
+        <div class="version-summary">
+          <div>
+            <h3>${version.title}</h3>
+            <p>${version.note}</p>
+          </div>
+          <div class="state-list">
+            ${version.states.map(([label, name, desc]) => `
+              <div class="state-item"><b>${label}. ${name}</b><span>${desc}</span></div>
+            `).join("")}
+          </div>
+        </div>
+        ${version.states.map(([label, name, desc, body]) => `
+          <div class="state-label" id="v${idx + 1}${label.toLowerCase()}"><em>${label}</em>${name}</div>
+          ${shell(body)}
+        `).join("")}
+      </section>
+    `).join("");
+
+    requestAnimationFrame(() => {
+      const target = location.hash ? document.querySelector(location.hash) : null;
+      if (target) target.scrollIntoView({ block: "start" });
+    });
+  </script>
+</body>
+</html>

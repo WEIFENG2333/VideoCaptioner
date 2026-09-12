@@ -1,0 +1,4681 @@
+# English translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-20 02:09+0800\n"
+"PO-Revision-Date: 2026-06-21 23:08+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "app.announcement.got_it"
+msgstr "Got it"
+
+msgid "app.announcement.title"
+msgstr "Announcement"
+
+msgid "app.ffmpeg.missing_body"
+msgstr ""
+"FFmpeg is required to process audio and video files. Please install it "
+"first."
+
+msgid "app.ffmpeg.missing_title"
+msgstr "FFmpeg is not installed"
+
+msgid "app.github.body"
+msgstr ""
+"VideoCaptioner was independently developed by me in my spare time and is "
+"currently hosted on GitHub. Stars and forks are welcome. The project "
+"still has many areas for improvement. If you encounter any software "
+"issues or BUGs, please submit an Issue.\n"
+"\n"
+" https://github.com/WEIFENG2333/VideoCaptioner"
+
+msgid "app.github.open"
+msgstr "Open GitHub"
+
+msgid "app.github.support_author"
+msgstr "Support the Author"
+
+msgid "app.github.title"
+msgstr "GitHub Info"
+
+msgid "app.nav.batch"
+msgstr "Batch Processing"
+
+msgid "app.nav.doctor"
+msgstr "Diagnostics"
+
+msgid "app.nav.dubbing"
+msgstr "Dubbing"
+
+msgid "app.nav.hardsub"
+msgstr "Hard Subtitle Extraction"
+
+msgid "app.nav.home"
+msgstr "Home"
+
+msgid "app.nav.live_caption"
+msgstr "Live Subtitles"
+
+msgid "app.nav.request_logs"
+msgstr "Request Logs"
+
+msgid "app.nav.settings"
+msgstr "Settings"
+
+msgid "app.nav.subtitle_style"
+msgstr "Subtitle Style"
+
+msgid "app.sidebar.collapse"
+msgstr "Collapse"
+
+msgid "app.sidebar.expand"
+msgstr "Expand"
+
+msgid "app.update.available"
+msgstr "A new version is available"
+
+msgid "app.update.background"
+msgstr "Download in background"
+
+msgid "app.update.cancel"
+msgstr "Cancel download"
+
+msgid "app.update.check_failed"
+msgstr "Update check failed"
+
+msgid "app.update.checking"
+msgstr "Checking for updates…"
+
+msgid "app.update.download"
+msgstr "Download update"
+
+msgid "app.update.downloading"
+msgstr "Downloading {percent}%"
+
+msgid "app.update.failed"
+msgstr "Download failed: {error}"
+
+msgid "app.update.go_download"
+msgstr "Go to download"
+
+msgid "app.update.install"
+msgstr "Restart & install"
+
+msgid "app.update.install_failed"
+msgstr "Install failed"
+
+msgid "app.update.later"
+msgstr "Later"
+
+msgid "app.update.mandatory"
+msgstr "You must update to the latest version to continue"
+
+msgid "app.update.nav_available"
+msgstr "Update available"
+
+msgid "app.update.nav_failed"
+msgstr "Update download failed"
+
+msgid "app.update.nav_ready"
+msgstr "Restart to update"
+
+msgid "app.update.ready"
+msgstr "Update downloaded — restart the app to finish installing"
+
+msgid "app.update.retry"
+msgstr "Retry"
+
+msgid "app.update.title"
+msgstr "Update available: {version}"
+
+msgid "app.update.up_to_date"
+msgstr "You're up to date"
+
+msgid "app.window_title"
+msgstr "Kaka Subtitle Assistant -- VideoCaptioner"
+
+msgid "batch.added.count"
+msgstr "Added {n} files"
+
+msgid "batch.added.duplicated"
+msgstr "{n} already in queue"
+
+msgid "batch.added.ignored"
+msgstr "Ignored {n} unsupported files"
+
+msgid "batch.added.title"
+msgstr "Added successfully"
+
+msgid "batch.btn.add_file"
+msgstr "Add files"
+
+msgid "batch.btn.add_folder"
+msgstr "Add folder"
+
+msgid "batch.btn.clear"
+msgstr "Clear list"
+
+msgid "batch.btn.pause"
+msgstr "Pause queue"
+
+msgid "batch.btn.resume"
+msgstr "Resume processing"
+
+msgid "batch.btn.start"
+msgstr "Start processing"
+
+msgid "batch.cannot_retry"
+msgstr "Cannot retry"
+
+msgid "batch.cannot_start"
+msgstr "Cannot start"
+
+msgid "batch.concurrency"
+msgstr "Concurrency {n}"
+
+msgid "batch.count"
+msgstr "{n} tasks"
+
+msgid "batch.detail.error"
+msgstr ""
+"Error message:\n"
+"{error}"
+
+msgid "batch.detail.file"
+msgstr "File: {path}"
+
+msgid "batch.detail.got_it"
+msgstr "Got it"
+
+msgid "batch.detail.outputs"
+msgstr "Output file:"
+
+msgid "batch.detail.progress"
+msgstr "Progress: {note}"
+
+msgid "batch.detail.status"
+msgstr "Status: {status} · {progress}%"
+
+msgid "batch.detail.title"
+msgstr "Task details"
+
+msgid "batch.dialog.pick_files"
+msgstr "Select file"
+
+msgid "batch.dialog.pick_folder"
+msgstr "Select folder"
+
+msgid "batch.done.body"
+msgstr "All {completed} tasks completed"
+
+msgid "batch.done.title"
+msgstr "Batch processing completed"
+
+msgid "batch.drop.format"
+msgstr "Current mode: {mode} · Supports {kinds}; folders can be dropped in"
+
+msgid "batch.drop.media_kinds"
+msgstr "Audio, video"
+
+msgid "batch.drop.subtitle_kinds"
+msgstr "Subtitle files"
+
+msgid "batch.drop.title"
+msgstr "Drop files or folders here"
+
+msgid "batch.empty.duplicated"
+msgstr "File is already in the queue"
+
+msgid "batch.empty.no_media"
+msgstr "No supported audio/video files found"
+
+msgid "batch.empty.no_subtitle"
+msgstr "No subtitle files found"
+
+msgid "batch.empty.title"
+msgstr "No files added"
+
+msgid "batch.error.empty_output"
+msgstr "{stage}: Output path is empty"
+
+msgid "batch.error.empty_video_output"
+msgstr "{stage}: Output video path is empty"
+
+msgid "batch.filter.all"
+msgstr "All"
+
+msgid "batch.filter.empty"
+msgstr "No tasks match the current filter"
+
+msgid "batch.filter.media"
+msgstr "Audio/video files ({patterns})"
+
+msgid "batch.filter.subtitle"
+msgstr "Subtitle files ({patterns})"
+
+msgid "batch.filtered.body"
+msgstr ""
+"{n} files do not match the \"{mode}\" input type and have been removed "
+"from the queue"
+
+msgid "batch.filtered.title"
+msgstr "Queue filtered"
+
+msgid "batch.finished.body"
+msgstr "{completed} completed, {failed} failed. You can retry them in the list."
+
+msgid "batch.finished.title"
+msgstr "Batch processing completed"
+
+msgid "batch.metric.concurrency"
+msgstr "Concurrency"
+
+msgid "batch.metric.progress"
+msgstr "Current progress"
+
+msgid "batch.metric.queue"
+msgstr "Queued tasks"
+
+msgid "batch.metric.success_rate"
+msgstr "Success rate"
+
+msgid "batch.mode.full.desc"
+msgstr "Transcribe, translate, synthesize final video"
+
+msgid "batch.mode.full.title"
+msgstr "Full process"
+
+msgid "batch.mode.subtitle.desc"
+msgstr "Optimize and translate existing subtitles"
+
+msgid "batch.mode.subtitle.title"
+msgstr "Batch subtitle translation"
+
+msgid "batch.mode.trans_sub.desc"
+msgstr "Generate subtitles, translate and optimize"
+
+msgid "batch.mode.trans_sub.title"
+msgstr "Transcription + subtitles"
+
+msgid "batch.mode.transcribe.desc"
+msgstr "Generate subtitles from audio/video"
+
+msgid "batch.mode.transcribe.title"
+msgstr "Batch Transcription"
+
+msgid "batch.note.completed"
+msgstr "Processing Complete"
+
+msgid "batch.note.failed"
+msgstr "Processing Failed"
+
+msgid "batch.note.output"
+msgstr "Output {name}"
+
+msgid "batch.panel.ended"
+msgstr "Ended"
+
+msgid "batch.panel.not_started"
+msgstr "Not Started"
+
+msgid "batch.panel.paused"
+msgstr "Paused"
+
+msgid "batch.panel.ready"
+msgstr "Ready to Start"
+
+msgid "batch.panel.running"
+msgstr "Running"
+
+msgid "batch.panel.title"
+msgstr "This Batch"
+
+msgid "batch.preflight.dubbing_key"
+msgstr ""
+"The current voice requires an API Key. Please check the voice "
+"configuration or switch to a free Edge voice."
+
+msgid "batch.preflight.ffmpeg"
+msgstr ""
+"Video composition requires FFmpeg: please install it and ensure ffmpeg is"
+" in PATH."
+
+msgid "batch.preflight.llm"
+msgstr ""
+"Subtitle processing requires a large model: please configure a valid API "
+"Key, API URL, and model first."
+
+msgid "batch.row.details_tip"
+msgstr "Click to view task details"
+
+msgid "batch.row.open_output"
+msgstr "Open output folder"
+
+msgid "batch.row.remove"
+msgstr "Remove task"
+
+msgid "batch.row.retry"
+msgstr "Retry task"
+
+msgid "batch.stage.dubbing.desc"
+msgstr "Generate audio track from subtitles"
+
+msgid "batch.stage.dubbing.title"
+msgstr "Dubbing"
+
+msgid "batch.stage.settings_tip"
+msgstr "{title} Settings"
+
+msgid "batch.stage.subtitle.desc"
+msgstr "Sentence Splitting, Optimization, Translation"
+
+msgid "batch.stage.subtitle.title"
+msgstr "Subtitle Processing"
+
+msgid "batch.stage.synthesis.desc"
+msgstr "Export Final Video"
+
+msgid "batch.stage.synthesis.title"
+msgstr "Video Composition"
+
+msgid "batch.stage.transcribe.desc"
+msgstr "Generate Original Subtitles"
+
+msgid "batch.stage.transcribe.title"
+msgstr "Speech Transcription"
+
+msgid "batch.status.completed"
+msgstr "Completed"
+
+msgid "batch.status.failed"
+msgstr "Failed"
+
+msgid "batch.status.preparing"
+msgstr "Preparing"
+
+msgid "batch.status.running"
+msgstr "Processing"
+
+msgid "batch.status.waiting"
+msgstr "Waiting"
+
+msgid "batch.subtitle.done"
+msgstr "Batch Task Completed"
+
+msgid "batch.subtitle.done_failed"
+msgstr "Batch task completed, {n} files need processing"
+
+msgid "batch.subtitle.empty"
+msgstr "Drag in a batch of files, select a processing type, then start"
+
+msgid "batch.subtitle.paused"
+msgstr "Paused · Will stop after the current task finishes"
+
+msgid "batch.subtitle.ready"
+msgstr "{n} files added to the queue"
+
+msgid "batch.subtitle.running"
+msgstr "Processing in queue order"
+
+msgid "batch.switch.busy_body"
+msgstr ""
+"Please pause and wait for the current task to finish before switching "
+"processing type"
+
+msgid "batch.switch.busy_title"
+msgstr "Processing"
+
+msgid "batch.switched.body"
+msgstr "Switch to “{mode}” based on file type"
+
+msgid "batch.switched.title"
+msgstr "Processing type switched"
+
+msgid "batch.title"
+msgstr "Batch processing"
+
+msgid "colorpicker.clear"
+msgstr "Clear"
+
+msgid "colorpicker.section.presets"
+msgstr "Common subtitle colors"
+
+msgid "colorpicker.section.recent"
+msgstr "Recently used"
+
+msgid "colorpicker.title"
+msgstr "Select color"
+
+msgid "common.cancel"
+msgstr "Cancel"
+
+msgid "common.close"
+msgstr "Close"
+
+msgid "common.copy"
+msgstr "Copy"
+
+msgid "common.delete"
+msgstr "Delete"
+
+msgid "common.error"
+msgstr "Error"
+
+msgid "common.ok"
+msgstr "OK"
+
+msgid "common.open_folder"
+msgstr "Open folder"
+
+msgid "common.retry"
+msgstr "Retry"
+
+msgid "common.save"
+msgstr "Save"
+
+msgid "common.tip"
+msgstr "Tip"
+
+msgid "common.warning"
+msgstr "Warning"
+
+msgid "ctrl.change"
+msgstr "Change"
+
+msgid "ctrl.open"
+msgstr "Open"
+
+msgid "ctrl.settings_title"
+msgstr "Settings"
+
+msgid "depdl.body.intro"
+msgstr ""
+"Automatically select the appropriate version for your system and download"
+" it locally; domestic networks will prioritize accelerated mirrors."
+
+msgid "depdl.btn.done"
+msgstr "Done"
+
+msgid "depdl.btn.download"
+msgstr "Download"
+
+msgid "depdl.btn.install_all_missing"
+msgstr "Install missing dependencies"
+
+msgid "depdl.btn.open_install_dir"
+msgstr "Open installation folder"
+
+msgid "depdl.error.download_failed"
+msgstr "Download failed"
+
+msgid "depdl.info.done_body"
+msgstr "{name} download complete."
+
+msgid "depdl.info.nothing_body"
+msgstr "All dependencies are ready."
+
+msgid "depdl.info.nothing_title"
+msgstr "No installation needed"
+
+msgid "depdl.status.connecting"
+msgstr "Connecting to mirror…"
+
+msgid "depdl.status.failed"
+msgstr "Failed"
+
+msgid "depdl.status.installed"
+msgstr "Installed"
+
+msgid "depdl.status.unsupported"
+msgstr "Not supported yet"
+
+msgid "depdl.title"
+msgstr "Download runtime dependencies"
+
+msgid "doctor.btn.download_install"
+msgstr "Download and install"
+
+msgid "doctor.btn.download_voxgate"
+msgstr "Download voxgate"
+
+msgid "doctor.btn.dubbing_settings"
+msgstr "Voiceover settings"
+
+msgid "doctor.btn.how_to_handle"
+msgstr "Processing method"
+
+msgid "doctor.btn.install_tool"
+msgstr "Install tools"
+
+msgid "doctor.btn.live_caption_settings"
+msgstr "Live Subtitle Settings"
+
+msgid "doctor.btn.llm_settings"
+msgstr "LLM Settings"
+
+msgid "doctor.btn.rerun"
+msgstr "Diagnose Again"
+
+msgid "doctor.btn.run"
+msgstr "Run Diagnostics"
+
+msgid "doctor.btn.running"
+msgstr "Diagnosing"
+
+msgid "doctor.btn.transcribe_settings"
+msgstr "Transcription Settings"
+
+msgid "doctor.btn.translate_settings"
+msgstr "Translation Settings"
+
+msgid "doctor.btn.usage"
+msgstr "Instructions"
+
+msgid "doctor.checklist"
+msgstr "Checklist"
+
+msgid "doctor.chip.dubbing"
+msgstr "Dubbing"
+
+msgid "doctor.chip.export"
+msgstr "Export"
+
+msgid "doctor.chip.subtitle"
+msgstr "Subtitle Processing"
+
+msgid "doctor.chip.transcribe"
+msgstr "Transcription"
+
+msgid "doctor.chip.translate"
+msgstr "Translation"
+
+msgid "doctor.done.all_passed"
+msgstr "All current checks passed"
+
+msgid "doctor.done.errors"
+msgstr "{count} items need attention"
+
+msgid "doctor.done.title"
+msgstr "Diagnostics complete"
+
+msgid "doctor.done.warnings"
+msgstr "{count} optional items need attention (does not affect the main workflow)"
+
+msgid "doctor.download"
+msgstr "Video Download"
+
+msgid "doctor.download.desc"
+msgstr ""
+"Parse YouTube and Bilibili links and verify whether online videos can be "
+"downloaded."
+
+msgid "doctor.download.ok"
+msgstr ""
+"YouTube and Bilibili parsing is working. Paste a link to download "
+"directly."
+
+msgid "doctor.download.ok_login"
+msgstr ""
+"YouTube and Bilibili parsing is working (some sites use browser login "
+"state). Paste a link to download directly."
+
+msgid "doctor.download.unavailable"
+msgstr "{detail}"
+
+msgid "doctor.dubbing.desc"
+msgstr ""
+"Generate voiceover using the current provider and voice; some services "
+"require a Key."
+
+msgid "doctor.dubbing.fail.desc"
+msgstr ""
+"Gemini / SiliconFlow requires a voiceover Key; Edge does not require a "
+"Key."
+
+msgid "doctor.dubbing.ok.desc"
+msgstr ""
+"The current voiceover configuration is available. You can continue "
+"generating voiceover."
+
+msgid "doctor.dubbing.title"
+msgstr "Voiceover Service"
+
+msgid "doctor.failed.title"
+msgstr "Diagnosis failed"
+
+msgid "doctor.ffmpeg.desc"
+msgstr ""
+"It is required to generate videos, burn in subtitles, and merge "
+"voiceovers."
+
+msgid "doctor.ffmpeg.missing.desc"
+msgstr ""
+"Without it, videos cannot be generated, subtitles cannot be burned in, or"
+" voiceovers merged."
+
+msgid "doctor.ffmpeg.missing.title"
+msgstr "Missing FFmpeg"
+
+msgid "doctor.ffmpeg.no_ass.desc"
+msgstr ""
+"The current FFmpeg is missing the ASS subtitle filter. Please install the"
+" full version, or switch the subtitle rendering mode to rounded "
+"background."
+
+msgid "doctor.ffmpeg.no_ass.title"
+msgstr "FFmpeg does not support ASS hard subtitles"
+
+msgid "doctor.ffmpeg.ok.desc"
+msgstr "Tools are complete. You can generate videos and voiceover videos."
+
+msgid "doctor.help.download"
+msgstr ""
+"YouTube needs a working system proxy. If it asks for sign-in "
+"verification: log in with Firefox, or export cookies.txt via a browser "
+"extension into the app data folder (recent Chrome/Edge encryption blocks "
+"cookie reading on Windows). Bilibili risk control (412) usually clears "
+"after a few minutes."
+
+msgid "doctor.help.ffmpeg"
+msgstr ""
+"ASS hard subtitles require the full FFmpeg with libass. On macOS, you can"
+" install ffmpeg-full; you can also switch to rounded background first."
+
+msgid "doctor.jump_failed.body"
+msgstr "No corresponding settings page found."
+
+msgid "doctor.jump_failed.title"
+msgstr "Failed to navigate"
+
+msgid "doctor.label.disabled"
+msgstr "Not enabled"
+
+msgid "doctor.label.dubbing"
+msgstr "Voiceover"
+
+msgid "doctor.label.optimize"
+msgstr "Correction"
+
+msgid "doctor.label.split"
+msgstr "Smart sentence splitting"
+
+msgid "doctor.label.subtitle"
+msgstr "Subtitles"
+
+msgid "doctor.label.subtitle_file"
+msgstr "Subtitle file"
+
+msgid "doctor.label.video"
+msgstr "Video"
+
+msgid "doctor.live_caption.desc"
+msgstr ""
+"Real-time transcription requires a local voxgate transcription program or"
+" an external real-time service."
+
+msgid "doctor.live_caption.funasr_no_key.desc"
+msgstr ""
+"Fun-ASR real-time transcription is missing the Bailian API Key. Fill it "
+"in Settings."
+
+msgid "doctor.live_caption.not_found.desc"
+msgstr ""
+"Optional feature: voxgate transcription program or external real-time "
+"service not found. Configure it later if needed."
+
+msgid "doctor.live_caption.ok.desc"
+msgstr ""
+"Real-time subtitle backend is ready. You can start real-time "
+"transcription and translation."
+
+msgid "doctor.live_caption.title"
+msgstr "Real-time subtitles"
+
+msgid "doctor.llm.desc.default"
+msgstr ""
+"Correction, terminology correction, and smart sentence splitting require "
+"a valid Key."
+
+msgid "doctor.llm.desc.translate"
+msgstr "The current translation will call an LLM and requires a valid Key."
+
+msgid "doctor.llm.fail.desc"
+msgstr ""
+"Subtitle correction, terminology correction, and smart sentence splitting"
+" require a valid Key."
+
+msgid "doctor.llm.ok.desc"
+msgstr "LLM configuration is available and can be used for subtitle enhancement."
+
+msgid "doctor.llm.title.optimize"
+msgstr "Subtitle correction"
+
+msgid "doctor.llm.title.optimize_split"
+msgstr "Subtitle correction and smart sentence splitting"
+
+msgid "doctor.llm.title.split"
+msgstr "Smart sentence splitting"
+
+msgid "doctor.llm.title.translate"
+msgstr "LLM translation"
+
+msgid "doctor.llm.unavailable.title"
+msgstr "LLM configuration unavailable"
+
+msgid "doctor.status.checking"
+msgstr "Checking"
+
+msgid "doctor.status.error"
+msgstr "Failed"
+
+msgid "doctor.status.ok"
+msgstr "Normal"
+
+msgid "doctor.status.pending"
+msgstr "Pending check"
+
+msgid "doctor.status.warning"
+msgstr "Needs attention"
+
+msgid "doctor.subtitle"
+msgstr ""
+"Check the services and tools used by the current task. Disabled features "
+"will not appear in the list."
+
+msgid "doctor.summary.all_passed"
+msgstr "All passed"
+
+msgid "doctor.summary.errors"
+msgstr "{count} failed"
+
+msgid "doctor.summary.pending"
+msgstr "{count} pending check"
+
+msgid "doctor.summary.warnings"
+msgstr "{count} need attention"
+
+msgid "doctor.title"
+msgstr "Diagnostics"
+
+msgid "doctor.transcribe.desc.free"
+msgstr ""
+"Convert video or audio to source subtitles; the free API requires "
+"internet access."
+
+msgid "doctor.transcribe.desc.local"
+msgstr "Convert video or audio to source subtitles; requires a local model."
+
+msgid "doctor.transcribe.desc.whisper"
+msgstr "Convert video or audio to source subtitles; requires a Whisper Key."
+
+msgid "doctor.transcribe.fail.desc"
+msgstr ""
+"The current transcription method is unavailable. Check the network, Key, "
+"or local model."
+
+msgid "doctor.transcribe.ok.desc"
+msgstr ""
+"The current transcription method is available and can generate source "
+"subtitles."
+
+msgid "doctor.transcribe.title"
+msgstr "Transcription Service"
+
+msgid "doctor.translate.desc.default"
+msgstr "Generate target-language subtitles. Failure only affects the translation."
+
+msgid "doctor.translate.desc.uses_llm"
+msgstr ""
+"Generate target-language subtitles. LLM translation will reuse the LLM "
+"Key."
+
+msgid "doctor.translate.ok.desc"
+msgstr ""
+"Translation service is available and can generate target-language "
+"subtitles."
+
+msgid "doctor.translate.title"
+msgstr "Translation Service"
+
+msgid "doctor.translate.uses_llm.desc"
+msgstr "Large model translation will reuse the LLM Key."
+
+msgid "donate.alipay"
+msgstr "Alipay"
+
+msgid "donate.desc"
+msgstr ""
+"I currently have limited time and energy. Your support motivates me to "
+"keep working on this project!\n"
+"Thank you for your love and support for open source!"
+
+msgid "donate.title"
+msgstr "Support the Author"
+
+msgid "donate.wechat"
+msgstr "WeChat"
+
+msgid "dubbing.badge.clone"
+msgstr "Cloneable"
+
+msgid "dubbing.badge.need_key"
+msgstr "Key Required"
+
+msgid "dubbing.badge.no_key"
+msgstr "No Key Required"
+
+msgid "dubbing.btn.audition"
+msgstr "Preview"
+
+msgid "dubbing.btn.config"
+msgstr "Voiceover Settings"
+
+msgid "dubbing.btn.generate_clone"
+msgstr "Generate Cloned Audio"
+
+msgid "dubbing.btn.generate_preview"
+msgstr "Generate Preview Audio"
+
+msgid "dubbing.btn.stop"
+msgstr "Stop"
+
+msgid "dubbing.btn.synthesizing"
+msgstr "Synthesizing…"
+
+msgid "dubbing.clone.clear"
+msgstr "Clear"
+
+msgid "dubbing.clone.hint"
+msgstr ""
+"If no reference audio is uploaded, the text above will be used directly "
+"to preview the current voice."
+
+msgid "dubbing.clone.missing_file"
+msgstr "Reference audio file does not exist. Please select again or clear it."
+
+msgid "dubbing.clone.no_audio"
+msgstr "No reference audio selected"
+
+msgid "dubbing.clone.record"
+msgstr "Record"
+
+msgid "dubbing.clone.ref_text"
+msgstr "Reference Text"
+
+msgid "dubbing.clone.ref_text_placeholder"
+msgstr "Enter the text actually spoken in the reference audio"
+
+msgid "dubbing.clone.title"
+msgstr "Voice Cloning"
+
+msgid "dubbing.clone.upload"
+msgstr "Upload"
+
+msgid "dubbing.clone.uploaded"
+msgstr "Uploaded"
+
+msgid "dubbing.dialog.audio_filter"
+msgstr "Audio files (*.wav *.mp3 *.m4a *.aac *.flac *.ogg *.opus);;All files (*.*)"
+
+msgid "dubbing.dialog.choose_audio"
+msgstr "Select Reference Audio"
+
+msgid "dubbing.filter.all"
+msgstr "All"
+
+msgid "dubbing.filter.clone"
+msgstr "Clone"
+
+msgid "dubbing.filter.female"
+msgstr "Female voice"
+
+msgid "dubbing.filter.male"
+msgstr "Male voice"
+
+msgid "dubbing.form.current_voice"
+msgstr "Current Voice"
+
+msgid "dubbing.form.gen_type"
+msgstr "Generation Type"
+
+msgid "dubbing.form.not_selected"
+msgstr "Not selected"
+
+msgid "dubbing.form.type_preview"
+msgstr "Preview Audio"
+
+msgid "dubbing.preview.char_count"
+msgstr "{count} characters"
+
+msgid "dubbing.preview.desc"
+msgstr "Enter test copy, generate audio, then check the voice and tone."
+
+msgid "dubbing.preview.desc_clone"
+msgstr ""
+"You can preview preset voices directly, or add reference audio for voice "
+"cloning."
+
+msgid "dubbing.preview.input_placeholder"
+msgstr "Enter a sentence to preview the selected voice"
+
+msgid "dubbing.preview.sample_text"
+msgstr ""
+"Hello, this is the voiceover script I want to use for testing. Please "
+"read this sentence in a natural and clear tone."
+
+msgid "dubbing.preview.title"
+msgstr "Voiceover Script"
+
+msgid "dubbing.provider.edge.desc"
+msgstr ""
+"No API Key required, ideal for quickly generating Chinese or English "
+"voiceovers by default."
+
+msgid "dubbing.provider.edge.title"
+msgstr "Free Edge Voiceover"
+
+msgid "dubbing.provider.gemini.desc"
+msgstr "Google Gemini speech model, ideal for natural English expression."
+
+msgid "dubbing.provider.gemini.title"
+msgstr "Gemini TTS"
+
+msgid "dubbing.provider.siliconflow.desc"
+msgstr ""
+"CosyVoice offers stable Chinese performance and supports reference audio "
+"cloning."
+
+msgid "dubbing.provider.siliconflow.title"
+msgstr "SiliconFlow CosyVoice"
+
+msgid "dubbing.ready.clone"
+msgstr "Supports voice cloning"
+
+msgid "dubbing.ready.default"
+msgstr "Ready"
+
+msgid "dubbing.ready.need_key"
+msgstr "API Key required"
+
+msgid "dubbing.ready.no_key"
+msgstr "No Key needed"
+
+msgid "dubbing.subtitle"
+msgstr "Select a provider and voice, then enter your own preview text."
+
+msgid "dubbing.tag.breathy"
+msgstr "Breathy"
+
+msgid "dubbing.tag.bright"
+msgstr "Bright"
+
+msgid "dubbing.tag.casual"
+msgstr "Casual"
+
+msgid "dubbing.tag.clear"
+msgstr "Clear"
+
+msgid "dubbing.tag.clone"
+msgstr "Clone"
+
+msgid "dubbing.tag.easy_going"
+msgstr "Easy-going"
+
+msgid "dubbing.tag.en"
+msgstr "English"
+
+msgid "dubbing.tag.even"
+msgstr "Even"
+
+msgid "dubbing.tag.female"
+msgstr "Female voice"
+
+msgid "dubbing.tag.firm"
+msgstr "Firm"
+
+msgid "dubbing.tag.forward"
+msgstr "Forward"
+
+msgid "dubbing.tag.free"
+msgstr "Free"
+
+msgid "dubbing.tag.gentle"
+msgstr "Gentle"
+
+msgid "dubbing.tag.gravelly"
+msgstr "Gravelly"
+
+msgid "dubbing.tag.informative"
+msgstr "Informative"
+
+msgid "dubbing.tag.knowledgeable"
+msgstr "Knowledgeable"
+
+msgid "dubbing.tag.lively"
+msgstr "Lively"
+
+msgid "dubbing.tag.male"
+msgstr "Male voice"
+
+msgid "dubbing.tag.mature"
+msgstr "Mature"
+
+msgid "dubbing.tag.need_key"
+msgstr "Requires Key"
+
+msgid "dubbing.tag.recommended"
+msgstr "Recommended"
+
+msgid "dubbing.tag.smooth"
+msgstr "Smooth"
+
+msgid "dubbing.tag.soft"
+msgstr "Soft"
+
+msgid "dubbing.tag.upbeat"
+msgstr "Upbeat"
+
+msgid "dubbing.tag.warm"
+msgstr "Warm"
+
+msgid "dubbing.tag.yue"
+msgstr "Cantonese"
+
+msgid "dubbing.tag.zh"
+msgstr "Chinese"
+
+msgid "dubbing.title"
+msgstr "Dubbing"
+
+msgid "dubbing.toast.audio_missing"
+msgstr "Reference audio does not exist"
+
+msgid "dubbing.toast.audio_missing_body"
+msgstr "Please upload or record the reference audio again."
+
+msgid "dubbing.toast.empty_text"
+msgstr "Please enter preview text"
+
+msgid "dubbing.toast.empty_text_body"
+msgstr "The text preview will generate audio in real time using your input."
+
+msgid "dubbing.toast.missing_ref_text"
+msgstr "Missing reference text"
+
+msgid "dubbing.toast.missing_ref_text_body"
+msgstr ""
+"Please enter the text actually spoken in the reference audio, or clear "
+"the reference audio for a normal preview."
+
+msgid "dubbing.toast.need_api_key"
+msgstr "API Key required"
+
+msgid "dubbing.toast.need_api_key_body"
+msgstr ""
+"Custom text preview requires a real request. Please enter the API Key for"
+" the current voice service first."
+
+msgid "dubbing.toast.play_failed"
+msgstr "Playback failed"
+
+msgid "dubbing.toast.play_failed_body"
+msgstr ""
+"The current system is missing audio decoding components and no available "
+"external player was found."
+
+msgid "dubbing.toast.please_wait"
+msgstr "Please wait"
+
+msgid "dubbing.toast.please_wait_body"
+msgstr "Synthesizing another preview."
+
+msgid "dubbing.toast.preview_failed"
+msgstr "Preview failed"
+
+msgid "dubbing.toast.record_done"
+msgstr "Recording complete"
+
+msgid "dubbing.toast.record_done_body"
+msgstr "Saved as reference audio"
+
+msgid "dubbing.voice.edge-cn-female.desc"
+msgstr "Clear, natural Mandarin female voice"
+
+msgid "dubbing.voice.edge-cn-male.desc"
+msgstr "Young, natural Mandarin male voice"
+
+msgid "dubbing.voice.edge-cn-xiaoyi.desc"
+msgstr "Gentle, bright Mandarin female voice"
+
+msgid "dubbing.voice.edge-cn-yunjian.desc"
+msgstr "Male voice better suited for speeches and narration"
+
+msgid "dubbing.voice.edge-cn-yunyang.desc"
+msgstr "Mandarin male voice with a stronger broadcast style"
+
+msgid "dubbing.voice.edge-en-andrew.desc"
+msgstr "Clear, steady American English male voice"
+
+msgid "dubbing.voice.edge-en-ava.desc"
+msgstr "Crisp, natural American English female voice"
+
+msgid "dubbing.voice.edge-en-brian.desc"
+msgstr "Natural, steady American English male voice"
+
+msgid "dubbing.voice.edge-en-emma.desc"
+msgstr "Soft, natural American English female voice"
+
+msgid "dubbing.voice.edge-en-female.desc"
+msgstr "American English female voice"
+
+msgid "dubbing.voice.edge-en-libby.desc"
+msgstr "British English female voice"
+
+msgid "dubbing.voice.edge-en-male.desc"
+msgstr "American English male voice"
+
+msgid "dubbing.voice.edge-en-ryan.desc"
+msgstr "British English male voice"
+
+msgid "dubbing.voice.edge-hk-hiugaai.desc"
+msgstr "Cantonese female voice"
+
+msgid "dubbing.voice.edge-hk-wanlung.desc"
+msgstr "Cantonese male voice"
+
+msgid "dubbing.voice.edge-tw-hsiaoyu.desc"
+msgstr "Taiwan Mandarin female voice"
+
+msgid "dubbing.voice.edge-tw-yunjhe.desc"
+msgstr "Taiwan Mandarin male voice"
+
+msgid "dubbing.voice.gemini-achernar.desc"
+msgstr "Soft English voice"
+
+msgid "dubbing.voice.gemini-algenib.desc"
+msgstr "More textured English voice"
+
+msgid "dubbing.voice.gemini-algieba.desc"
+msgstr "Smooth English voice"
+
+msgid "dubbing.voice.gemini-alnilam.desc"
+msgstr "Firm, clear English voice"
+
+msgid "dubbing.voice.gemini-aoede.desc"
+msgstr "Bright, natural English voice"
+
+msgid "dubbing.voice.gemini-autonoe.desc"
+msgstr "Balanced, clear English voice"
+
+msgid "dubbing.voice.gemini-callirrhoe.desc"
+msgstr "Relaxed, natural English voice"
+
+msgid "dubbing.voice.gemini-charon.desc"
+msgstr "Calmer English voice"
+
+msgid "dubbing.voice.gemini-despina.desc"
+msgstr "Smooth, natural English voice"
+
+msgid "dubbing.voice.gemini-en-friendly.desc"
+msgstr "Friendly, natural English expression"
+
+msgid "dubbing.voice.gemini-en-neutral.desc"
+msgstr "Clear, stable natural English"
+
+msgid "dubbing.voice.gemini-en-upbeat.desc"
+msgstr "More energetic English expression"
+
+msgid "dubbing.voice.gemini-enceladus.desc"
+msgstr "Breathier English voice"
+
+msgid "dubbing.voice.gemini-erinome.desc"
+msgstr "Clear, direct English voice"
+
+msgid "dubbing.voice.gemini-fenrir.desc"
+msgstr "Deep, powerful English voice"
+
+msgid "dubbing.voice.gemini-gacrux.desc"
+msgstr "Mature, steady English voice"
+
+msgid "dubbing.voice.gemini-iapetus.desc"
+msgstr "Clear, stable English voice"
+
+msgid "dubbing.voice.gemini-laomedeia.desc"
+msgstr "Light, lively English voice"
+
+msgid "dubbing.voice.gemini-leda.desc"
+msgstr "Light, bright English voice"
+
+msgid "dubbing.voice.gemini-orus.desc"
+msgstr "More narration-like English voice"
+
+msgid "dubbing.voice.gemini-pulcherrima.desc"
+msgstr "More forward English voice"
+
+msgid "dubbing.voice.gemini-rasalgethi.desc"
+msgstr "More informative English voice"
+
+msgid "dubbing.voice.gemini-sadachbia.desc"
+msgstr "Vivid, light English voice"
+
+msgid "dubbing.voice.gemini-sadaltager.desc"
+msgstr "Knowledge-focused English voice"
+
+msgid "dubbing.voice.gemini-schedar.desc"
+msgstr "Smooth, balanced English voice"
+
+msgid "dubbing.voice.gemini-sulafat.desc"
+msgstr "Warm, natural English voice"
+
+msgid "dubbing.voice.gemini-umbriel.desc"
+msgstr "Relaxed, natural English voice"
+
+msgid "dubbing.voice.gemini-vindemiatrix.desc"
+msgstr "Gentle, smooth English voice"
+
+msgid "dubbing.voice.gemini-zephyr.desc"
+msgstr "Bright, refreshing English voice"
+
+msgid "dubbing.voice.gemini-zubenelgenubi.desc"
+msgstr "Casual, natural English voice"
+
+msgid "dubbing.voice.library"
+msgstr "Voice Library"
+
+msgid "dubbing.voice.library_zh"
+msgstr "Chinese voices"
+
+msgid "dubbing.voice.siliconflow-cn-bella.desc"
+msgstr "Warm Chinese female voice, clonable"
+
+msgid "dubbing.voice.siliconflow-cn-charles.desc"
+msgstr "Magnetic Chinese male voice, clonable"
+
+msgid "dubbing.voice.siliconflow-cn-claire.desc"
+msgstr "Gentle Chinese female voice, clonable"
+
+msgid "dubbing.voice.siliconflow-cn-david.desc"
+msgstr "Cheerful Chinese male voice, clonable"
+
+msgid "dubbing.voice.siliconflow-cn-deep-male.desc"
+msgstr "Calm, deep Chinese male voice, clonable"
+
+msgid "dubbing.voice.siliconflow-cn-diana.desc"
+msgstr "Cheerful Chinese female voice, clonable"
+
+msgid "dubbing.voice.siliconflow-cn-female.desc"
+msgstr "Natural Chinese female voice, can be cloned with reference audio"
+
+msgid "dubbing.voice.siliconflow-cn-male.desc"
+msgstr "Natural Chinese male voice, can be cloned with reference audio"
+
+msgid "enum.FasterWhisperModelEnum.BASE"
+msgstr "base"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V1"
+msgstr "large-v1"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V2"
+msgstr "large-v2"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V3"
+msgstr "large-v3"
+
+msgid "enum.FasterWhisperModelEnum.LARGE_V3_TURBO"
+msgstr "large-v3-turbo"
+
+msgid "enum.FasterWhisperModelEnum.MEDIUM"
+msgstr "medium"
+
+msgid "enum.FasterWhisperModelEnum.SMALL"
+msgstr "small"
+
+msgid "enum.FasterWhisperModelEnum.TINY"
+msgstr "tiny"
+
+msgid "enum.LLMServiceEnum.DEEPSEEK"
+msgstr "DeepSeek"
+
+msgid "enum.LLMServiceEnum.GEMINI"
+msgstr "Gemini"
+
+msgid "enum.LLMServiceEnum.IMMERSIVE"
+msgstr "Free Community LLM"
+
+msgid "enum.LLMServiceEnum.LM_STUDIO"
+msgstr "LM Studio"
+
+msgid "enum.LLMServiceEnum.OFFICIAL"
+msgstr "Official Relay"
+
+msgid "enum.LLMServiceEnum.OLLAMA"
+msgstr "Ollama"
+
+msgid "enum.LLMServiceEnum.OPENAI"
+msgstr "OpenAI Compatible"
+
+msgid "enum.LLMServiceEnum.SILICON_CLOUD"
+msgstr "SiliconCloud"
+
+msgid "enum.LLMServiceEnum.ZHIPU"
+msgstr "Zhipu"
+
+msgid "enum.SubtitleLayoutEnum.ONLY_ORIGINAL"
+msgstr "Original Only"
+
+msgid "enum.SubtitleLayoutEnum.ONLY_TRANSLATE"
+msgstr "Translation Only"
+
+msgid "enum.SubtitleLayoutEnum.ORIGINAL_ON_TOP"
+msgstr "Original on Top"
+
+msgid "enum.SubtitleLayoutEnum.TRANSLATE_ON_TOP"
+msgstr "Translation on Top"
+
+msgid "enum.SubtitleRenderModeEnum.ASS_STYLE"
+msgstr "ASS Style"
+
+msgid "enum.SubtitleRenderModeEnum.ROUNDED_BG"
+msgstr "Rounded Background"
+
+msgid "enum.TargetLanguage.ARABIC"
+msgstr "Arabic"
+
+msgid "enum.TargetLanguage.BULGARIAN"
+msgstr "Bulgarian"
+
+msgid "enum.TargetLanguage.CANTONESE"
+msgstr "Cantonese"
+
+msgid "enum.TargetLanguage.CZECH"
+msgstr "Czech"
+
+msgid "enum.TargetLanguage.DANISH"
+msgstr "Danish"
+
+msgid "enum.TargetLanguage.DUTCH"
+msgstr "Dutch"
+
+msgid "enum.TargetLanguage.ENGLISH"
+msgstr "English"
+
+msgid "enum.TargetLanguage.ENGLISH_UK"
+msgstr "English (UK)"
+
+msgid "enum.TargetLanguage.ENGLISH_US"
+msgstr "English (United States)"
+
+msgid "enum.TargetLanguage.FINNISH"
+msgstr "Finnish"
+
+msgid "enum.TargetLanguage.FRENCH"
+msgstr "French"
+
+msgid "enum.TargetLanguage.GERMAN"
+msgstr "German"
+
+msgid "enum.TargetLanguage.GREEK"
+msgstr "Greek"
+
+msgid "enum.TargetLanguage.HEBREW"
+msgstr "Hebrew"
+
+msgid "enum.TargetLanguage.HUNGARIAN"
+msgstr "Hungarian"
+
+msgid "enum.TargetLanguage.INDONESIAN"
+msgstr "Indonesian"
+
+msgid "enum.TargetLanguage.ITALIAN"
+msgstr "Italian"
+
+msgid "enum.TargetLanguage.JAPANESE"
+msgstr "Japanese"
+
+msgid "enum.TargetLanguage.KOREAN"
+msgstr "Korean"
+
+msgid "enum.TargetLanguage.MALAY"
+msgstr "Malay"
+
+msgid "enum.TargetLanguage.NORWEGIAN"
+msgstr "Norwegian"
+
+msgid "enum.TargetLanguage.PERSIAN"
+msgstr "Persian"
+
+msgid "enum.TargetLanguage.POLISH"
+msgstr "Polish"
+
+msgid "enum.TargetLanguage.PORTUGUESE"
+msgstr "Portuguese"
+
+msgid "enum.TargetLanguage.PORTUGUESE_BR"
+msgstr "Portuguese (Brazil)"
+
+msgid "enum.TargetLanguage.PORTUGUESE_PT"
+msgstr "Portuguese (Portugal)"
+
+msgid "enum.TargetLanguage.ROMANIAN"
+msgstr "Romanian"
+
+msgid "enum.TargetLanguage.RUSSIAN"
+msgstr "Russian"
+
+msgid "enum.TargetLanguage.SIMPLIFIED_CHINESE"
+msgstr "Simplified Chinese"
+
+msgid "enum.TargetLanguage.SPANISH"
+msgstr "Spanish"
+
+msgid "enum.TargetLanguage.SPANISH_LATAM"
+msgstr "Spanish (Latin America)"
+
+msgid "enum.TargetLanguage.SWEDISH"
+msgstr "Swedish"
+
+msgid "enum.TargetLanguage.TAGALOG"
+msgstr "Filipino"
+
+msgid "enum.TargetLanguage.THAI"
+msgstr "Thai"
+
+msgid "enum.TargetLanguage.TRADITIONAL_CHINESE"
+msgstr "Traditional Chinese"
+
+msgid "enum.TargetLanguage.TURKISH"
+msgstr "Turkish"
+
+msgid "enum.TargetLanguage.UKRAINIAN"
+msgstr "Ukrainian"
+
+msgid "enum.TargetLanguage.VIETNAMESE"
+msgstr "Vietnamese"
+
+msgid "enum.TranscribeLanguageEnum.AFRIKAANS"
+msgstr "Afrikaans"
+
+msgid "enum.TranscribeLanguageEnum.ALBANIAN"
+msgstr "Albanian"
+
+msgid "enum.TranscribeLanguageEnum.AMHARIC"
+msgstr "Amharic"
+
+msgid "enum.TranscribeLanguageEnum.ARABIC"
+msgstr "Arabic"
+
+msgid "enum.TranscribeLanguageEnum.ARMENIAN"
+msgstr "Armenian"
+
+msgid "enum.TranscribeLanguageEnum.ASSAMESE"
+msgstr "Assamese"
+
+msgid "enum.TranscribeLanguageEnum.AUTO"
+msgstr "Auto detect"
+
+msgid "enum.TranscribeLanguageEnum.AZERBAIJANI"
+msgstr "Azerbaijani"
+
+msgid "enum.TranscribeLanguageEnum.BASHKIR"
+msgstr "Bashkir"
+
+msgid "enum.TranscribeLanguageEnum.BASQUE"
+msgstr "Basque"
+
+msgid "enum.TranscribeLanguageEnum.BELARUSIAN"
+msgstr "Belarusian"
+
+msgid "enum.TranscribeLanguageEnum.BENGALI"
+msgstr "Bengali"
+
+msgid "enum.TranscribeLanguageEnum.BOSNIAN"
+msgstr "Bosnian"
+
+msgid "enum.TranscribeLanguageEnum.BRETON"
+msgstr "Breton"
+
+msgid "enum.TranscribeLanguageEnum.BULGARIAN"
+msgstr "Bulgarian"
+
+msgid "enum.TranscribeLanguageEnum.CANTONESE"
+msgstr "Cantonese"
+
+msgid "enum.TranscribeLanguageEnum.CATALAN"
+msgstr "Catalan"
+
+msgid "enum.TranscribeLanguageEnum.CHINESE"
+msgstr "Chinese"
+
+msgid "enum.TranscribeLanguageEnum.CROATIAN"
+msgstr "Croatian"
+
+msgid "enum.TranscribeLanguageEnum.CZECH"
+msgstr "Czech"
+
+msgid "enum.TranscribeLanguageEnum.DANISH"
+msgstr "Danish"
+
+msgid "enum.TranscribeLanguageEnum.DUTCH"
+msgstr "Dutch"
+
+msgid "enum.TranscribeLanguageEnum.ENGLISH"
+msgstr "English"
+
+msgid "enum.TranscribeLanguageEnum.ESTONIAN"
+msgstr "Estonian"
+
+msgid "enum.TranscribeLanguageEnum.FAROESE"
+msgstr "Faroese"
+
+msgid "enum.TranscribeLanguageEnum.FINNISH"
+msgstr "Finnish"
+
+msgid "enum.TranscribeLanguageEnum.FRENCH"
+msgstr "French"
+
+msgid "enum.TranscribeLanguageEnum.GALICIAN"
+msgstr "Galician"
+
+msgid "enum.TranscribeLanguageEnum.GEORGIAN"
+msgstr "Georgian"
+
+msgid "enum.TranscribeLanguageEnum.GERMAN"
+msgstr "German"
+
+msgid "enum.TranscribeLanguageEnum.GREEK"
+msgstr "Greek"
+
+msgid "enum.TranscribeLanguageEnum.GUJARATI"
+msgstr "Gujarati"
+
+msgid "enum.TranscribeLanguageEnum.HAITIAN_CREOLE"
+msgstr "Haitian Creole"
+
+msgid "enum.TranscribeLanguageEnum.HAUSA"
+msgstr "Hausa"
+
+msgid "enum.TranscribeLanguageEnum.HAWAIIAN"
+msgstr "Hawaiian"
+
+msgid "enum.TranscribeLanguageEnum.HEBREW"
+msgstr "Hebrew"
+
+msgid "enum.TranscribeLanguageEnum.HINDI"
+msgstr "Hindi"
+
+msgid "enum.TranscribeLanguageEnum.HUNGARIAN"
+msgstr "Hungarian"
+
+msgid "enum.TranscribeLanguageEnum.ICELANDIC"
+msgstr "Icelandic"
+
+msgid "enum.TranscribeLanguageEnum.INDONESIAN"
+msgstr "Indonesian"
+
+msgid "enum.TranscribeLanguageEnum.ITALIAN"
+msgstr "Italian"
+
+msgid "enum.TranscribeLanguageEnum.JAPANESE"
+msgstr "Japanese"
+
+msgid "enum.TranscribeLanguageEnum.JAVANESE"
+msgstr "Javanese"
+
+msgid "enum.TranscribeLanguageEnum.KANNADA"
+msgstr "Kannada"
+
+msgid "enum.TranscribeLanguageEnum.KAZAKH"
+msgstr "Kazakh"
+
+msgid "enum.TranscribeLanguageEnum.KHMER"
+msgstr "Khmer"
+
+msgid "enum.TranscribeLanguageEnum.KOREAN"
+msgstr "Korean"
+
+msgid "enum.TranscribeLanguageEnum.LAO"
+msgstr "Lao"
+
+msgid "enum.TranscribeLanguageEnum.LATIN"
+msgstr "Latin"
+
+msgid "enum.TranscribeLanguageEnum.LATVIAN"
+msgstr "Latvian"
+
+msgid "enum.TranscribeLanguageEnum.LINGALA"
+msgstr "Lingala"
+
+msgid "enum.TranscribeLanguageEnum.LITHUANIAN"
+msgstr "Lithuanian"
+
+msgid "enum.TranscribeLanguageEnum.LUXEMBOURGISH"
+msgstr "Luxembourgish"
+
+msgid "enum.TranscribeLanguageEnum.MACEDONIAN"
+msgstr "Macedonian"
+
+msgid "enum.TranscribeLanguageEnum.MALAGASY"
+msgstr "Malagasy"
+
+msgid "enum.TranscribeLanguageEnum.MALAY"
+msgstr "Malay"
+
+msgid "enum.TranscribeLanguageEnum.MALAYALAM"
+msgstr "Malayalam"
+
+msgid "enum.TranscribeLanguageEnum.MALTESE"
+msgstr "Maltese"
+
+msgid "enum.TranscribeLanguageEnum.MAORI"
+msgstr "Maori"
+
+msgid "enum.TranscribeLanguageEnum.MARATHI"
+msgstr "Marathi"
+
+msgid "enum.TranscribeLanguageEnum.MONGOLIAN"
+msgstr "Mongolian"
+
+msgid "enum.TranscribeLanguageEnum.MYANMAR"
+msgstr "Myanmar"
+
+msgid "enum.TranscribeLanguageEnum.NEPALI"
+msgstr "Nepali"
+
+msgid "enum.TranscribeLanguageEnum.NORWEGIAN"
+msgstr "Norwegian"
+
+msgid "enum.TranscribeLanguageEnum.NYNORSK"
+msgstr "Nynorsk"
+
+msgid "enum.TranscribeLanguageEnum.OCCITAN"
+msgstr "Occitan"
+
+msgid "enum.TranscribeLanguageEnum.PASHTO"
+msgstr "Pashto"
+
+msgid "enum.TranscribeLanguageEnum.PERSIAN"
+msgstr "Persian"
+
+msgid "enum.TranscribeLanguageEnum.POLISH"
+msgstr "Polish"
+
+msgid "enum.TranscribeLanguageEnum.PORTUGUESE"
+msgstr "Portuguese"
+
+msgid "enum.TranscribeLanguageEnum.PUNJABI"
+msgstr "Punjabi"
+
+msgid "enum.TranscribeLanguageEnum.ROMANIAN"
+msgstr "Romanian"
+
+msgid "enum.TranscribeLanguageEnum.RUSSIAN"
+msgstr "Russian"
+
+msgid "enum.TranscribeLanguageEnum.SANSKRIT"
+msgstr "Sanskrit"
+
+msgid "enum.TranscribeLanguageEnum.SERBIAN"
+msgstr "Serbian"
+
+msgid "enum.TranscribeLanguageEnum.SHONA"
+msgstr "Shona"
+
+msgid "enum.TranscribeLanguageEnum.SINDHI"
+msgstr "Sindhi"
+
+msgid "enum.TranscribeLanguageEnum.SINHALA"
+msgstr "Sinhala"
+
+msgid "enum.TranscribeLanguageEnum.SLOVAK"
+msgstr "Slovak"
+
+msgid "enum.TranscribeLanguageEnum.SLOVENIAN"
+msgstr "Slovenian"
+
+msgid "enum.TranscribeLanguageEnum.SOMALI"
+msgstr "Somali"
+
+msgid "enum.TranscribeLanguageEnum.SPANISH"
+msgstr "Spanish"
+
+msgid "enum.TranscribeLanguageEnum.SUNDANESE"
+msgstr "Sundanese"
+
+msgid "enum.TranscribeLanguageEnum.SWAHILI"
+msgstr "Swahili"
+
+msgid "enum.TranscribeLanguageEnum.SWEDISH"
+msgstr "Swedish"
+
+msgid "enum.TranscribeLanguageEnum.TAGALOG"
+msgstr "Tagalog"
+
+msgid "enum.TranscribeLanguageEnum.TAJIK"
+msgstr "Tajik"
+
+msgid "enum.TranscribeLanguageEnum.TAMIL"
+msgstr "Tamil"
+
+msgid "enum.TranscribeLanguageEnum.TATAR"
+msgstr "Tatar"
+
+msgid "enum.TranscribeLanguageEnum.TELUGU"
+msgstr "Telugu"
+
+msgid "enum.TranscribeLanguageEnum.THAI"
+msgstr "Thai"
+
+msgid "enum.TranscribeLanguageEnum.TIBETAN"
+msgstr "Tibetan"
+
+msgid "enum.TranscribeLanguageEnum.TURKISH"
+msgstr "Turkish"
+
+msgid "enum.TranscribeLanguageEnum.TURKMEN"
+msgstr "Turkmen"
+
+msgid "enum.TranscribeLanguageEnum.UKRAINIAN"
+msgstr "Ukrainian"
+
+msgid "enum.TranscribeLanguageEnum.URDU"
+msgstr "Urdu"
+
+msgid "enum.TranscribeLanguageEnum.UZBEK"
+msgstr "Uzbek"
+
+msgid "enum.TranscribeLanguageEnum.VIETNAMESE"
+msgstr "Vietnamese"
+
+msgid "enum.TranscribeLanguageEnum.WELSH"
+msgstr "Welsh"
+
+msgid "enum.TranscribeLanguageEnum.YIDDISH"
+msgstr "Yiddish"
+
+msgid "enum.TranscribeLanguageEnum.YORUBA"
+msgstr "Yoruba"
+
+msgid "enum.TranscribeLanguageEnum.YUE"
+msgstr "Cantonese"
+
+msgid "enum.TranscribeModelEnum.BAILIAN_FUN_ASR"
+msgstr "Bailian Fun-ASR"
+
+msgid "enum.TranscribeModelEnum.BIJIAN"
+msgstr "B Interface"
+
+msgid "enum.TranscribeModelEnum.FASTER_WHISPER"
+msgstr "FasterWhisper"
+
+msgid "enum.TranscribeModelEnum.JIANYING"
+msgstr "J Interface"
+
+msgid "enum.TranscribeModelEnum.WHISPER_API"
+msgstr "Whisper [API]"
+
+msgid "enum.TranscribeModelEnum.WHISPER_CPP"
+msgstr "WhisperCpp"
+
+msgid "enum.TranscribeOutputFormatEnum.ALL"
+msgstr "All"
+
+msgid "enum.TranscribeOutputFormatEnum.ASS"
+msgstr "ASS"
+
+msgid "enum.TranscribeOutputFormatEnum.SRT"
+msgstr "SRT"
+
+msgid "enum.TranscribeOutputFormatEnum.TXT"
+msgstr "TXT"
+
+msgid "enum.TranscribeOutputFormatEnum.VTT"
+msgstr "VTT"
+
+msgid "enum.TranslatorServiceEnum.BING"
+msgstr "Microsoft Translate"
+
+msgid "enum.TranslatorServiceEnum.DEEPLX"
+msgstr "DeepLx Translate"
+
+msgid "enum.TranslatorServiceEnum.GOOGLE"
+msgstr "Google Translate"
+
+msgid "enum.TranslatorServiceEnum.OPENAI"
+msgstr "LLM Translation"
+
+msgid "enum.VadMethodEnum.AUDITOK"
+msgstr "auditok"
+
+msgid "enum.VadMethodEnum.PYANNOTE_ONNX_V3"
+msgstr "pyannote_onnx_v3"
+
+msgid "enum.VadMethodEnum.PYANNOTE_V3"
+msgstr "pyannote_v3"
+
+msgid "enum.VadMethodEnum.SILERO_V3"
+msgstr "silero_v3"
+
+msgid "enum.VadMethodEnum.SILERO_V4"
+msgstr "silero_v4"
+
+msgid "enum.VadMethodEnum.SILERO_V4_FW"
+msgstr "silero_v4_fw"
+
+msgid "enum.VadMethodEnum.SILERO_V5"
+msgstr "silero_v5"
+
+msgid "enum.VadMethodEnum.WEBRTC"
+msgstr "webrtc"
+
+msgid "enum.VideoQualityEnum.HIGH"
+msgstr "High Quality"
+
+msgid "enum.VideoQualityEnum.LOW"
+msgstr "Low Quality"
+
+msgid "enum.VideoQualityEnum.MEDIUM"
+msgstr "Medium Quality"
+
+msgid "enum.VideoQualityEnum.ULTRA_HIGH"
+msgstr "Very High Quality"
+
+msgid "enum.WhisperModelEnum.BASE"
+msgstr "base"
+
+msgid "enum.WhisperModelEnum.LARGE_V1"
+msgstr "large-v1"
+
+msgid "enum.WhisperModelEnum.LARGE_V2"
+msgstr "large-v2"
+
+msgid "enum.WhisperModelEnum.MEDIUM"
+msgstr "medium"
+
+msgid "enum.WhisperModelEnum.SMALL"
+msgstr "small"
+
+msgid "enum.WhisperModelEnum.TINY"
+msgstr "tiny"
+
+msgid "feedback.add_image"
+msgstr "Add image"
+
+msgid "feedback.attach_count"
+msgstr "{count}/{max}"
+
+msgid "feedback.category.bug"
+msgstr "Bug"
+
+msgid "feedback.category.feature"
+msgstr "Feature request"
+
+msgid "feedback.category.label"
+msgstr "Type"
+
+msgid "feedback.category.other"
+msgstr "Other"
+
+msgid "feedback.category.question"
+msgstr "Question"
+
+msgid "feedback.contact.placeholder"
+msgstr "Email / WeChat / QQ (optional, so we can reply)"
+
+msgid "feedback.done"
+msgstr "Done"
+
+msgid "feedback.err.category_invalid"
+msgstr "Invalid type"
+
+msgid "feedback.err.contact_too_long"
+msgstr "Contact is too long"
+
+msgid "feedback.err.file_too_large"
+msgstr "Each screenshot must be ≤ 5 MB"
+
+msgid "feedback.err.file_type"
+msgstr "PNG / JPEG only"
+
+msgid "feedback.err.invalid_request"
+msgstr "Invalid request"
+
+msgid "feedback.err.message_required"
+msgstr "Please describe the issue first"
+
+msgid "feedback.err.message_too_long"
+msgstr "Description too long (max 5000)"
+
+msgid "feedback.err.network"
+msgstr "Network error, please retry"
+
+msgid "feedback.err.server"
+msgstr "Submit failed, please retry"
+
+msgid "feedback.err.too_large"
+msgstr "Image or request too large"
+
+msgid "feedback.err.too_many_files"
+msgstr "Up to 3 screenshots"
+
+msgid "feedback.err.total_too_large"
+msgstr "Total size must be ≤ 12 MB"
+
+msgid "feedback.err.unauthorized"
+msgstr "Unauthorized"
+
+msgid "feedback.intro"
+msgstr ""
+"Your feedback goes straight to the developer — we read every one and will"
+" look into it."
+
+msgid "feedback.message.placeholder"
+msgstr "Describe the issue or suggestion — the more detail, the better…"
+
+msgid "feedback.screenshot.hint"
+msgstr "Paste with Ctrl+V, drag in, or click + to add"
+
+msgid "feedback.section.contact"
+msgstr "Contact (optional)"
+
+msgid "feedback.section.message"
+msgstr "Description"
+
+msgid "feedback.section.screenshot"
+msgstr "Screenshots (optional)"
+
+msgid "feedback.submit"
+msgstr "Submit"
+
+msgid "feedback.submitting"
+msgstr "Submitting…"
+
+msgid "feedback.success"
+msgstr "Got it — we'll look into this soon. Thanks for your feedback!"
+
+msgid "feedback.title"
+msgstr "Feedback"
+
+msgid "hardsub.btn.auto_region"
+msgstr "Auto-detect Region"
+
+msgid "hardsub.btn.export"
+msgstr "Export Subtitles"
+
+msgid "hardsub.btn.redo"
+msgstr "Extract Again"
+
+msgid "hardsub.btn.replace_video"
+msgstr "Change Video"
+
+msgid "hardsub.btn.send_optimize"
+msgstr "Send to Subtitle Optimization"
+
+msgid "hardsub.btn.start"
+msgstr "Start Extraction"
+
+msgid "hardsub.busy.detecting_region"
+msgstr "Detecting subtitle region…"
+
+msgid "hardsub.busy.detecting_region_pct"
+msgstr "Detecting subtitle region… {percent}%"
+
+msgid "hardsub.busy.loading_video"
+msgstr "Loading video…"
+
+msgid "hardsub.col.end"
+msgstr "End"
+
+msgid "hardsub.col.start"
+msgstr "Start"
+
+msgid "hardsub.col.text"
+msgstr "Text"
+
+msgid "hardsub.count.recognized"
+msgstr "{n} recognized"
+
+msgid "hardsub.count.total"
+msgstr "{n} total"
+
+msgid "hardsub.dialog.export"
+msgstr "Export Subtitles"
+
+msgid "hardsub.dialog.pick_video"
+msgstr "Select Video"
+
+msgid "hardsub.drop.pick"
+msgstr "Select Video"
+
+msgid "hardsub.drop.title"
+msgstr "Drag in a video with hardcoded subtitles"
+
+msgid "hardsub.engine.card_title"
+msgstr "Engine not ready"
+
+msgid "hardsub.engine.desc"
+msgstr ""
+"Hardcoded subtitle extraction requires OCR engine dependencies (rapidocr "
+"/ onnxruntime)."
+
+msgid "hardsub.engine.title"
+msgstr "OCR engine not ready"
+
+msgid "hardsub.error.read_video"
+msgstr "Unable to read this video: {msg}"
+
+msgid "hardsub.menu.delete_row"
+msgstr "Delete this row"
+
+msgid "hardsub.menu.locate"
+msgstr "Go to this frame"
+
+msgid "hardsub.note.done"
+msgstr ""
+"Double-click to edit text/time; right-click to delete a row. Can be sent "
+"for subtitle optimization or exported."
+
+msgid "hardsub.note.empty"
+msgstr "Automatically detect subtitle area after selecting a video"
+
+msgid "hardsub.note.engine_missing"
+msgstr "OCR engine dependencies are not installed"
+
+msgid "hardsub.note.no_subtitle"
+msgstr "If no stable area is found, manually select an area before recognizing."
+
+msgid "hardsub.note.processing"
+msgstr ""
+"Recognized subtitles will be continuously written to the table on the "
+"right."
+
+msgid "hardsub.note.region"
+msgstr "If the area is inaccurate, drag directly on the video to select an area."
+
+msgid "hardsub.ph.empty.sub"
+msgstr "Subtitle results will appear here."
+
+msgid "hardsub.ph.empty.title"
+msgstr "Waiting for video"
+
+msgid "hardsub.ph.engine_missing.sub"
+msgstr "Please install the recognition engine dependencies first."
+
+msgid "hardsub.ph.engine_missing.title"
+msgstr "OCR engine not ready"
+
+msgid "hardsub.ph.no_subtitle.sub"
+msgstr "You can manually select an area on the video on the left and try again."
+
+msgid "hardsub.ph.no_subtitle.title"
+msgstr "No subtitles detected"
+
+msgid "hardsub.ph.region.sub"
+msgstr "Confirm the area to start extracting."
+
+msgid "hardsub.ph.region.title"
+msgstr "Subtitle area found"
+
+msgid "hardsub.progress.title"
+msgstr "Subtitle recognition"
+
+msgid "hardsub.result.title"
+msgstr "Subtitle results"
+
+msgid "hardsub.stage.video_preview"
+msgstr "Video preview"
+
+msgid "hardsub.status.done"
+msgstr "Completed"
+
+msgid "hardsub.status.engine_missing"
+msgstr "Engine not ready"
+
+msgid "hardsub.status.need_action"
+msgstr "Needs processing"
+
+msgid "hardsub.status.processing"
+msgstr "Extracting"
+
+msgid "hardsub.status.region_detected"
+msgstr "Recognized area"
+
+msgid "hardsub.status.waiting_video"
+msgstr "Waiting for video"
+
+msgid "hardsub.subtitle"
+msgstr ""
+"Recognize hard subtitles from video frames. Select an area, then export "
+"as editable subtitles."
+
+msgid "hardsub.title"
+msgstr "Hard subtitle extraction"
+
+msgid "hardsub.toast.exported"
+msgstr "Exported: {name}"
+
+msgid "hardsub.toast.no_auto_region"
+msgstr ""
+"No subtitle area was detected automatically. Please manually select the "
+"subtitle location in the frame."
+
+msgid "home.btn.browse"
+msgstr "Select file"
+
+msgid "home.btn.start"
+msgstr "Start processing"
+
+msgid "home.confirm.has_subtitle"
+msgstr "With subtitles"
+
+msgid "home.confirm.quality"
+msgstr "Clarity"
+
+msgid "home.confirm.quality.best"
+msgstr "Best"
+
+msgid "home.confirm.untitled"
+msgstr "Untitled Video"
+
+msgid "home.dialog.filter.audio"
+msgstr "Audio File"
+
+msgid "home.dialog.filter.media"
+msgstr "Media File"
+
+msgid "home.dialog.filter.video"
+msgstr "Video File"
+
+msgid "home.dialog.select_media"
+msgstr "Select Media File"
+
+msgid "home.download.done.body"
+msgstr "Starting automatic processing..."
+
+msgid "home.download.done.title"
+msgstr "Download complete"
+
+msgid "home.download.parsing"
+msgstr "Parsing video info…"
+
+msgid "home.download.start"
+msgstr "Start Download"
+
+msgid "home.error.invalid_input"
+msgstr "Please enter a valid local audio/video file or a full http / https link."
+
+msgid "home.error.unsupported_drop"
+msgstr "The dropped file is not a supported audio/video format"
+
+msgid "home.footer.donate"
+msgstr "Donate"
+
+msgid "home.footer.logs"
+msgstr "View Logs"
+
+msgid "home.hero.title"
+msgstr "Import video, generate subtitles and dubbing"
+
+msgid "home.input.placeholder"
+msgstr "Paste a video link, or drag in a local audio/video file"
+
+msgid "home.media.kind.audio"
+msgstr "Audio"
+
+msgid "home.media.kind.video"
+msgstr "Video"
+
+msgid "home.media.ready"
+msgstr "Ready"
+
+msgid "home.quick.confirm"
+msgstr "Parsing complete · Confirm resolution to start download"
+
+msgid "home.quick.downloading"
+msgstr "Online video link · Automatically proceed to the next step after download"
+
+msgid "home.quick.empty"
+msgstr "Drag files here · Supports local audio/video and online video links"
+
+msgid "home.quick.file"
+msgstr "Local media file · Automatically start speech transcription after starting"
+
+msgid "home.quick.invalid"
+msgstr "Unable to recognize input content"
+
+msgid "home.quick.parsing"
+msgstr "Parsing video information, confirm quality later"
+
+msgid "home.quick.url"
+msgstr "Online video link · Will download to the working directory first"
+
+msgid "home.status.invalid"
+msgstr "Invalid input"
+
+msgid "home.status.parsing"
+msgstr "Parsing"
+
+msgid "home.status.pending"
+msgstr "Pending confirmation"
+
+msgid "home.status.ready"
+msgstr "Ready to start"
+
+msgid "home.status.waiting"
+msgstr "Waiting for input"
+
+msgid "home.tip.downloading"
+msgstr "Downloading"
+
+msgid "home.tip.parsing"
+msgstr "Parsing"
+
+msgid "homeflow.tab.subtitle_optimize"
+msgstr "Subtitle Optimization and Translation"
+
+msgid "homeflow.tab.task_creation"
+msgstr "Task Creation"
+
+msgid "homeflow.tab.transcription"
+msgstr "Speech Transcription"
+
+msgid "homeflow.tab.video_synthesis"
+msgstr "Subtitle Video Composition"
+
+msgid "inspector.color.pick"
+msgstr "Select Color"
+
+msgid "inspector.color.pick_prefix"
+msgstr "Select"
+
+msgid "inspector.style.rename"
+msgstr "Rename"
+
+msgid "inspector.style.source.builtin"
+msgstr "Built-in"
+
+msgid "inspector.style.source.mine"
+msgstr "Mine"
+
+msgid "lclang.ar"
+msgstr "Arabic"
+
+msgid "lclang.auto"
+msgstr "Auto Detect"
+
+msgid "lclang.cs"
+msgstr "Czech"
+
+msgid "lclang.da"
+msgstr "Danish"
+
+msgid "lclang.de"
+msgstr "German"
+
+msgid "lclang.en"
+msgstr "English"
+
+msgid "lclang.es"
+msgstr "Spanish"
+
+msgid "lclang.fi"
+msgstr "Finnish"
+
+msgid "lclang.fil"
+msgstr "Filipino"
+
+msgid "lclang.fr"
+msgstr "French"
+
+msgid "lclang.hi"
+msgstr "Hindi"
+
+msgid "lclang.id"
+msgstr "Indonesian"
+
+msgid "lclang.is"
+msgstr "Icelandic"
+
+msgid "lclang.it"
+msgstr "Italian"
+
+msgid "lclang.ja"
+msgstr "Japanese"
+
+msgid "lclang.ko"
+msgstr "Korean"
+
+msgid "lclang.ms"
+msgstr "Malay"
+
+msgid "lclang.no"
+msgstr "Norwegian"
+
+msgid "lclang.pl"
+msgstr "Polish"
+
+msgid "lclang.pt"
+msgstr "Portuguese"
+
+msgid "lclang.ru"
+msgstr "Russian"
+
+msgid "lclang.sv"
+msgstr "Swedish"
+
+msgid "lclang.th"
+msgstr "Thai"
+
+msgid "lclang.tr"
+msgstr "Turkish"
+
+msgid "lclang.uk"
+msgstr "Ukrainian"
+
+msgid "lclang.vi"
+msgstr "Vietnamese"
+
+msgid "lclang.yue"
+msgstr "Cantonese"
+
+msgid "lclang.zh"
+msgstr "Chinese"
+
+msgid "live.delete.confirm"
+msgstr ""
+"Delete “{name}”? The entire record (including audio) will be removed from"
+" disk. This action cannot be undone."
+
+msgid "live.delete.title"
+msgstr "Delete Record"
+
+msgid "live.device.default_input"
+msgstr "Default Input"
+
+msgid "live.device.default_tag"
+msgstr "(Default)"
+
+msgid "live.device.system_audio"
+msgstr "System Sound"
+
+msgid "live.error.concurrency_full"
+msgstr ""
+"Backend transcription service concurrency is full (shared interface "
+"limited to 5 streams). Please try again later."
+
+msgid "live.error.start_failed"
+msgstr "Startup Failed"
+
+msgid "live.error.start_failed_desc"
+msgstr "Failed to start live captions"
+
+msgid "live.error.transcribe_failed"
+msgstr "Transcription pipeline error"
+
+msgid "live.export.dialog_title"
+msgstr "Export"
+
+msgid "live.export.failed"
+msgstr "Export failed"
+
+msgid "live.export.success"
+msgstr "Export successful"
+
+msgid "live.ready.desc"
+msgstr "Select an audio source to start"
+
+msgid "live.ready.title"
+msgstr "Start new live subtitles"
+
+msgid "live.rename.placeholder"
+msgstr "Record name"
+
+msgid "live.rename.title"
+msgstr "Rename record"
+
+msgid "live.status.connecting"
+msgstr "Connecting…"
+
+msgid "live.status.connecting_with_time"
+msgstr "00:00 · Connecting…"
+
+msgid "live.status.paused"
+msgstr "Paused"
+
+msgid "live.status.progress"
+msgstr "{time} · {count} sentences generated"
+
+msgid "live.status.recording"
+msgstr "Recording"
+
+msgid "live.status.saved"
+msgstr "Saved"
+
+msgid "live.status.waiting"
+msgstr "Waiting to start"
+
+msgid "live.title"
+msgstr "Live subtitles"
+
+msgid "livetx.menu.copy_all"
+msgstr "Copy all"
+
+msgid "livetx.menu.copy_sentence"
+msgstr "Copy this sentence"
+
+msgid "liveview.action.back"
+msgstr "Back"
+
+msgid "liveview.action.export"
+msgstr "Export"
+
+msgid "liveview.action.folder"
+msgstr "Directory"
+
+msgid "liveview.action.home"
+msgstr "Home"
+
+msgid "liveview.action.open"
+msgstr "Open"
+
+msgid "liveview.action.refresh"
+msgstr "Refresh"
+
+msgid "liveview.action.rename"
+msgstr "Rename"
+
+msgid "liveview.btn.new_session"
+msgstr "New Session"
+
+msgid "liveview.btn.pause"
+msgstr "Pause"
+
+msgid "liveview.btn.resume"
+msgstr "Resume"
+
+msgid "liveview.btn.saving"
+msgstr "Saving…"
+
+msgid "liveview.btn.start"
+msgstr "Start Live Captions"
+
+msgid "liveview.btn.stop"
+msgstr "Finish and Save"
+
+msgid "liveview.btn.view_record"
+msgstr "View History"
+
+msgid "liveview.detail.display"
+msgstr "Show"
+
+msgid "liveview.detail.export"
+msgstr "Export"
+
+msgid "liveview.display.bilingual"
+msgstr "Bilingual"
+
+msgid "liveview.display.source"
+msgstr "Original"
+
+msgid "liveview.display.target"
+msgstr "Translation"
+
+msgid "liveview.error.detail"
+msgstr "Failed to capture audio. Switch the source on the right and try again."
+
+msgid "liveview.error.title"
+msgstr "Failed to start"
+
+msgid "liveview.export.srt"
+msgstr "SRT Subtitles"
+
+msgid "liveview.export.txt"
+msgstr "TXT Text"
+
+msgid "liveview.history.empty.detail"
+msgstr "Saved live captions will appear here."
+
+msgid "liveview.history.empty.title"
+msgstr "No records yet"
+
+msgid "liveview.history.search_placeholder"
+msgstr "Search record name or text"
+
+msgid "liveview.option.audio_source"
+msgstr "Audio source"
+
+msgid "liveview.option.live_translate"
+msgstr "Real-time translation"
+
+msgid "liveview.option.overlay"
+msgstr "Desktop floating window"
+
+msgid "liveview.option.source_language"
+msgstr "Recognition language"
+
+msgid "liveview.option.target_language"
+msgstr "Translation language"
+
+msgid "liveview.ready.detail"
+msgstr "Select an audio source to get started"
+
+msgid "liveview.ready.title"
+msgstr "Start new real-time subtitles"
+
+msgid "liveview.recent.empty.detail"
+msgstr ""
+"Start a real-time subtitle session. It will be saved here automatically "
+"when finished."
+
+msgid "liveview.recent.empty.title"
+msgstr "No records yet"
+
+msgid "liveview.recent.title"
+msgstr "Recent records"
+
+msgid "liveview.recent.view_all"
+msgstr "View all"
+
+msgid "liveview.settings.config"
+msgstr "Configuration"
+
+msgid "liveview.settings.title"
+msgstr "Current settings"
+
+msgid "liveview.timer.saving"
+msgstr "Saving…"
+
+msgid "liveview.timer.waiting"
+msgstr "Waiting to start"
+
+msgid "liveview.title.detail"
+msgstr "Record details"
+
+msgid "liveview.title.history"
+msgstr "Real-time subtitle history"
+
+msgid "liveview.title.session"
+msgstr "Real-time subtitles"
+
+msgid "llmlog.btn.clear"
+msgstr "Clear Logs"
+
+msgid "llmlog.btn.refresh"
+msgstr "Refresh"
+
+msgid "llmlog.clear.confirm_body"
+msgstr "Are you sure you want to clear all logs? This action cannot be undone."
+
+msgid "llmlog.clear.confirm_btn"
+msgstr "Clear"
+
+msgid "llmlog.clear.confirm_title"
+msgstr "Confirm Clear"
+
+msgid "llmlog.clear.success"
+msgstr "Logs cleared"
+
+msgid "llmlog.col.duration"
+msgstr "Duration"
+
+msgid "llmlog.col.file"
+msgstr "File"
+
+msgid "llmlog.col.model"
+msgstr "Model"
+
+msgid "llmlog.col.stage"
+msgstr "Stage"
+
+msgid "llmlog.col.time"
+msgstr "Time"
+
+msgid "llmlog.copied"
+msgstr "Copied"
+
+msgid "llmlog.detail.foot_hint"
+msgstr ""
+"The copy button only copies the corresponding JSON; press Esc or close "
+"from the top right."
+
+msgid "llmlog.detail.title"
+msgstr "Request Details"
+
+msgid "llmlog.empty.hint"
+msgstr ""
+"After enabling subtitle correction, smart sentence splitting, or LLM "
+"translation, the page will automatically record requests and responses."
+
+msgid "llmlog.empty.no_match.hint"
+msgstr "Try another task ID, file name, model, or stage keyword."
+
+msgid "llmlog.empty.no_match.title"
+msgstr "No matching logs"
+
+msgid "llmlog.empty.title"
+msgstr "No LLM request logs yet"
+
+msgid "llmlog.empty_payload"
+msgstr "(empty)"
+
+msgid "llmlog.meta.duration"
+msgstr "Duration"
+
+msgid "llmlog.meta.result"
+msgstr "Result"
+
+msgid "llmlog.meta.stage"
+msgstr "Stage"
+
+msgid "llmlog.meta.time"
+msgstr "Time"
+
+msgid "llmlog.no_records"
+msgstr "No records"
+
+msgid "llmlog.panel.error"
+msgstr "Error Response"
+
+msgid "llmlog.panel.error.desc"
+msgstr "Error JSON returned by the model or API"
+
+msgid "llmlog.panel.request"
+msgstr "Request Body"
+
+msgid "llmlog.panel.request.desc"
+msgstr "Full Request JSON sent to the model"
+
+msgid "llmlog.panel.response"
+msgstr "Response Body"
+
+msgid "llmlog.panel.response.desc"
+msgstr "Raw Response JSON returned by the model"
+
+msgid "llmlog.refresh.success"
+msgstr "Refresh successful"
+
+msgid "llmlog.result.done"
+msgstr "Completed"
+
+msgid "llmlog.result.failed"
+msgstr "Failed"
+
+msgid "llmlog.search.placeholder"
+msgstr "Search task ID, file name, model, or stage"
+
+msgid "llmlog.status.filtered"
+msgstr "{total} total · {shown} after filtering · Double-click to view full JSON"
+
+msgid "llmlog.status.total"
+msgstr "{total} total · Double-click to view full JSON"
+
+msgid "llmlog.status.total_zero"
+msgstr "0 total"
+
+msgid "llmlog.title"
+msgstr "LLM Request Logs"
+
+msgid "llmlog.unknown"
+msgstr "Unknown"
+
+msgid "logwin.btn.open_folder"
+msgstr "Open Log Folder"
+
+msgid "logwin.error.open_failed"
+msgstr "Failed to open log file: {error}"
+
+msgid "logwin.error.read_failed"
+msgstr "Failed to read log file: {error}"
+
+msgid "logwin.error.update_failed"
+msgstr "Error reading log file: {error}"
+
+msgid "logwin.history_divider"
+msgstr "Above are historical logs"
+
+msgid "logwin.title"
+msgstr "Log Viewer"
+
+msgid "modelmgr.action.current"
+msgstr "Current"
+
+msgid "modelmgr.action.download"
+msgstr "Download"
+
+msgid "modelmgr.action.resume"
+msgstr "Continue"
+
+msgid "modelmgr.close_busy.body"
+msgstr ""
+"Closing this window will cancel the current download. The downloaded part"
+" will be kept so you can resume later."
+
+msgid "modelmgr.close_busy.confirm"
+msgstr "Cancel Download and Close"
+
+msgid "modelmgr.close_busy.title"
+msgstr "Download in Progress"
+
+msgid "modelmgr.col.action"
+msgstr "Action"
+
+msgid "modelmgr.col.model"
+msgstr "Model"
+
+msgid "modelmgr.col.size"
+msgstr "Size"
+
+msgid "modelmgr.col.status"
+msgstr "Status"
+
+msgid "modelmgr.command.copied_body"
+msgstr "Run in the terminal, then click \"Recheck\"."
+
+msgid "modelmgr.command.copied_title"
+msgstr "Installation command copied"
+
+msgid "modelmgr.command.copy"
+msgstr "Copy Command"
+
+msgid "modelmgr.download.done_body"
+msgstr "{name} is ready to use."
+
+msgid "modelmgr.download.done_title"
+msgstr "Model ready"
+
+msgid "modelmgr.download.failed"
+msgstr "Download failed"
+
+msgid "modelmgr.footer.open_model_dir"
+msgstr "Models Folder"
+
+msgid "modelmgr.footer.open_program_dir"
+msgstr "Programs Folder"
+
+msgid "modelmgr.program.available"
+msgstr "Installed"
+
+msgid "modelmgr.program.found"
+msgstr "Found {name}"
+
+msgid "modelmgr.program.missing"
+msgstr "Not installed"
+
+msgid "modelmgr.program.open_page"
+msgstr "Open page"
+
+msgid "modelmgr.program.opened_body"
+msgstr "After downloading and installing, come back and click \"Check again\"."
+
+msgid "modelmgr.program.opened_title"
+msgstr "Opened in browser"
+
+msgid "modelmgr.program.ready_body"
+msgstr "Now grab a model below and you're ready to transcribe."
+
+msgid "modelmgr.program.ready_title"
+msgstr "Runtime is ready"
+
+msgid "modelmgr.program.recheck"
+msgstr "Check again"
+
+msgid "modelmgr.progress.connecting"
+msgstr "Connecting to mirror…"
+
+msgid "modelmgr.recheck.available_body"
+msgstr "Found {name}."
+
+msgid "modelmgr.recheck.available_title"
+msgstr "Runtime ready"
+
+msgid "modelmgr.recheck.hint_command"
+msgstr "Run the install command in a terminal, then hit Re-detect."
+
+msgid "modelmgr.recheck.hint_download"
+msgstr "Click Download on the right to install it in one step."
+
+msgid "modelmgr.recheck.hint_link"
+msgstr ""
+"Download it from the official page and drop it into the Programs folder "
+"below."
+
+msgid "modelmgr.recheck.missing_title"
+msgstr "Runtime not found yet"
+
+msgid "modelmgr.remove.body"
+msgstr ""
+"This will delete {name} ({size}); you will need to download it again if "
+"needed."
+
+msgid "modelmgr.remove.done"
+msgstr "Deleted"
+
+msgid "modelmgr.remove.failed"
+msgstr "Delete failed"
+
+msgid "modelmgr.remove.title"
+msgstr "Delete model"
+
+msgid "modelmgr.section.models"
+msgstr "Step 2 · Download a model (at least one)"
+
+msgid "modelmgr.section.programs"
+msgstr "Step 1 · Install a runtime (either one)"
+
+msgid "modelmgr.status.downloading"
+msgstr "Downloading"
+
+msgid "modelmgr.status.installed"
+msgstr "Downloaded"
+
+msgid "modelmgr.status.paused"
+msgstr "Paused"
+
+msgid "modelmgr.status.pending"
+msgstr "Not downloaded"
+
+msgid "modelmgr.title"
+msgstr "Local Model Management"
+
+msgid "overlay.listening"
+msgstr "Listening…"
+
+msgid "overlay.paused"
+msgstr "Paused"
+
+msgid "overlayset.bg"
+msgstr "Background Style"
+
+msgid "overlayset.bg.black"
+msgstr "Solid Black"
+
+msgid "overlayset.bg.outline"
+msgstr "Outline Only"
+
+msgid "overlayset.bg.translucent"
+msgstr "Semi-transparent"
+
+msgid "overlayset.display"
+msgstr "Display Content"
+
+msgid "overlayset.display.bilingual"
+msgstr "Bilingual"
+
+msgid "overlayset.display.source"
+msgstr "Original Only"
+
+msgid "overlayset.display.target"
+msgstr "Translation Only"
+
+msgid "overlayset.font_size"
+msgstr "Font Size"
+
+msgid "overlayset.font_size.medium"
+msgstr "Medium"
+
+msgid "overlayset.title"
+msgstr "Subtitle Settings"
+
+msgid "roi.scrub.hint"
+msgstr "Drag to view other frames"
+
+msgid "roi.tag.caption_area"
+msgstr "Subtitle Area"
+
+msgid "settings.about.current_version"
+msgstr "Current Version"
+
+msgid "settings.about.feedback"
+msgstr "Feedback"
+
+msgid "settings.about.feedback.desc"
+msgstr "Submit feedback when you encounter an issue."
+
+msgid "settings.about.feedback_button"
+msgstr "Submit Feedback"
+
+msgid "settings.about.help"
+msgstr "Help"
+
+msgid "settings.about.help.desc"
+msgstr "View instructions and FAQs."
+
+msgid "settings.about.help_button"
+msgstr "Open Help"
+
+msgid "settings.about.update_button"
+msgstr "Check for Updates"
+
+msgid "settings.about.version"
+msgstr "Version"
+
+msgid "settings.busy.loading"
+msgstr "Loading..."
+
+msgid "settings.busy.testing"
+msgstr "Testing..."
+
+msgid "settings.busy.transcribing"
+msgstr "Transcribing..."
+
+msgid "settings.dubbing.api_key"
+msgstr "Dubbing API Key"
+
+msgid "settings.dubbing.api_key.desc"
+msgstr "Required for Gemini or SiliconFlow dubbing."
+
+msgid "settings.dubbing.audio_mode"
+msgstr "Original Audio Processing"
+
+msgid "settings.dubbing.audio_mode.desc"
+msgstr "How to handle the original video audio when generating a video."
+
+msgid "settings.dubbing.audio_mode.duck"
+msgstr "Lower Original Audio"
+
+msgid "settings.dubbing.audio_mode.mix"
+msgstr "Mix Original Audio"
+
+msgid "settings.dubbing.audio_mode.replace"
+msgstr "Replace Original Audio"
+
+msgid "settings.dubbing.config_error"
+msgstr "Dubbing Configuration Error"
+
+msgid "settings.dubbing.enabled"
+msgstr "Add Dubbing by Default"
+
+msgid "settings.dubbing.enabled.desc"
+msgstr ""
+"When enabled, the full workflow generates a dubbing audio track by "
+"default."
+
+msgid "settings.dubbing.model"
+msgstr "Dubbing Model"
+
+msgid "settings.dubbing.model.desc"
+msgstr "Text-to-speech model used by the current dubbing provider."
+
+msgid "settings.dubbing.need_api_key"
+msgstr "The current dubbing provider requires an API Key."
+
+msgid "settings.dubbing.preset"
+msgstr "Default Voice"
+
+msgid "settings.dubbing.preset.desc"
+msgstr ""
+"After saving, this will be used as the default voice on the dubbing page "
+"and in the full workflow."
+
+msgid "settings.dubbing.provider"
+msgstr "Dubbing Provider"
+
+msgid "settings.dubbing.provider.desc"
+msgstr "Edge requires no Key; Gemini and SiliconFlow require an API Key."
+
+msgid "settings.dubbing.test"
+msgstr "Dubbing Test"
+
+msgid "settings.dubbing.test.desc"
+msgstr "Generate a sample audio clip with the current voice."
+
+msgid "settings.dubbing.test_button"
+msgstr "Test Dubbing"
+
+msgid "settings.dubbing.test_failed"
+msgstr "Dubbing test failed"
+
+msgid "settings.dubbing.test_success"
+msgstr "Dubbing test succeeded"
+
+msgid "settings.dubbing.test_success.detail"
+msgstr "{provider} generated a sample audio file: {path}"
+
+msgid "settings.dubbing.text_track"
+msgstr "Dubbing Text Track"
+
+msgid "settings.dubbing.text_track.auto"
+msgstr "Auto Select"
+
+msgid "settings.dubbing.text_track.desc"
+msgstr "Choose original text, translation, or auto-detect for dubbing."
+
+msgid "settings.dubbing.text_track.first"
+msgstr "First Line"
+
+msgid "settings.dubbing.text_track.second"
+msgstr "Second Line"
+
+msgid "settings.dubbing.timing"
+msgstr "Time Alignment"
+
+msgid "settings.dubbing.timing.balanced"
+msgstr "Balanced"
+
+msgid "settings.dubbing.timing.desc"
+msgstr "Controls how closely the voiceover speed matches the subtitle timeline."
+
+msgid "settings.dubbing.timing.natural"
+msgstr "Natural"
+
+msgid "settings.dubbing.timing.none"
+msgstr "No speed change"
+
+msgid "settings.dubbing.timing.strict"
+msgstr "Strict"
+
+msgid "settings.dubbing.workers"
+msgstr "Voiceover concurrency"
+
+msgid "settings.dubbing.workers.desc"
+msgstr "Number of subtitle lines synthesized at the same time."
+
+msgid "settings.live_caption.asr_model"
+msgstr "Recognition model"
+
+msgid "settings.live_caption.asr_model.desc"
+msgstr ""
+"Fun-ASR recognition model; multilingual models can automatically "
+"recognize multiple languages."
+
+msgid "settings.live_caption.bg.black"
+msgstr "Pure black"
+
+msgid "settings.live_caption.bg.translucent"
+msgstr "Translucent"
+
+msgid "settings.live_caption.bg_style"
+msgstr "Background style"
+
+msgid "settings.live_caption.bg_style.desc"
+msgstr "Floating window background style"
+
+msgid "settings.live_caption.deps_button"
+msgstr "Download / Check"
+
+msgid "settings.live_caption.display.bilingual"
+msgstr "Bilingual"
+
+msgid "settings.live_caption.display.source"
+msgstr "Original only"
+
+msgid "settings.live_caption.display.target"
+msgstr "Translation only"
+
+msgid "settings.live_caption.display_mode"
+msgstr "Display content"
+
+msgid "settings.live_caption.display_mode.desc"
+msgstr "Content shown by default in the floating window"
+
+msgid "settings.live_caption.engine"
+msgstr "Transcription engine"
+
+msgid "settings.live_caption.engine.desc"
+msgstr "Recognition engine used for real-time speech-to-text."
+
+msgid "settings.live_caption.engine.group"
+msgstr "Transcription Engine"
+
+msgid "settings.live_caption.font_scale"
+msgstr "Font Size"
+
+msgid "settings.live_caption.font_scale.desc"
+msgstr "Floating Window Translation Font Size"
+
+msgid "settings.live_caption.fun_key"
+msgstr "Bailian API Key"
+
+msgid "settings.live_caption.fun_key.desc"
+msgstr ""
+"Key required by Fun-ASR / Qwen-ASR to call Alibaba Cloud Bailian, shared "
+"with the transcription configuration."
+
+msgid "settings.live_caption.overlay.group"
+msgstr "Floating Window Display"
+
+msgid "settings.live_caption.source_language"
+msgstr "Recognition Language"
+
+msgid "settings.live_caption.source_language.desc"
+msgstr ""
+"The language you speak; the recognition engine uses it for transcription."
+" Auto-detect lets the engine determine the language from the audio."
+
+msgid "settings.live_caption.target_language"
+msgstr "Target Language"
+
+msgid "settings.live_caption.target_language.desc"
+msgstr "The language to translate the text into."
+
+msgid "settings.live_caption.test.desc"
+msgstr ""
+"Run a real transcription with built-in short audio to verify the current "
+"engine works."
+
+msgid "settings.live_caption.translate"
+msgstr "Real-time Translation"
+
+msgid "settings.live_caption.translate.desc"
+msgstr ""
+"When enabled, transcribed text is translated instantly; when disabled, "
+"only the original text is shown."
+
+msgid "settings.live_caption.translate.group"
+msgstr "Translate"
+
+msgid "settings.live_caption.translator_service"
+msgstr "Translation Engine"
+
+msgid "settings.live_caption.translator_service.desc"
+msgstr "Translation service used to generate the translated text."
+
+msgid "settings.live_caption.voxgate"
+msgstr "Transcription Program"
+
+msgid "settings.live_caption.voxgate.desc"
+msgstr ""
+"voxgate local transcription program. Click here to download or detect it "
+"if not installed."
+
+msgid "settings.llm.api_key"
+msgstr "API Key"
+
+msgid "settings.llm.api_key.desc"
+msgstr "Used when {service} calls the large model."
+
+msgid "settings.llm.base_url"
+msgstr "Base URL"
+
+msgid "settings.llm.base_url.desc"
+msgstr "OpenAI-compatible endpoint."
+
+msgid "settings.llm.base_url.desc_fixed"
+msgstr "Fixed endpoint of this service."
+
+msgid "settings.llm.connect_error"
+msgstr "LLM connection error"
+
+msgid "settings.llm.connect_failed"
+msgstr "LLM connection failed"
+
+msgid "settings.llm.connect_success"
+msgstr "LLM connected successfully"
+
+msgid "settings.llm.immersive_hint.desc"
+msgstr ""
+"The free community model has limited quota and may be rate-limited or "
+"fail occasionally at peak times. For better reliability and quality, "
+"configure your own LLM key."
+
+msgid "settings.llm.immersive_hint.title"
+msgstr "Free · No API Key"
+
+msgid "settings.llm.load_models"
+msgstr "Load models"
+
+msgid "settings.llm.model"
+msgstr "Model"
+
+msgid "settings.llm.model.desc"
+msgstr ""
+"Name of the large model used for sentence splitting, correction, and "
+"translation."
+
+msgid "settings.llm.model_service"
+msgstr "Model service"
+
+msgid "settings.llm.model_service.desc"
+msgstr "Fetch available models and test connectivity of the current one."
+
+msgid "settings.llm.models_load_failed"
+msgstr "Failed to load models"
+
+msgid "settings.llm.models_loaded"
+msgstr "Models loaded"
+
+msgid "settings.llm.models_loaded.desc"
+msgstr "Loaded {count} models."
+
+msgid "settings.llm.no_models"
+msgstr "No available models"
+
+msgid "settings.llm.no_models.desc"
+msgstr ""
+"No model list was retrieved from the current provider. Please check the "
+"Base URL and API Key."
+
+msgid "settings.llm.official_note"
+msgstr "Mainland-direct access to major overseas models at ~1/7 of list price."
+
+msgid "settings.llm.official_note.link"
+msgstr "Sign up for a key"
+
+msgid "settings.llm.openai_note"
+msgstr "No key yet? The official relay works out of the box with this page."
+
+msgid "settings.llm.openai_note.link"
+msgstr "Open official relay"
+
+msgid "settings.llm.provider"
+msgstr "LLM provider"
+
+msgid "settings.llm.provider.desc"
+msgstr "Used for subtitle sentence splitting, correction, and LLM translation."
+
+msgid "settings.llm.test_connection"
+msgstr "Test connection"
+
+msgid "settings.llm.warn.need_all"
+msgstr "Please enter the current provider's Base URL, API Key, and model first."
+
+msgid "settings.llm.warn.need_base_key"
+msgstr "Please enter the current provider's Base URL and API Key first."
+
+msgid "settings.page.about"
+msgstr "About"
+
+msgid "settings.page.dubbing"
+msgstr "Voiceover Settings"
+
+msgid "settings.page.live_caption"
+msgstr "Real-time Subtitle Settings"
+
+msgid "settings.page.llm"
+msgstr "LLM Settings"
+
+msgid "settings.page.personal"
+msgstr "Personalization"
+
+msgid "settings.page.save"
+msgstr "Save Settings"
+
+msgid "settings.page.subtitle"
+msgstr "Subtitle Burn-in Settings"
+
+msgid "settings.page.transcribe"
+msgstr "Transcription Settings"
+
+msgid "settings.page.translate"
+msgstr "Translation and Optimization"
+
+msgid "settings.page.translate_service"
+msgstr "Translation Service"
+
+msgid "settings.personal.choose_theme_color"
+msgstr "Choose Theme Color"
+
+msgid "settings.personal.follow_system"
+msgstr "Follow System"
+
+msgid "settings.personal.language"
+msgstr "Language"
+
+msgid "settings.personal.restart_required"
+msgstr "Restart the app for changes to take effect."
+
+msgid "settings.personal.theme"
+msgstr "App Theme"
+
+msgid "settings.personal.theme.dark"
+msgstr "Dark"
+
+msgid "settings.personal.theme.desc"
+msgstr "Switch between light, dark, or follow system."
+
+msgid "settings.personal.theme.light"
+msgstr "Light"
+
+msgid "settings.personal.theme_color"
+msgstr "Theme Color"
+
+msgid "settings.personal.theme_color.desc"
+msgstr "Affects buttons, highlights, and selected states."
+
+msgid "settings.personal.theme_color.is_default"
+msgstr "Already using the project default green"
+
+msgid "settings.personal.theme_color.pick_tip"
+msgstr "Click to choose theme color: {color}"
+
+msgid "settings.personal.theme_color.reset"
+msgstr "Restore default"
+
+msgid "settings.personal.theme_color.reset_tip"
+msgstr "Restore to the project default green"
+
+msgid "settings.personal.zoom"
+msgstr "Interface scaling"
+
+msgid "settings.placeholder.empty"
+msgstr "Not filled in"
+
+msgid "settings.restart.confirm"
+msgstr "Restart now"
+
+msgid "settings.restart.later"
+msgstr "Later"
+
+msgid "settings.restart.message"
+msgstr ""
+"Language or display settings have changed and require an app restart to "
+"take effect. Restart now?"
+
+msgid "settings.restart.title"
+msgstr "Prompt"
+
+msgid "settings.save.cache"
+msgstr "Enable cache"
+
+msgid "settings.save.cache.desc"
+msgstr ""
+"Reuse ASR, translation, and dubbing synthesis results with the same "
+"configuration."
+
+msgid "settings.save.cache_disabled"
+msgstr "Cache disabled"
+
+msgid "settings.save.cache_disabled.detail"
+msgstr "Future tasks will regenerate results."
+
+msgid "settings.save.cache_enabled"
+msgstr "Cache enabled"
+
+msgid "settings.save.cache_enabled.detail"
+msgstr "Future tasks will prioritize reusing existing results."
+
+msgid "settings.save.choose_work_dir"
+msgstr "Select working directory"
+
+msgid "settings.save.keep_intermediates"
+msgstr "Keep intermediate files"
+
+msgid "settings.save.keep_intermediates.desc"
+msgstr ""
+"After successful processing, keep intermediate files in the task folder, "
+"such as original transcriptions and styled subtitles; by default, they "
+"are deleted after completion."
+
+msgid "settings.save.work_dir"
+msgstr "Working directory"
+
+msgid "settings.save.work_dir.desc"
+msgstr ""
+"Downloaded videos and intermediate files for processing tasks will be "
+"saved here."
+
+msgid "settings.subtitle.layout"
+msgstr "Subtitle layout"
+
+msgid "settings.subtitle.layout.desc"
+msgstr "Choose monolingual, bilingual, and source/translation positions."
+
+msgid "settings.subtitle.need_video"
+msgstr "Compose video"
+
+msgid "settings.subtitle.need_video.desc"
+msgstr ""
+"When disabled, only subtitle files are output; no final video is "
+"generated."
+
+msgid "settings.subtitle.open_style"
+msgstr "Open style page"
+
+msgid "settings.subtitle.render_mode"
+msgstr "Rendering mode"
+
+msgid "settings.subtitle.render_mode.desc"
+msgstr "Choose ASS style or rounded background rendering."
+
+msgid "settings.subtitle.soft"
+msgstr "Soft subtitles"
+
+msgid "settings.subtitle.soft.desc"
+msgstr "When enabled, subtitles are not burned into the video."
+
+msgid "settings.subtitle.style"
+msgstr "Subtitle style"
+
+msgid "settings.subtitle.style.desc"
+msgstr "Adjust fonts, colors, and preview images on the style page."
+
+msgid "settings.subtitle.video_quality"
+msgstr "Video quality"
+
+msgid "settings.subtitle.video_quality.desc"
+msgstr "Encoding quality used for hard-subtitle composition."
+
+msgid "settings.test_transcribe"
+msgstr "Test transcription"
+
+msgid "settings.title"
+msgstr "Settings"
+
+msgid "settings.transcribe.faster_whisper.choose_dir"
+msgstr "Select Faster Whisper model directory"
+
+msgid "settings.transcribe.faster_whisper.device"
+msgstr "Run device"
+
+msgid "settings.transcribe.faster_whisper.device.desc"
+msgstr "Model runtime device, usually keep auto."
+
+msgid "settings.transcribe.faster_whisper.model"
+msgstr "Faster Whisper Model"
+
+msgid "settings.transcribe.faster_whisper.model.desc"
+msgstr "Select a downloaded Faster Whisper model."
+
+msgid "settings.transcribe.faster_whisper.model_dir"
+msgstr "Model Directory"
+
+msgid "settings.transcribe.faster_whisper.model_dir.desc"
+msgstr "Folder containing the Faster Whisper model."
+
+msgid "settings.transcribe.faster_whisper.one_word"
+msgstr "Word-level Timestamps"
+
+msgid "settings.transcribe.faster_whisper.one_word.desc"
+msgstr "Generate word-level timestamps when enabled."
+
+msgid "settings.transcribe.faster_whisper.vad_filter"
+msgstr "VAD Filtering"
+
+msgid "settings.transcribe.faster_whisper.vad_filter.desc"
+msgstr "Filter non-speech segments to reduce recognition hallucinations."
+
+msgid "settings.transcribe.faster_whisper.vad_method"
+msgstr "VAD Method"
+
+msgid "settings.transcribe.faster_whisper.vad_method.desc"
+msgstr "Select the voice activity detection method."
+
+msgid "settings.transcribe.faster_whisper.vad_threshold"
+msgstr "VAD Threshold"
+
+msgid "settings.transcribe.faster_whisper.vad_threshold.desc"
+msgstr "Speech probability threshold; values above this are treated as speech."
+
+msgid "settings.transcribe.faster_whisper.voice_extraction"
+msgstr "Vocal Separation"
+
+msgid "settings.transcribe.faster_whisper.voice_extraction.desc"
+msgstr "Separate vocals from background music before processing."
+
+msgid "settings.transcribe.fun_asr.key"
+msgstr "Bailian API Key"
+
+msgid "settings.transcribe.fun_asr.key.desc"
+msgstr "Required for Bailian Fun-ASR transcription."
+
+msgid "settings.transcribe.fun_asr.model"
+msgstr "Bailian ASR Model"
+
+msgid "settings.transcribe.fun_asr.model.desc"
+msgstr "Enter the speech recognition model Code available in the Bailian console."
+
+msgid "settings.transcribe.local_model"
+msgstr "Local Model"
+
+msgid "settings.transcribe.local_model.desc"
+msgstr "View runtime status, download and manage model files."
+
+msgid "settings.transcribe.local_model.no_model"
+msgstr "No models downloaded yet. Open “Manage Models” to download one."
+
+msgid "settings.transcribe.local_model.not_installed"
+msgstr "Runtime is not installed. Install it first in “Manage Models”."
+
+msgid "settings.transcribe.manage_models"
+msgstr "Manage Models"
+
+msgid "settings.transcribe.missing.fun_asr_key"
+msgstr "Please enter the Bailian API Key first."
+
+msgid "settings.transcribe.missing.local_model"
+msgstr "No local models available yet. Download one first in “Manage Models”."
+
+msgid "settings.transcribe.missing.whisper_api"
+msgstr "Please enter the Whisper Base URL, API Key, and model first."
+
+msgid "settings.transcribe.model"
+msgstr "Transcription Model"
+
+msgid "settings.transcribe.model.desc"
+msgstr "Select the speech recognition service used to generate original subtitles."
+
+msgid "settings.transcribe.output_format"
+msgstr "Output Format"
+
+msgid "settings.transcribe.output_format.desc"
+msgstr "Subtitle file format saved after transcription is complete."
+
+msgid "settings.transcribe.prompt"
+msgstr "Prompt"
+
+msgid "settings.transcribe.prompt.desc"
+msgstr "Optional transcription prompt. Empty by default."
+
+msgid "settings.transcribe.source_language"
+msgstr "Source Language"
+
+msgid "settings.transcribe.source_language.desc"
+msgstr "Language spoken in the audio/video. Keep auto-detect if unsure."
+
+msgid "settings.transcribe.test.desc"
+msgstr ""
+"Run a real transcription on built-in short audio to verify the current "
+"service works."
+
+msgid "settings.transcribe.test_error"
+msgstr "Transcription Test Error"
+
+msgid "settings.transcribe.test_failed"
+msgstr "Transcription Test Failed"
+
+msgid "settings.transcribe.test_result"
+msgstr "Recognition result: {text}"
+
+msgid "settings.transcribe.test_success"
+msgstr "Transcription Test Successful"
+
+msgid "settings.transcribe.whisper_api.base"
+msgstr "Whisper API Base URL"
+
+msgid "settings.transcribe.whisper_api.base.desc"
+msgstr "Service address used when calling the Whisper API."
+
+msgid "settings.transcribe.whisper_api.key"
+msgstr "Whisper API Key"
+
+msgid "settings.transcribe.whisper_api.key.desc"
+msgstr "Required when transcribing with the Whisper API."
+
+msgid "settings.transcribe.whisper_api.model"
+msgstr "Whisper Model"
+
+msgid "settings.transcribe.whisper_api.model.desc"
+msgstr "Enter the audio transcription model name supported by the provider."
+
+msgid "settings.transcribe.whisper_cpp.model"
+msgstr "WhisperCpp Model"
+
+msgid "settings.transcribe.whisper_cpp.model.desc"
+msgstr "Select a downloaded whisper.cpp transcription model."
+
+msgid "settings.translate.cjk_length"
+msgstr "Chinese Subtitle Length"
+
+msgid "settings.translate.cjk_length.desc"
+msgstr ""
+"Maximum number of Chinese characters per subtitle when splitting "
+"sentences."
+
+msgid "settings.translate.custom_prompt"
+msgstr "Custom Prompt"
+
+msgid "settings.translate.custom_prompt.desc"
+msgstr "Additional LLM prompt for subtitle correction and translation."
+
+msgid "settings.translate.english_length"
+msgstr "English Subtitle Length"
+
+msgid "settings.translate.english_length.desc"
+msgstr "Maximum number of English words per subtitle when splitting sentences."
+
+msgid "settings.translate.optimize"
+msgstr "Subtitle Correction"
+
+msgid "settings.translate.optimize.desc"
+msgstr "Fix recognition errors and proper nouns when processing subtitles."
+
+msgid "settings.translate.split"
+msgstr "Subtitle Sentence Splitting"
+
+msgid "settings.translate.split.desc"
+msgstr "Re-split long subtitles by length and semantics."
+
+msgid "settings.translate.target_language"
+msgstr "Target Language"
+
+msgid "settings.translate.target_language.desc"
+msgstr "Target language for translated subtitle output."
+
+msgid "settings.translate.translate"
+msgstr "Subtitle Translation"
+
+msgid "settings.translate.translate.desc"
+msgstr "Generate target-language translations when processing subtitles."
+
+msgid "settings.translate_service.batch_size"
+msgstr "Batch Size"
+
+msgid "settings.translate_service.batch_size.desc"
+msgstr "Number of subtitles processed per batch by LLM translation."
+
+msgid "settings.translate_service.deeplx_endpoint"
+msgstr "DeepLx Backend"
+
+msgid "settings.translate_service.deeplx_endpoint.desc"
+msgstr "Required when selecting DeepLx translation."
+
+msgid "settings.translate_service.reflect"
+msgstr "Reflective Translation"
+
+msgid "settings.translate_service.reflect.desc"
+msgstr "Used only for LLM translation; increases model calls."
+
+msgid "settings.translate_service.service"
+msgstr "Translation Service"
+
+msgid "settings.translate_service.service.desc"
+msgstr "Select the service used for subtitle translation."
+
+msgid "settings.translate_service.test"
+msgstr "Test Translation"
+
+msgid "settings.translate_service.test.desc"
+msgstr "Translate a short sentence with the current service to verify its network connection and configuration."
+
+msgid "settings.translate_service.test_error"
+msgstr "Translation Test Error"
+
+msgid "settings.translate_service.test_failed"
+msgstr "Translation Test Failed"
+
+msgid "settings.translate_service.test_result"
+msgstr "Test translation: {text}"
+
+msgid "settings.translate_service.test_success"
+msgstr "Translation Service Available"
+
+msgid "settings.translate_service.thread_num"
+msgstr "Concurrency"
+
+msgid "settings.translate_service.thread_num.desc"
+msgstr "Increase this if allowed by the model service."
+
+msgid "settings.warn.incomplete"
+msgstr "Incomplete Configuration"
+
+msgid "substyle.align.center"
+msgstr "Center"
+
+msgid "substyle.align.left"
+msgstr "Left"
+
+msgid "substyle.align.right"
+msgstr "Right"
+
+msgid "substyle.content.bilingual"
+msgstr "Bilingual"
+
+msgid "substyle.content.source"
+msgstr "Original"
+
+msgid "substyle.content.target"
+msgstr "Translation"
+
+msgid "substyle.copy_suffix"
+msgstr "Copy"
+
+msgid "substyle.custom_suffix"
+msgstr "Custom"
+
+msgid "substyle.dialog.delete_body"
+msgstr "Delete style \"{name}\"? This action cannot be undone."
+
+msgid "substyle.dialog.delete_title"
+msgstr "Delete Style"
+
+msgid "substyle.dialog.name_placeholder"
+msgstr "Enter style name"
+
+msgid "substyle.dialog.new_style"
+msgstr "New Style"
+
+msgid "substyle.dialog.pick_bg"
+msgstr "Select Background Image"
+
+msgid "substyle.dialog.rename_style"
+msgstr "Rename Style"
+
+msgid "substyle.dock.count"
+msgstr "{n} sets total"
+
+msgid "substyle.dock.folder"
+msgstr "Directory"
+
+msgid "substyle.dock.new"
+msgstr "New"
+
+msgid "substyle.field.align"
+msgstr "Alignment"
+
+msgid "substyle.field.bg_color"
+msgstr "Background Color"
+
+msgid "substyle.field.bold"
+msgstr "Bold"
+
+msgid "substyle.field.font"
+msgstr "Font"
+
+msgid "substyle.field.letter_spacing"
+msgstr "Letter Spacing"
+
+msgid "substyle.field.margin_bottom"
+msgstr "Bottom Margin"
+
+msgid "substyle.field.max_width"
+msgstr "Max Width"
+
+msgid "substyle.field.outline_color"
+msgstr "Stroke Color"
+
+msgid "substyle.field.outline_width"
+msgstr "Stroke Width"
+
+msgid "substyle.field.pad_h"
+msgstr "Horizontal Padding"
+
+msgid "substyle.field.pad_v"
+msgstr "Vertical Padding"
+
+msgid "substyle.field.radius"
+msgstr "Corner Radius"
+
+msgid "substyle.field.size"
+msgstr "Font Size"
+
+msgid "substyle.field.text_color"
+msgstr "Text Color"
+
+msgid "substyle.filter.image"
+msgstr "Image File"
+
+msgid "substyle.group.background"
+msgstr "Background"
+
+msgid "substyle.group.layout"
+msgstr "Subtitle Layout"
+
+msgid "substyle.group.padding"
+msgstr "Padding"
+
+msgid "substyle.group.position"
+msgstr "Position"
+
+msgid "substyle.group.primary"
+msgstr "Primary Subtitle"
+
+msgid "substyle.group.secondary"
+msgstr "Secondary Subtitle"
+
+msgid "substyle.group.text"
+msgstr "Text"
+
+msgid "substyle.group.text.sub"
+msgstr "Primary and Secondary Subtitles"
+
+msgid "substyle.inspector.autosave"
+msgstr "Auto Save"
+
+msgid "substyle.inspector.title"
+msgstr "Parameters"
+
+msgid "substyle.mode.ass"
+msgstr "ASS Stroke"
+
+msgid "substyle.mode.rounded"
+msgstr "Rounded Background"
+
+msgid "substyle.order.source_top"
+msgstr "Original on Top"
+
+msgid "substyle.order.target_top"
+msgstr "Translation on Top"
+
+msgid "substyle.preview.background"
+msgstr "Change Background"
+
+msgid "substyle.preview.landscape"
+msgstr "Landscape Preview"
+
+msgid "substyle.preview.portrait"
+msgstr "Portrait Preview"
+
+msgid "substyle.preview.source_placeholder"
+msgstr "Original text example for preview"
+
+msgid "substyle.preview.target_placeholder"
+msgstr "Translation example for preview"
+
+msgid "substyle.preview.text"
+msgstr "Preview Text"
+
+msgid "substyle.preview.title"
+msgstr "Preview"
+
+msgid "substyle.row.content"
+msgstr "Display Content"
+
+msgid "substyle.row.gap"
+msgstr "Main/Sub Spacing"
+
+msgid "substyle.row.order"
+msgstr "Bilingual Order"
+
+msgid "substyle.title"
+msgstr "Subtitle Style Settings"
+
+msgid "substyle.toast.bg_set"
+msgstr "Preview background set:"
+
+msgid "substyle.toast.created"
+msgstr "Created style \"{name}\""
+
+msgid "substyle.toast.deleted"
+msgstr "Style deleted"
+
+msgid "substyle.toast.duplicated"
+msgstr "Copied as \"{name}\""
+
+msgid "substyle.toast.renamed"
+msgstr "Renamed to \"{name}\""
+
+msgid "subtitle.bottom.can_synthesize"
+msgstr "Ready for composition"
+
+msgid "subtitle.bottom.count"
+msgstr "{count} total"
+
+msgid "subtitle.bottom.hint"
+msgstr "Right-click to merge, delete, or retranslate"
+
+msgid "subtitle.bottom.loaded"
+msgstr "Loaded"
+
+msgid "subtitle.bottom.output"
+msgstr "Output: {name}"
+
+msgid "subtitle.bottom.progress"
+msgstr "Item {current} / {total}"
+
+msgid "subtitle.btn.clear"
+msgstr "Clear"
+
+msgid "subtitle.btn.enter_synthesis"
+msgstr "Go to Synthesis"
+
+msgid "subtitle.btn.folder"
+msgstr "Directory"
+
+msgid "subtitle.btn.open_config"
+msgstr "Open Processing Settings"
+
+msgid "subtitle.btn.processing"
+msgstr "Processing"
+
+msgid "subtitle.btn.replace"
+msgstr "Replace"
+
+msgid "subtitle.btn.start"
+msgstr "Start Processing"
+
+msgid "subtitle.btn.wait_subtitle"
+msgstr "Waiting for Subtitles"
+
+msgid "subtitle.clear.body"
+msgstr ""
+"This will clear loaded subtitles and unsaved edits, returning to the "
+"initial state. Continue?"
+
+msgid "subtitle.clear.title"
+msgstr "Clear Current Subtitles"
+
+msgid "subtitle.col.end"
+msgstr "End"
+
+msgid "subtitle.col.original"
+msgstr "Original"
+
+msgid "subtitle.col.start"
+msgstr "Start"
+
+msgid "subtitle.col.translated"
+msgstr "Translation"
+
+msgid "subtitle.dialog.choose_file"
+msgstr "Select Subtitle File"
+
+msgid "subtitle.dialog.save_file"
+msgstr "Save Subtitle File"
+
+msgid "subtitle.drop.pick"
+msgstr "Click to Select Subtitles"
+
+msgid "subtitle.drop.title"
+msgstr "Drag in a subtitle file"
+
+msgid "subtitle.error.need_llm"
+msgstr "You need to configure an available LLM API Key, API URL, and model first."
+
+msgid "subtitle.error.no_config"
+msgstr "Unable to build processing configuration"
+
+msgid "subtitle.fail.config_missing"
+msgstr "Configuration missing"
+
+msgid "subtitle.fail.process"
+msgstr "Processing failed"
+
+msgid "subtitle.file_filter"
+msgstr "Subtitle file"
+
+msgid "subtitle.menu.merge"
+msgstr "Merge"
+
+msgid "subtitle.menu.retranslate"
+msgstr "Retranslate"
+
+msgid "subtitle.no_file"
+msgstr "No subtitle file selected"
+
+msgid "subtitle.opt.language"
+msgstr "Translation language"
+
+msgid "subtitle.opt.layout"
+msgstr "Translation layout"
+
+msgid "subtitle.opt.optimize"
+msgstr "Subtitle correction"
+
+msgid "subtitle.opt.prompt"
+msgstr "Transcript prompt"
+
+msgid "subtitle.opt.split"
+msgstr "Sentence splitting"
+
+msgid "subtitle.opt.translate"
+msgstr "Subtitle translation"
+
+msgid "subtitle.process_settings"
+msgstr "Processing settings"
+
+msgid "subtitle.prompt.placeholder"
+msgstr ""
+"Enter a transcript prompt (to help correct subtitles and translation)\n"
+"\n"
+"Supports the following:\n"
+"1. Glossary - a correction mapping for technical terms, names, and "
+"specific words\n"
+"Example:\n"
+"机器学习->Machine Learning\n"
+"马斯克->Elon Musk\n"
+"\n"
+"2. Original subtitle transcript - the video's existing transcript or "
+"related content\n"
+"3. Correction requirements - unify personal pronouns, standardize "
+"technical terms, etc.\n"
+"\n"
+"Note: When using a small LLM model, keep the transcript within 1,000 "
+"Chinese characters."
+
+msgid "subtitle.prompt.set"
+msgstr "Set"
+
+msgid "subtitle.prompt.unset"
+msgstr "Not set"
+
+msgid "subtitle.status.preparing"
+msgstr "Ready to process"
+
+msgid "subtitle.status.retranslating"
+msgstr "Retranslate selected rows"
+
+msgid "subtitle.tip.collapse_settings"
+msgstr "Collapse settings panel"
+
+msgid "subtitle.tip.expand_settings"
+msgstr "Expand Processing Settings"
+
+msgid "subtitle.toast.format_error"
+msgstr "Format error"
+
+msgid "subtitle.toast.load_failed"
+msgstr "Failed to load"
+
+msgid "subtitle.toast.load_first"
+msgstr "Please load a subtitle file first"
+
+msgid "subtitle.toast.no_video"
+msgstr ""
+"No associated video. Please select a video file on the “Subtitle-Video "
+"Merge” page"
+
+msgid "subtitle.toast.processing_wait"
+msgstr "Processing. Please wait for the current task to finish"
+
+msgid "subtitle.toast.save_done"
+msgstr "Saved successfully"
+
+msgid "subtitle.toast.save_failed"
+msgstr "Failed to save"
+
+msgid "subtitle.toast.saved_to"
+msgstr "Subtitles saved to: "
+
+msgid "subtitle.toast.supported_formats"
+msgstr "Supported subtitle formats: "
+
+msgid "subtitle.toast.translate_done"
+msgstr "Translation complete"
+
+msgid "subtitle.toast.translate_done_body"
+msgstr "Updated the translation for the selected row"
+
+msgid "subtitle.toast.translate_failed"
+msgstr "Translation failed"
+
+msgid "synth.audio_mode.duck"
+msgstr "Lower original audio"
+
+msgid "synth.audio_mode.mix"
+msgstr "Mix with original audio"
+
+msgid "synth.audio_mode.replace"
+msgstr "Replace original audio"
+
+msgid "synth.blocker.ffmpeg_missing"
+msgstr "FFmpeg not found"
+
+msgid "synth.blocker.ffmpeg_missing_detail"
+msgstr "Please install FFmpeg and ensure ffmpeg is in PATH."
+
+msgid "synth.blocker.key_required"
+msgstr "Current voice requires API Key"
+
+msgid "synth.blocker.key_required_detail"
+msgstr ""
+"Current voice is missing an API Key. Check the dubbing settings or switch"
+" to a free Edge voice."
+
+msgid "synth.btn.generate_audio"
+msgstr "Generate dubbing audio"
+
+msgid "synth.btn.generate_full"
+msgstr "Generate final video"
+
+msgid "synth.btn.generate_subtitle_video"
+msgstr "Generate subtitled video"
+
+msgid "synth.btn.optional_video"
+msgstr "Optional video"
+
+msgid "synth.btn.pick_output"
+msgstr "Select output content"
+
+msgid "synth.btn.pick_subtitle"
+msgstr "Select subtitles"
+
+msgid "synth.btn.pick_video"
+msgstr "Select video"
+
+msgid "synth.btn.regenerate"
+msgstr "Regenerate"
+
+msgid "synth.btn.wait_files"
+msgstr "Waiting for file"
+
+msgid "synth.btn.wait_video"
+msgstr "Waiting for video"
+
+msgid "synth.dialog.pick_media"
+msgstr "Select subtitle and video files"
+
+msgid "synth.dialog.pick_subtitle"
+msgstr "Select subtitle file"
+
+msgid "synth.dialog.pick_video"
+msgstr "Select video file"
+
+msgid "synth.drop.formats"
+msgstr "Subtitles: srt / ass / vtt    Video: mp4 / mov / mkv"
+
+msgid "synth.drop.pick"
+msgstr "Click to select file"
+
+msgid "synth.drop.title"
+msgstr "Drag in subtitle and video files"
+
+msgid "synth.error.ass_unsupported"
+msgstr ""
+"FFmpeg does not support ASS hard subtitles. Please install a full FFmpeg "
+"with libass, or switch to rounded background rendering."
+
+msgid "synth.error.dubbed_video_path_empty"
+msgstr "Dubbing video output path is empty"
+
+msgid "synth.file.media"
+msgstr "Media File"
+
+msgid "synth.file.reference_video"
+msgstr "Reference Video"
+
+msgid "synth.file.subtitle"
+msgstr "Subtitle File"
+
+msgid "synth.file.video"
+msgstr "Video File"
+
+msgid "synth.hint.dub_only"
+msgstr "Generate dubbing audio only; video file is optional"
+
+msgid "synth.hint.dub_then_synthesize"
+msgstr "Dubbing will be generated first, then combined into a subtitled video"
+
+msgid "synth.hint.need_subtitle"
+msgstr "Subtitle file required"
+
+msgid "synth.hint.need_subtitle_and_video"
+msgstr "Subtitle file and video file required"
+
+msgid "synth.hint.need_video"
+msgstr "Video file still required"
+
+msgid "synth.hint.pick_output"
+msgstr "Please enable at least one output option on the right"
+
+msgid "synth.hint.synthesize_only"
+msgstr "Subtitles will be embedded into the video"
+
+msgid "synth.link.style_page"
+msgstr "Stylesheet"
+
+msgid "synth.link.voice_library"
+msgstr "Voice Library"
+
+msgid "synth.opt.audio_mode"
+msgstr "Audio Processing"
+
+msgid "synth.opt.bilingual_order"
+msgstr "Bilingual order"
+
+msgid "synth.opt.display_content"
+msgstr "Display content"
+
+msgid "synth.opt.render_mode"
+msgstr "Rendering Mode"
+
+msgid "synth.opt.style"
+msgstr "Style"
+
+msgid "synth.opt.subtitle_mode"
+msgstr "Subtitle Mode"
+
+msgid "synth.opt.subtitle_style"
+msgstr "Subtitle Style"
+
+msgid "synth.opt.text_track"
+msgstr "Text Track"
+
+msgid "synth.opt.timing"
+msgstr "Timing Alignment"
+
+msgid "synth.opt.video_quality"
+msgstr "Video Quality"
+
+msgid "synth.opt.voice"
+msgstr "Voice"
+
+msgid "synth.output.dubbing"
+msgstr "Dubbing Track"
+
+msgid "synth.output.dubbing_desc"
+msgstr "Generate Dubbing from Subtitles"
+
+msgid "synth.output.subtitle_video"
+msgstr "Subtitled Video"
+
+msgid "synth.output.subtitle_video_desc"
+msgstr "Burn Subtitles into Video"
+
+msgid "synth.panel.title"
+msgstr "Generated This Time"
+
+msgid "synth.pill.completed"
+msgstr "Completed"
+
+msgid "synth.pill.failed"
+msgstr "Failed"
+
+msgid "synth.pill.missing_ffmpeg"
+msgstr "Missing FFmpeg"
+
+msgid "synth.pill.missing_key"
+msgstr "Missing Key"
+
+msgid "synth.pill.missing_video"
+msgstr "Missing Video"
+
+msgid "synth.pill.no_output"
+msgstr "No Output Selected"
+
+msgid "synth.pill.ready"
+msgstr "Ready to Generate"
+
+msgid "synth.plan.collect"
+msgstr "Organize Result Files"
+
+msgid "synth.plan.dubbing"
+msgstr "Generate Dubbing Track"
+
+msgid "synth.plan.pending"
+msgstr "Pending Generation"
+
+msgid "synth.plan.save"
+msgstr "Save Result File"
+
+msgid "synth.plan.synthesize"
+msgstr "Create Subtitled Video"
+
+msgid "synth.result.dubbed_audio"
+msgstr "Dubbing Audio"
+
+msgid "synth.result.dubbed_video"
+msgstr "Dubbing Video"
+
+msgid "synth.result.subtitled_video"
+msgstr "Subtitled Video"
+
+msgid "synth.row.subtitle_required"
+msgstr "Required: Select SRT / ASS / VTT subtitles"
+
+msgid "synth.row.video_optional"
+msgstr "Optional: Also generate a dubbed video after selection"
+
+msgid "synth.row.video_required"
+msgstr "Required: Select an MP4 / MOV / MKV video"
+
+msgid "synth.section.dubbing_params"
+msgstr "Dubbing Settings"
+
+msgid "synth.section.output"
+msgstr "Output Content"
+
+msgid "synth.section.subtitle_params"
+msgstr "Subtitle Video Settings"
+
+msgid "synth.status.completed"
+msgstr "Generation Complete"
+
+msgid "synth.status.done"
+msgstr "Complete"
+
+msgid "synth.status.failed"
+msgstr "Generation Failed"
+
+msgid "synth.status.generating"
+msgstr "Generating result file"
+
+msgid "synth.status.missing"
+msgstr "Missing"
+
+msgid "synth.status.optional"
+msgstr "Optional"
+
+msgid "synth.status.processing"
+msgstr "Generating"
+
+msgid "synth.status.ready"
+msgstr "Ready"
+
+msgid "synth.status.waiting"
+msgstr "Waiting"
+
+msgid "synth.subtitle_mode.hard"
+msgstr "Hard Subtitles"
+
+msgid "synth.subtitle_mode.soft"
+msgstr "Soft Subtitles"
+
+msgid "synth.text_track.auto"
+msgstr "Auto Select"
+
+msgid "synth.text_track.first"
+msgstr "First Line"
+
+msgid "synth.text_track.second"
+msgstr "Second Line"
+
+msgid "synth.timing.balanced"
+msgstr "Balanced"
+
+msgid "synth.timing.natural"
+msgstr "Natural"
+
+msgid "synth.timing.strict"
+msgstr "Strict Fit"
+
+msgid "synth.tip.collapse_panel"
+msgstr "Collapse This Panel"
+
+msgid "synth.tip.expand_panel"
+msgstr "Expand Generation Panel"
+
+msgid "synth.tip.open_config"
+msgstr "Open Synthesis Settings"
+
+msgid "synth.title.config_check"
+msgstr "Configuration Check"
+
+msgid "synth.title.confirm"
+msgstr "Confirm Before Generation"
+
+msgid "synth.title.input"
+msgstr "Input File"
+
+msgid "synth.title.results"
+msgstr "Output File"
+
+msgid "synth.title.running"
+msgstr "Generating"
+
+msgid "t_dubbing.error.config_empty"
+msgstr "Dubbing configuration is empty"
+
+msgid "t_dubbing.error.output_audio_path_empty"
+msgstr "Output audio path is empty"
+
+msgid "t_dubbing.error.subtitle_path_empty"
+msgstr "Subtitle path is empty"
+
+msgid "t_dubbing.error.task_dir_empty"
+msgstr "Task directory is empty"
+
+msgid "t_dubbing.status.done"
+msgstr "Dubbing complete"
+
+msgid "t_dubbing.status.preparing"
+msgstr "Preparing dubbing"
+
+msgid "t_hardsub.error.read_video_failed"
+msgstr "Unable to read this video"
+
+msgid "t_hardsub.status.detecting_region"
+msgstr "Detect subtitle area"
+
+msgid "t_hardsub.status.recognizing"
+msgstr "Recognizing {count} items"
+
+msgid "t_media.error.no_video_file"
+msgstr "Download completed but no video file was found. Try another link."
+
+msgid "t_media.status.completed"
+msgstr "Download completed"
+
+msgid "t_subtitle.error.llm_model_not_configured"
+msgstr "LLM model not configured"
+
+msgid "t_subtitle.error.llm_not_configured"
+msgstr "LLM API not configured. Please check LLM settings."
+
+msgid "t_subtitle.error.llm_test_failed"
+msgstr "LLM API test failed: {message}"
+
+msgid "t_subtitle.error.no_config"
+msgstr "Subtitle settings are empty"
+
+msgid "t_subtitle.error.no_subtitle_path"
+msgstr "Subtitle file path is empty"
+
+msgid "t_subtitle.error.no_target_language"
+msgstr "Target language not configured"
+
+msgid "t_subtitle.error.unsupported_service"
+msgstr "Unsupported translation service: {service}"
+
+msgid "t_subtitle.status.done"
+msgstr "Processing completed"
+
+msgid "t_subtitle.status.optimizing"
+msgstr "Optimizing subtitles..."
+
+msgid "t_subtitle.status.processing_percent"
+msgstr "Processing subtitles {percent}%"
+
+msgid "t_subtitle.status.splitting"
+msgstr "Splitting subtitle sentences..."
+
+msgid "t_subtitle.status.translating"
+msgstr "Translating subtitles..."
+
+msgid "t_subtitle.status.translating_percent"
+msgstr "Translating {percent}%"
+
+msgid "t_subtitle.status.verifying_llm"
+msgstr "Starting LLM configuration validation..."
+
+msgid "t_synth.error.no_output_path"
+msgstr "Output path is empty"
+
+msgid "t_synth.error.no_subtitle_path"
+msgstr "Subtitle path is empty"
+
+msgid "t_synth.error.no_video_path"
+msgstr "Video path is empty"
+
+msgid "t_synth.status.done"
+msgstr "Synthesis complete"
+
+msgid "t_synth.status.synthesizing"
+msgstr "Synthesizing"
+
+msgid "t_transcript.error.audio_extract_failed"
+msgstr "Audio conversion failed"
+
+msgid "t_transcript.error.file_not_found"
+msgstr "Media file does not exist"
+
+msgid "t_transcript.error.no_config"
+msgstr "Transcription config is empty"
+
+msgid "t_transcript.error.no_file_path"
+msgstr "File path is empty"
+
+msgid "t_transcript.error.no_output_path"
+msgstr "Output path is empty"
+
+msgid "t_transcript.status.done"
+msgstr "Transcription complete"
+
+msgid "t_transcript.status.extracting_audio"
+msgstr "Converting audio"
+
+msgid "t_transcript.status.transcribing"
+msgstr "Transcribing speech"
+
+msgid "t_voice.error.need_api_key"
+msgstr ""
+"To preview {provider}, please enter the voiceover API Key in Settings "
+"first"
+
+msgid "t_voice.sample_text"
+msgstr "Hello, this is a voiceover preview from Kaka Subtitle Assistant."
+
+msgid "transcribe.action.cancel"
+msgstr "Cancel transcription"
+
+msgid "transcribe.action.replace_file"
+msgstr "Replace file"
+
+msgid "transcribe.btn.open_subtitle"
+msgstr "Go to subtitle optimization"
+
+msgid "transcribe.btn.retranscribe"
+msgstr "Transcribe again"
+
+msgid "transcribe.btn.running"
+msgstr "Transcribing"
+
+msgid "transcribe.btn.start"
+msgstr "Start transcription"
+
+msgid "transcribe.btn.waiting_file"
+msgstr "Waiting for file"
+
+msgid "transcribe.col.content"
+msgstr "Subtitle content"
+
+msgid "transcribe.col.end"
+msgstr "End time"
+
+msgid "transcribe.col.start"
+msgstr "Start time"
+
+msgid "transcribe.config.open_tip"
+msgstr "Open transcription settings"
+
+msgid "transcribe.dialog.media_filter"
+msgstr "Media file"
+
+msgid "transcribe.dialog.pick_media"
+msgstr "Select media file"
+
+msgid "transcribe.drop.pick"
+msgstr "Click to select file"
+
+msgid "transcribe.drop.title"
+msgstr "Drag in an audio or video file"
+
+msgid "transcribe.empty.title"
+msgstr "No media file selected"
+
+msgid "transcribe.error.title"
+msgstr "Failure reason"
+
+msgid "transcribe.file.title"
+msgstr "Current file"
+
+msgid "transcribe.format.txt"
+msgstr "TXT"
+
+msgid "transcribe.opt.language"
+msgstr "Language"
+
+msgid "transcribe.opt.model"
+msgstr "Model"
+
+msgid "transcribe.opt.output"
+msgstr "Output"
+
+msgid "transcribe.opt.service"
+msgstr "Service"
+
+msgid "transcribe.opt.track"
+msgstr "Audio track"
+
+msgid "transcribe.opt.word_timestamp"
+msgstr "Word timestamps"
+
+msgid "transcribe.params.collapse_tip"
+msgstr "Collapse parameter panel"
+
+msgid "transcribe.params.expand_tip"
+msgstr "Expand parameters panel"
+
+msgid "transcribe.params.title"
+msgstr "Parameters"
+
+msgid "transcribe.pending.not_started"
+msgstr "Transcription not started yet"
+
+msgid "transcribe.preview.count"
+msgstr "{n} items"
+
+msgid "transcribe.preview.title"
+msgstr "Original subtitle preview"
+
+msgid "transcribe.progress.phase"
+msgstr "Speech recognition"
+
+msgid "transcribe.result.collapse_tip"
+msgstr "Collapse action bar"
+
+msgid "transcribe.result.file"
+msgstr "Result file"
+
+msgid "transcribe.result.open_file_tip"
+msgstr "Click to open result file"
+
+msgid "transcribe.result.title"
+msgstr "Result actions"
+
+msgid "transcribe.stage.done"
+msgstr "Completed"
+
+msgid "transcribe.stage.read_audio"
+msgstr "Read audio"
+
+msgid "transcribe.stage.recognize"
+msgstr "Recognize speech"
+
+msgid "transcribe.stage.running"
+msgstr "In progress"
+
+msgid "transcribe.stage.waiting"
+msgstr "Waiting"
+
+msgid "transcribe.stage.write_subtitle"
+msgstr "Generate subtitle file"
+
+msgid "transcribe.status.done"
+msgstr "Completed"
+
+msgid "transcribe.status.failed"
+msgstr "Transcription failed"
+
+msgid "transcribe.status.pending"
+msgstr "Not started"
+
+msgid "transcribe.status.running"
+msgstr "Transcribing"
+
+msgid "transcribe.status.unreachable"
+msgstr "Not connected"
+
+msgid "transcribe.text_preview.done"
+msgstr "Transcription complete"
+
+msgid "transcribe.text_preview.title"
+msgstr "Plain text preview"
+
+msgid "transcribe.toast.bad_format"
+msgstr "Invalid format {suffix}"
+
+msgid "transcribe.toast.drop_media"
+msgstr "Please drag in an audio or video file"
+
+msgid "transcribe.toast.no_subtitle"
+msgstr "No subtitle file available for subtitle optimization"
+
+msgid "transcribe.toast.processing"
+msgstr "Processing, please wait for the current task to complete"
+
+msgid "transcribe.track.first"
+msgstr "Audio Track 1"
+
+msgid "workbench.drop.or"
+msgstr "or"

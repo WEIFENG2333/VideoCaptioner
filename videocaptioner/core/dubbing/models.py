@@ -18,6 +18,13 @@ class SpeakerProfile:
     clone_audio_text: Optional[str] = None
     style_prompt: Optional[str] = None
 
+    def __post_init__(self):
+        self.name = self.name.strip()
+        self.voice = self.voice.strip() if self.voice else self.voice
+        self.clone_audio_path = self.clone_audio_path.strip() if self.clone_audio_path else self.clone_audio_path
+        self.clone_audio_text = self.clone_audio_text.strip() if self.clone_audio_text else self.clone_audio_text
+        self.style_prompt = self.style_prompt.strip() if self.style_prompt else self.style_prompt
+
 
 @dataclass
 class DubbingSegment:
@@ -69,6 +76,9 @@ class DubbingConfig:
     style_prompt: str = ""
     fit_mode: FitMode = "tempo"
     max_speed: float = 1.35
+    # 默认把偏短的配音放慢拉伸到原时长，避免比原声短造成时间轴漂移/突兀静音。
+    stretch_to_fit: bool = True
+    min_speed: float = 0.5  # 放慢下限：过慢会发闷，低于此值就不再继续拉伸
     target_padding_ms: int = 80
     rewrite_too_long: bool = False
     rewrite_threshold: float = 1.15
@@ -78,6 +88,17 @@ class DubbingConfig:
     mix_original_audio: bool = False
     original_audio_volume: float = 0.25
     dubbed_audio_volume: float = 1.0
+
+    def __post_init__(self):
+        self.api_key = self.api_key.strip()
+        self.base_url = self.base_url.strip()
+        self.model = self.model.strip()
+        self.voice = self.voice.strip()
+        self.response_format = self.response_format.strip()  # type: ignore[attr-defined]
+        self.style_prompt = self.style_prompt.strip()
+        self.llm_api_key = self.llm_api_key.strip()
+        self.llm_api_base = self.llm_api_base.strip()
+        self.llm_model = self.llm_model.strip()
 
 
 @dataclass
@@ -89,3 +110,5 @@ class DubbingResult:
     segments: list[DubbingSegment]
     duration_ms: int
     warnings: list[str] = field(default_factory=list)
+    # 分段报告（report.json），随工作目录生灭
+    report_path: Optional[Path] = None
