@@ -57,3 +57,18 @@ def test_render_ass_preview_quotes_ffmpeg_filter_paths(monkeypatch, tmp_path):
     assert vf_value.startswith("ass='"), f"ass path is not single-quoted: {vf_value}"
     assert "':fontsdir='" in vf_value, f"fontsdir is not single-quoted: {vf_value}"
     assert vf_value.endswith("'"), f"fontsdir path is not closed: {vf_value}"
+
+
+def test_get_video_resolution_avoids_locale_text_decoding(monkeypatch):
+    """FFmpeg stderr may contain bytes that are invalid in the Windows locale codec."""
+    captured = {}
+    stderr = b"ffmpeg banner \x80\xff Video: h264, yuv420p, 1920x1080, 30 fps"
+
+    def fake_run(cmd, **kwargs):
+        captured["kwargs"] = kwargs
+        return subprocess.CompletedProcess(cmd, 1, b"", stderr)
+
+    monkeypatch.setattr(ass_renderer.subprocess, "run", fake_run)
+
+    assert ass_renderer._get_video_resolution("example.mp4") == (1920, 1080)
+    assert captured["kwargs"].get("text") is not True

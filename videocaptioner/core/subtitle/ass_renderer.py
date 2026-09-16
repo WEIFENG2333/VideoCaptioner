@@ -223,19 +223,19 @@ def render_ass_preview(
 
 
 def _get_video_resolution(video_path: str) -> Tuple[int, int]:
-    """获取视频分辨率"""
+    """获取视频分辨率，避免依赖 Windows 本地编码解码 FFmpeg 输出。"""
     result = subprocess.run(
         ["ffmpeg", "-i", video_path],
         capture_output=True,
-        text=True,
         creationflags=(
             getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
         ),
     )
 
-    # 从 ffmpeg 输出中解析分辨率
-    pattern = r"(\d{2,5})x(\d{2,5})"
-    match = re.search(pattern, result.stderr)
+    # FFmpeg stderr 可能包含当前 Windows 代码页无法解码的字节，直接按 bytes 解析。
+    stderr = result.stderr or b""
+    pattern = rb"(\d{2,5})x(\d{2,5})"
+    match = re.search(pattern, stderr)
     if match:
         return int(match.group(1)), int(match.group(2))
     return 1920, 1080  # 默认返回 1080P
