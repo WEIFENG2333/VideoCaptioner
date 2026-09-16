@@ -22,6 +22,7 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 
 from videocaptioner.config import AUTHOR, FEEDBACK_URL, HELP_URL, RELEASE_URL, VERSION, YEAR
+from videocaptioner.core.asr.minimax_api import check_minimax_connection
 from videocaptioner.core.constant import (
     INFOBAR_DURATION_ERROR,
     INFOBAR_DURATION_SUCCESS,
@@ -481,11 +482,35 @@ class SettingInterface(ScrollArea):
             self.transcribeGroup,
         )
 
+        # MiniMax Speech-to-Text 配置
+        self.minimaxApiBaseCard = LineEditSettingCard(
+            cfg.minimax_api_base, FIF.LINK, self.tr("MiniMax API Base URL"),
+            self.tr("输入 MiniMax Speech-to-Text API Base URL"),
+            "https://api.minimaxi.com/v1", self.transcribeGroup,
+        )
+        self.minimaxApiKeyCard = LineEditSettingCard(
+            cfg.minimax_api_key, FIF.FINGERPRINT, self.tr("MiniMax API Key"),
+            self.tr("输入 MiniMax API Key"), "", self.transcribeGroup,
+        )
+        self.minimaxApiModelCard = EditComboBoxSettingCard(
+            cfg.minimax_api_model, FIF.ROBOT,  # type: ignore
+            self.tr("MiniMax ASR 模型"),
+            self.tr("当前官方 Speech-to-Text 模型"), ["asr-1.0"], self.transcribeGroup,
+        )
+        self.checkMiniMaxConnectionCard = PushSettingCard(
+            self.tr("测试 MiniMax 连接"), FIF.CONNECT, self.tr("测试 MiniMax ASR 连接"),
+            self.tr("发送极短静音 WAV 验证鉴权与服务可用性"), self.transcribeGroup,
+        )
+
         # 默认隐藏 Whisper API 配置卡片（仅在选择 Whisper API 时显示）
         self.whisperApiBaseCard.setVisible(False)
         self.whisperApiKeyCard.setVisible(False)
         self.whisperApiModelCard.setVisible(False)
         self.checkWhisperConnectionCard.setVisible(False)
+        self.minimaxApiBaseCard.setVisible(False)
+        self.minimaxApiKeyCard.setVisible(False)
+        self.minimaxApiModelCard.setVisible(False)
+        self.checkMiniMaxConnectionCard.setVisible(False)
 
     def __createTranslateServiceCards(self):
         """创建翻译服务相关的配置卡片"""
@@ -602,6 +627,11 @@ class SettingInterface(ScrollArea):
         self.transcribeGroup.addSettingCard(self.whisperApiKeyCard)
         self.transcribeGroup.addSettingCard(self.whisperApiModelCard)
         self.transcribeGroup.addSettingCard(self.checkWhisperConnectionCard)
+        # 添加 MiniMax ASR 配置卡片
+        self.transcribeGroup.addSettingCard(self.minimaxApiBaseCard)
+        self.transcribeGroup.addSettingCard(self.minimaxApiKeyCard)
+        self.transcribeGroup.addSettingCard(self.minimaxApiModelCard)
+        self.transcribeGroup.addSettingCard(self.checkMiniMaxConnectionCard)
 
         # 添加LLM配置卡片
         self.llmGroup.addSettingCard(self.llmServiceCard)
@@ -648,6 +678,7 @@ class SettingInterface(ScrollArea):
 
         # 检查 Whisper 连接
         self.checkWhisperConnectionCard.clicked.connect(self.checkWhisperConnection)
+        self.checkMiniMaxConnectionCard.clicked.connect(self.checkMiniMaxConnection)
 
         # 保存路径
         self.savePathCard.clicked.connect(self.__onsavePathCardClicked)
@@ -893,14 +924,60 @@ class SettingInterface(ScrollArea):
             self.checkWhisperConnectionCard,
         ]
 
-        # 根据选择的模型显示/隐藏 Whisper API 配置
+        minimax_api_cards = [
+            self.minimaxApiBaseCard,
+            self.minimaxApiKeyCard,
+            self.minimaxApiModelCard,
+            self.checkMiniMaxConnectionCard,
+        ]
+
+        # 根据选择的模型显示/隐藏对应 API 配置
         is_whisper_api = model_name == TranscribeModelEnum.WHISPER_API.value
+        is_minimax_api = model_name == TranscribeModelEnum.MINIMAX_API.value
         for card in whisper_api_cards:
             card.setVisible(is_whisper_api)
+        for card in minimax_api_cards:
+            card.setVisible(is_minimax_api)
 
         # 更新布局
         self.transcribeGroup.adjustSize()
         self.expandLayout.update()
+
+    def checkMiniMaxConnection(self):
+        """检查 MiniMax ASR API 连接。"""
+        scroll_position = self.verticalScrollBar().value()
+        base_url = self.minimaxApiBaseCard.lineEdit.text().strip()
+        api_key = self.minimaxApiKeyCard.lineEdit.text().strip()
+        model = self.minimaxApiModelCard.comboBox.currentText().strip()
+        if not base_url or not api_key or not model:
+            InfoBar.warning(
+                self.tr("配置不完整"),
+                self.tr("请输入 MiniMax API Key、Base URL 和模型"),
+                duration=INFOBAR_DURATION_ERROR,
+                parent=self,
+            )
+            return
+
+        self.checkMiniMaxConnectionCard.button.setEnabled(False)
+        self.checkMiniMaxConnectionCard.button.setText(self.tr("正在测试..."))
+        self.verticalScrollBar().setValue(scroll_position)
+        self.minimax_connection_thread = MiniMaxConnectionThread(base_url, api_key, model)
+        self.minimax_connection_thread.finished.connect(self.onMiniMaxConnectionCheckFinished)
+        self.minimax_connection_thread.start()
+
+    def onMiniMaxConnectionCheckFinished(self, success, result):
+        self.checkMiniMaxConnectionCard.button.setEnabled(True)
+        self.checkMiniMaxConnectionCard.button.setText(self.tr("测试 MiniMax 连接"))
+        if success:
+            InfoBar.success(
+                self.tr("连接成功"), self.tr(result),
+                duration=INFOBAR_DURATION_SUCCESS, parent=self,
+            )
+        else:
+            InfoBar.error(
+                self.tr("连接失败"), self.tr(result),
+                duration=INFOBAR_DURATION_ERROR, parent=self,
+            )
 
     def checkWhisperConnection(self):
         """检查 Whisper API 连接"""
@@ -990,6 +1067,24 @@ class SettingInterface(ScrollArea):
             duration=INFOBAR_DURATION_ERROR,
             parent=self,
         )
+
+
+class MiniMaxConnectionThread(QThread):
+    """MiniMax ASR API 连接测试线程。"""
+
+    finished = pyqtSignal(bool, str)
+
+    def __init__(self, base_url, api_key, model):
+        super().__init__()
+        self.base_url = base_url
+        self.api_key = api_key
+        self.model = model
+
+    def run(self):
+        success, result = check_minimax_connection(
+            self.api_key, self.base_url, self.model
+        )
+        self.finished.emit(success, result)
 
 
 class WhisperConnectionThread(QThread):

@@ -48,11 +48,14 @@ videocaptioner transcribe <文件> [选项]
 
 | 选项 | 说明 |
 |------|------|
-| `--asr` | ASR 引擎：`bijian`(默认,免费) `jianying`(免费) `whisper-api` `whisper-cpp`。bijian/jianying 仅支持中英文，其他语言用 whisper-api 或 whisper-cpp |
-| `--language CODE` | 源语言 ISO 639-1 代码，如 `zh` `en` `ja`，或 `auto`（默认） |
+| `--asr` | ASR 引擎：`bijian`(默认,免费) `jianying`(免费) `whisper-api` `minimax` `whisper-cpp`。bijian/jianying 仅支持中英文；MiniMax/Whisper 支持更多语言 |
+| `--language CODE` | 源语言代码，如 `zh` `yue` `en` `ja`，或 `auto`（默认） |
 | `--word-timestamps` | 输出词级时间戳（配合字幕断句使用） |
 | `--whisper-api-key` | Whisper API 密钥（仅 `--asr whisper-api`） |
 | `--whisper-api-base` | Whisper API 地址 |
+| `--minimax-api-key` | MiniMax API 密钥（仅 `--asr minimax`） |
+| `--minimax-api-base` | MiniMax ASR API 地址（默认 `https://api.minimaxi.com/v1`） |
+| `--minimax-model` | MiniMax ASR 模型（默认 `asr-1.0`） |
 | `--whisper-model` | Whisper 模型名（whisper-api 默认 whisper-1，whisper-cpp 默认 large-v2） |
 | `-o PATH` | 输出文件或目录路径 |
 | `--format` | 输出格式：`srt`(默认) `ass` `txt` `json` |

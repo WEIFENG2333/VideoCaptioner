@@ -3,6 +3,7 @@ from videocaptioner.core.asr.bcut import BcutASR
 from videocaptioner.core.asr.chunked_asr import ChunkedASR
 from videocaptioner.core.asr.faster_whisper import FasterWhisperASR
 from videocaptioner.core.asr.jianying import JianYingASR
+from videocaptioner.core.asr.minimax_api import MiniMaxASR
 from videocaptioner.core.asr.whisper_api import WhisperAPI
 from videocaptioner.core.asr.whisper_cpp import WhisperCppASR
 from videocaptioner.core.entities import TranscribeConfig, TranscribeModelEnum
@@ -66,6 +67,9 @@ def _create_asr_instance(audio_path: str, config: TranscribeConfig) -> ChunkedAS
     elif model_type == TranscribeModelEnum.WHISPER_API:
         return _create_whisper_api_asr(audio_path, config)
 
+    elif model_type == TranscribeModelEnum.MINIMAX_API:
+        return _create_minimax_asr(audio_path, config)
+
     elif model_type == TranscribeModelEnum.FASTER_WHISPER:
         return _create_faster_whisper_asr(audio_path, config)
 
@@ -123,6 +127,25 @@ def _create_whisper_api_asr(audio_path: str, config: TranscribeConfig) -> Chunke
     }
     return ChunkedASR(
         asr_class=WhisperAPI, audio_path=audio_path, asr_kwargs=asr_kwargs
+    )
+
+
+def _create_minimax_asr(audio_path: str, config: TranscribeConfig) -> ChunkedASR:
+    """Create MiniMax ASR with provider limits enforced at the chunk boundary."""
+    asr_kwargs = {
+        "use_cache": True,
+        "need_word_time_stamp": config.need_word_time_stamp,
+        "language": config.transcribe_language,
+        "model": config.minimax_api_model or "asr-1.0",
+        "api_key": config.minimax_api_key or "",
+        "base_url": config.minimax_api_base or "https://api.minimaxi.com/v1",
+    }
+    return ChunkedASR(
+        asr_class=MiniMaxASR,
+        audio_path=audio_path,
+        asr_kwargs=asr_kwargs,
+        chunk_concurrency=1,
+        chunk_length=480,
     )
 
 

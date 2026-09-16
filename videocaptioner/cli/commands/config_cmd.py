@@ -202,6 +202,7 @@ def _render_onboarding_template(config_data: dict) -> str:
     f.write("# Keep API keys private. This file is written with 0600 permissions on Unix.\n\n")
     f.write("# [llm] is used for AI subtitle polish, LLM translation, reflective translation, and dubbing length adaptation.\n")
     f.write("# [whisper_api] is only needed when transcribe.asr = \"whisper-api\".\n")
+    f.write("# [minimax_api] is only needed when transcribe.asr = \"minimax\".\n")
     f.write("# [transcribe] controls speech-to-text. bijian/jianying need no key; whisper-cpp needs a local binary/model.\n")
     f.write("# [subtitle] split and AI polish use LLM; [translate] can use bing/google/llm.\n")
     f.write("# [synthesize] controls subtitle embedding/burning.\n")
@@ -225,6 +226,11 @@ def _user_facing_config(config_data: dict) -> dict:
             "api_key": config_data["whisper_api"]["api_key"],
             "api_base": config_data["whisper_api"]["api_base"],
             "model": config_data["whisper_api"]["model"],
+        },
+        "minimax_api": {
+            "api_key": config_data["minimax_api"]["api_key"],
+            "api_base": config_data["minimax_api"]["api_base"],
+            "model": config_data["minimax_api"]["model"],
         },
         "transcribe": {
             "asr": config_data["transcribe"]["asr"],

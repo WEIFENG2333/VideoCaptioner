@@ -43,13 +43,22 @@ videocaptioner config set llm.model gpt-4o-mini
 
 配置优先级：`命令行参数 > 环境变量 (VIDEOCAPTIONER_*) > 配置文件 > 默认值`。运行 `videocaptioner config show` 查看当前配置。
 
+MiniMax ASR 可像 Whisper API 一样直接配置：
+
+```bash
+videocaptioner config set minimax_api.api_key <your-key>
+videocaptioner transcribe input.mp4 --asr minimax --language zh -o output.srt
+```
+
+MiniMax 使用官方 `asr-1.0` / `v1/speech_to_text` 接口。单次音频官方限制为 500 秒、50 MB；长音频会自动按 480 秒串行分块。
+
 <details>
 <summary>所有 CLI 命令一览</summary>
 
 | 命令 | 说明 |
 |------|------|
 | `gui` | 打开桌面版。也可以直接运行 `videocaptioner-gui` |
-| `transcribe` | 语音转字幕。引擎：`faster-whisper`、`whisper-api`、`bijian`（免费）、`jianying`（免费）、`whisper-cpp` |
+| `transcribe` | 语音转字幕。引擎：`faster-whisper`、`whisper-api`、`minimax`、`bijian`（免费）、`jianying`（免费）、`whisper-cpp` |
 | `subtitle` | 字幕优化/翻译。翻译服务：`llm`、`bing`（免费）、`google`（免费） |
 | `dub` | 根据字幕生成配音音轨或配音视频 |
 | `synthesize` | 字幕烧录到视频（软字幕/硬字幕） |

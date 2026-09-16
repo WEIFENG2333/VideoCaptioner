@@ -220,6 +220,11 @@ class Config(QConfig):
     whisper_api_model = OptionsConfigItem("WhisperAPI", "WhisperApiModel", "")
     whisper_api_prompt = ConfigItem("WhisperAPI", "WhisperApiPrompt", "")
 
+    # ------------------- MiniMax ASR API 配置 -------------------
+    minimax_api_base = ConfigItem("MiniMaxAPI", "MiniMaxApiBase", "https://api.minimaxi.com/v1")
+    minimax_api_key = ConfigItem("MiniMaxAPI", "MiniMaxApiKey", "")
+    minimax_api_model = OptionsConfigItem("MiniMaxAPI", "MiniMaxApiModel", "asr-1.0")
+
     # ------------------- 字幕配置 -------------------
     need_optimize = ConfigItem("Subtitle", "NeedOptimize", False, BoolValidator())
     need_translate = ConfigItem("Subtitle", "NeedTranslate", False, BoolValidator())

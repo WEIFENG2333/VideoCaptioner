@@ -123,8 +123,10 @@ def _check_transcribe(config: dict) -> list[Check]:
     checks = [Check("transcribe.asr", "ok", f"default ASR: {asr}")]
     if asr == "whisper-api" and not get(config, "whisper_api.api_key", ""):
         checks.append(Check("whisper_api.api_key", "error", "Whisper API key is missing", "Run 'videocaptioner config set whisper_api.api_key <key>'"))
+    if asr == "minimax" and not get(config, "minimax_api.api_key", ""):
+        checks.append(Check("minimax_api.api_key", "error", "MiniMax ASR API key is missing", "Run 'videocaptioner config set minimax_api.api_key <key>'"))
     if asr == "whisper-cpp" and not any(shutil.which(n) for n in ["whisper-cpp", "whisper", "whisper-cpp-main"]):
-        checks.append(Check("whisper-cpp", "error", "whisper.cpp binary not found", "Install whisper.cpp or choose --asr bijian/whisper-api"))
+        checks.append(Check("whisper-cpp", "error", "whisper.cpp binary not found", "Install whisper.cpp or choose --asr bijian/minimax/whisper-api"))
     return checks
 
 

@@ -82,6 +82,10 @@ class TaskFactory:
             whisper_api_base=cfg.whisper_api_base.value,
             whisper_api_model=cfg.whisper_api_model.value,
             whisper_api_prompt=cfg.whisper_api_prompt.value,
+            # MiniMax ASR API 配置
+            minimax_api_key=cfg.minimax_api_key.value,
+            minimax_api_base=cfg.minimax_api_base.value,
+            minimax_api_model=cfg.minimax_api_model.value,
             # Faster Whisper 配置
             faster_whisper_program=cfg.faster_whisper_program.value,
             faster_whisper_model=cfg.faster_whisper_model.value,

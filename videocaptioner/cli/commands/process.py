@@ -87,6 +87,9 @@ def run(args: Namespace, config: dict) -> int:
         fw_voice_extraction=False, fw_prompt=None,
         whisper_api_key=getattr(args, "whisper_api_key", None),
         whisper_api_base=getattr(args, "whisper_api_base", None),
+        minimax_api_key=getattr(args, "minimax_api_key", None),
+        minimax_api_base=getattr(args, "minimax_api_base", None),
+        minimax_model=getattr(args, "minimax_model", None),
         whisper_model=None, whisper_prompt=None,
     )
     from videocaptioner.cli.commands.transcribe import run as transcribe_run
