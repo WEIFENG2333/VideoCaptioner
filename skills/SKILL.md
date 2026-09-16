@@ -126,7 +126,7 @@ videocaptioner synthesize video.mp4 -s subtitle.srt --subtitle-mode hard \
 
 | Command | Purpose |
 |---------|---------|
-| `transcribe` | Speech → subtitles. Engines: `bijian`(free) `jianying`(free) `whisper-api` `whisper-cpp` |
+| `transcribe` | Speech → subtitles. Engines: `bijian`(free) `jianying`(free) `whisper-api` `minimax` `whisper-cpp` |
 | `subtitle` | Optimize (LLM) and/or translate (LLM/Bing/Google) subtitle files |
 | `synthesize` | Burn subtitles into video with customizable styles |
 | `process` | Full pipeline: transcribe → optimize → translate → synthesize |
@@ -169,5 +169,5 @@ BCP 47 codes: `zh-Hans` `zh-Hant` `en` `ja` `ko` `fr` `de` `es` `ru` `pt` `it` `
 
 - Use `-q` for scripting (stdout = result path only)
 - Bing/Google translation is free, no API key needed
-- `bijian`/`jianying` ASR is free but only supports Chinese & English
+- `bijian`/`jianying` ASR is free but only supports Chinese & English; `minimax` uses the MiniMax Speech-to-Text API
 - Run `videocaptioner style` to see all style presets

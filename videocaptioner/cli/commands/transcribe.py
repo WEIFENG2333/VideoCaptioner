@@ -79,6 +79,7 @@ def run(args: Namespace, config: dict) -> int:
     asr_map = {
         "faster-whisper": TranscribeModelEnum.FASTER_WHISPER,
         "whisper-api": TranscribeModelEnum.WHISPER_API,
+        "minimax": TranscribeModelEnum.MINIMAX_API,
         "bijian": TranscribeModelEnum.BIJIAN,
         "jianying": TranscribeModelEnum.JIANYING,
         "whisper-cpp": TranscribeModelEnum.WHISPER_CPP,
@@ -117,6 +118,10 @@ def run(args: Namespace, config: dict) -> int:
         whisper_api_base=get(config, "whisper_api.api_base", ""),
         whisper_api_model=get(config, "whisper_api.model", "whisper-1"),
         whisper_api_prompt=get(config, "whisper_api.prompt", ""),
+        # MiniMax ASR options
+        minimax_api_key=get(config, "minimax_api.api_key", ""),
+        minimax_api_base=get(config, "minimax_api.api_base", "https://api.minimaxi.com/v1"),
+        minimax_api_model=get(config, "minimax_api.model", "asr-1.0"),
     )
 
 

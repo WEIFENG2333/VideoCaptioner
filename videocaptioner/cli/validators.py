@@ -118,6 +118,20 @@ def validate_whisper_api(config: dict) -> bool:
     return True
 
 
+def validate_minimax_api(config: dict) -> bool:
+    """Validate MiniMax ASR API configuration."""
+    api_key = get(config, "minimax_api.api_key")
+    if not api_key:
+        output.config_missing_error(
+            "MiniMax ASR API key",
+            "minimax_api.api_key",
+            "VIDEOCAPTIONER_MINIMAX_API_KEY",
+            "--minimax-api-key",
+        )
+        return False
+    return True
+
+
 def validate_ffmpeg() -> bool:
     """Check that FFmpeg is available on PATH."""
     if not shutil.which("ffmpeg"):
@@ -163,6 +177,8 @@ def validate_transcribe(config: dict) -> bool:
 
     if asr == "whisper-api":
         return validate_whisper_api(config)
+    if asr == "minimax":
+        return validate_minimax_api(config)
     if asr == "faster-whisper":
         return validate_faster_whisper()
     if asr == "whisper-cpp":

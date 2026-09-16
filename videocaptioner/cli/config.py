@@ -42,6 +42,9 @@ ENV_MAP: Dict[str, str] = {
     "VIDEOCAPTIONER_LLM_MODEL": "llm.model",
     "VIDEOCAPTIONER_WHISPER_API_KEY": "whisper_api.api_key",
     "VIDEOCAPTIONER_WHISPER_API_BASE": "whisper_api.api_base",
+    "VIDEOCAPTIONER_MINIMAX_API_KEY": "minimax_api.api_key",
+    "VIDEOCAPTIONER_MINIMAX_API_BASE": "minimax_api.api_base",
+    "VIDEOCAPTIONER_MINIMAX_MODEL": "minimax_api.model",
     "VIDEOCAPTIONER_DEEPLX_ENDPOINT": "translate.deeplx_endpoint",
     "VIDEOCAPTIONER_TARGET_LANG": "translate.target_language",
     "VIDEOCAPTIONER_DUBBING_PROVIDER": "dubbing.provider",
@@ -72,6 +75,11 @@ DEFAULTS: Dict[str, Any] = {
         "api_base": "https://api.openai.com/v1",
         "model": "whisper-1",
         "prompt": "",
+    },
+    "minimax_api": {
+        "api_key": "",
+        "api_base": "https://api.minimaxi.com/v1",
+        "model": "asr-1.0",
     },
     "transcribe": {
         "asr": "bijian",
