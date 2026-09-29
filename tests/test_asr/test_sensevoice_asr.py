@@ -96,6 +96,47 @@ def test_groups_words_into_readable_sentence_segments(test_audio_path_en, monkey
     ]
 
 
+@pytest.mark.parametrize("need_word_time_stamp", [False, True])
+def test_removes_leading_sentencepiece_marker_without_changing_timestamps(
+    test_audio_path_en, monkeypatch, need_word_time_stamp
+):
+    # SenseVoice.post can retain the SentencePiece marker on each result's first word.
+    model = FakeSenseVoiceModel(
+        [
+            {
+                "text": "Hello world.",
+                "words": ["\u2581Hello", "world", "."],
+                "timestamp": [[100, 400], [500, 800], [800, 860]],
+            },
+            {
+                "text": "Goodbye.",
+                "words": ["\u2581Goodbye", "."],
+                "timestamp": [[2000, 2500], [2500, 2560]],
+            },
+        ]
+    )
+    monkeypatch.setattr(SenseVoiceASR, "_get_model", lambda self: model)
+
+    result = SenseVoiceASR(
+        str(test_audio_path_en),
+        device="cpu",
+        need_word_time_stamp=need_word_time_stamp,
+    ).run()
+
+    expected = (
+        [
+            ("Hello", 100, 400),
+            ("world", 500, 800),
+            (".", 800, 860),
+            ("Goodbye", 2000, 2500),
+            (".", 2500, 2560),
+        ]
+        if need_word_time_stamp
+        else [("Hello world.", 100, 860), ("Goodbye.", 2000, 2560)]
+    )
+    assert [(seg.text, seg.start_time, seg.end_time) for seg in result] == expected
+
+
 def test_falls_back_to_clean_text_and_timestamp_bounds(test_audio_path_zh, monkeypatch):
     model = FakeSenseVoiceModel(
         [

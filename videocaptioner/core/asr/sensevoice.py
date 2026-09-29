@@ -177,6 +177,8 @@ class SenseVoiceASR(BaseASR):
         for word, timestamp in zip(words, timestamps):
             pair = cls._timestamp_pair_ms(timestamp)
             text = cls._RICH_TAG_PATTERN.sub("", str(word)).strip()
+            # SenseVoice.post may leave the SentencePiece marker on the first word.
+            text = text.removeprefix("\u2581")
             if pair is None or not text:
                 continue
             aligned.append((text, pair[0], pair[1]))
