@@ -4,6 +4,7 @@ Each validator checks that required config/dependencies are available
 BEFORE starting the actual task, so users get clear error messages upfront.
 """
 
+import importlib.util
 import shutil
 from pathlib import Path
 
@@ -12,14 +13,18 @@ from videocaptioner.cli.config import get
 
 # Shared file format constants
 AUDIO_EXTENSIONS = frozenset({"flac", "m4a", "mp3", "wav", "ogg", "opus", "aac", "wma"})
-VIDEO_EXTENSIONS = frozenset({"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"})
+VIDEO_EXTENSIONS = frozenset(
+    {"mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "ts", "m4v", "mpg", "mpeg"}
+)
 SUBTITLE_EXTENSIONS = frozenset({".srt", ".ass", ".vtt"})
 OUTPUT_EXTENSIONS = frozenset({".srt", ".ass", ".txt", ".json"})
+SENSEVOICE_RUNTIME_DEPENDENCIES = ("funasr", "torch", "torchaudio")
 
 
 def resolve_layout(cli_name: str):
     """Convert CLI layout name to SubtitleLayoutEnum."""
     from videocaptioner.core.entities import SubtitleLayoutEnum
+
     mapping = {
         "target-above": SubtitleLayoutEnum.TRANSLATE_ON_TOP,
         "source-above": SubtitleLayoutEnum.ORIGINAL_ON_TOP,
@@ -32,6 +37,7 @@ def resolve_layout(cli_name: str):
 def validate_media_input(path: Path) -> int | None:
     """Validate input is a supported audio/video file. Returns exit code on failure, None on success."""
     from videocaptioner.cli import exit_codes as EXIT
+
     if not path.is_file():
         output.error(f"Input is not a file: {path}")
         return EXIT.FILE_NOT_FOUND
@@ -47,6 +53,7 @@ def validate_media_input(path: Path) -> int | None:
 def validate_subtitle_input(path: Path) -> int | None:
     """Validate input is a supported subtitle file. Returns exit code on failure, None on success."""
     from videocaptioner.cli import exit_codes as EXIT
+
     if path.suffix.lower() not in SUBTITLE_EXTENSIONS:
         output.error(f"Unsupported subtitle format: {path.suffix}")
         output.hint(f"Supported formats: {', '.join(sorted(SUBTITLE_EXTENSIONS))}")
@@ -57,9 +64,12 @@ def validate_subtitle_input(path: Path) -> int | None:
 def validate_video_input(path: Path) -> int | None:
     """Validate input is a video file (not audio or other). Returns exit code on failure."""
     from videocaptioner.cli import exit_codes as EXIT
+
     ext = path.suffix.lower()
     if ext.lstrip(".") in AUDIO_EXTENSIONS:
-        output.error(f"Input is an audio file ({ext}), not a video. Cannot burn subtitles into audio.")
+        output.error(
+            f"Input is an audio file ({ext}), not a video. Cannot burn subtitles into audio."
+        )
         output.hint("Use a video file (mp4, mkv, etc.) as input.")
         return EXIT.USAGE_ERROR
     if ext and ext.lstrip(".") not in VIDEO_EXTENSIONS:
@@ -72,6 +82,7 @@ def validate_video_input(path: Path) -> int | None:
 def validate_output_format(path: Path) -> int | None:
     """Validate output file extension is supported. Returns exit code on failure."""
     from videocaptioner.cli import exit_codes as EXIT
+
     ext = Path(path).suffix.lower()
     if ext and ext not in OUTPUT_EXTENSIONS:
         output.error(f"Unsupported output format: {ext}")
@@ -129,7 +140,11 @@ def validate_ffmpeg() -> bool:
 
 def validate_faster_whisper() -> bool:
     """Check that FasterWhisper executable is available."""
-    if not shutil.which("faster-whisper-xxl") and not shutil.which("faster-whisper") and not shutil.which("faster_whisper"):
+    if (
+        not shutil.which("faster-whisper-xxl")
+        and not shutil.which("faster-whisper")
+        and not shutil.which("faster_whisper")
+    ):
         output.error("FasterWhisper not found on PATH")
         output.hint("Download from the GUI (Settings > FasterWhisper), or install manually.")
         output.hint("See: https://github.com/Purfview/whisper-standalone-win")
@@ -145,6 +160,7 @@ def validate_whisper_cpp() -> bool:
         # Also check project's bin directory
         try:
             from videocaptioner.config import BIN_PATH
+
             if not any((BIN_PATH / n).exists() for n in names):
                 output.error("WhisperCpp not found")
                 output.hint("Download from the GUI (Settings > WhisperCpp), or install manually.")
@@ -154,6 +170,23 @@ def validate_whisper_cpp() -> bool:
             output.error("WhisperCpp not found on PATH")
             output.hint("See: https://github.com/ggerganov/whisper.cpp")
             return False
+    return True
+
+
+def missing_sensevoice_dependencies() -> list[str]:
+    """Return missing packages required by the optional SenseVoice runtime."""
+    return [
+        name for name in SENSEVOICE_RUNTIME_DEPENDENCIES if importlib.util.find_spec(name) is None
+    ]
+
+
+def validate_sensevoice() -> bool:
+    """Check that the complete optional SenseVoice runtime is installed."""
+    missing = missing_sensevoice_dependencies()
+    if missing:
+        output.error(f"SenseVoice dependencies are not installed: {', '.join(missing)}")
+        output.hint("Install SenseVoice support: pip install 'videocaptioner[sensevoice]'")
+        return False
     return True
 
 
@@ -167,6 +200,8 @@ def validate_transcribe(config: dict) -> bool:
         return validate_faster_whisper()
     if asr == "whisper-cpp":
         return validate_whisper_cpp()
+    if asr == "sensevoice":
+        return validate_sensevoice()
     # bijian/jianying: no config needed (public endpoints)
     return True
 
@@ -202,6 +237,7 @@ def validate_dubbing(config: dict, *, needs_video: bool = False, rewrite: bool =
     if preset_name:
         try:
             from videocaptioner.core.dubbing.presets import get_dubbing_preset
+
             preset = get_dubbing_preset(preset_name)
         except ValueError as exc:
             output.error(str(exc))
@@ -244,7 +280,9 @@ def validate_dubbing(config: dict, *, needs_video: bool = False, rewrite: bool =
         output.error(f"Unsupported dubbing audio mode: {audio_mode}")
         output.hint("Supported audio modes: replace, mix, duck")
         return False
-    if (needs_video or get(config, "dubbing.fit_mode", "tempo") == "tempo") and not validate_ffmpeg():
+    if (
+        needs_video or get(config, "dubbing.fit_mode", "tempo") == "tempo"
+    ) and not validate_ffmpeg():
         return False
     if rewrite and not validate_llm(config):
         return False

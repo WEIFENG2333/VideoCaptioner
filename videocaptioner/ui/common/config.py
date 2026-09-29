@@ -214,6 +214,15 @@ class Config(QConfig):
     # 提示词
     faster_whisper_prompt = ConfigItem("FasterWhisper", "Prompt", "")
 
+    # ------------------- SenseVoice 配置 -------------------
+    sensevoice_model = ConfigItem("SenseVoice", "Model", "iic/SenseVoiceSmall")
+    sensevoice_device = OptionsConfigItem(
+        "SenseVoice",
+        "Device",
+        "auto",
+        OptionsValidator(["auto", "cuda", "cpu", "mps"]),
+    )
+
     # ------------------- Whisper API 配置 -------------------
     whisper_api_base = ConfigItem("WhisperAPI", "WhisperApiBase", "")
     whisper_api_key = ConfigItem("WhisperAPI", "WhisperApiKey", "")

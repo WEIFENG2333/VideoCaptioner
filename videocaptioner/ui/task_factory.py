@@ -93,6 +93,9 @@ class TaskFactory:
             faster_whisper_ff_mdx_kim2=cfg.faster_whisper_ff_mdx_kim2.value,
             faster_whisper_one_word=cfg.faster_whisper_one_word.value,
             faster_whisper_prompt=cfg.faster_whisper_prompt.value,
+            # SenseVoice 配置
+            sensevoice_model=cfg.sensevoice_model.value,
+            sensevoice_device=cfg.sensevoice_device.value,
         )
 
         task = TranscribeTask(
