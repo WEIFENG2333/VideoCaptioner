@@ -1,7 +1,8 @@
+import inspect
 import io
 import logging
 import sys
-from typing import Callable
+from typing import Any, Callable
 
 from modelscope.hub.callback import ProgressCallback
 from modelscope.hub.snapshot_download import snapshot_download
@@ -65,14 +66,15 @@ class ModelscopeDownloadThread(QThread):
         try:
             self.progress.emit(0, self.tr("开始下载..."))
 
-            callback_class = create_progress_callback_class(self.progress.emit)
+            download_kwargs: dict[str, Any] = {"local_dir": self.save_path}
+            # ModelScope 部分版本不支持进度回调，按实际函数签名传参。
+            if "progress_callbacks" in inspect.signature(snapshot_download).parameters:
+                download_kwargs["progress_callbacks"] = [
+                    create_progress_callback_class(self.progress.emit)
+                ]
 
             with SuppressOutput():
-                snapshot_download(
-                    self.model_id,
-                    local_dir=self.save_path,
-                    progress_callbacks=[callback_class],
-                )
+                snapshot_download(self.model_id, **download_kwargs)
 
             self.progress.emit(100, self.tr("下载完成"))
 
