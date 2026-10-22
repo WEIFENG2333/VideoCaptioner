@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # yt-dlp must track site changes (Bilibili/YouTube) closely;
+    # other dependencies are left to manual upgrades.
+    allow:
+      - dependency-name: "yt-dlp"
+    commit-message:
+      prefix: "chore(deps)"
