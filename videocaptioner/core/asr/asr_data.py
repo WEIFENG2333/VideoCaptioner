@@ -45,7 +45,10 @@ def handle_long_path(path: str) -> str:
         and len(path) > 260
         and not path.startswith("\\\\?\\")
     ):
-        return rf"\\?\{os.path.abspath(path)}"
+        absolute_path = os.path.abspath(path)
+        if absolute_path.startswith("\\\\"):
+            return "\\\\?\\UNC\\" + absolute_path[2:]
+        return "\\\\?\\" + absolute_path
     return path
 
 
