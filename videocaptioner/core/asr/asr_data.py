@@ -73,9 +73,10 @@ class ASRDataSeg:
     @staticmethod
     def _ms_to_lrc_time(ms: int) -> str:
         """Convert milliseconds to LRC time format (MM:SS.cc)"""
-        seconds = ms / 1000
-        minutes, seconds = divmod(seconds, 60)
-        return f"{int(minutes):02}:{seconds:.2f}"
+        total_seconds, milliseconds = divmod(ms, 1000)
+        minutes, seconds = divmod(total_seconds, 60)
+        centiseconds = milliseconds // 10
+        return f"{int(minutes):02}:{int(seconds):02}.{int(centiseconds):02}"
 
     @staticmethod
     def _ms_to_srt_time(ms: int) -> str:
