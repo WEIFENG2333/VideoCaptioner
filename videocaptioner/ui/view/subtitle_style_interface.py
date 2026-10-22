@@ -144,6 +144,9 @@ class SubtitleStyleInterface(QWidget):
         # 控制是否触发样式变更回调（加载样式时禁用）
         self._loading_style = False
 
+        # 持有仍在运行的预览线程，避免被回收导致 "QThread: Destroyed while thread is still running" 闪退
+        self._running_preview_threads = set()
+
         # 设置初始值,加载样式
         self.__setValues()
 
@@ -970,11 +973,22 @@ class SubtitleStyleInterface(QWidget):
                 bg_image_path=str(path),
             )
 
-        self.preview_thread.previewReady.connect(self.onPreviewReady)
-        self.preview_thread.start()
+        thread = self.preview_thread
+        self._running_preview_threads.add(thread)
+        thread.previewReady.connect(self.onPreviewReady)
+        thread.finished.connect(lambda t=thread: self._onPreviewThreadFinished(t))
+        thread.start()
+
+    def _onPreviewThreadFinished(self, thread):
+        """预览线程结束后释放引用"""
+        self._running_preview_threads.discard(thread)
+        thread.deleteLater()
 
     def onPreviewReady(self, preview_path):
         """预览图片生成完成的回调"""
+        # 忽略已被新预览请求取代的旧线程结果
+        if self.sender() is not self.preview_thread:
+            return
         self.previewImage.setImage(preview_path)
         self.updatePreviewImage()
 
