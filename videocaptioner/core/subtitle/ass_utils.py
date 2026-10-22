@@ -270,7 +270,8 @@ def auto_wrap_ass_file(
             text_part, max_text_width, style.font_name, style.font_size, style.spacing
         )
 
-        return full_line.replace(text_part, wrapped_text)
+        text_offset = match.start(1) - match.start(0)
+        return full_line[:text_offset] + wrapped_text
 
     # 匹配All对话行的文本部分（第10个字段）
     # Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
